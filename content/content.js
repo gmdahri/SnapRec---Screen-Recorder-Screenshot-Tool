@@ -374,9 +374,53 @@
             console.log('Display audio tracks (system audio):', displayAudioTracks.length);
             console.log('Options received - Mic:', options.microphone, 'System Audio:', options.systemAudio);
 
-            // Combine streams
-            const tracks = [...displayStream.getTracks(), ...audioTracks];
-            const combinedStream = new MediaStream(tracks);
+            // Combine audio streams using AudioContext if multiple audio sources
+            let combinedStream;
+            const videoTracks = displayStream.getVideoTracks();
+
+            if (audioTracks.length > 0 && displayAudioTracks.length > 0) {
+                // Mix both audio sources using AudioContext
+                console.log('Mixing microphone and system audio with AudioContext');
+                const audioContext = new AudioContext();
+                const destination = audioContext.createMediaStreamDestination();
+
+                // Add system audio
+                const systemAudioSource = audioContext.createMediaStreamSource(
+                    new MediaStream(displayAudioTracks)
+                );
+                systemAudioSource.connect(destination);
+
+                // Add microphone audio
+                const micSource = audioContext.createMediaStreamSource(
+                    new MediaStream(audioTracks)
+                );
+                micSource.connect(destination);
+
+                // Create combined stream with video + mixed audio
+                combinedStream = new MediaStream([
+                    ...videoTracks,
+                    ...destination.stream.getAudioTracks()
+                ]);
+                console.log('Combined stream created with mixed audio');
+            } else if (audioTracks.length > 0) {
+                // Microphone only
+                console.log('Using microphone audio only');
+                combinedStream = new MediaStream([
+                    ...videoTracks,
+                    ...audioTracks
+                ]);
+            } else if (displayAudioTracks.length > 0) {
+                // System audio only
+                console.log('Using system audio only');
+                combinedStream = new MediaStream([
+                    ...videoTracks,
+                    ...displayAudioTracks
+                ]);
+            } else {
+                // No audio - video only
+                console.log('No audio sources available');
+                combinedStream = new MediaStream(videoTracks);
+            }
 
             // Setup webcam if enabled
             if (options.webcam) {
