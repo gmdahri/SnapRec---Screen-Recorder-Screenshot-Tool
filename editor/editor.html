@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapRec - Edit Screenshot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/design-system.css">
+    <link rel="stylesheet" href="editor.css">
+</head>
+
+<body>
+    <div class="editor-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h1 class="title">Edit Screenshot</h1>
+            </div>
+            <div class="top-bar-center">
+                <button class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M9 14L4 9L9 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M4 9H15C17.7614 9 20 11.2386 20 14C20 16.7614 17.7614 19 15 19H11"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <button class="tool-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M15 14L20 9L15 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M20 9H9C6.23858 9 4 11.2386 4 14C4 16.7614 6.23858 19 9 19H13" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <div class="divider"></div>
+                <button class="tool-btn" id="zoomOutBtn" title="Zoom Out">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                        <path d="M21 21L16.5 16.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M8 11H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button class="tool-btn" id="zoomInBtn" title="Zoom In">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                        <path d="M21 21L16.5 16.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M11 8V14M8 11H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="top-bar-right">
+                <button class="tool-btn" id="resetBtn" title="Reset">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 4V10H10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path
+                            d="M4.51 15C5.155 17.5 6.61 19.5 8.61 20.74C10.61 21.98 13.01 22.37 15.3 21.85C17.59 21.33 19.61 19.93 20.98 17.93C22.35 15.93 22.99 13.47 22.79 11.01C22.59 8.55 21.56 6.23 19.9 4.49C18.24 2.75 16.05 1.7 13.7 1.53C11.35 1.36 9.02 2.08 7.17 3.58L4 6.5"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Toolbar -->
+            <aside class="left-toolbar">
+                <div class="tool-group">
+                    <button class="toolbar-btn active" data-tool="select" title="Select (V)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M4 4L10 20L12 14L18 12L4 4Z" stroke="currentColor" stroke-width="2"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" data-tool="arrow" title="Arrow (A)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M5 19L19 5M19 5H9M19 5V15" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" data-tool="rectangle" title="Rectangle (R)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" data-tool="circle" title="Circle (C)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" data-tool="text" title="Text (T)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M4 7V4H20V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <path d="M12 4V20M9 20H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" data-tool="pen" title="Pen (P)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M12 20L4 12L16 4L20 8L8 20H4V16L16 4" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" data-tool="blur" title="Blur (B)">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="2" fill="currentColor" />
+                            <circle cx="12" cy="6" r="1.5" fill="currentColor" opacity="0.6" />
+                            <circle cx="12" cy="18" r="1.5" fill="currentColor" opacity="0.6" />
+                            <circle cx="6" cy="12" r="1.5" fill="currentColor" opacity="0.6" />
+                            <circle cx="18" cy="12" r="1.5" fill="currentColor" opacity="0.6" />
+                            <circle cx="8" cy="8" r="1" fill="currentColor" opacity="0.4" />
+                            <circle cx="16" cy="8" r="1" fill="currentColor" opacity="0.4" />
+                            <circle cx="8" cy="16" r="1" fill="currentColor" opacity="0.4" />
+                            <circle cx="16" cy="16" r="1" fill="currentColor" opacity="0.4" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="divider-h"></div>
+
+                <div class="tool-group">
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="colorPicker" value="#8B5CF6" title="Color">
+                        <div class="color-preview" id="colorPreview"></div>
+                    </div>
+                    <div class="stroke-width">
+                        <label>Size</label>
+                        <input type="range" id="strokeWidth" min="1" max="20" value="3">
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Canvas Area -->
+            <main class="canvas-area">
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <canvas id="mainCanvas"></canvas>
+                    <canvas id="drawCanvas"></canvas>
+                </div>
+            </main>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <footer class="bottom-bar">
+            <button class="action-btn secondary" id="cancelBtn">Cancel</button>
+            <div class="action-group">
+                <button class="action-btn secondary" id="copyBtn">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2" />
+                        <path
+                            d="M16 8V6C16 4.89543 15.1046 4 14 4H6C4.89543 4 4 4.89543 4 6V14C4 15.1046 4.89543 16 6 16H8"
+                            stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    Copy to Clipboard
+                </button>
+                <button class="action-btn secondary" id="driveBtn" title="Upload to Google Drive">
+                    <svg viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H1c0 1.55.4 3.1 1.2 4.5l4.4 9.35z"
+                            fill="#0066da" />
+                        <path
+                            d="M43.65 25L29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3L1.2 52.35c-.8 1.4-1.2 2.95-1.2 4.5h27.5L43.65 25z"
+                            fill="#00ac47" />
+                        <path
+                            d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57c.8-1.4 1.2-2.95 1.2-4.5H59.85L73.55 76.8z"
+                            fill="#ea4335" />
+                        <path d="M43.65 25L57.4 1.2c-1.35-.8-2.9-1.2-4.5-1.2H34.35c-1.55 0-3.1.45-4.45 1.2L43.65 25z"
+                            fill="#00832d" />
+                        <path d="M59.8 53H27.45L13.7 76.8c1.35.8 2.9 1.2 4.5 1.2h50.3c1.55 0 3.1-.45 4.45-1.2L59.8 53z"
+                            fill="#2684fc" />
+                        <path
+                            d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5l-12.65-22z"
+                            fill="#ffba00" />
+                    </svg>
+                    Save to Drive
+                </button>
+                <button class="action-btn primary" id="downloadBtn">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3V15M12 15L7 10M12 15L17 10" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <path d="M3 17V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V17"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    Download
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="editor.js" type="module"></script>
+</body>
+
+</html>

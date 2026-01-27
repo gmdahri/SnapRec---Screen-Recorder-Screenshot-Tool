@@ -1,0 +1,170 @@
+/* SnapRec Floating Action Button
+ * A draggable floating button with quick capture options
+ */
+
+/* Floating Button Container */
+.snaprec-fab-container {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    z-index: 2147483647;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    user-select: none;
+}
+
+/* Main FAB Button */
+.snaprec-fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    border: none;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4), 0 0 0 4px rgba(139, 92, 246, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.snaprec-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px rgba(139, 92, 246, 0.5), 0 0 0 6px rgba(139, 92, 246, 0.15);
+}
+
+.snaprec-fab:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+}
+
+.snaprec-fab svg {
+    width: 28px;
+    height: 28px;
+    color: white;
+    transition: transform 0.3s ease;
+}
+
+.snaprec-fab.expanded svg {
+    transform: rotate(45deg);
+}
+
+/* FAB Menu */
+.snaprec-fab-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: rgba(15, 15, 25, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 16px;
+    padding: 8px;
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.95);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.snaprec-fab-container.expanded .snaprec-fab-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* Menu Items */
+.snaprec-fab-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.snaprec-fab-item:hover {
+    background: rgba(139, 92, 246, 0.2);
+    color: white;
+}
+
+.snaprec-fab-item svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.snaprec-fab-divider {
+    height: 1px;
+    background: rgba(139, 92, 246, 0.2);
+    margin: 8px 0;
+}
+
+/* Recording indicator */
+.snaprec-fab-recording {
+    animation: fabPulse 1.5s ease infinite;
+}
+
+@keyframes fabPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4), 0 0 0 4px rgba(239, 68, 68, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 4px 30px rgba(239, 68, 68, 0.6), 0 0 0 8px rgba(239, 68, 68, 0.3);
+    }
+}
+
+.snaprec-fab-recording svg {
+    color: white;
+}
+
+/* Tooltip */
+.snaprec-fab-tooltip {
+    position: absolute;
+    right: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(15, 15, 25, 0.95);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.snaprec-fab:hover+.snaprec-fab-tooltip,
+.snaprec-fab:focus+.snaprec-fab-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dragging state */
+.snaprec-fab-container.dragging {
+    transition: none;
+}
+
+.snaprec-fab-container.dragging .snaprec-fab {
+    cursor: grabbing;
+}
+
+/* Hide when in editor or extension pages */
+.snaprec-fab-container.hidden {
+    display: none !important;
+}

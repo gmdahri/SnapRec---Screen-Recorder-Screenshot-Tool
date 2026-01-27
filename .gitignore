@@ -1,0 +1,12 @@
+# Markdown files
+*.md
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Zip files (if you don't want to track them)
+# *.zip
