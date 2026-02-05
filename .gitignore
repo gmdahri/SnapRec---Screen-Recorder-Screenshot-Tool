@@ -1,5 +1,17 @@
-# Markdown files
-*.md
+# Dependencies
+node_modules/
+dist/
+build/
+.turbo/
+.cache/
+
+# Environment
+.env*
+!.env.example
+
+# Build artifacts
+*.tsbuildinfo
+*.log
 
 # macOS
 .DS_Store
@@ -10,4 +22,3 @@
 
 # Zip files
 *.zip
-node_modules
