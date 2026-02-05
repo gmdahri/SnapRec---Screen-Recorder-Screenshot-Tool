@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Header, LoginModal, GatedButton, Spinner } from '../components';
+import { MainLayout, LoginModal, GatedButton, Spinner } from '../components';
 import { api } from '../lib/api';
 
 const VideoPreview: React.FC = () => {
@@ -119,11 +119,11 @@ const VideoPreview: React.FC = () => {
         try {
             // Get upload URL from backend using centralized API
             console.log('Getting presigned upload URL for video...');
-            const { url, fileName } = await api.recordings.getUploadUrl(
+            const { uploadUrl, fileUrl } = await api.recordings.getUploadUrl(
                 `video_${Date.now()}.webm`,
                 'video/webm'
             );
-            console.log('Presigned URL received:', url ? 'Success' : 'Failed');
+            console.log('Presigned URL received:', uploadUrl ? 'Success' : 'Failed');
 
             // Convert data URL to blob
             const res = await fetch(videoUrl);
@@ -131,7 +131,7 @@ const VideoPreview: React.FC = () => {
 
             // Upload to R2
             console.log('Uploading to R2 via PUT...');
-            const uploadRes = await fetch(url, {
+            const uploadRes = await fetch(uploadUrl, {
                 method: 'PUT',
                 body: blob,
                 headers: { 'Content-Type': 'video/webm' }
@@ -148,7 +148,7 @@ const VideoPreview: React.FC = () => {
             const recording = await api.recordings.create({
                 title: `Video Recording ${new Date().toLocaleString()}`,
                 type: 'video',
-                fileName
+                fileUrl
             });
             console.log('Database entry created:', recording.id);
 
@@ -174,7 +174,7 @@ const VideoPreview: React.FC = () => {
     };
 
     return (
-        <div className="bg-background-light dark:bg-background-dark font-display text-[#130d1c] dark:text-[#faf8fc] antialiased min-h-screen flex flex-col">
+        <MainLayout title="Video Preview" showBackButton={true}>
             {/* Login Prompt Modal */}
             <LoginModal
                 isOpen={showLoginPrompt}
@@ -182,10 +182,6 @@ const VideoPreview: React.FC = () => {
                 actionDescription={pendingAction === 'download' ? 'download your video' : 'save your video to cloud'}
             />
 
-            {/* Header */}
-            <Header title="Video Preview" showBackButton />
-
-            {/* Main Content */}
             <main className="flex-1 flex flex-col items-center justify-center p-8">
                 {loading ? (
                     <div className="flex flex-col items-center gap-4">
@@ -212,7 +208,7 @@ const VideoPreview: React.FC = () => {
                                 variant="secondary"
                                 className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold"
                             >
-                                Download Video
+                                Download
                             </GatedButton>
                             <GatedButton
                                 onClick={() => handleActionClick('save')}
@@ -221,7 +217,7 @@ const VideoPreview: React.FC = () => {
                                 className={`px-6 py-3 font-bold ${isUploading ? 'animate-pulse' : ''}`}
                                 disabled={isUploading}
                             >
-                                {isUploading ? 'Uploading...' : 'Save to Cloud'}
+                                {isUploading ? 'Saving...' : 'Save to your account'}
                             </GatedButton>
                         </div>
                     </div>
@@ -242,7 +238,7 @@ const VideoPreview: React.FC = () => {
                     </div>
                 )}
             </main>
-        </div>
+        </MainLayout>
     );
 };
 

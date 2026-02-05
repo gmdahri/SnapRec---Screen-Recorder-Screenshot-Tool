@@ -12,12 +12,6 @@ const sizeClasses = {
     lg: 'size-12',
 };
 
-const iconSizes = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-3xl',
-};
-
 const textSizes = {
     sm: 'text-sm',
     md: 'text-lg',
@@ -31,11 +25,11 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
     return (
         <div className={`flex items-center gap-2 ${className}`}>
-            <div className={`${sizeClasses[size]} bg-primary rounded-lg flex items-center justify-center text-white`}>
-                <span className={`material-symbols-outlined ${iconSizes[size]}`}>crop_free</span>
+            <div className={`${sizeClasses[size]} flex items-center justify-center`}>
+                <img src="/logo.png" alt="SnapRec Logo" className="w-full h-full object-contain" />
             </div>
             {showText && (
-                <h1 className={`${textSizes[size]} font-bold tracking-tight`}>SnapRec</h1>
+                <h1 className={`${textSizes[size]} font-bold tracking-tight text-slate-900 dark:text-white`}>SnapRec</h1>
             )}
         </div>
     );

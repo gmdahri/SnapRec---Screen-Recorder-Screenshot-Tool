@@ -25,10 +25,18 @@ export class RecordingsService {
         recording.type = data.type;
 
         if (data.userId) {
-            const user = await this.usersRepository.findOne({ where: { id: data.userId } });
-            if (user) {
-                recording.user = user;
+            // Find user by supabaseId (which is what userId is in this context)
+            let user = await this.usersRepository.findOne({ where: { supabaseId: data.userId } });
+
+            // Lazy sync: create user if not exists
+            if (!user) {
+                user = new User();
+                user.supabaseId = data.userId;
+                // We'll leave email and other details for a more complete sync later, 
+                // but at least the ID link will work.
+                await this.usersRepository.save(user);
             }
+            recording.user = user;
         }
 
         return this.recordingsRepository.save(recording);
@@ -37,7 +45,7 @@ export class RecordingsService {
     async findAll(userId?: string) {
         if (userId) {
             return this.recordingsRepository.find({
-                where: { user: { id: userId } },
+                where: { user: { supabaseId: userId } },
                 order: { createdAt: 'DESC' },
             });
         }
@@ -49,7 +57,7 @@ export class RecordingsService {
     }
 
     async claimRecordings(userId: string, recordingIds: string[]) {
-        const user = await this.usersRepository.findOne({ where: { id: userId } });
+        const user = await this.usersRepository.findOne({ where: { supabaseId: userId } });
         if (!user) throw new Error('User not found');
 
         await this.recordingsRepository
@@ -57,7 +65,6 @@ export class RecordingsService {
             .update(Recording)
             .set({ user })
             .where('id IN (:...ids)', { ids: recordingIds })
-            .andWhere('userId IS NULL')
             .execute();
     }
 }

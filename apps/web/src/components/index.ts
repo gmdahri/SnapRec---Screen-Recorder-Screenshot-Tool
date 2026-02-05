@@ -6,4 +6,5 @@ export { UserMenu } from './UserMenu';
 export { LoginModal } from './LoginModal';
 export { GatedButton } from './GatedButton';
 export { Header } from './Header';
+export { MainLayout } from './MainLayout';
 export { default as ProtectedRoute } from './ProtectedRoute';

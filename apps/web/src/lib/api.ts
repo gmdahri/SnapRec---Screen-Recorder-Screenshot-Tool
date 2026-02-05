@@ -8,11 +8,15 @@ export const api = {
 
     // Generic fetch wrapper with auth
     async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
         const url = `${API_BASE_URL}${endpoint}`;
         const response = await fetch(url, {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 ...options.headers,
             },
         });
@@ -34,7 +38,7 @@ export const api = {
             return api.fetch<any>(`/recordings/${id}`);
         },
 
-        async create(data: { title: string; type: string; fileName: string }) {
+        async create(data: { title: string; type: string; fileUrl: string; guestId?: string }) {
             return api.fetch<any>('/recordings', {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -42,7 +46,7 @@ export const api = {
         },
 
         async getUploadUrl(fileName: string, contentType: string) {
-            return api.fetch<{ url: string; fileName: string }>('/recordings/upload-url', {
+            return api.fetch<{ uploadUrl: string; fileUrl: string }>('/recordings/upload-url', {
                 method: 'POST',
                 body: JSON.stringify({ fileName, contentType }),
             });

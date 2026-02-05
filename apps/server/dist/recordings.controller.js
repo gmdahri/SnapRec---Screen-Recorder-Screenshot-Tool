@@ -27,16 +27,19 @@ let RecordingsController = class RecordingsController {
     }
     async getUploadUrl(body) {
         const { fileName, contentType } = body;
-        const url = await this.storageService.getUploadPresignedUrl(fileName, contentType);
-        return { url, fileName };
+        const uploadUrl = await this.storageService.getUploadPresignedUrl(fileName, contentType);
+        return { uploadUrl, fileUrl: fileName };
     }
     async createRecording(body) {
-        const fileUrl = body.fileName;
+        const fileUrl = body.fileUrl;
+        if (!fileUrl) {
+            throw new Error('fileUrl is required');
+        }
         return this.recordingsService.create({
             title: body.title,
             fileUrl,
             type: body.type,
-            userId: body.userId,
+            userId: body.userId || body.guestId,
         });
     }
     async claimRecordings(req, body) {
@@ -45,12 +48,26 @@ let RecordingsController = class RecordingsController {
         return { success: true };
     }
     async getAllRecordings(req) {
-        const userId = req.user.id;
-        const recordings = await this.recordingsService.findAll(userId);
-        return Promise.all(recordings.map(async (recording) => ({
-            ...recording,
-            fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
-        })));
+        try {
+            const userId = req.user.id;
+            const recordings = await this.recordingsService.findAll(userId);
+            return Promise.all(recordings.map(async (recording) => {
+                try {
+                    return {
+                        ...recording,
+                        fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
+                    };
+                }
+                catch (err) {
+                    console.error(`Failed to get signed URL for recording ${recording.id}:`, err);
+                    return { ...recording, fileUrl: null };
+                }
+            }));
+        }
+        catch (error) {
+            console.error('Error in getAllRecordings:', error);
+            throw error;
+        }
     }
     async getRecording(id) {
         const recording = await this.recordingsService.findOne(id);
