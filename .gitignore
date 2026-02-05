@@ -10,3 +10,4 @@
 
 # Zip files
 *.zip
+node_modules

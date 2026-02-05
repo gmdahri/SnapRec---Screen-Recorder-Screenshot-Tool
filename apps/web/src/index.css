@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #7b25f4;
+  --color-background-light: #f7f5f8;
+  --color-background-dark: #171022;
+  --color-slate-grey: #475569;
+
+  --font-display: "Inter", sans-serif;
+
+  --radius-default: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+}
+
+@layer base {
+  body {
+    @apply font-display transition-colors duration-300;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}

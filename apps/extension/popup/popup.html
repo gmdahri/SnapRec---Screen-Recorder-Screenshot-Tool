@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapRec</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/design-system.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="../icons/logo.png" alt="SnapRec Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+        </div>
+        <span class="logo-text">SnapRec</span>
+      </div>
+      <button class="btn-icon" id="settingsBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" />
+          <path
+            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"
+            stroke="currentColor" stroke-width="2" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Mode Toggle -->
+    <div class="toggle-group mode-toggle">
+      <button class="toggle-btn active" data-mode="screenshot">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+          <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Screenshot
+      </button>
+      <button class="toggle-btn" data-mode="record">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+          <circle cx="12" cy="12" r="4" fill="currentColor" />
+        </svg>
+        Record
+      </button>
+    </div>
+
+    <!-- Screenshot Options -->
+    <div class="mode-panel" id="screenshotPanel">
+      <div class="action-list">
+        <div class="action-card" data-action="captureVisible">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" />
+              <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="content">
+            <div class="title">Visible Area</div>
+            <div class="subtitle">Capture what you can see</div>
+          </div>
+          <div class="arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="action-card" data-action="captureFullPage">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2" />
+              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="content">
+            <div class="title">Full Page</div>
+            <div class="subtitle">Scroll and capture entire page</div>
+          </div>
+          <div class="arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="action-card" data-action="captureRegion">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="content">
+            <div class="title">Select Region</div>
+            <div class="subtitle">Draw to select area</div>
+          </div>
+          <div class="arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Record Options -->
+    <div class="mode-panel hidden" id="recordPanel">
+      <!-- Source Selection -->
+      <div class="option-group">
+        <label class="option-label">Record Source</label>
+        <div class="source-options">
+          <button class="source-btn active" data-source="screen">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" />
+              <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Screen
+          </button>
+          <button class="source-btn" data-source="tab">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" />
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" />
+            </svg>
+            Tab
+          </button>
+        </div>
+      </div>
+
+      <!-- Audio Options -->
+      <div class="option-group">
+        <label class="option-label">Audio</label>
+        <div class="toggle-options">
+          <label class="toggle-option">
+            <input type="checkbox" id="micToggle">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" stroke-width="2" />
+                <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" />
+              </svg>
+              Microphone
+            </span>
+          </label>
+          <label class="toggle-option">
+            <input type="checkbox" id="systemAudioToggle">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor" stroke-width="2" />
+                <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" />
+              </svg>
+              System Audio
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Webcam Toggle -->
+      <div class="option-group">
+        <label class="toggle-option webcam-toggle">
+          <input type="checkbox" id="webcamToggle">
+          <span class="toggle-switch"></span>
+          <span class="toggle-label">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" stroke-width="2" />
+              <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="2" />
+            </svg>
+            Show Webcam Overlay
+          </span>
+        </label>
+      </div>
+
+      <!-- Start Recording Button -->
+      <button class="btn btn-primary btn-lg w-full start-record-btn" id="startRecordBtn">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+          <circle cx="12" cy="12" r="4" fill="currentColor" />
+        </svg>
+        Start Recording
+      </button>
+    </div>
+
+    <!-- Recent Captures -->
+    <div class="recent-section" id="recentSection">
+      <div class="section-header">
+        <span class="section-title">Recent Captures</span>
+        <button class="btn btn-ghost btn-sm" id="clearRecent">Clear</button>
+      </div>
+      <div class="recent-scroll" id="recentCaptures">
+        <!-- Recent captures will be inserted here -->
+      </div>
+      <div class="recent-empty" id="recentEmpty">
+        <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" opacity="0.3" />
+          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" opacity="0.3" />
+          <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" opacity="0.3" />
+        </svg>
+        <span>No recent captures</span>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel hidden" id="settingsPanel">
+      <div class="settings-header">
+        <button class="btn-icon" id="backBtn">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <span class="settings-title">Settings</span>
+      </div>
+      <div class="settings-content">
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Open Editor After Capture</div>
+            <div class="setting-hint">Automatically open editor to annotate</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoEditToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Copy to Clipboard</div>
+            <div class="setting-hint">Auto-copy screenshots to clipboard</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoCopyToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Floating Button</div>
+            <div class="setting-hint">Show quick capture button on pages</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="fabToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Keyboard Shortcuts Section -->
+        <div class="shortcuts-section">
+          <div class="shortcuts-header">
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+              <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2" />
+              <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M6 16h8" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <span>Keyboard Shortcuts</span>
+          </div>
+          <div class="shortcuts-list">
+            <div class="shortcut-item">
+              <span class="shortcut-name">Full Page</span>
+              <span class="shortcut-keys" id="shortcutFullpage">⌘⇧1</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-name">Select Region</span>
+              <span class="shortcut-keys" id="shortcutRegion">⌘⇧2</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-name">Visible Area</span>
+              <span class="shortcut-keys" id="shortcutVisible">⌘⇧3</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-name">Recording</span>
+              <span class="shortcut-keys" id="shortcutRecord">⌘⇧4</span>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm customize-shortcuts-btn" id="customizeShortcutsBtn">
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" />
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" />
+            </svg>
+            Customize Shortcuts
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

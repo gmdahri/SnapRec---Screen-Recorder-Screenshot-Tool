@@ -1,0 +1,12 @@
+{
+  "name": "snaprec-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "extension": "npm run --workspace=apps/extension",
+    "web": "npm run --workspace=apps/web"
+  }
+}

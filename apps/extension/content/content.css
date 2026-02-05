@@ -1,0 +1,352 @@
+/* SnapRec Content Script Styles */
+
+/* Selection Overlay */
+.snaprec-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 2147483646;
+    cursor: crosshair;
+}
+
+.snaprec-instructions {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    color: #130d1c;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid #ece7f4;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    z-index: 2147483647;
+}
+
+.snaprec-selection-box {
+    position: fixed;
+    display: none;
+    border: 2px solid #8B5CF6;
+    background: rgba(123, 37, 244, 0.1);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    z-index: 2147483647;
+    pointer-events: none;
+}
+
+/* Loading Indicator */
+.snaprec-loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    color: #130d1c;
+    padding: 20px 32px;
+    border-radius: 16px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #ece7f4;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    z-index: 2147483647;
+}
+
+.snaprec-loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(123, 37, 244, 0.3);
+    border-top-color: #8B5CF6;
+    border-radius: 50%;
+    animation: snaprec-spin 0.8s linear infinite;
+}
+
+@keyframes snaprec-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Recording Bar */
+.snaprec-recording-bar {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: #ffffff;
+    padding: 12px 24px;
+    border-radius: 50px;
+    border: 1px solid #ece7f4;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    z-index: 2147483647;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.snaprec-rec-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.snaprec-rec-dot {
+    width: 12px;
+    height: 12px;
+    background: #EF4444;
+    border-radius: 50%;
+    animation: snaprec-pulse 1s infinite;
+}
+
+.snaprec-recording-bar.paused .snaprec-rec-dot {
+    animation: none;
+    opacity: 0.5;
+}
+
+@keyframes snaprec-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+.snaprec-timer {
+    color: #130d1c;
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 50px;
+}
+
+.snaprec-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.snaprec-pause-btn,
+.snaprec-stop-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.snaprec-pause-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.snaprec-pause-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.snaprec-stop-btn {
+    background: #EF4444;
+    color: white;
+}
+
+.snaprec-stop-btn:hover {
+    background: #DC2626;
+    transform: scale(1.05);
+}
+
+.snaprec-pause-btn svg,
+.snaprec-stop-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Webcam Overlay */
+.snaprec-webcam {
+    position: fixed;
+    bottom: 120px;
+    right: 40px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(123, 37, 244, 0.6);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 2147483646;
+}
+
+/* Countdown Timer Overlay */
+.snaprec-countdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2147483647;
+    backdrop-filter: blur(4px);
+}
+
+.snaprec-countdown-number {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 200px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 0 60px rgba(123, 37, 244, 0.8), 0 0 120px rgba(123, 37, 244, 0.4);
+    animation: snaprec-countdown-pop 1s ease-out forwards;
+}
+
+@keyframes snaprec-countdown-pop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    20% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    40% {
+        transform: scale(1);
+    }
+
+    80% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+}
+
+/* Mini Preview Window */
+.snaprec-mini-preview {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 320px;
+    background: #F4F4F5;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    z-index: 2147483647;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.snaprec-preview-header {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    cursor: grab;
+}
+
+.snaprec-preview-header:active {
+    cursor: grabbing;
+}
+
+.snaprec-drag-handle {
+    display: flex;
+    gap: 2px;
+}
+
+.snaprec-drag-dot {
+    width: 3px;
+    height: 3px;
+    background: #A1A1AA;
+    border-radius: 50%;
+}
+
+.snaprec-close-mini {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #71717A;
+    transition: all 0.2s;
+}
+
+.snaprec-close-mini:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #18181B;
+}
+
+.snaprec-preview-body {
+    padding: 0 12px;
+}
+
+.snaprec-preview-img-container {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.snaprec-preview-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.snaprec-preview-footer {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.snaprec-mini-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #3F3F46;
+    transition: all 0.2s ease;
+}
+
+.snaprec-mini-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #18181B;
+    transform: translateY(-2px);
+}
+
+.snaprec-mini-btn svg {
+    width: 20px;
+    height: 20px;
+}
