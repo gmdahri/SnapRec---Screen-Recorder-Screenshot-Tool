@@ -14,26 +14,28 @@ export class RecordingsController {
     @Post('upload-url')
     async getUploadUrl(@Body() body: { fileName: string; contentType: string }) {
         const { fileName, contentType } = body;
-        const url = await this.storageService.getUploadPresignedUrl(fileName, contentType);
-        return { url, fileName };
+        const uploadUrl = await this.storageService.getUploadPresignedUrl(fileName, contentType);
+        return { uploadUrl, fileUrl: fileName };
     }
 
     @Post()
     async createRecording(@Body() body: {
         title: string;
-        fileName: string;
+        fileUrl: string;
         type: 'video' | 'screenshot';
         userId?: string;
+        guestId?: string;
     }) {
-        // Construct the actual file URL (this depends on Cloudflare R2 public URL or signed URL logic)
-        // For now, we'll store the fileName or a simulated public URL
-        const fileUrl = body.fileName;
+        const fileUrl = body.fileUrl;
+        if (!fileUrl) {
+            throw new Error('fileUrl is required');
+        }
 
         return this.recordingsService.create({
             title: body.title,
             fileUrl,
             type: body.type,
-            userId: body.userId,
+            userId: body.userId || body.guestId,
         });
     }
 
@@ -48,14 +50,26 @@ export class RecordingsController {
     @UseGuards(JwtAuthGuard)
     @Get()
     async getAllRecordings(@Req() req: any) {
-        const userId = req.user.id;
-        const recordings = await this.recordingsService.findAll(userId);
+        try {
+            const userId = req.user.id;
+            const recordings = await this.recordingsService.findAll(userId);
 
-        // Add signed URLs to each recording for the dashboard thumbnails/previews
-        return Promise.all(recordings.map(async (recording) => ({
-            ...recording,
-            fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
-        })));
+            // Add signed URLs to each recording for the dashboard thumbnails/previews
+            return Promise.all(recordings.map(async (recording) => {
+                try {
+                    return {
+                        ...recording,
+                        fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
+                    };
+                } catch (err) {
+                    console.error(`Failed to get signed URL for recording ${recording.id}:`, err);
+                    return { ...recording, fileUrl: null };
+                }
+            }));
+        } catch (error) {
+            console.error('Error in getAllRecordings:', error);
+            throw error;
+        }
     }
 
     @Get(':id')

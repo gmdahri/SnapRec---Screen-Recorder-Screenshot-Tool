@@ -64,10 +64,10 @@ function initCaptureActions() {
   document.querySelectorAll('.action-card[data-action]').forEach(card => {
     card.addEventListener('click', () => {
       card.style.transform = 'scale(0.98)';
-      setTimeout(() => card.style.transform = '', 100);
 
-      sendMessage({ action: card.dataset.action })
-        .finally(() => window.close());
+      // Send message and close immediately for best UX
+      sendMessage({ action: card.dataset.action });
+      setTimeout(() => window.close(), 150);
     });
   });
 }
@@ -93,7 +93,10 @@ function initRecordOptions() {
         systemAudio: document.getElementById('systemAudioToggle').checked,
         webcam: document.getElementById('webcamToggle').checked
       }
-    }).finally(() => window.close());
+    });
+
+    // Close immediately so picker/countdown can show
+    setTimeout(() => window.close(), 150);
   });
 }
 
@@ -143,6 +146,7 @@ function initShortcuts() {
 
   document.getElementById('customizeShortcutsBtn')?.addEventListener('click', () => {
     chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+    window.close();
   });
 }
 

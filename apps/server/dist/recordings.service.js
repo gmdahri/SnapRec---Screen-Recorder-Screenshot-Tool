@@ -31,17 +31,20 @@ let RecordingsService = class RecordingsService {
         recording.fileUrl = data.fileUrl;
         recording.type = data.type;
         if (data.userId) {
-            const user = await this.usersRepository.findOne({ where: { id: data.userId } });
-            if (user) {
-                recording.user = user;
+            let user = await this.usersRepository.findOne({ where: { supabaseId: data.userId } });
+            if (!user) {
+                user = new user_entity_1.User();
+                user.supabaseId = data.userId;
+                await this.usersRepository.save(user);
             }
+            recording.user = user;
         }
         return this.recordingsRepository.save(recording);
     }
     async findAll(userId) {
         if (userId) {
             return this.recordingsRepository.find({
-                where: { user: { id: userId } },
+                where: { user: { supabaseId: userId } },
                 order: { createdAt: 'DESC' },
             });
         }
@@ -51,7 +54,7 @@ let RecordingsService = class RecordingsService {
         return this.recordingsRepository.findOne({ where: { id }, relations: ['user'] });
     }
     async claimRecordings(userId, recordingIds) {
-        const user = await this.usersRepository.findOne({ where: { id: userId } });
+        const user = await this.usersRepository.findOne({ where: { supabaseId: userId } });
         if (!user)
             throw new Error('User not found');
         await this.recordingsRepository
@@ -59,7 +62,6 @@ let RecordingsService = class RecordingsService {
             .update(recording_entity_1.Recording)
             .set({ user })
             .where('id IN (:...ids)', { ids: recordingIds })
-            .andWhere('userId IS NULL')
             .execute();
     }
 };
