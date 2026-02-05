@@ -1,32 +1,29 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { passportJwtSecret } from 'jwks-rsa';
-import { JwtPayload } from './interfaces';
+
+export interface JwtPayload {
+    sub: string; // Supabase user ID
+    email: string;
+    aud: string;
+    role: string;
+    iat: number;
+    exp: number;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-    private readonly logger = new Logger(JwtStrategy.name);
-
-    constructor(configService: ConfigService) {
-        const supabaseUrl = configService.get<string>('SUPABASE_URL');
-        if (!supabaseUrl) {
-            throw new Error('SUPABASE_URL is not configured');
+    constructor(private configService: ConfigService) {
+        const secret = configService.get<string>('SUPABASE_JWT_SECRET');
+        if (!secret) {
+            throw new Error('SUPABASE_JWT_SECRET is not configured');
         }
-
-        const jwksUri = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
-
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKeyProvider: passportJwtSecret({
-                cache: true,
-                rateLimit: true,
-                jwksRequestsPerMinute: 5,
-                jwksUri: jwksUri,
-            }),
-            algorithms: ['ES256'],
+            secretOrKey: secret,
+            algorithms: ['HS256'],
         });
     }
 

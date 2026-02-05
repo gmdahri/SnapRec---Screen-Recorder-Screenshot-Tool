@@ -10,23 +10,31 @@ let audioContext = null;
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Offscreen] Received message:', message.action);
 
+<<<<<<< HEAD
     // Only handle messages prefixed with 'offscreen_'
     if (!message.action || !message.action.startsWith('offscreen_')) {
         return false; // Not for us, don't keep channel open
     }
 
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
     switch (message.action) {
         case 'offscreen_startRecording':
             startRecording(message.options)
                 .then((result) => sendResponse({ success: true, streamReady: true }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
+<<<<<<< HEAD
             return true; // Async response
+=======
+            return true;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         case 'offscreen_startMediaRecorder':
             // Actually start recording after countdown
             startMediaRecorder()
                 .then((result) => sendResponse({ success: true, startTime: result.startTime }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
+<<<<<<< HEAD
             return true; // Async response
 
         case 'offscreen_stopRecording':
@@ -40,16 +48,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .then(() => sendResponse({ success: true }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Async response
+=======
+            return true;
+
+        case 'offscreen_stopRecording':
+            stopRecording()
+                .then(dataUrl => sendResponse({ success: true, dataUrl }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         case 'offscreen_pauseRecording':
             pauseRecording();
             sendResponse({ success: true });
+<<<<<<< HEAD
             return false; // Sync response already sent
+=======
+            break;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         case 'offscreen_resumeRecording':
             resumeRecording();
             sendResponse({ success: true });
+<<<<<<< HEAD
             return false; // Sync response already sent
+=======
+            break;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         case 'offscreen_getRecordingState':
             sendResponse({
@@ -57,6 +82,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 isPaused: mediaRecorder?.state === 'paused',
                 state: mediaRecorder?.state || 'inactive'
             });
+<<<<<<< HEAD
             return false; // Sync response already sent
 
         case 'offscreen_cropImage':
@@ -68,6 +94,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         default:
             return false; // Unknown action
     }
+=======
+            break;
+    }
+    return true;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 });
 
 // Store combined stream for later use
@@ -237,8 +268,11 @@ async function startMediaRecorder() {
     return { startTime };
 }
 
+<<<<<<< HEAD
 let currentRecordingBlob = null;
 
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 async function stopRecording() {
     console.log('[Offscreen] Stopping recording');
 
@@ -255,10 +289,29 @@ async function stopRecording() {
             try {
                 const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
                 console.log('[Offscreen] Blob created, size:', blob.size);
+<<<<<<< HEAD
                 currentRecordingBlob = blob;
 
                 // Don't cleanup yet, we need the blob for upload
                 resolve({ size: blob.size });
+=======
+
+                // Convert blob to base64 data URL
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const dataUrl = reader.result;
+                    console.log('[Offscreen] Data URL created, length:', dataUrl.length);
+
+                    // Clear recording state is now handled by background.js
+                    // Cleanup
+                    cleanup();
+
+
+                    resolve(dataUrl);
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(blob);
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             } catch (error) {
                 console.error('[Offscreen] Error creating blob:', error);
                 cleanup();
@@ -270,6 +323,7 @@ async function stopRecording() {
     });
 }
 
+<<<<<<< HEAD
 async function uploadVideo(uploadUrl) {
     if (!currentRecordingBlob) {
         throw new Error('No recording blob available to upload');
@@ -342,6 +396,8 @@ async function cropImage(dataUrl, rect) {
 
 // Note: Upload logic has been moved to background.js which has access to chrome.storage
 
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 function pauseRecording() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.pause();

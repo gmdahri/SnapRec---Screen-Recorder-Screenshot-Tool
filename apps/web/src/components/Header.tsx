@@ -5,10 +5,9 @@ import UserMenu from './UserMenu';
 import LoginModal from './LoginModal';
 
 interface HeaderProps {
-    title?: React.ReactNode;
+    title?: string;
     showBackButton?: boolean;
     actions?: React.ReactNode;
-    center?: React.ReactNode;
     variant?: 'default' | 'transparent';
 }
 
@@ -16,7 +15,6 @@ export const Header: React.FC<HeaderProps> = ({
     title,
     showBackButton = false,
     actions,
-    center,
     variant = 'default',
 }) => {
     const navigate = useNavigate();
@@ -29,29 +27,23 @@ export const Header: React.FC<HeaderProps> = ({
 
     return (
         <>
-            <header className={`h-16 px-6 flex items-center justify-between gap-4 shrink-0 transition-all ${variantClasses[variant]}`}>
-                <div className="flex items-center gap-3 w-[350px] shrink-0 min-w-[300px]">
-                    {showBackButton ? (
+            <header className={`h-16 px-6 flex items-center justify-between ${variantClasses[variant]}`}>
+                <div className="flex items-center gap-3">
+                    <Logo size="md" />
+                    {title && (
+                        <span className="text-sm text-slate-500">/ {title}</span>
+                    )}
+                </div>
+                <div className="flex items-center gap-4">
+                    {showBackButton && (
                         <button
                             onClick={() => navigate('/dashboard')}
-                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all text-slate-600 dark:text-slate-400"
-                            title="Back to Dashboard"
+                            className="flex items-center gap-2 px-4 py-2 hover:bg-[#ece7f4] dark:hover:bg-[#2d2245] rounded-xl transition-all font-medium text-sm cursor-pointer"
                         >
-                            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+                            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                            <span>Dashboard</span>
                         </button>
-                    ) : (
-                        <Logo size="md" />
                     )}
-                    {title && (
-                        <span className="text-sm font-semibold text-slate-500 w-full max-w-[400px] truncate"> {title}</span>
-                    )}
-                </div>
-
-                <div className="flex-1 flex justify-center max-w-2xl px-4">
-                    {center}
-                </div>
-
-                <div className="flex items-center gap-4 shrink-0 min-w-[200px] justify-end">
                     {actions}
                     <UserMenu onSignIn={() => setShowLoginModal(true)} />
                 </div>

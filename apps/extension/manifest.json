@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
   "name": "SnapRec - Screen Recorder & Screenshot Tool",
+<<<<<<< HEAD
   "version": "1.1.0",
   "description": "Powerful screen recorder and screenshot tool. Capture full page screenshots, record video messages with webcam overlays, and share instantly with cloud storage. Ideal for bug reporting and product walkthroughs.",
+=======
+  "version": "1.0.8",
+  "description": "Screen recorder & screenshot tool. Full-page capture, webcam overlay, annotation editor, keyboard shortcuts.",
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -59,16 +64,24 @@
     "contextMenus",
     "identity",
     "offscreen",
+<<<<<<< HEAD
     "unlimitedStorage",
     "notifications"
+=======
+    "unlimitedStorage"
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
   ],
   "host_permissions": [
     "https://www.googleapis.com/*",
     "http://localhost:3001/*",
     "http://localhost:5173/*",
+<<<<<<< HEAD
     "https://snaprec-backend.onrender.com/*",
     "https://snaprec---screen-recorder-screenshot-tool.pages.dev/*",
     "https://*.r2.cloudflarestorage.com/*"
+=======
+    "*.r2.cloudflarestorage.com"
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
   ],
   "oauth2": {
     "client_id": "489525905608-ftrbjkob1ktitmhtsfhvs2vct3oar6ph.apps.googleusercontent.com",
@@ -102,6 +115,13 @@
         "content/content.css",
         "content/fab.css",
         "content/fab.js",
+<<<<<<< HEAD
+=======
+        "editor/editor.html",
+        "editor/editor.css",
+        "editor/editor.js",
+        "video/video.html",
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
         "styles/design-system.css"
       ],
       "matches": [

@@ -20,8 +20,11 @@
     let isPaused = false;
     let timerInterval = null;
     let recordingSeconds = 0;
+<<<<<<< HEAD
     let webcamStream = null;
     let webcamElement = null;
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -30,16 +33,24 @@
         switch (message.action) {
             case 'startRegionSelect':
                 startRegionSelection();
+<<<<<<< HEAD
                 return false; // No async response needed
             case 'captureFullPage':
                 captureFullPage();
                 return false; // No async response needed
+=======
+                break;
+            case 'captureFullPage':
+                captureFullPage();
+                break;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             case 'showCountdown':
                 showCountdown().then(() => {
                     sendResponse({ success: true });
                 });
                 return true; // Keep channel open for async response
             case 'showRecordingOverlay':
+<<<<<<< HEAD
                 showRecordingOverlay(message.startTime, message.webcam);
                 sendResponse({ success: true });
                 return false; // Response already sent synchronously
@@ -54,15 +65,33 @@
             default:
                 return false; // Unknown action
         }
+=======
+                showRecordingOverlay(message.startTime);
+                sendResponse({ success: true });
+                break;
+            case 'hideRecordingOverlay':
+                hideRecordingOverlay();
+                sendResponse({ success: true });
+                break;
+            case 'showMiniPreview':
+                showMiniPreview(message.dataUrl);
+                sendResponse({ success: true });
+                break;
+        }
+        return true;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
     });
 
     // Region Selection
     function startRegionSelection() {
         console.log('Starting region selection');
+<<<<<<< HEAD
 
         // Clean up any existing ones first to prevent duplicates
         cleanupSelection();
 
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
         isSelectingRegion = true;
 
         // Create overlay
@@ -176,17 +205,24 @@
             selectionBox = null;
         }
 
+<<<<<<< HEAD
         // Just in case references were lost or multiple instances, find by class and remove
         document.querySelectorAll('.snaprec-overlay, .snaprec-selection-box').forEach(el => el.remove());
 
         document.removeEventListener('mousedown', onMouseDown);
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
+=======
+        document.removeEventListener('mousedown', onMouseDown);
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
         document.removeEventListener('keydown', onKeyDown);
     }
 
     // Full Page Capture - SIMPLIFIED ALGORITHM
+<<<<<<< HEAD
     const SCROLL_DELAY = 600; // Shared with CONFIG.TIMEOUTS.SCROLL_DELAY
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
     async function captureFullPage() {
         console.log('=== Starting full page capture ===');
         showLoadingIndicator('Preparing capture...');
@@ -457,8 +493,13 @@
     }
 
     // Recording Overlay UI (actual recording happens in offscreen document)
+<<<<<<< HEAD
     function showRecordingOverlay(startTime, showWebcam = false) {
         console.log('[SnapRec Content] Showing recording overlay, webcam:', showWebcam);
+=======
+    function showRecordingOverlay(startTime) {
+        console.log('[SnapRec Content] Showing recording overlay');
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         // Remove existing overlay if present
         if (recordingOverlay) {
@@ -507,6 +548,7 @@
 
         pauseBtn.addEventListener('click', togglePause);
         stopBtn.addEventListener('click', stopRecording);
+<<<<<<< HEAD
 
         // Start webcam if requested
         if (showWebcam) {
@@ -541,6 +583,8 @@
             webcamElement.remove();
             webcamElement = null;
         }
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
     }
 
     function formatTime(totalSeconds) {
@@ -580,7 +624,10 @@
 
         isPaused = false;
         recordingSeconds = 0;
+<<<<<<< HEAD
         stopWebcam();
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
     }
 
     // Countdown Timer

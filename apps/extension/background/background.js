@@ -1,10 +1,14 @@
 // SnapRec Background Service Worker
+<<<<<<< HEAD
 importScripts('config.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
 importScripts('utils/contentScriptManager.js');
 importScripts('utils/storage.js');
+=======
+importScripts('storage.js');
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
 // Single consolidated message listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -55,6 +59,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+<<<<<<< HEAD
     // Handle other messages (fire-and-forget, no response needed)
     switch (message.action) {
         case 'captureVisible':
@@ -109,6 +114,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // Unknown action - don't keep channel open
             return false;
     }
+=======
+    // Handle other messages
+    switch (message.action) {
+        case 'captureVisible':
+            captureVisibleTab();
+            break;
+        case 'captureFullPage':
+            captureFullPage();
+            break;
+        case 'captureRegion':
+            startRegionCapture();
+            break;
+        case 'processScreenshot':
+            processScreenshot(message.dataUrl, message.type);
+            break;
+        case 'startRecording':
+            startRecording(message.options);
+            break;
+        case 'stopRecording':
+            stopRecording();
+            break;
+        case 'pauseRecording':
+            pauseRecording();
+            break;
+        case 'resumeRecording':
+            resumeRecording();
+            break;
+        case 'openCapture':
+            openCapture(message.capture);
+            break;
+        case 'saveScreenshot':
+            saveScreenshot(message.dataUrl, message.filename);
+            break;
+        case 'downloadScreenshot':
+            downloadScreenshot(message.dataUrl);
+            break;
+        case 'recordingComplete':
+            handleRecordingComplete(message.dataUrl);
+            break;
+        case 'regionCaptured':
+            captureAndCropRegion(message.rect, sender.tab.id);
+            break;
+        case 'openFullEditor':
+            openEditor(message.dataUrl);
+            break;
+    }
+    return true;
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 });
 
 // Drive Upload Handler
@@ -246,8 +299,27 @@ async function captureVisibleTab() {
 // Capture Full Page
 async function captureFullPage() {
     try {
+<<<<<<< HEAD
         const tab = await TabUtils.getActiveTab();
         await ContentScriptManager.inject(tab.id);
+=======
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        // Inject the content script programmatically
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content/content.js']
+        });
+
+        // Also inject CSS
+        await chrome.scripting.insertCSS({
+            target: { tabId: tab.id },
+            files: ['content/content.css']
+        });
+
+        // Use a more robust way to ensure content script is ready
+        await new Promise(resolve => setTimeout(resolve, 250));
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         // Send message to capture full page
         chrome.tabs.sendMessage(tab.id, { action: 'captureFullPage' }, (response) => {
@@ -267,13 +339,37 @@ async function captureFullPage() {
 // Start Region Capture
 async function startRegionCapture() {
     try {
+<<<<<<< HEAD
         const tab = await TabUtils.getActiveTab();
         if (TabUtils.isRestrictedUrl(tab.url)) {
+=======
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!tab || tab.url?.startsWith('chrome://')) {
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             console.warn('Cannot capture region on this page');
             return;
         }
 
+<<<<<<< HEAD
         await ContentScriptManager.inject(tab.id);
+=======
+        // Inject the content script programmatically
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content/content.js']
+        });
+
+        // Also inject CSS
+        await chrome.scripting.insertCSS({
+            target: { tabId: tab.id },
+            files: ['content/content.css']
+        });
+
+        // Use a more robust way to ensure content script is ready
+        // Wait a bit longer and check if ping helps
+        await new Promise(resolve => setTimeout(resolve, 250));
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         try {
             chrome.tabs.sendMessage(tab.id, { action: 'startRegionSelect' }, (response) => {
@@ -293,6 +389,7 @@ async function startRegionCapture() {
     }
 }
 
+<<<<<<< HEAD
 // Capture and Crop Region
 async function captureAndCropRegion(rect, tabId) {
     try {
@@ -324,6 +421,8 @@ async function captureAndCropRegion(rect, tabId) {
     }
 }
 
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 // Process Screenshot
 async function processScreenshot(dataUrl, type) {
     try {
@@ -356,13 +455,39 @@ async function processScreenshot(dataUrl, type) {
 // Helper: Show Mini Preview in Content Script
 async function showPreview(dataUrl, type) {
     try {
+<<<<<<< HEAD
         const tab = await TabUtils.getActiveTab();
         if (TabUtils.isRestrictedUrl(tab.url)) {
+=======
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) {
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             await openEditor(dataUrl);
             return;
         }
 
+<<<<<<< HEAD
         await ContentScriptManager.inject(tab.id);
+=======
+        // Skip restricted pages
+        if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://') || tab.url?.startsWith('edge://')) {
+            await openEditor(dataUrl);
+            return;
+        }
+
+        // Ensure content script is injected
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content/content.js']
+        });
+        await chrome.scripting.insertCSS({
+            target: { tabId: tab.id },
+            files: ['content/content.css']
+        });
+
+        // Wait for script to be ready
+        await new Promise(resolve => setTimeout(resolve, 250));
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
         // Send message to show mini preview
         chrome.tabs.sendMessage(tab.id, {
@@ -388,7 +513,11 @@ async function openEditor(dataUrl) {
         console.log('Redirecting to web editor...');
         await chrome.storage.local.set({ editingImage: dataUrl });
 
+<<<<<<< HEAD
         const editorUrl = `${CONFIG.WEB_BASE_URL}/editor`;
+=======
+        const editorUrl = 'http://localhost:5173/editor';
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
         const tab = await chrome.tabs.create({ url: editorUrl });
 
         // Wait for tab to load and inject data transfer script
@@ -476,8 +605,24 @@ async function startRecording(options) {
     try {
         console.log('[SnapRec] startRecording called with options:', JSON.stringify(options));
 
+<<<<<<< HEAD
         const tab = await TabUtils.getActiveTab();
         if (TabUtils.isRestrictedUrl(tab.url)) {
+=======
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        console.log('[SnapRec] Active tabs found:', tabs.length);
+
+        if (!tabs || tabs.length === 0) {
+            console.error('[SnapRec] No active tab found!');
+            return;
+        }
+
+        const tab = tabs[0];
+        console.log('[SnapRec] Target tab:', { id: tab.id, url: tab.url, status: tab.status });
+
+        // Check if we can inject scripts into this tab
+        if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             console.error('[SnapRec] Cannot inject into restricted page:', tab.url);
             return;
         }
@@ -506,9 +651,25 @@ async function startRecording(options) {
             console.log('[SnapRec] Stream acquired, showing countdown...');
 
             // Step 2: Inject content script for countdown
+<<<<<<< HEAD
             await ContentScriptManager.inject(tab.id);
             console.log('[SnapRec] Content script injected for countdown');
 
+=======
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['content/content.js']
+            });
+            await chrome.scripting.insertCSS({
+                target: { tabId: tab.id },
+                files: ['content/content.css']
+            });
+            console.log('[SnapRec] Content script injected for countdown');
+
+            // Small delay for script initialization
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             // Show 3-2-1 countdown
             chrome.tabs.sendMessage(tab.id, { action: 'showCountdown' }, (response) => {
                 if (chrome.runtime.lastError) {
@@ -536,7 +697,11 @@ async function startRecording(options) {
                 });
 
                 // Show recording overlay in the content script
+<<<<<<< HEAD
                 await injectRecordingOverlay(tab.id, options);
+=======
+                await injectRecordingOverlay(tab.id);
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             } else {
                 console.error('[SnapRec] Failed to start MediaRecorder:', recorderResponse?.error);
                 recordingTabId = null;
@@ -554,20 +719,46 @@ async function startRecording(options) {
 }
 
 // Inject recording overlay into a tab
+<<<<<<< HEAD
 async function injectRecordingOverlay(tabId, options) {
     try {
         // Inject content script
         await ContentScriptManager.inject(tabId);
         console.log('[SnapRec] Content script injected');
 
+=======
+async function injectRecordingOverlay(tabId) {
+    try {
+        // Inject content script
+        await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ['content/content.js']
+        });
+        console.log('[SnapRec] Content script injected');
+
+        // Inject CSS
+        await chrome.scripting.insertCSS({
+            target: { tabId: tabId },
+            files: ['content/content.css']
+        });
+        console.log('[SnapRec] CSS injected');
+
+        // Small delay for script initialization
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
         // Get recording start time from storage
         const { recordingStartTime } = await chrome.storage.local.get('recordingStartTime');
 
         // Tell content script to show the recording overlay
         chrome.tabs.sendMessage(tabId, {
             action: 'showRecordingOverlay',
+<<<<<<< HEAD
             startTime: recordingStartTime,
             webcam: options?.webcam
+=======
+            startTime: recordingStartTime
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
         }, (response) => {
             if (chrome.runtime.lastError) {
                 console.warn('[SnapRec] Could not show overlay:', chrome.runtime.lastError.message);
@@ -587,9 +778,15 @@ async function stopRecording() {
         const response = await chrome.runtime.sendMessage({ action: 'offscreen_stopRecording' });
         console.log('[SnapRec] stopRecording response received:', response ? (response.success ? 'success' : 'failure') : 'null');
 
+<<<<<<< HEAD
         if (response?.success) {
             console.log('[SnapRec] Recording stopped, size:', response.size);
             await handleRecordingComplete();
+=======
+        if (response?.success && response?.dataUrl) {
+            console.log('[SnapRec] Recording stopped, size:', response.dataUrl.length);
+            await handleRecordingComplete(response.dataUrl);
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             console.log('[SnapRec] handleRecordingComplete finished');
         } else {
             console.error('[SnapRec] Failed to stop recording:', response?.error);
@@ -609,6 +806,7 @@ async function finalizeCleanup() {
     await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
 }
 
+<<<<<<< HEAD
 // ... existing code ...
 
 async function handleRecordingComplete() {
@@ -686,6 +884,209 @@ chrome.runtime.onMessage.addListener((message) => {
     }
 });
 
+=======
+// Pause Recording
+async function pauseRecording() {
+    try {
+        await chrome.runtime.sendMessage({ action: 'offscreen_pauseRecording' });
+        console.log('[SnapRec] Recording paused via offscreen document');
+    } catch (error) {
+        console.error('[SnapRec] Error pausing recording:', error);
+    }
+}
+
+// Resume Recording
+async function resumeRecording() {
+    try {
+        await chrome.runtime.sendMessage({ action: 'offscreen_resumeRecording' });
+        console.log('[SnapRec] Recording resumed via offscreen document');
+    } catch (error) {
+        console.error('[SnapRec] Error resuming recording:', error);
+    }
+}
+
+// Listen for tab navigation to re-inject overlay
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    // Only care about the recording tab and when navigation completes
+    if (tabId !== recordingTabId || changeInfo.status !== 'complete') {
+        return;
+    }
+
+    console.log('[SnapRec] Recording tab navigated, re-injecting overlay');
+
+    // Check if recording is still active
+    const { isRecording } = await chrome.storage.local.get('isRecording');
+    if (!isRecording) {
+        console.log('[SnapRec] Recording not active, skipping overlay injection');
+        return;
+    }
+
+    // Skip restricted pages
+    if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://') || tab.url?.startsWith('edge://')) {
+        console.log('[SnapRec] Cannot inject into restricted page');
+        return;
+    }
+
+    // Re-inject the recording overlay
+    await injectRecordingOverlay(tabId);
+});
+
+// Save Screenshot
+async function saveScreenshot(dataUrl, filename) {
+    try {
+        chrome.downloads.download({
+            url: dataUrl,
+            filename: filename || `SnapRec_${Date.now()}.png`,
+            saveAs: true
+        });
+    } catch (error) {
+        console.error('Error saving screenshot:', error);
+    }
+}
+
+// Download Screenshot
+async function downloadScreenshot(dataUrl) {
+    try {
+        const filename = `SnapRec_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+
+        chrome.downloads.download({
+            url: dataUrl,
+            filename: filename,
+            saveAs: false
+        });
+    } catch (error) {
+        console.error('Error downloading screenshot:', error);
+    }
+}
+
+// Add to Recent Captures
+async function addToRecentCaptures(capture) {
+    try {
+        const result = await chrome.storage.local.get('recentCaptures');
+        let captures = result.recentCaptures || [];
+
+        // Add to beginning
+        captures.unshift(capture);
+
+        // Keep only last 20
+        captures = captures.slice(0, 20);
+
+        await chrome.storage.local.set({ recentCaptures: captures });
+    } catch (error) {
+        console.error('Error adding to recent captures:', error);
+    }
+}
+
+// Open Capture
+function openCapture(capture) {
+    if (capture.type === 'screenshot') {
+        openEditor(capture.dataUrl);
+    } else if (capture.type === 'video') {
+        chrome.tabs.create({ url: capture.dataUrl });
+    }
+}
+
+// Capture and crop region
+async function captureAndCropRegion(rect, tabId) {
+    try {
+        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+
+        // Use OffscreenCanvas for cropping in Service Worker
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const imageBitmap = await createImageBitmap(blob);
+
+        const dpr = rect.devicePixelRatio || 1;
+        const width = Math.round(rect.width * dpr);
+        const height = Math.round(rect.height * dpr);
+        const x = Math.round(rect.x * dpr);
+        const y = Math.round(rect.y * dpr);
+
+        const canvas = new OffscreenCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Draw the specific portion of the captured visible tab onto the canvas
+        ctx.drawImage(imageBitmap, x, y, width, height, 0, 0, width, height);
+
+        // Convert canvas to data URL (handling blob conversion in Service Worker)
+        const croppedBlob = await canvas.convertToBlob({ type: 'image/png' });
+        const reader = new FileReader();
+        const croppedDataUrl = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(croppedBlob);
+        });
+
+        await showPreview(croppedDataUrl, 'region');
+    } catch (error) {
+        console.error('Error capturing region:', error);
+        // Fallback to full screenshot if cropping fails
+        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+        await showPreview(dataUrl, 'visible');
+    }
+}
+
+async function handleRecordingComplete(dataUrl) {
+    console.log('[SnapRec] handleRecordingComplete called');
+    try {
+        // Store video URL for the preview page
+        console.log('[SnapRec] Storing video in local storage...');
+        await chrome.storage.local.set({ recordedVideo: dataUrl });
+        console.log('[SnapRec] Video stored successfully');
+
+        // Add to recent captures
+        try {
+            await addToRecentCaptures({
+                type: 'video',
+                dataUrl: '',
+                thumbnail: '',
+                timestamp: Date.now()
+            });
+        } catch (e) {
+            console.warn('[SnapRec] Could not add to recent captures:', e);
+        }
+
+        // Open video preview in web app
+        console.log('[SnapRec] Opening web app video preview...');
+        const videoPreviewUrl = 'http://localhost:5173/video-preview';
+        const tab = await chrome.tabs.create({ url: videoPreviewUrl });
+        console.log('[SnapRec] Video preview tab created:', tab.id);
+
+        // Wait for tab to load and inject data transfer script
+        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+            if (tabId === tab.id && info.status === 'complete') {
+                chrome.tabs.onUpdated.removeListener(listener);
+
+                // Transfer data to the page context
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (videoData) => {
+                        console.log('Injected script sending video postMessage');
+                        window.postMessage({
+                            type: 'SNAPREC_VIDEO_PREVIEW',
+                            dataUrl: videoData
+                        }, '*');
+                    },
+                    args: [dataUrl]
+                });
+            }
+        });
+
+        // Clean up resources
+        await finalizeCleanup();
+    } catch (error) {
+        console.error('[SnapRec] Error handling recording completion:', error);
+        // Fallback to direct download
+        const filename = `SnapRec_Video_${new Date().toISOString().replace(/[:.]/g, '-')}.webm`;
+        chrome.downloads.download({
+            url: dataUrl,
+            filename: filename,
+            saveAs: true
+        });
+        await finalizeCleanup();
+    }
+}
+
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
 
 // Context menu
 chrome.runtime.onInstalled.addListener(() => {

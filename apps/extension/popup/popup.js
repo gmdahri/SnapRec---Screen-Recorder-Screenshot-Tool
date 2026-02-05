@@ -64,10 +64,17 @@ function initCaptureActions() {
   document.querySelectorAll('.action-card[data-action]').forEach(card => {
     card.addEventListener('click', () => {
       card.style.transform = 'scale(0.98)';
+<<<<<<< HEAD
 
       // Send message and close immediately for best UX
       sendMessage({ action: card.dataset.action });
       setTimeout(() => window.close(), 150);
+=======
+      setTimeout(() => card.style.transform = '', 100);
+
+      sendMessage({ action: card.dataset.action })
+        .finally(() => window.close());
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
     });
   });
 }
@@ -93,10 +100,14 @@ function initRecordOptions() {
         systemAudio: document.getElementById('systemAudioToggle').checked,
         webcam: document.getElementById('webcamToggle').checked
       }
+<<<<<<< HEAD
     });
 
     // Close immediately so picker/countdown can show
     setTimeout(() => window.close(), 150);
+=======
+    }).finally(() => window.close());
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
   });
 }
 
@@ -146,7 +157,10 @@ function initShortcuts() {
 
   document.getElementById('customizeShortcutsBtn')?.addEventListener('click', () => {
     chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+<<<<<<< HEAD
     window.close();
+=======
+>>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
   });
 }
 

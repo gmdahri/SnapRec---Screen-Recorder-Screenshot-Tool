@@ -1,13 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { useClaimRecordings } from '../hooks/useRecordings';
+import { api } from '../lib/api';
 
 interface AuthContextType {
     user: User | null;
     session: Session | null;
-    guestId: string | null;
     loading: boolean;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
@@ -22,19 +21,9 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
-    const [guestId, setGuestId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const claimMutation = useClaimRecordings();
-    const hasClaimedRef = useRef(false);
 
     useEffect(() => {
-        // Handle guest identity
-        let id = localStorage.getItem('guestId');
-        if (!id) {
-            id = crypto.randomUUID();
-            localStorage.setItem('guestId', id);
-        }
-        setGuestId(id);
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
@@ -44,38 +33,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event, session) => {
+            (_event, session) => {
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);
 
-                // Only claim guest recordings on explicit SIGNED_IN event (not TOKEN_REFRESHED)
-                // Also only claim once per session
-                if (event === 'SIGNED_IN' && session?.user && !hasClaimedRef.current) {
+                // If user just logged in, claim guest recordings
+                if (session?.user) {
                     const guestIds = JSON.parse(localStorage.getItem('guestRecordingIds') || '[]');
                     if (guestIds.length > 0) {
-                        hasClaimedRef.current = true;
                         console.log('Claiming guest recordings:', guestIds);
-                        claimMutation.mutate(guestIds, {
-                            onSuccess: () => {
+                        api.recordings.claim(guestIds)
+                            .then(() => {
                                 localStorage.removeItem('guestRecordingIds');
                                 console.log('Guest recordings claimed successfully');
-                            },
-                            onError: (err) => {
-                                hasClaimedRef.current = false; // Allow retry
-                                console.error('Failed to claim guest recordings:', err);
-                            },
-                        });
+                            })
+                            .catch(err => console.error('Failed to claim guest recordings:', err));
                     }
                 }
             }
         );
 
         return () => subscription.unsubscribe();
-    }, [claimMutation]);
+    }, []);
 
     const signInWithGoogle = async () => {
-        hasClaimedRef.current = false; // Reset on new sign in
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -88,7 +70,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     const signOut = async () => {
-        hasClaimedRef.current = false; // Reset on sign out
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error('Error signing out:', error);
@@ -96,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, guestId, loading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );
