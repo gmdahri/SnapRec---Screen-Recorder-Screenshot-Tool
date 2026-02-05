@@ -5,6 +5,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
+import DashboardOverview from './pages/DashboardOverview';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 import Editor from './pages/Editor';
 import ShareView from './pages/ShareView';
 import Login from './pages/Login';
@@ -31,7 +34,22 @@ function App() {
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
+                  <DashboardOverview />
+                </ProtectedRoute>
+              } />
+              <Route path="/library" element={
+                <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/analytics" element={
+                <ProtectedRoute>
+                  <Analytics />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } />
               {/* Editor and VideoPreview accessible without login, but with limited features */}
