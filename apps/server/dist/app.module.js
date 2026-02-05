@@ -16,12 +16,12 @@ const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const user_entity_1 = require("./entities/user.entity");
-const recording_entity_1 = require("./entities/recording.entity");
+const user_entity_1 = require("./users/entities/user.entity");
+const recording_entity_1 = require("./recordings/entities/recording.entity");
 const storage_module_1 = require("./storage/storage.module");
 const auth_module_1 = require("./auth/auth.module");
-const recordings_controller_1 = require("./recordings.controller");
-const recordings_service_1 = require("./recordings.service");
+const users_module_1 = require("./users/users.module");
+const recordings_module_1 = require("./recordings/recordings.module");
 const typeorm_2 = require("typeorm");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
@@ -45,8 +45,6 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),
-            storage_module_1.StorageModule,
-            auth_module_1.AuthModule,
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
@@ -58,16 +56,19 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
                     password: configService.get('DB_PASSWORD'),
                     database: configService.get('DB_NAME'),
                     entities: [user_entity_1.User, recording_entity_1.Recording],
-                    synchronize: true,
+                    synchronize: false,
                     ssl: {
                         rejectUnauthorized: false,
                     },
                 }),
             }),
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, recording_entity_1.Recording]),
+            storage_module_1.StorageModule,
+            auth_module_1.AuthModule,
+            users_module_1.UsersModule,
+            recordings_module_1.RecordingsModule,
         ],
-        controllers: [app_controller_1.AppController, recordings_controller_1.RecordingsController],
-        providers: [app_service_1.AppService, recordings_service_1.RecordingsService],
+        controllers: [app_controller_1.AppController],
+        providers: [app_service_1.AppService],
     }),
     __metadata("design:paramtypes", [typeorm_2.DataSource])
 ], AppModule);

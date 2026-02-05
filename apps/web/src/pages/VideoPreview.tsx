@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { MainLayout, LoginModal, GatedButton, Spinner } from '../components';
-import { api } from '../lib/api';
 
 const VideoPreview: React.FC = () => {
     const { user } = useAuth();
