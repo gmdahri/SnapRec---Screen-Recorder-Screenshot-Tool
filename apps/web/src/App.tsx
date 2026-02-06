@@ -12,7 +12,7 @@ import Editor from './pages/Editor';
 import ShareView from './pages/ShareView';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
-import VideoPreview from './pages/VideoPreview';
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,7 +54,7 @@ function App() {
               } />
               {/* Editor and VideoPreview accessible without login, but with limited features */}
               <Route path="/editor/:id?" element={<Editor />} />
-              <Route path="/video-preview/:id?" element={<VideoPreview />} />
+              <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
               <Route path="/v/:id" element={<ShareView />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>

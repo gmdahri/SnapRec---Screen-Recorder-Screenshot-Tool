@@ -3,12 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecordingsController } from './recordings.controller';
 import { RecordingsService } from './recordings.service';
 import { Recording } from './entities/recording.entity';
+import { Reaction } from './entities/reaction.entity';
+import { Comment } from './entities/comment.entity';
 import { UsersModule } from '../users/users.module';
 import { StorageModule } from '../storage/storage.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Recording]),
+        TypeOrmModule.forFeature([Recording, Reaction, Comment]),
         UsersModule,
         StorageModule,
     ],
