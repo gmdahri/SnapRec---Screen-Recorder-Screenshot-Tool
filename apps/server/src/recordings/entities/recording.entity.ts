@@ -18,10 +18,10 @@ export class Recording {
     @Column({ type: 'enum', enum: ['video', 'screenshot'] })
     type: 'video' | 'screenshot';
 
-    @CreateDateColumn()
+    @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt: Date;
 
     @ManyToOne(() => User, (user) => user.recordings)

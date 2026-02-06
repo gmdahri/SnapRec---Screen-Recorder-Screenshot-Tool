@@ -4,4 +4,8 @@ export class UpdateRecordingDto {
     @IsString()
     @IsOptional()
     title?: string;
+
+    @IsString()
+    @IsOptional()
+    fileUrl?: string;
 }

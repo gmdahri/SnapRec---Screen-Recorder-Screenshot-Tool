@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { useRecording, useGetUploadUrl, useCreateRecording, recordingsKeys, uploadFile } from './useRecordings';
+import { useRecording, useGetUploadUrl, useCreateRecording, useUpdateRecording, uploadFile } from './useRecordings';
 import { fabric } from 'fabric';
 
 export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.Canvas | null>) => {
     const { id } = useParams();
     const { user } = useAuth();
     const { showNotification } = useNotification();
-    const queryClient = useQueryClient();
+    const [title, setTitle] = useState(`Screenshot ${new Date().toLocaleString()}`);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [hasAutoUploaded, setHasAutoUploaded] = useState(false);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -21,6 +20,7 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
     const { data: recording, isError } = useRecording(id);
     const getUploadUrlMutation = useGetUploadUrl();
     const createRecordingMutation = useCreateRecording();
+    const updateRecordingMutation = useUpdateRecording();
 
     // Show error if recording fetch fails
     useEffect(() => {
@@ -32,6 +32,7 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
     useEffect(() => {
         if (recording && recording.fileUrl) {
             setCapturedImage(recording.fileUrl);
+            setTitle(recording.title);
             setHasAutoUploaded(true);
         }
     }, [recording]);
@@ -43,7 +44,7 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
         try {
             const dataUrl = fabricCanvas.current.toDataURL({ format: 'png', quality: 0.8 });
             const blob = await (await fetch(dataUrl)).blob();
-            const fileName = `screenshot-${Date.now()}.png`;
+            const fileName = id ? `update-${id}-${Date.now()}.png` : `screenshot-${Date.now()}.png`;
 
             const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
                 fileName,
@@ -52,23 +53,33 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
 
             await uploadFile(uploadUrl, blob, 'image/png');
 
-            const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
-            if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
+            if (id) {
+                // Update existing recording
+                await updateRecordingMutation.mutateAsync({
+                    id,
+                    data: { title, fileUrl }
+                });
+                showNotification('Updated successfully', 'success');
+            } else {
+                // Create new recording
+                const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
+                if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
 
-            const data = await createRecordingMutation.mutateAsync({
-                title: 'Edited Screenshot',
-                fileUrl,
-                type: 'screenshot',
-                guestId: !user ? guestId : undefined,
-            });
+                const data = await createRecordingMutation.mutateAsync({
+                    title,
+                    fileUrl,
+                    type: 'screenshot',
+                    userId: user?.id,
+                    guestId: !user ? guestId : undefined,
+                });
 
-            // Cache invalidation is handled by the mutation's onSuccess
-            if (data && data.id && !id) {
-                window.history.pushState({}, '', `/editor/${data.id}`);
+                if (data && data.id) {
+                    window.history.pushState({}, '', `/editor/${data.id}`);
+                }
+                showNotification('Saved to Cloud successfully', 'success');
             }
-            showNotification('Saved to Cloud successfully', 'success');
-        } catch {
-            showNotification('Upload failed. Please try again.', 'error');
+        } catch (error: any) {
+            showNotification(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
             setIsUploading(false);
         }
@@ -76,6 +87,8 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
 
     return {
         id,
+        title,
+        setTitle,
         capturedImage,
         setCapturedImage,
         hasAutoUploaded,

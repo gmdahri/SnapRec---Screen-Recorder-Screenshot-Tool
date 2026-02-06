@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, useUpdateRecording, useDeleteRecording, type Recording } from '../hooks/useRecordings';
 import { MainLayout } from '../components';
+import { formatRelativeTime } from '../lib/dateUtils';
 
 type TabFilter = 'all' | 'video' | 'screenshot';
 type SortOrder = 'newest' | 'oldest' | 'name';
@@ -63,15 +64,6 @@ const Dashboard: React.FC = () => {
         return result;
     }, [recordings, searchQuery, activeTab, sortOrder]);
 
-    const formatTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        if (hours < 1) return 'Just now';
-        if (hours < 24) return `${hours} hours ago`;
-        return date.toLocaleDateString();
-    };
 
     // Stats
     const totalRecordings = recordings.length;
@@ -284,7 +276,7 @@ const Dashboard: React.FC = () => {
                         ) : (
                             filteredRecordings.map((recording) => (
                                 <div key={recording.id} className="group bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                    <a href={`/v/${recording.id}`} className="block">
+                                    <a href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/video-preview/${recording.id}`} className="block">
                                         <div className="relative aspect-video bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                             {recording.type === 'video' ? (
                                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -356,7 +348,7 @@ const Dashboard: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
                                             <span className="material-symbols-outlined text-sm">schedule</span>
-                                            <span>{formatTime(recording.createdAt)}</span>
+                                            <span>{formatRelativeTime(recording.createdAt)}</span>
                                         </div>
                                     </div>
                                 </div>
