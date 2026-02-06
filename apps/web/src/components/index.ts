@@ -7,4 +7,5 @@ export { LoginModal } from './LoginModal';
 export { GatedButton } from './GatedButton';
 export { Header } from './Header';
 export { MainLayout } from './MainLayout';
+export { VideoPlayer } from './VideoPlayer';
 export { default as ProtectedRoute } from './ProtectedRoute';

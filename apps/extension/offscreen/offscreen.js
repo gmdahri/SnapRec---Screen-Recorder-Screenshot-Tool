@@ -31,7 +31,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case 'offscreen_stopRecording':
             stopRecording()
-                .then(dataUrl => sendResponse({ success: true, dataUrl }))
+                .then(result => sendResponse({ success: true, size: result.size }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true; // Async response
+
+        case 'offscreen_uploadVideo':
+            uploadVideo(message.uploadUrl)
+                .then(() => sendResponse({ success: true }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Async response
 
@@ -225,6 +231,8 @@ async function startMediaRecorder() {
     return { startTime };
 }
 
+let currentRecordingBlob = null;
+
 async function stopRecording() {
     console.log('[Offscreen] Stopping recording');
 
@@ -241,18 +249,10 @@ async function stopRecording() {
             try {
                 const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
                 console.log('[Offscreen] Blob created, size:', blob.size);
+                currentRecordingBlob = blob;
 
-                // Convert blob to base64 data URL
-                // The background script will handle the upload since it has access to chrome.storage
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const dataUrl = reader.result;
-                    console.log('[Offscreen] Data URL created, length:', dataUrl.length);
-                    cleanup();
-                    resolve(dataUrl);
-                };
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(blob);
+                // Don't cleanup yet, we need the blob for upload
+                resolve({ size: blob.size });
             } catch (error) {
                 console.error('[Offscreen] Error creating blob:', error);
                 cleanup();
@@ -262,6 +262,40 @@ async function stopRecording() {
 
         mediaRecorder.stop();
     });
+}
+
+async function uploadVideo(uploadUrl) {
+    if (!currentRecordingBlob) {
+        throw new Error('No recording blob available to upload');
+    }
+
+    console.log('[Offscreen] Uploading blob to R2...', currentRecordingBlob.size);
+
+    console.log('[Offscreen] Initiating fetch PUT request to:', uploadUrl.split('?')[0]);
+    const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: currentRecordingBlob,
+        headers: {
+            'Content-Type': currentRecordingBlob.type || 'video/webm'
+        }
+    });
+
+    console.log('[Offscreen] Fetch response received, ok:', response.ok, 'status:', response.status);
+
+    if (!response.ok) {
+        console.error('[Offscreen] Upload failed:', response.statusText);
+        chrome.runtime.sendMessage({
+            action: 'offscreen_uploadError',
+            error: response.statusText
+        });
+        throw new Error(`Upload failed: ${response.statusText}`);
+    }
+
+    console.log('[Offscreen] Upload successful, notifying background...');
+    chrome.runtime.sendMessage({ action: 'offscreen_uploadComplete' });
+
+    cleanup();
+    currentRecordingBlob = null;
 }
 
 // Note: Upload logic has been moved to background.js which has access to chrome.storage

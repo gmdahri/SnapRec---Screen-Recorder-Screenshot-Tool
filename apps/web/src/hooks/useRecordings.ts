@@ -10,6 +10,31 @@ export interface Recording {
     type: 'video' | 'screenshot';
     createdAt: string;
     duration?: number;
+    views: number;
+    description?: string;
+    location?: string;
+    user?: {
+        supabaseId: string;
+        fullName?: string;
+        avatarUrl?: string;
+    };
+    reactions: Array<{
+        id: string;
+        type: string;
+        guestId?: string;
+        user?: { supabaseId: string };
+    }>;
+    comments: Array<{
+        id: string;
+        content: string;
+        createdAt: string;
+        guestId?: string;
+        user?: {
+            supabaseId: string;
+            fullName?: string;
+            avatarUrl?: string;
+        };
+    }>;
 }
 
 interface CreateRecordingInput {
@@ -186,8 +211,47 @@ export function useClaimRecordings() {
                 method: 'POST',
                 body: JSON.stringify({ recordingIds }),
             }),
-        onSuccess: () => {
+        onSuccess: (_, recordingIds) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.all });
+            recordingIds.forEach(id => {
+                queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+            });
+        },
+    });
+}
+
+/**
+ * Hook to add a reaction to a recording
+ */
+export function useAddReaction() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, type, guestId }: { id: string; type: string; guestId?: string }) =>
+            fetchWithAuth<any>(`/recordings/${id}/reactions`, {
+                method: 'POST',
+                body: JSON.stringify({ type, guestId }),
+            }),
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+/**
+ * Hook to add a comment to a recording
+ */
+export function useAddComment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, content, guestId }: { id: string; content: string; guestId?: string }) =>
+            fetchWithAuth<any>(`/recordings/${id}/comments`, {
+                method: 'POST',
+                body: JSON.stringify({ content, guestId }),
+            }),
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
         },
     });
 }

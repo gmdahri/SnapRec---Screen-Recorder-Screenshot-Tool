@@ -7,6 +7,7 @@ import { useClaimRecordings } from '../hooks/useRecordings';
 interface AuthContextType {
     user: User | null;
     session: Session | null;
+    guestId: string | null;
     loading: boolean;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
@@ -21,11 +22,19 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
+    const [guestId, setGuestId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const claimMutation = useClaimRecordings();
     const hasClaimedRef = useRef(false);
 
     useEffect(() => {
+        // Handle guest identity
+        let id = localStorage.getItem('guestId');
+        if (!id) {
+            id = crypto.randomUUID();
+            localStorage.setItem('guestId', id);
+        }
+        setGuestId(id);
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
@@ -87,7 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, guestId, loading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );

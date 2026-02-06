@@ -555,9 +555,9 @@ async function stopRecording() {
         const response = await chrome.runtime.sendMessage({ action: 'offscreen_stopRecording' });
         console.log('[SnapRec] stopRecording response received:', response ? (response.success ? 'success' : 'failure') : 'null');
 
-        if (response?.success && response?.dataUrl) {
-            console.log('[SnapRec] Recording stopped, size:', response.dataUrl.length);
-            await handleRecordingComplete(response.dataUrl);
+        if (response?.success) {
+            console.log('[SnapRec] Recording stopped, size:', response.size);
+            await handleRecordingComplete();
             console.log('[SnapRec] handleRecordingComplete finished');
         } else {
             console.error('[SnapRec] Failed to stop recording:', response?.error);
@@ -577,166 +577,11 @@ async function finalizeCleanup() {
     await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
 }
 
-// Pause Recording
-async function pauseRecording() {
-    try {
-        await chrome.runtime.sendMessage({ action: 'offscreen_pauseRecording' });
-        console.log('[SnapRec] Recording paused via offscreen document');
-    } catch (error) {
-        console.error('[SnapRec] Error pausing recording:', error);
-    }
-}
+// ... existing code ...
 
-// Resume Recording
-async function resumeRecording() {
-    try {
-        await chrome.runtime.sendMessage({ action: 'offscreen_resumeRecording' });
-        console.log('[SnapRec] Recording resumed via offscreen document');
-    } catch (error) {
-        console.error('[SnapRec] Error resuming recording:', error);
-    }
-}
-
-// Listen for tab navigation to re-inject overlay
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-    // Only care about the recording tab and when navigation completes
-    if (tabId !== recordingTabId || changeInfo.status !== 'complete') {
-        return;
-    }
-
-    console.log('[SnapRec] Recording tab navigated, re-injecting overlay');
-
-    // Check if recording is still active
-    const { isRecording } = await chrome.storage.local.get('isRecording');
-    if (!isRecording) {
-        console.log('[SnapRec] Recording not active, skipping overlay injection');
-        return;
-    }
-
-    // Skip restricted pages
-    if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://') || tab.url?.startsWith('edge://')) {
-        console.log('[SnapRec] Cannot inject into restricted page');
-        return;
-    }
-
-    // Re-inject the recording overlay
-    await injectRecordingOverlay(tabId);
-});
-
-// Save Screenshot
-async function saveScreenshot(dataUrl, filename) {
-    try {
-        chrome.downloads.download({
-            url: dataUrl,
-            filename: filename || `SnapRec_${Date.now()}.png`,
-            saveAs: true
-        });
-    } catch (error) {
-        console.error('Error saving screenshot:', error);
-    }
-}
-
-// Download Screenshot
-async function downloadScreenshot(dataUrl) {
-    try {
-        const filename = `SnapRec_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
-
-        chrome.downloads.download({
-            url: dataUrl,
-            filename: filename,
-            saveAs: false
-        });
-    } catch (error) {
-        console.error('Error downloading screenshot:', error);
-    }
-}
-
-// Add to Recent Captures
-async function addToRecentCaptures(capture) {
-    try {
-        const result = await chrome.storage.local.get('recentCaptures');
-        let captures = result.recentCaptures || [];
-
-        // Add to beginning
-        captures.unshift(capture);
-
-        // Keep only last 20
-        captures = captures.slice(0, 20);
-
-        await chrome.storage.local.set({ recentCaptures: captures });
-    } catch (error) {
-        console.error('Error adding to recent captures:', error);
-    }
-}
-
-// Open Capture
-function openCapture(capture) {
-    if (capture.type === 'screenshot') {
-        openEditor(capture.dataUrl);
-    } else if (capture.type === 'video') {
-        chrome.tabs.create({ url: capture.dataUrl });
-    }
-}
-
-// Capture and crop region
-async function captureAndCropRegion(rect, tabId) {
-    try {
-        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
-
-        // Use OffscreenCanvas for cropping in Service Worker
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        const imageBitmap = await createImageBitmap(blob);
-
-        const dpr = rect.devicePixelRatio || 1;
-        const width = Math.round(rect.width * dpr);
-        const height = Math.round(rect.height * dpr);
-        const x = Math.round(rect.x * dpr);
-        const y = Math.round(rect.y * dpr);
-
-        const canvas = new OffscreenCanvas(width, height);
-        const ctx = canvas.getContext('2d');
-
-        // Draw the specific portion of the captured visible tab onto the canvas
-        ctx.drawImage(imageBitmap, x, y, width, height, 0, 0, width, height);
-
-        // Convert canvas to data URL (handling blob conversion in Service Worker)
-        const croppedBlob = await canvas.convertToBlob({ type: 'image/png' });
-        const reader = new FileReader();
-        const croppedDataUrl = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(croppedBlob);
-        });
-
-        await showPreview(croppedDataUrl, 'region');
-    } catch (error) {
-        console.error('Error capturing region:', error);
-        // Fallback to full screenshot if cropping fails
-        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
-        await showPreview(dataUrl, 'visible');
-    }
-}
-
-async function handleRecordingComplete(dataUrl) {
+async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called');
     try {
-        // Store video URL as fallback
-        console.log('[SnapRec] Storing video in local storage...');
-        await chrome.storage.local.set({ recordedVideo: dataUrl });
-        console.log('[SnapRec] Video stored successfully');
-
-        // Add to recent captures
-        try {
-            await addToRecentCaptures({
-                type: 'video',
-                dataUrl: '',
-                thumbnail: '',
-                timestamp: Date.now()
-            });
-        } catch (e) {
-            console.warn('[SnapRec] Could not add to recent captures:', e);
-        }
-
         // Get auth session first
         const { snaprecSession } = await chrome.storage.local.get('snaprecSession');
         const headers = {
@@ -745,8 +590,6 @@ async function handleRecordingComplete(dataUrl) {
         if (snaprecSession?.accessToken) {
             headers['Authorization'] = `Bearer ${snaprecSession.accessToken}`;
             console.log('[SnapRec] Using authenticated session');
-        } else {
-            console.log('[SnapRec] No auth session, continuing as guest');
         }
 
         // Get presigned URL first
@@ -760,7 +603,7 @@ async function handleRecordingComplete(dataUrl) {
 
         console.log('[SnapRec] Got presigned URL:', !!videoUploadRes?.uploadUrl);
 
-        // Create database entry IMMEDIATELY with the file URL (before upload)
+        // Create database entry IMMEDIATELY
         console.log('[SnapRec] Creating database entry...');
         const { guestId } = await chrome.storage.local.get('guestId');
 
@@ -779,54 +622,37 @@ async function handleRecordingComplete(dataUrl) {
 
         console.log('[SnapRec] Recording created:', recordingRes.id);
 
-        // IMMEDIATELY redirect to /v/{id} - video will show loading until upload completes
-        console.log('[SnapRec] Redirecting to share page immediately...');
+        // IMMEDIATELY redirect to /v/{id}
+        console.log('[SnapRec] Redirecting to share page...');
         const shareUrl = `${CONFIG.WEB_BASE_URL}/v/${recordingRes.id}`;
         await chrome.tabs.create({ url: shareUrl });
-        console.log('[SnapRec] Opened share page:', shareUrl);
 
-        // Cleanup recording state
-        await finalizeCleanup();
-
-        // Now upload the video in the background (fire-and-forget)
-        console.log('[SnapRec] Starting background upload...');
-        uploadVideoInBackground(dataUrl, videoUploadRes.uploadUrl).then(() => {
-            console.log('[SnapRec] Background upload completed successfully');
+        // Start upload in offscreen document without blocking
+        console.log('[SnapRec] Triggering upload in offscreen document...');
+        chrome.runtime.sendMessage({
+            action: 'offscreen_uploadVideo',
+            uploadUrl: videoUploadRes.uploadUrl
         }).catch(err => {
-            console.error('[SnapRec] Background upload failed:', err);
+            console.error('[SnapRec] Failed to start upload:', err);
         });
 
+        // State cleanup happens in the new listener below
     } catch (error) {
         console.error('[SnapRec] Error handling recording completion:', error);
-        // Fallback to direct download
-        const filename = `SnapRec_Video_${new Date().toISOString().replace(/[:.]/g, '-')}.webm`;
-        chrome.downloads.download({
-            url: dataUrl,
-            filename: filename,
-            saveAs: true
-        });
         await finalizeCleanup();
     }
 }
 
-// Upload video to R2 in background (fire-and-forget)
-async function uploadVideoInBackground(dataUrl, uploadUrl) {
-    console.log('[SnapRec] uploadVideoInBackground starting...');
-
-    // Convert data URL to blob
-    const response = await fetch(dataUrl);
-    const videoBlob = await response.blob();
-    console.log('[SnapRec] Video blob size:', videoBlob.size);
-
-    // Upload to R2
-    console.log('[SnapRec] Uploading video to R2...');
-    await fetch(uploadUrl, {
-        method: 'PUT',
-        body: videoBlob,
-        headers: { 'Content-Type': 'video/webm' }
-    });
-    console.log('[SnapRec] Video uploaded successfully to R2');
-}
+// Separate listener for upload completion from offscreen document
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'offscreen_uploadComplete') {
+        console.log('[SnapRec] Upload complete signal received from offscreen');
+        finalizeCleanup();
+    } else if (message.action === 'offscreen_uploadError') {
+        console.error('[SnapRec] Upload error reported by offscreen:', message.error);
+        finalizeCleanup();
+    }
+});
 
 
 // Context menu

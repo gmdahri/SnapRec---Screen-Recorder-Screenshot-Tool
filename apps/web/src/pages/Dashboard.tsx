@@ -276,7 +276,7 @@ const Dashboard: React.FC = () => {
                         ) : (
                             filteredRecordings.map((recording) => (
                                 <div key={recording.id} className="group bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                    <a href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/video-preview/${recording.id}`} className="block">
+                                    <a href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/v/${recording.id}`} className="block">
                                         <div className="relative aspect-video bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                             {recording.type === 'video' ? (
                                                 <div className="absolute inset-0 flex items-center justify-center">
