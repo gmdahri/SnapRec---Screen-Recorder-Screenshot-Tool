@@ -1,5 +1,10 @@
 // SnapRec Background Service Worker
+importScripts('config.js');
 importScripts('storage.js');
+importScripts('utils/tabs.js');
+importScripts('utils/messaging.js');
+importScripts('utils/contentScriptManager.js');
+importScripts('utils/storage.js');
 
 // Single consolidated message listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -50,52 +55,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
-    // Handle other messages
+    // Handle other messages (fire-and-forget, no response needed)
     switch (message.action) {
         case 'captureVisible':
             captureVisibleTab();
-            break;
+            return false; // No response needed
         case 'captureFullPage':
             captureFullPage();
-            break;
+            return false; // No response needed
         case 'captureRegion':
             startRegionCapture();
-            break;
+            return false; // No response needed
         case 'processScreenshot':
             processScreenshot(message.dataUrl, message.type);
-            break;
+            return false; // No response needed
         case 'startRecording':
             startRecording(message.options);
-            break;
+            return false; // No response needed
         case 'stopRecording':
             stopRecording();
-            break;
+            return false; // No response needed
         case 'pauseRecording':
             pauseRecording();
-            break;
+            return false; // No response needed
         case 'resumeRecording':
             resumeRecording();
-            break;
+            return false; // No response needed
         case 'openCapture':
             openCapture(message.capture);
-            break;
+            return false; // No response needed
         case 'saveScreenshot':
             saveScreenshot(message.dataUrl, message.filename);
-            break;
+            return false; // No response needed
         case 'downloadScreenshot':
             downloadScreenshot(message.dataUrl);
-            break;
+            return false; // No response needed
         case 'recordingComplete':
             handleRecordingComplete(message.dataUrl);
-            break;
+            return false; // No response needed
+        case 'recordingUploaded':
+            handleRecordingUploaded(message.recordingId);
+            return false; // No response needed
+        case 'uploadError':
+            handleUploadError(message.error);
+            return false; // No response needed
         case 'regionCaptured':
             captureAndCropRegion(message.rect, sender.tab.id);
-            break;
+            return false; // No response needed
         case 'openFullEditor':
             openEditor(message.dataUrl);
-            break;
+            return false; // No response needed
+        default:
+            // Unknown action - don't keep channel open
+            return false;
     }
-    return true;
 });
 
 // Drive Upload Handler
@@ -233,22 +246,8 @@ async function captureVisibleTab() {
 // Capture Full Page
 async function captureFullPage() {
     try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        // Inject the content script programmatically
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content/content.js']
-        });
-
-        // Also inject CSS
-        await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['content/content.css']
-        });
-
-        // Use a more robust way to ensure content script is ready
-        await new Promise(resolve => setTimeout(resolve, 250));
+        const tab = await TabUtils.getActiveTab();
+        await ContentScriptManager.inject(tab.id);
 
         // Send message to capture full page
         chrome.tabs.sendMessage(tab.id, { action: 'captureFullPage' }, (response) => {
@@ -268,28 +267,13 @@ async function captureFullPage() {
 // Start Region Capture
 async function startRegionCapture() {
     try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        if (!tab || tab.url?.startsWith('chrome://')) {
+        const tab = await TabUtils.getActiveTab();
+        if (TabUtils.isRestrictedUrl(tab.url)) {
             console.warn('Cannot capture region on this page');
             return;
         }
 
-        // Inject the content script programmatically
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content/content.js']
-        });
-
-        // Also inject CSS
-        await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['content/content.css']
-        });
-
-        // Use a more robust way to ensure content script is ready
-        // Wait a bit longer and check if ping helps
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await ContentScriptManager.inject(tab.id);
 
         try {
             chrome.tabs.sendMessage(tab.id, { action: 'startRegionSelect' }, (response) => {
@@ -341,30 +325,13 @@ async function processScreenshot(dataUrl, type) {
 // Helper: Show Mini Preview in Content Script
 async function showPreview(dataUrl, type) {
     try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab) {
+        const tab = await TabUtils.getActiveTab();
+        if (TabUtils.isRestrictedUrl(tab.url)) {
             await openEditor(dataUrl);
             return;
         }
 
-        // Skip restricted pages
-        if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://') || tab.url?.startsWith('edge://')) {
-            await openEditor(dataUrl);
-            return;
-        }
-
-        // Ensure content script is injected
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content/content.js']
-        });
-        await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['content/content.css']
-        });
-
-        // Wait for script to be ready
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await ContentScriptManager.inject(tab.id);
 
         // Send message to show mini preview
         chrome.tabs.sendMessage(tab.id, {
@@ -390,7 +357,7 @@ async function openEditor(dataUrl) {
         console.log('Redirecting to web editor...');
         await chrome.storage.local.set({ editingImage: dataUrl });
 
-        const editorUrl = 'http://localhost:5173/editor';
+        const editorUrl = `${CONFIG.WEB_BASE_URL}/editor`;
         const tab = await chrome.tabs.create({ url: editorUrl });
 
         // Wait for tab to load and inject data transfer script
@@ -478,19 +445,8 @@ async function startRecording(options) {
     try {
         console.log('[SnapRec] startRecording called with options:', JSON.stringify(options));
 
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        console.log('[SnapRec] Active tabs found:', tabs.length);
-
-        if (!tabs || tabs.length === 0) {
-            console.error('[SnapRec] No active tab found!');
-            return;
-        }
-
-        const tab = tabs[0];
-        console.log('[SnapRec] Target tab:', { id: tab.id, url: tab.url, status: tab.status });
-
-        // Check if we can inject scripts into this tab
-        if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
+        const tab = await TabUtils.getActiveTab();
+        if (TabUtils.isRestrictedUrl(tab.url)) {
             console.error('[SnapRec] Cannot inject into restricted page:', tab.url);
             return;
         }
@@ -519,18 +475,8 @@ async function startRecording(options) {
             console.log('[SnapRec] Stream acquired, showing countdown...');
 
             // Step 2: Inject content script for countdown
-            await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                files: ['content/content.js']
-            });
-            await chrome.scripting.insertCSS({
-                target: { tabId: tab.id },
-                files: ['content/content.css']
-            });
+            await ContentScriptManager.inject(tab.id);
             console.log('[SnapRec] Content script injected for countdown');
-
-            // Small delay for script initialization
-            await new Promise(resolve => setTimeout(resolve, 100));
 
             // Show 3-2-1 countdown
             chrome.tabs.sendMessage(tab.id, { action: 'showCountdown' }, (response) => {
@@ -580,21 +526,8 @@ async function startRecording(options) {
 async function injectRecordingOverlay(tabId) {
     try {
         // Inject content script
-        await chrome.scripting.executeScript({
-            target: { tabId: tabId },
-            files: ['content/content.js']
-        });
+        await ContentScriptManager.inject(tabId);
         console.log('[SnapRec] Content script injected');
-
-        // Inject CSS
-        await chrome.scripting.insertCSS({
-            target: { tabId: tabId },
-            files: ['content/content.css']
-        });
-        console.log('[SnapRec] CSS injected');
-
-        // Small delay for script initialization
-        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Get recording start time from storage
         const { recordingStartTime } = await chrome.storage.local.get('recordingStartTime');
@@ -787,7 +720,7 @@ async function captureAndCropRegion(rect, tabId) {
 async function handleRecordingComplete(dataUrl) {
     console.log('[SnapRec] handleRecordingComplete called');
     try {
-        // Store video URL for the preview page
+        // Store video URL as fallback
         console.log('[SnapRec] Storing video in local storage...');
         await chrome.storage.local.set({ recordedVideo: dataUrl });
         console.log('[SnapRec] Video stored successfully');
@@ -804,34 +737,65 @@ async function handleRecordingComplete(dataUrl) {
             console.warn('[SnapRec] Could not add to recent captures:', e);
         }
 
-        // Open video preview in web app
-        console.log('[SnapRec] Opening web app video preview...');
-        const videoPreviewUrl = 'http://localhost:5173/video-preview';
-        const tab = await chrome.tabs.create({ url: videoPreviewUrl });
-        console.log('[SnapRec] Video preview tab created:', tab.id);
+        // Get auth session first
+        const { snaprecSession } = await chrome.storage.local.get('snaprecSession');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (snaprecSession?.accessToken) {
+            headers['Authorization'] = `Bearer ${snaprecSession.accessToken}`;
+            console.log('[SnapRec] Using authenticated session');
+        } else {
+            console.log('[SnapRec] No auth session, continuing as guest');
+        }
 
-        // Wait for tab to load and inject data transfer script
-        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-            if (tabId === tab.id && info.status === 'complete') {
-                chrome.tabs.onUpdated.removeListener(listener);
+        // Get presigned URL first
+        console.log('[SnapRec] Requesting presigned URL...');
+        const videoFileName = `video_${Date.now()}.webm`;
+        const videoUploadRes = await fetch(`${API_BASE_URL}/recordings/upload-url`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ fileName: videoFileName, contentType: 'video/webm' })
+        }).then(r => r.json());
 
-                // Transfer data to the page context
-                chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: (videoData) => {
-                        console.log('Injected script sending video postMessage');
-                        window.postMessage({
-                            type: 'SNAPREC_VIDEO_PREVIEW',
-                            dataUrl: videoData
-                        }, '*');
-                    },
-                    args: [dataUrl]
-                });
-            }
+        console.log('[SnapRec] Got presigned URL:', !!videoUploadRes?.uploadUrl);
+
+        // Create database entry IMMEDIATELY with the file URL (before upload)
+        console.log('[SnapRec] Creating database entry...');
+        const { guestId } = await chrome.storage.local.get('guestId');
+
+        const recordingRes = await fetch(`${API_BASE_URL}/recordings`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                title: `Video Recording ${new Date().toLocaleString()}`,
+                type: 'video',
+                fileUrl: videoUploadRes.fileUrl,
+                thumbnailUrl: null,
+                userId: snaprecSession?.user?.id,
+                guestId: !snaprecSession ? guestId : undefined
+            })
+        }).then(r => r.json());
+
+        console.log('[SnapRec] Recording created:', recordingRes.id);
+
+        // IMMEDIATELY redirect to /v/{id} - video will show loading until upload completes
+        console.log('[SnapRec] Redirecting to share page immediately...');
+        const shareUrl = `${CONFIG.WEB_BASE_URL}/v/${recordingRes.id}`;
+        await chrome.tabs.create({ url: shareUrl });
+        console.log('[SnapRec] Opened share page:', shareUrl);
+
+        // Cleanup recording state
+        await finalizeCleanup();
+
+        // Now upload the video in the background (fire-and-forget)
+        console.log('[SnapRec] Starting background upload...');
+        uploadVideoInBackground(dataUrl, videoUploadRes.uploadUrl).then(() => {
+            console.log('[SnapRec] Background upload completed successfully');
+        }).catch(err => {
+            console.error('[SnapRec] Background upload failed:', err);
         });
 
-        // Clean up resources
-        await finalizeCleanup();
     } catch (error) {
         console.error('[SnapRec] Error handling recording completion:', error);
         // Fallback to direct download
@@ -843,6 +807,25 @@ async function handleRecordingComplete(dataUrl) {
         });
         await finalizeCleanup();
     }
+}
+
+// Upload video to R2 in background (fire-and-forget)
+async function uploadVideoInBackground(dataUrl, uploadUrl) {
+    console.log('[SnapRec] uploadVideoInBackground starting...');
+
+    // Convert data URL to blob
+    const response = await fetch(dataUrl);
+    const videoBlob = await response.blob();
+    console.log('[SnapRec] Video blob size:', videoBlob.size);
+
+    // Upload to R2
+    console.log('[SnapRec] Uploading video to R2...');
+    await fetch(uploadUrl, {
+        method: 'PUT',
+        body: videoBlob,
+        headers: { 'Content-Type': 'video/webm' }
+    });
+    console.log('[SnapRec] Video uploaded successfully to R2');
 }
 
 

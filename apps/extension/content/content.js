@@ -28,10 +28,10 @@
         switch (message.action) {
             case 'startRegionSelect':
                 startRegionSelection();
-                break;
+                return false; // No async response needed
             case 'captureFullPage':
                 captureFullPage();
-                break;
+                return false; // No async response needed
             case 'showCountdown':
                 showCountdown().then(() => {
                     sendResponse({ success: true });
@@ -40,22 +40,27 @@
             case 'showRecordingOverlay':
                 showRecordingOverlay(message.startTime);
                 sendResponse({ success: true });
-                break;
+                return false; // Response already sent synchronously
             case 'hideRecordingOverlay':
                 hideRecordingOverlay();
                 sendResponse({ success: true });
-                break;
+                return false; // Response already sent synchronously
             case 'showMiniPreview':
                 showMiniPreview(message.dataUrl);
                 sendResponse({ success: true });
-                break;
+                return false; // Response already sent synchronously
+            default:
+                return false; // Unknown action
         }
-        return true;
     });
 
     // Region Selection
     function startRegionSelection() {
         console.log('Starting region selection');
+
+        // Clean up any existing ones first to prevent duplicates
+        cleanupSelection();
+
         isSelectingRegion = true;
 
         // Create overlay
@@ -169,11 +174,17 @@
             selectionBox = null;
         }
 
+        // Just in case references were lost or multiple instances, find by class and remove
+        document.querySelectorAll('.snaprec-overlay, .snaprec-selection-box').forEach(el => el.remove());
+
         document.removeEventListener('mousedown', onMouseDown);
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
         document.removeEventListener('keydown', onKeyDown);
     }
 
     // Full Page Capture - SIMPLIFIED ALGORITHM
+    const SCROLL_DELAY = 600; // Shared with CONFIG.TIMEOUTS.SCROLL_DELAY
     async function captureFullPage() {
         console.log('=== Starting full page capture ===');
         showLoadingIndicator('Preparing capture...');

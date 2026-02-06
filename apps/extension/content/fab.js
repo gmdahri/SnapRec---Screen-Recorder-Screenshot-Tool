@@ -16,48 +16,6 @@
         return;
     }
 
-    // Inject Styles directly to ensure they are applied
-    const injectStyles = () => {
-        if (document.getElementById('snaprec-fab-styles')) return;
-        const style = document.createElement('style');
-        style.id = 'snaprec-fab-styles';
-        style.textContent = `
-            .snaprec-fab-container {
-                position: fixed !important;
-                bottom: 80px !important;
-                right: 24px !important;
-                z-index: 2147483647 !important;
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-                user-select: none !important;
-                width: 56px !important;
-                height: 56px !important;
-            }
-            .snaprec-fab {
-                width: 56px !important;
-                height: 56px !important;
-                border-radius: 50% !important;
-                background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%) !important;
-                border: none !important;
-                cursor: grab !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4), 0 0 0 4px rgba(139, 92, 246, 0.1) !important;
-                transition: all 0.3s ease !important;
-                padding: 0 !important;
-                color: white !important;
-            }
-            .snaprec-fab svg {
-                width: 28px !important;
-                height: 28px !important;
-                fill: none !important;
-                stroke: currentColor !important;
-            }
-            /* ... more styles will be in the actual file, but this is for immediate visibility ... */
-        `;
-        document.head.appendChild(style);
-    };
-
     // Check if FAB is enabled (default: true)
     chrome.storage.local.get(['fabEnabled'], (result) => {
         console.log('SnapRec FAB: fabEnabled =', result.fabEnabled);
@@ -66,7 +24,6 @@
             return;
         }
         console.log('SnapRec FAB: Initializing...');
-        injectStyles();
         initFAB();
     });
 

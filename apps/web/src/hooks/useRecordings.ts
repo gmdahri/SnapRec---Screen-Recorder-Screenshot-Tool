@@ -6,6 +6,7 @@ export interface Recording {
     id: string;
     title: string;
     fileUrl: string;
+    thumbnailUrl?: string;
     type: 'video' | 'screenshot';
     createdAt: string;
     duration?: number;
@@ -15,6 +16,7 @@ interface CreateRecordingInput {
     title: string;
     type: string;
     fileUrl: string;
+    thumbnailUrl?: string;
     userId?: string;
     guestId?: string;
 }

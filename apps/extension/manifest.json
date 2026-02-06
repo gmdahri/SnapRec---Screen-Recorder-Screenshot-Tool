@@ -59,7 +59,8 @@
     "contextMenus",
     "identity",
     "offscreen",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "notifications"
   ],
   "host_permissions": [
     "https://www.googleapis.com/*",
@@ -99,10 +100,6 @@
         "content/content.css",
         "content/fab.css",
         "content/fab.js",
-        "editor/editor.html",
-        "editor/editor.css",
-        "editor/editor.js",
-        "video/video.html",
         "styles/design-system.css"
       ],
       "matches": [
