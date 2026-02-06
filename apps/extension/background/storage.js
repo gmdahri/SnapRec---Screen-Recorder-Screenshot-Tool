@@ -11,7 +11,7 @@ async function uploadToR2(dataUrl, filename, mimeType) {
         console.log('Starting R2 upload process...');
 
         // 1. Request presigned URL from our backend
-        const response = await fetch(`${API_BASE_URL}/recordings/upload-url`, {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload-url`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ async function uploadToR2(dataUrl, filename, mimeType) {
         console.log('File uploaded to R2 successfully');
 
         // 4. Save metadata to backend
-        const metaResponse = await fetch(`${API_BASE_URL}/recordings`, {
+        const metaResponse = await fetch(`${CONFIG.API_BASE_URL}/recordings`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ async function uploadToR2(dataUrl, filename, mimeType) {
         return {
             success: true,
             id: recording.id,
-            shareUrl: `${API_BASE_URL.replace(':3001', ':5173')}/v/${recording.id}`
+            shareUrl: `${CONFIG.WEB_BASE_URL}/v/${recording.id}`
         };
 
     } catch (error) {

@@ -9,6 +9,10 @@ export class CreateRecordingDto {
     @IsNotEmpty()
     fileUrl: string;
 
+    @IsString()
+    @IsOptional()
+    thumbnailUrl?: string;
+
     @IsEnum(['video', 'screenshot'])
     type: 'video' | 'screenshot';
 

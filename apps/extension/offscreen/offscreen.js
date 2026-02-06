@@ -10,35 +10,40 @@ let audioContext = null;
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Offscreen] Received message:', message.action);
 
+    // Only handle messages prefixed with 'offscreen_'
+    if (!message.action || !message.action.startsWith('offscreen_')) {
+        return false; // Not for us, don't keep channel open
+    }
+
     switch (message.action) {
         case 'offscreen_startRecording':
             startRecording(message.options)
                 .then((result) => sendResponse({ success: true, streamReady: true }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
-            return true;
+            return true; // Async response
 
         case 'offscreen_startMediaRecorder':
             // Actually start recording after countdown
             startMediaRecorder()
                 .then((result) => sendResponse({ success: true, startTime: result.startTime }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
-            return true;
+            return true; // Async response
 
         case 'offscreen_stopRecording':
             stopRecording()
                 .then(dataUrl => sendResponse({ success: true, dataUrl }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
-            return true;
+            return true; // Async response
 
         case 'offscreen_pauseRecording':
             pauseRecording();
             sendResponse({ success: true });
-            break;
+            return false; // Sync response already sent
 
         case 'offscreen_resumeRecording':
             resumeRecording();
             sendResponse({ success: true });
-            break;
+            return false; // Sync response already sent
 
         case 'offscreen_getRecordingState':
             sendResponse({
@@ -46,9 +51,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 isPaused: mediaRecorder?.state === 'paused',
                 state: mediaRecorder?.state || 'inactive'
             });
-            break;
+            return false; // Sync response already sent
+
+        default:
+            return false; // Unknown action
     }
-    return true;
 });
 
 // Store combined stream for later use
@@ -236,16 +243,12 @@ async function stopRecording() {
                 console.log('[Offscreen] Blob created, size:', blob.size);
 
                 // Convert blob to base64 data URL
+                // The background script will handle the upload since it has access to chrome.storage
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     const dataUrl = reader.result;
                     console.log('[Offscreen] Data URL created, length:', dataUrl.length);
-
-                    // Clear recording state is now handled by background.js
-                    // Cleanup
                     cleanup();
-
-
                     resolve(dataUrl);
                 };
                 reader.onerror = () => reject(reader.error);
@@ -260,6 +263,8 @@ async function stopRecording() {
         mediaRecorder.stop();
     });
 }
+
+// Note: Upload logic has been moved to background.js which has access to chrome.storage
 
 function pauseRecording() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
