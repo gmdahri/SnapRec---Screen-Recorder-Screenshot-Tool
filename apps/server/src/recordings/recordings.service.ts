@@ -77,6 +77,10 @@ export class RecordingsService {
             recording.title = updateRecordingDto.title;
         }
 
+        if (updateRecordingDto.fileUrl) {
+            recording.fileUrl = updateRecordingDto.fileUrl;
+        }
+
         return this.recordingsRepository.save(recording);
     }
 

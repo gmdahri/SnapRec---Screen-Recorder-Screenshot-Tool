@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { MainLayout } from '../components';
+import { parseUTCDate } from '../lib/dateUtils';
 
 interface Recording {
     id: string;
@@ -88,7 +89,7 @@ const ShareView: React.FC = () => {
                                 </h1>
                                 <div className="flex items-center gap-4 text-sm text-slate-500">
                                     <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">visibility</span> -- views</span>
-                                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">calendar_today</span> {new Date(recording.createdAt).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">calendar_today</span> {parseUTCDate(recording.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
                             {/* Media Player */}

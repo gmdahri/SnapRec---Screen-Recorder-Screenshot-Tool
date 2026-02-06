@@ -5,7 +5,7 @@ import UserMenu from './UserMenu';
 import LoginModal from './LoginModal';
 
 interface HeaderProps {
-    title?: string;
+    title?: React.ReactNode;
     showBackButton?: boolean;
     actions?: React.ReactNode;
     center?: React.ReactNode;
@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
     return (
         <>
             <header className={`h-16 px-6 flex items-center justify-between gap-4 shrink-0 transition-all ${variantClasses[variant]}`}>
-                <div className="flex items-center gap-3 shrink-0 min-w-[200px]">
+                <div className="flex items-center gap-3 w-[350px] shrink-0 min-w-[300px]">
                     {showBackButton ? (
                         <button
                             onClick={() => navigate('/dashboard')}
@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <Logo size="md" />
                     )}
                     {title && (
-                        <span className="text-sm font-semibold text-slate-500 max-w-[200px] truncate">/ {title}</span>
+                        <span className="text-sm font-semibold text-slate-500 w-full max-w-[400px] truncate"> {title}</span>
                     )}
                 </div>
 

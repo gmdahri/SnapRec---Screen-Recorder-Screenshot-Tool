@@ -9,7 +9,8 @@ const EditorContent: React.FC = () => {
         hasAutoUploaded, setHasAutoUploaded, isUploading,
         showLoginPrompt, setShowLoginPrompt,
         handleUploadToCloud, setupCanvasEvents, initCanvas,
-        undo, redo, historyIndex, history, handleActionClick
+        undo, redo, historyIndex, history, handleActionClick,
+        id, title, setTitle
     } = useEditor();
 
     // Initial Setup
@@ -76,24 +77,34 @@ const EditorContent: React.FC = () => {
             </GatedButton>
             <GatedButton
                 onClick={() => handleActionClick('share')}
-                icon={isUploading ? 'sync' : 'cloud_upload'}
+                icon={isUploading ? 'sync' : (id ? 'save' : 'cloud_upload')}
                 variant="primary"
                 className={`px-5 ${isUploading ? 'animate-pulse' : ''}`}
                 disabled={isUploading}
-                title="Save to your account"
+                title={id ? 'Update recording' : 'Save to your account'}
             >
-                {isUploading ? 'Saving...' : 'Save to your account'}
+                {isUploading ? (id ? 'Updating...' : 'Saving...') : (id ? 'Update' : 'Save to your account')}
             </GatedButton>
         </div>
     );
 
     return (
         <MainLayout
-            title="Untitled Screenshot"
+            title={
+                <div className="flex items-center gap-1 group/title max-w-xl">
+                    <input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
+                    />
+                    <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                </div>
+            }
             showBackButton={true}
             headerActions={EditorActions}
+            noScroll={true}
         >
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex h-full overflow-hidden">
                 <Toolbar />
                 <CanvasArea />
                 <PropertySidebar />

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, type Recording } from '../hooks/useRecordings';
 import { MainLayout } from '../components';
+import { parseUTCDate } from '../lib/dateUtils';
 
 const Analytics: React.FC = () => {
     const { user, loading: authLoading, signOut } = useAuth();
@@ -23,7 +24,7 @@ const Analytics: React.FC = () => {
 
     // Group by date for activity chart
     const activityByDay = recordings.reduce((acc: Record<string, number>, r: Recording) => {
-        const date = new Date(r.createdAt).toLocaleDateString();
+        const date = parseUTCDate(r.createdAt).toLocaleDateString();
         acc[date] = (acc[date] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
@@ -127,7 +128,7 @@ const Analytics: React.FC = () => {
                                                 className="w-full bg-primary rounded-sm min-h-[4px]"
                                                 style={{ height: `${Math.min(count * 20, 80)}px` }}
                                             />
-                                            <span className="text-[10px] text-slate-400">{new Date(date).getDate()}</span>
+                                            <span className="text-[10px] text-slate-400">{parseUTCDate(date).getDate()}</span>
                                         </div>
                                     ))}
                                 </div>

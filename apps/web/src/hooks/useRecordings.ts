@@ -15,6 +15,7 @@ interface CreateRecordingInput {
     title: string;
     type: string;
     fileUrl: string;
+    userId?: string;
     guestId?: string;
 }
 
@@ -129,7 +130,7 @@ export function useUpdateRecording() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: { title?: string } }) =>
+        mutationFn: ({ id, data }: { id: string; data: { title?: string; fileUrl?: string } }) =>
             fetchWithAuth<Recording>(`/recordings/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(data),

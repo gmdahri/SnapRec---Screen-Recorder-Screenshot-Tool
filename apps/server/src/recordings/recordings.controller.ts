@@ -15,6 +15,7 @@ import {
 import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto } from './dto';
 
 @Controller('recordings')
@@ -35,8 +36,12 @@ export class RecordingsController {
         return { uploadUrl, fileUrl: uploadUrlDto.fileName };
     }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Post()
-    async createRecording(@Body() createRecordingDto: CreateRecordingDto) {
+    async createRecording(@Req() req: any, @Body() createRecordingDto: CreateRecordingDto) {
+        if (req.user && !createRecordingDto.userId) {
+            createRecordingDto.userId = req.user.id;
+        }
         return this.recordingsService.create(createRecordingDto);
     }
 

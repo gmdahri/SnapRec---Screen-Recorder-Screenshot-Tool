@@ -152,7 +152,7 @@ const DashboardOverview: React.FC = () => {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                             {recentRecordings.map(recording => (
-                                <a key={recording.id} href={`/v/${recording.id}`} className="group bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                                <a key={recording.id} href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/video-preview/${recording.id}`} className="group bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden hover:shadow-md transition-all">
                                     <div className="aspect-video bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
                                         {recording.type === 'video' ? (
                                             <span className="material-symbols-outlined text-3xl text-slate-400">videocam</span>

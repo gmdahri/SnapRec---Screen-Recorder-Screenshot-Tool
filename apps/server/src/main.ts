@@ -2,6 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+// @ts-ignore
+import * as pg from 'pg';
+
+// Configure pg to parse timestamp (without time zone) as UTC
+// OID 1114 is the OID for 'timestamp' in Postgres
+(pg as any).types.setTypeParser(1114, (value: string) => {
+  return value ? new Date(value + 'Z') : null;
+});
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
