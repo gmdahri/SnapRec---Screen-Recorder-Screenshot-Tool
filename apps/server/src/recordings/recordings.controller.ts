@@ -60,19 +60,10 @@ export class RecordingsController {
     async getAllRecordings(@Req() req: any) {
         const recordings = await this.recordingsService.findAll(req.user.id);
 
-        return Promise.all(
-            recordings.map(async (recording) => {
-                try {
-                    return {
-                        ...recording,
-                        fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
-                    };
-                } catch (err) {
-                    this.logger.error(`Failed to get signed URL for recording ${recording.id}:`, err);
-                    return { ...recording, fileUrl: null };
-                }
-            }),
-        );
+        return recordings.map((recording) => ({
+            ...recording,
+            fileUrl: `/recordings/stream/${recording.fileUrl}`,
+        }));
     }
 
     @Get('status/:fileName')
@@ -123,7 +114,7 @@ export class RecordingsController {
 
         return {
             ...recording,
-            fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
+            fileUrl: `/recordings/stream/${recording.fileUrl}`,
         };
     }
 

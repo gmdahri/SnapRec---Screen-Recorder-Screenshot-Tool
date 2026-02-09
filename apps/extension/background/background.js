@@ -293,6 +293,37 @@ async function startRegionCapture() {
     }
 }
 
+// Capture and Crop Region
+async function captureAndCropRegion(rect, tabId) {
+    try {
+        console.log('Capturing and cropping region:', rect);
+
+        // 1. Capture the visible tab
+        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+
+        // 2. Ensure offscreen document is open
+        await createOffscreenDocument();
+
+        // 3. Send to offscreen for cropping
+        const response = await chrome.runtime.sendMessage({
+            action: 'offscreen_cropImage',
+            dataUrl: dataUrl,
+            rect: rect
+        });
+
+        if (response && response.success) {
+            console.log('Region cropped successfully');
+            await processScreenshot(response.dataUrl, 'region');
+        } else {
+            console.error('Failed to crop region:', response?.error);
+            // Fallback to full screenshot if crop fails
+            await processScreenshot(dataUrl, 'region');
+        }
+    } catch (error) {
+        console.error('Error in captureAndCropRegion:', error);
+    }
+}
+
 // Process Screenshot
 async function processScreenshot(dataUrl, type) {
     try {
@@ -505,7 +536,7 @@ async function startRecording(options) {
                 });
 
                 // Show recording overlay in the content script
-                await injectRecordingOverlay(tab.id);
+                await injectRecordingOverlay(tab.id, options);
             } else {
                 console.error('[SnapRec] Failed to start MediaRecorder:', recorderResponse?.error);
                 recordingTabId = null;
@@ -523,7 +554,7 @@ async function startRecording(options) {
 }
 
 // Inject recording overlay into a tab
-async function injectRecordingOverlay(tabId) {
+async function injectRecordingOverlay(tabId, options) {
     try {
         // Inject content script
         await ContentScriptManager.inject(tabId);
@@ -535,7 +566,8 @@ async function injectRecordingOverlay(tabId) {
         // Tell content script to show the recording overlay
         chrome.tabs.sendMessage(tabId, {
             action: 'showRecordingOverlay',
-            startTime: recordingStartTime
+            startTime: recordingStartTime,
+            webcam: options?.webcam
         }, (response) => {
             if (chrome.runtime.lastError) {
                 console.warn('[SnapRec] Could not show overlay:', chrome.runtime.lastError.message);

@@ -103,6 +103,13 @@ export const recordingsKeys = {
 
 // ============= QUERIES =============
 
+const ensureAbsoluteUrl = (url: string) => {
+    if (url && url.startsWith('/')) {
+        return `${API_BASE_URL}${url}`;
+    }
+    return url;
+};
+
 /**
  * Hook to fetch all recordings for the current user
  * Pass isAuthenticated and isLoading from useAuth to control when query runs
@@ -110,7 +117,14 @@ export const recordingsKeys = {
 export function useRecordings(isAuthenticated: boolean = true, isLoading: boolean = false) {
     return useQuery({
         queryKey: recordingsKeys.all,
-        queryFn: () => fetchWithAuth<Recording[]>('/recordings'),
+        queryFn: async () => {
+            const recordings = await fetchWithAuth<Recording[]>('/recordings');
+            return recordings.map(r => ({
+                ...r,
+                fileUrl: ensureAbsoluteUrl(r.fileUrl),
+                thumbnailUrl: r.thumbnailUrl ? ensureAbsoluteUrl(r.thumbnailUrl) : undefined
+            }));
+        },
         // Only fetch when user is logged in and auth has finished loading
         enabled: isAuthenticated && !isLoading,
         retry: 1,
@@ -124,7 +138,14 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
 export function useRecording(id: string | undefined) {
     return useQuery({
         queryKey: recordingsKeys.detail(id!),
-        queryFn: () => fetchWithAuth<Recording>(`/recordings/${id}`),
+        queryFn: async () => {
+            const recording = await fetchWithAuth<Recording>(`/recordings/${id}`);
+            return {
+                ...recording,
+                fileUrl: ensureAbsoluteUrl(recording.fileUrl),
+                thumbnailUrl: recording.thumbnailUrl ? ensureAbsoluteUrl(recording.thumbnailUrl) : undefined
+            };
+        },
         enabled: !!id,
         retry: 1,
     });
