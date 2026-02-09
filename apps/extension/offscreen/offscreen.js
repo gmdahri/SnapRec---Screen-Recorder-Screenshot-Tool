@@ -59,6 +59,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
             return false; // Sync response already sent
 
+        case 'offscreen_cropImage':
+            cropImage(message.dataUrl, message.rect)
+                .then(croppedDataUrl => sendResponse({ success: true, dataUrl: croppedDataUrl }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true; // Async response
+
         default:
             return false; // Unknown action
     }
@@ -296,6 +302,42 @@ async function uploadVideo(uploadUrl) {
 
     cleanup();
     currentRecordingBlob = null;
+}
+
+async function cropImage(dataUrl, rect) {
+    console.log('[Offscreen] Cropping image...', rect);
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const dpr = rect.devicePixelRatio || 1;
+
+                // Scale rectangle by device pixel ratio if needed
+                // Note: captureVisibleTab results are already scaled by DPR
+                const x = rect.x * dpr;
+                const y = rect.y * dpr;
+                const width = rect.width * dpr;
+                const height = rect.height * dpr;
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, x, y, width, height, 0, 0, width, height);
+
+                const croppedDataUrl = canvas.toDataURL('image/png');
+                console.log('[Offscreen] Image cropped successfully');
+                resolve(croppedDataUrl);
+            } catch (error) {
+                console.error('[Offscreen] Crop error:', error);
+                reject(error);
+            }
+        };
+        img.onerror = () => reject(new Error('Failed to load image for cropping'));
+        img.src = dataUrl;
+    });
 }
 
 // Note: Upload logic has been moved to background.js which has access to chrome.storage

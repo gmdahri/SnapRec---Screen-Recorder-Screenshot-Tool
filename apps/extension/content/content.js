@@ -20,6 +20,8 @@
     let isPaused = false;
     let timerInterval = null;
     let recordingSeconds = 0;
+    let webcamStream = null;
+    let webcamElement = null;
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -38,7 +40,7 @@
                 });
                 return true; // Keep channel open for async response
             case 'showRecordingOverlay':
-                showRecordingOverlay(message.startTime);
+                showRecordingOverlay(message.startTime, message.webcam);
                 sendResponse({ success: true });
                 return false; // Response already sent synchronously
             case 'hideRecordingOverlay':
@@ -455,8 +457,8 @@
     }
 
     // Recording Overlay UI (actual recording happens in offscreen document)
-    function showRecordingOverlay(startTime) {
-        console.log('[SnapRec Content] Showing recording overlay');
+    function showRecordingOverlay(startTime, showWebcam = false) {
+        console.log('[SnapRec Content] Showing recording overlay, webcam:', showWebcam);
 
         // Remove existing overlay if present
         if (recordingOverlay) {
@@ -505,6 +507,40 @@
 
         pauseBtn.addEventListener('click', togglePause);
         stopBtn.addEventListener('click', stopRecording);
+
+        // Start webcam if requested
+        if (showWebcam) {
+            startWebcam();
+        }
+    }
+
+    async function startWebcam() {
+        try {
+            console.log('[SnapRec Content] Starting webcam...');
+            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+            webcamElement = document.createElement('video');
+            webcamElement.className = 'snaprec-webcam';
+            webcamElement.autoplay = true;
+            webcamElement.srcObject = webcamStream;
+            webcamElement.muted = true; // Avoid feedback
+
+            document.body.appendChild(webcamElement);
+            console.log('[SnapRec Content] Webcam started');
+        } catch (error) {
+            console.error('[SnapRec Content] Failed to start webcam:', error);
+        }
+    }
+
+    function stopWebcam() {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+        if (webcamElement) {
+            webcamElement.remove();
+            webcamElement = null;
+        }
     }
 
     function formatTime(totalSeconds) {
@@ -544,6 +580,7 @@
 
         isPaused = false;
         recordingSeconds = 0;
+        stopWebcam();
     }
 
     // Countdown Timer
