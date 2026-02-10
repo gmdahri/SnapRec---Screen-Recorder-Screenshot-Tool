@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LandingNavbar, LandingFooter } from '../components';
+import { LandingNavbar, LandingFooter, AddToChromeButton } from '../components';
 
 const Landing: React.FC = () => {
     return (
@@ -26,17 +26,20 @@ const Landing: React.FC = () => {
                         <p className="max-w-2xl mx-auto text-xl text-slate-500 mb-10 leading-relaxed">
                             SnapRec is the effortless screen recording and collaboration platform for teams that move fast. Record, share, and organize in seconds.
                         </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <NavLink
-                                to="/login"
-                                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white text-lg font-bold px-10 py-4 rounded-2xl transition-all shadow-xl shadow-primary/30 hover:shadow-2xl hover:-translate-y-1"
-                            >
-                                Start Recording for Free ↗
-                            </NavLink>
-                            <button className="flex items-center gap-2 text-slate-600 hover:text-primary font-bold transition-colors">
-                                <span className="material-symbols-outlined">play_circle</span>
-                                Watch how it works
-                            </button>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                            <AddToChromeButton size="xl" />
+                            <div className="flex flex-col sm:flex-row items-center gap-4">
+                                <NavLink
+                                    to="/login"
+                                    className="text-slate-600 hover:text-primary font-bold text-lg px-6 py-4 transition-all"
+                                >
+                                    Login to Dashboard
+                                </NavLink>
+                                <button className="flex items-center gap-2 text-slate-400 hover:text-primary font-bold transition-colors">
+                                    <span className="material-symbols-outlined">play_circle</span>
+                                    Watch how it works
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -125,15 +128,7 @@ const Landing: React.FC = () => {
                             </p>
 
                             <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                                <a
-                                    href="https://chromewebstore.google.com/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-4 bg-white text-slate-900 font-bold px-8 py-5 rounded-2xl hover:bg-slate-100 transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1 w-full md:w-auto justify-center group"
-                                >
-                                    <img src="https://www.google.com/chrome/static/images/chrome-logo.svg" alt="Chrome" className="size-6" />
-                                    <span>Add to Chrome (Free)</span>
-                                </a>
+                                <AddToChromeButton variant="white" size="lg" />
                                 <div className="flex -space-x-3">
                                     {[1, 2, 3, 4].map(i => (
                                         <div key={i} className="size-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden">

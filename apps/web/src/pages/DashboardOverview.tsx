@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, type Recording } from '../hooks/useRecordings';
-import { MainLayout } from '../components';
+import { MainLayout, AddToChromeButton } from '../components';
 
 const DashboardOverview: React.FC = () => {
     const { user, loading: authLoading, signOut } = useAuth();
@@ -42,6 +42,9 @@ const DashboardOverview: React.FC = () => {
                     <span className="material-symbols-outlined text-xl">add_circle</span>
                     <span>New Recording</span>
                 </button>
+                <div className="mt-4">
+                    <AddToChromeButton size="md" variant="outline" className="w-full !rounded-lg border-slate-200 text-slate-600 hover:text-primary hover:border-primary/30" />
+                </div>
                 <nav className="flex flex-col gap-1">
                     <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
                         <span className="material-symbols-outlined">analytics</span>
