@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { MainLayout, VideoPlayer, LoginModal } from '../components';
+import { MainLayout, VideoPlayer, LoginModal, SEO } from '../components';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useRecording, useAddReaction, useAddComment, useClaimRecordings } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
@@ -201,6 +201,13 @@ const ShareView: React.FC = () => {
             showBackButton={true}
             headerActions={HeaderActions}
         >
+            <SEO
+                title={recording.title}
+                description={recording.description || `Watch this ${recording.type} shared via SnapRec.`}
+                url={`/v/${id}`}
+                type="video.other"
+                image={recording.thumbnailUrl}
+            />
             <div className="bg-background-light dark:bg-background-dark transition-colors duration-300 min-h-screen pb-20">
                 <main className="max-w-[1440px] mx-auto px-6 lg:px-20 py-8">
                     <div className="flex flex-col lg:flex-row gap-8">

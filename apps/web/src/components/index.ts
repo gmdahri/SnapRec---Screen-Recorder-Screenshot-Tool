@@ -12,3 +12,4 @@ export { LandingNavbar } from './LandingNavbar';
 export { LandingFooter } from './LandingFooter';
 export { AddToChromeButton } from './AddToChromeButton';
 export { default as ProtectedRoute } from './ProtectedRoute';
+export { default as SEO } from './SEO';
