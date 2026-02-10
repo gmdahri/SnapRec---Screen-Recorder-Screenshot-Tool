@@ -16,6 +16,8 @@ import Privacy from './pages/Privacy';
 import Landing from './pages/Landing';
 
 
+import { HelmetProvider } from 'react-helmet-async';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -27,45 +29,47 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <AuthProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <DashboardOverview />
-                </ProtectedRoute>
-              } />
-              <Route path="/library" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/analytics" element={
-                <ProtectedRoute>
-                  <Analytics />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              {/* Editor and VideoPreview accessible without login, but with limited features */}
-              <Route path="/editor/:id?" element={<Editor />} />
-              <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
-              <Route path="/v/:id" element={<ShareView />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/" element={<Landing />} />
-            </Routes>
-          </Router>
-        </AuthProvider>
-      </NotificationProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <NotificationProvider>
+          <AuthProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <DashboardOverview />
+                  </ProtectedRoute>
+                } />
+                <Route path="/library" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/analytics" element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+                {/* Editor and VideoPreview accessible without login, but with limited features */}
+                <Route path="/editor/:id?" element={<Editor />} />
+                <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
+                <Route path="/v/:id" element={<ShareView />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/" element={<Landing />} />
+              </Routes>
+            </Router>
+          </AuthProvider>
+        </NotificationProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 
