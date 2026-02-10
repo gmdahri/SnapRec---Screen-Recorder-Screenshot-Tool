@@ -67,7 +67,7 @@
     "http://localhost:3001/*",
     "http://localhost:5173/*",
     "https://snaprec-backend.onrender.com/*",
-    "https://snaprec---screen-recorder-screenshot-tool.pages.dev/*",
+    "https://snaprec.pages.dev/*",
     "https://*.r2.cloudflarestorage.com/*"
   ],
   "oauth2": {
