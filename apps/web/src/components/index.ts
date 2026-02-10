@@ -10,4 +10,5 @@ export { MainLayout } from './MainLayout';
 export { VideoPlayer } from './VideoPlayer';
 export { LandingNavbar } from './LandingNavbar';
 export { LandingFooter } from './LandingFooter';
+export { AddToChromeButton } from './AddToChromeButton';
 export { default as ProtectedRoute } from './ProtectedRoute';
