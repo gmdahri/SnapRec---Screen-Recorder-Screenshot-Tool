@@ -12,6 +12,8 @@ import Editor from './pages/Editor';
 import ShareView from './pages/ShareView';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
+import Privacy from './pages/Privacy';
+import Landing from './pages/Landing';
 
 
 const queryClient = new QueryClient({
@@ -56,7 +58,8 @@ function App() {
               <Route path="/editor/:id?" element={<Editor />} />
               <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
               <Route path="/v/:id" element={<ShareView />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/" element={<Landing />} />
             </Routes>
           </Router>
         </AuthProvider>
