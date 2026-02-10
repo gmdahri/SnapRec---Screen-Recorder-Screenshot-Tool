@@ -25,9 +25,17 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
-
   const configService = app.get(ConfigService);
+  const allowedOrigins = configService.get<string>('ALLOWED_ORIGINS');
+
+  if (allowedOrigins) {
+    app.enableCors({
+      origin: allowedOrigins.split(','),
+      credentials: true,
+    });
+  } else {
+    app.enableCors();
+  }
   const port = configService.get<number>('PORT', 3001);
 
   await app.listen(port);

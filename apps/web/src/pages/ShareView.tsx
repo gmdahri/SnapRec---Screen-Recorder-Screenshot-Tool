@@ -28,12 +28,13 @@ const ShareView: React.FC = () => {
     useEffect(() => {
         if (!recording) return;
 
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
         const fileName = recording.fileUrl.split('?')[0].split('/').pop();
-        const streamUrl = `http://localhost:3001/recordings/stream/${fileName}`;
+        const streamUrl = `${API_BASE_URL}/recordings/stream/${fileName}`;
 
         const checkStreamAvailability = async (fName: string) => {
             try {
-                const response = await fetch(`http://localhost:3001/recordings/status/${fName}`);
+                const response = await fetch(`${API_BASE_URL}/recordings/status/${fName}`);
                 if (response.ok) {
                     const data = await response.json();
                     return data.ready;
