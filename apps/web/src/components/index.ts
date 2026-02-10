@@ -8,4 +8,6 @@ export { GatedButton } from './GatedButton';
 export { Header } from './Header';
 export { MainLayout } from './MainLayout';
 export { VideoPlayer } from './VideoPlayer';
+export { LandingNavbar } from './LandingNavbar';
+export { LandingFooter } from './LandingFooter';
 export { default as ProtectedRoute } from './ProtectedRoute';

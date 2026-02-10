@@ -7,7 +7,13 @@
   width: 360px;
   min-height: 520px;
   height: auto;
-  background: #f7f5f8;
+  background: rgba(247, 245, 248, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(123, 37, 244, 0.2);
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(123, 37, 244, 0.1);
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
