@@ -10,6 +10,7 @@ export const useFabricEditor = () => {
     const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [isCanvasReady, setIsCanvasReady] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvas = useRef<fabric.Canvas | null>(null);
@@ -113,6 +114,7 @@ export const useFabricEditor = () => {
 
             // Set initial tool state
             handleToolChange(activeToolRef.current);
+            setIsCanvasReady(true);
         }
 
         const canvas = fabricCanvas.current;
@@ -266,36 +268,55 @@ export const useFabricEditor = () => {
         if (!fabricCanvas.current) return;
         const canvas = fabricCanvas.current;
 
-        fabric.Image.fromURL(dataUrl, (img) => {
-            if (!img) {
-                console.error('Failed to load image into fabric:', dataUrl);
-                return;
-            }
-            const imgWidth = img.width || 800;
-            const imgHeight = img.height || 600;
-
-            canvas.setDimensions({
-                width: imgWidth,
-                height: imgHeight,
+        const loadImageWithCORS = (url: string, crossOrigin?: string) => {
+            return new Promise<fabric.Image>((resolve, reject) => {
+                fabric.Image.fromURL(url, (img) => {
+                    if (img && img.width && img.height) {
+                        resolve(img);
+                    } else {
+                        reject(new Error('Failed to load image or image is empty'));
+                    }
+                }, crossOrigin ? { crossOrigin } : {});
             });
+        };
 
-            canvas.setBackgroundImage(img, () => {
-                // Calculate initial fit zoom
-                const container = document.querySelector('.canvas-bg');
-                if (container) {
-                    const padding = 100;
-                    const availableWidth = container.clientWidth - padding;
-                    const availableHeight = container.clientHeight - padding;
-                    const scaleX = availableWidth / imgWidth;
-                    const scaleY = availableHeight / imgHeight;
-                    const fitZoom = Math.min(scaleX, scaleY, 1);
-                    handleSetZoom(fitZoom);
-                }
+        loadImageWithCORS(dataUrl, 'anonymous')
+            .catch(() => {
+                console.warn('CORS-enabled load failed, trying without crossOrigin:', dataUrl);
+                return loadImageWithCORS(dataUrl);
+            })
+            .then((img) => {
+                console.log('Successfully loaded image into fabric:', dataUrl);
+                const imgWidth = img.width || 800;
+                const imgHeight = img.height || 600;
 
-                canvas.renderAll();
-                saveState(); // Save initial state
+                canvas.setDimensions({
+                    width: imgWidth,
+                    height: imgHeight,
+                });
+
+                canvas.setBackgroundImage(img, () => {
+                    // Calculate initial fit zoom
+                    const container = document.querySelector('.canvas-bg');
+                    if (container && container.clientWidth > 0) {
+                        const padding = 100;
+                        const availableWidth = container.clientWidth - padding;
+                        const availableHeight = container.clientHeight - padding;
+                        const scaleX = availableWidth / imgWidth;
+                        const scaleY = availableHeight / imgHeight;
+                        const fitZoom = Math.min(scaleX, scaleY, 1);
+                        handleSetZoom(fitZoom);
+                    } else {
+                        handleSetZoom(1);
+                    }
+
+                    canvas.renderAll();
+                    saveState(); // Save initial state
+                });
+            })
+            .catch((err) => {
+                console.error('Final image load failure:', err, dataUrl);
             });
-        }, { crossOrigin: 'anonymous' });
     };
 
     return {
@@ -319,6 +340,7 @@ export const useFabricEditor = () => {
         handleCropCancel,
         setupCanvasEvents,
         saveState,
-        initCanvas
+        initCanvas,
+        isCanvasReady
     };
 };

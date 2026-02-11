@@ -1,4 +1,3 @@
-const API_BASE_URL = 'http://localhost:3001';
 
 /**
  * Main function to handle upload to Cloudflare R2 via our NestJS backend
@@ -26,14 +25,14 @@ async function uploadToR2(dataUrl, filename, mimeType) {
             throw new Error('Failed to get presigned URL from backend');
         }
 
-        const { url } = await response.json();
+        const { uploadUrl } = await response.json();
         console.log('Received presigned URL');
 
         // 2. Convert Data URL to Blob
         const blob = await (await fetch(dataUrl)).blob();
 
         // 3. Upload directly to Cloudflare R2
-        const uploadResponse = await fetch(url, {
+        const uploadResponse = await fetch(uploadUrl, {
             method: 'PUT',
             headers: {
                 'Content-Type': mimeType,
@@ -55,7 +54,7 @@ async function uploadToR2(dataUrl, filename, mimeType) {
             },
             body: JSON.stringify({
                 title: filename,
-                fileName: filename,
+                fileUrl: filename,
                 type: mimeType.includes('video') ? 'video' : 'screenshot',
             }),
         });

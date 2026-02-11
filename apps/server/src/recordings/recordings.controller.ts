@@ -85,7 +85,14 @@ export class RecordingsController {
             const headers: any = {
                 'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=3600',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, OPTIONS',
             };
+
+            if (req.method === 'OPTIONS') {
+                res.status(200).set(headers).send();
+                return;
+            }
 
             // Support forceful download via query param
             const isDownload = (req.query as any).download === 'true';
