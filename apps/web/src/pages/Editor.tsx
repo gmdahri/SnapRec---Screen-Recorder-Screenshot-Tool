@@ -8,9 +8,9 @@ const EditorContent: React.FC = () => {
         canvasRef, fabricCanvas, capturedImage, setCapturedImage,
         hasAutoUploaded, setHasAutoUploaded, isUploading,
         showLoginPrompt, setShowLoginPrompt,
-        handleUploadToCloud, setupCanvasEvents, initCanvas,
+        handleUploadToCloud, setupCanvasEvents, initCanvas, isCanvasReady,
         undo, redo, historyIndex, history, handleActionClick,
-        id, title, setTitle
+        id, title, setTitle, user
     } = useEditor();
 
     // Initial Setup
@@ -41,10 +41,10 @@ const EditorContent: React.FC = () => {
 
     // Initialize from capturedImage when ready
     useEffect(() => {
-        if (capturedImage && fabricCanvas.current && !fabricCanvas.current.backgroundImage) {
+        if (capturedImage && isCanvasReady && fabricCanvas.current && !fabricCanvas.current.backgroundImage) {
             initCanvas(capturedImage);
         }
-    }, [capturedImage, fabricCanvas, initCanvas]);
+    }, [capturedImage, isCanvasReady, initCanvas]);
 
     const EditorActions = (
         <div className="flex items-center gap-4">
@@ -77,13 +77,13 @@ const EditorContent: React.FC = () => {
             </GatedButton>
             <GatedButton
                 onClick={() => handleActionClick('share')}
-                icon={isUploading ? 'sync' : (id ? 'save' : 'cloud_upload')}
+                icon={isUploading ? 'sync' : (id && user ? 'save' : 'cloud_upload')}
                 variant="primary"
                 className={`px-5 ${isUploading ? 'animate-pulse' : ''}`}
                 disabled={isUploading}
-                title={id ? 'Update recording' : 'Save to your account'}
+                title={id && user ? 'Update recording' : 'Save to your account'}
             >
-                {isUploading ? (id ? 'Updating...' : 'Saving...') : (id ? 'Update' : 'Save to your account')}
+                {isUploading ? (id && user ? 'Updating...' : 'Saving...') : (id && user ? 'Update' : 'Save to your account')}
             </GatedButton>
         </div>
     );
@@ -92,12 +92,25 @@ const EditorContent: React.FC = () => {
         <MainLayout
             title={
                 <div className="flex items-center gap-1 group/title max-w-xl">
-                    <input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
-                    />
-                    <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                    {user ? (
+                        <>
+                            <input
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
+                            />
+                            <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                        </>
+                    ) : (
+                        <div
+                            onClick={() => setShowLoginPrompt(true)}
+                            className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer flex items-center gap-1"
+                            title="Login to edit title"
+                        >
+                            <span>{title}</span>
+                            <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">lock</span>
+                        </div>
+                    )}
                 </div>
             }
             showBackButton={true}

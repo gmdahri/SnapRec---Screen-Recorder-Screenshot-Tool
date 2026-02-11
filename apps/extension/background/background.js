@@ -103,7 +103,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             captureAndCropRegion(message.rect, sender.tab.id);
             return false; // No response needed
         case 'openFullEditor':
-            openEditor(message.dataUrl);
+            const filename = `SnapRec_Capture_${Date.now()}.png`;
+            uploadToR2(message.dataUrl, filename, 'image/png')
+                .then(result => {
+                    if (result.success && result.id) {
+                        openEditor(message.dataUrl, result.id);
+                    } else {
+                        console.warn('Pre-upload failed, opening editor with local data only');
+                        openEditor(message.dataUrl);
+                    }
+                })
+                .catch(err => {
+                    console.error('Upload error:', err);
+                    openEditor(message.dataUrl);
+                });
             return false; // No response needed
         default:
             // Unknown action - don't keep channel open
@@ -383,12 +396,13 @@ async function showPreview(dataUrl, type) {
 }
 
 // Open Editor
-async function openEditor(dataUrl) {
+async function openEditor(dataUrl, id = null) {
     try {
         console.log('Redirecting to web editor...');
         await chrome.storage.local.set({ editingImage: dataUrl });
 
-        const editorUrl = `${CONFIG.WEB_BASE_URL}/editor`;
+        const baseUrl = `${CONFIG.WEB_BASE_URL}/editor`;
+        const editorUrl = id ? `${baseUrl}/${id}` : baseUrl;
         const tab = await chrome.tabs.create({ url: editorUrl });
 
         // Wait for tab to load and inject data transfer script

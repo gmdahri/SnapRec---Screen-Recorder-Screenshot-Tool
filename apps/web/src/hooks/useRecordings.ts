@@ -52,7 +52,7 @@ interface UploadUrlResponse {
 }
 
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snaprec-backend.onrender.com';
 
 // Base fetch function with auth - exported for use by AuthContext
 export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
