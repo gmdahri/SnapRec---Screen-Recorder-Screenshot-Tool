@@ -81,6 +81,7 @@ const Dashboard: React.FC = () => {
     const handleDownload = async (recording: Recording) => {
         try {
             const response = await fetch(recording.fileUrl);
+            if (!response.ok) throw new Error('Download failed');
             const blob = await response.blob();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -89,8 +90,12 @@ const Dashboard: React.FC = () => {
             link.click();
             document.body.removeChild(link);
             showNotification('Download started!', 'success');
-        } catch {
-            showNotification('Download failed', 'error');
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.log('Download aborted');
+            } else {
+                showNotification('Download failed', 'error');
+            }
         }
         setActiveCardMenu(null);
     };

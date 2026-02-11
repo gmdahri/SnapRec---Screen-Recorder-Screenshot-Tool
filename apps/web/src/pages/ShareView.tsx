@@ -32,9 +32,9 @@ const ShareView: React.FC = () => {
         const fileName = recording.fileUrl.split('?')[0].split('/').pop();
         const streamUrl = `${API_BASE_URL}/recordings/stream/${fileName}`;
 
-        const checkStreamAvailability = async (fName: string) => {
+        const checkStreamAvailability = async (fName: string, signal?: AbortSignal) => {
             try {
-                const response = await fetch(`${API_BASE_URL}/recordings/status/${fName}`);
+                const response = await fetch(`${API_BASE_URL}/recordings/status/${fName}`, { signal });
                 if (response.ok) {
                     const data = await response.json();
                     return data.ready;
@@ -47,13 +47,18 @@ const ShareView: React.FC = () => {
 
         let pollInterval: any;
 
-        const startPolling = async (fName: string) => {
+        const startPolling = async (fName: string, signal: AbortSignal) => {
             setIsProcessing(true);
             setPollingTimedOut(false);
-            const isAvailable = await checkStreamAvailability(fName);
+            const isAvailable = await checkStreamAvailability(fName, signal);
 
-            if (!isAvailable) {
+            if (!isAvailable && !signal.aborted) {
                 pollInterval = setInterval(async () => {
+                    if (signal.aborted) {
+                        clearInterval(pollInterval);
+                        return;
+                    }
+
                     setRetryCount(prev => {
                         if (prev >= 30) {
                             clearInterval(pollInterval);
@@ -64,26 +69,29 @@ const ShareView: React.FC = () => {
                         return prev + 1;
                     });
 
-                    const available = await checkStreamAvailability(fName);
+                    const available = await checkStreamAvailability(fName, signal);
                     if (available) {
                         clearInterval(pollInterval);
                         setIsProcessing(false);
                         setDownloadUrl(streamUrl);
                     }
                 }, 3000);
-            } else {
+            } else if (isAvailable) {
                 setIsProcessing(false);
                 setDownloadUrl(streamUrl);
             }
         };
 
+        const controller = new AbortController();
+
         if (recording.type === 'video') {
-            startPolling(fileName!);
+            startPolling(fileName!, controller.signal);
         } else {
             setDownloadUrl(streamUrl);
         }
 
         return () => {
+            controller.abort();
             if (pollInterval) clearInterval(pollInterval);
         };
     }, [recording]);

@@ -69,6 +69,7 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
     console.log('API Request:', endpoint, {
         hasToken: !!token,
         tokenPrefix: token ? token.substring(0, 20) + '...' : 'none',
+        aborted: options.signal?.aborted
     });
 
     const url = `${API_BASE_URL}${endpoint}`;
@@ -117,8 +118,8 @@ const ensureAbsoluteUrl = (url: string) => {
 export function useRecordings(isAuthenticated: boolean = true, isLoading: boolean = false) {
     return useQuery({
         queryKey: recordingsKeys.all,
-        queryFn: async () => {
-            const recordings = await fetchWithAuth<Recording[]>('/recordings');
+        queryFn: async ({ signal }) => {
+            const recordings = await fetchWithAuth<Recording[]>('/recordings', { signal });
             return recordings.map(r => ({
                 ...r,
                 fileUrl: ensureAbsoluteUrl(r.fileUrl),
@@ -138,8 +139,8 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
 export function useRecording(id: string | undefined) {
     return useQuery({
         queryKey: recordingsKeys.detail(id!),
-        queryFn: async () => {
-            const recording = await fetchWithAuth<Recording>(`/recordings/${id}`);
+        queryFn: async ({ signal }) => {
+            const recording = await fetchWithAuth<Recording>(`/recordings/${id}`, { signal });
             return {
                 ...recording,
                 fileUrl: ensureAbsoluteUrl(recording.fileUrl),
