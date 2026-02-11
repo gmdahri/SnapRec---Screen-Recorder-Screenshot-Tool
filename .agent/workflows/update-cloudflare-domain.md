@@ -2,20 +2,21 @@
 description: How to update the Cloudflare Pages domain name
 ---
 
-To update your domain to `snaprec.pages.dev`, you need to rename your Cloudflare Pages project. Follow these steps:
+To get the domain `snaprecorder.pages.dev`, you **cannot** simply rename an existing project (Cloudflare permanently locks the subdomain at creation). You must create a **new** project:
 
 1. **Log in to Cloudflare**: Go to the [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. **Navigate to Pages**: Click on **Workers & Pages** in the sidebar.
-3. **Select Your Project**: Find and click on your current project (e.g., `snaprec---screen-recorder...`).
-4. **Go to Settings**: Click the **Settings** tab at the top.
-5. **Rename Project**:
-   - In the **General** section, look for **Project name**.
-   - Click **Rename**.
-   - Enter `snaprec` as the new name.
-   - Confirm the rename.
-6. **Verify the New URL**: Once renamed, your site will be available at `https://snaprec.pages.dev`.
+2. **Delete the Old Project (Recommended)**: 
+   - Since `snaprecorder` might be "reserved" by your current renamed project, go to **Settings** > **General** and **Delete** the current project first to free up the name.
+3. **Create a New Project**:
+   - Go to **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
+   - Select your repository.
+   - **CRITICAL**: In the **Project Name** field, enter exactly `snaprecorder`.
+4. **Configure Build Settings**:
+   - Framework preset: `Vite`.
+   - Build command: `npm run build`
+   - Root directory: `apps/web` (or ensure it's set to the web app folder).
+5. **Deploy**: Click **Save and Deploy**.
+6. **Verify**: Once the build finishes, your site will be live at `https://snaprecorder.pages.dev`.
 
 > [!IMPORTANT]
-> Renaming the project will break the old `*.pages.dev` URL. Ensure you've updated all references in your code (which we have already done in the `fix/editor-and-upload-issues` branch).
-
-7. **Update Production Deployment**: If you have a CI/CD pipeline (like GitHub Actions), ensure it points to the new project name if required.
+> Since we've already updated the code to point to `snaprecorder.pages.dev` in our current branch, everything will work perfectly once this new project finishes its first deployment.
