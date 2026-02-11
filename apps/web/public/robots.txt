@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://snaprec.page.dev/sitemap.xml
+Sitemap: https://snaprec.pages.dev/sitemap.xml
