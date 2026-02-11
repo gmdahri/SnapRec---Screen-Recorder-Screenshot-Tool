@@ -102,13 +102,19 @@ const EditorContent: React.FC = () => {
     return (
         <MainLayout
             title={
-                <div className="flex items-center gap-1 group/title max-w-xl">
+                <div
+                    className="flex items-center gap-1 group/title max-w-xl cursor-text"
+                    onClick={() => !user && setShowLoginPrompt(true)}
+                >
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
+                        readOnly={!user}
+                        className={`bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all ${!user ? 'cursor-pointer' : ''}`}
                     />
-                    <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                    {user && (
+                        <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                    )}
                 </div>
             }
             showBackButton={true}
