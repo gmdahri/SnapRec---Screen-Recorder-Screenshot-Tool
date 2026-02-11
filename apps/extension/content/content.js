@@ -406,8 +406,8 @@
             updateLoadingIndicator('Converting to image...');
             const finalDataUrl = canvas.toDataURL('image/png', 0.95);
 
-            console.log(`Data URL length: ${finalDataUrl.length} chars`);
-            console.log(`Estimated size: ${(finalDataUrl.length * 0.75 / 1024 / 1024).toFixed(2)} MB`);
+            console.log(`[SnapRec] FULL PAGE CAPTURE: Final Data URL length: ${finalDataUrl.length} chars`);
+            console.log(`[SnapRec] Estimated size: ${(finalDataUrl.length * 0.75 / 1024 / 1024).toFixed(2)} MB`);
 
             // Send to background
             chrome.runtime.sendMessage({
@@ -663,7 +663,7 @@
 
     // Mini Preview Window
     function showMiniPreview(dataUrl) {
-        console.log('[SnapRec] Showing mini preview');
+        console.log('[SnapRec] Showing mini preview, dataUrl length:', dataUrl?.length || 0);
 
         // Remove existing preview if any
         const existing = document.querySelector('.snaprec-mini-preview');

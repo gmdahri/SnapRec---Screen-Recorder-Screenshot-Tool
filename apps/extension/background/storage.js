@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3001';
+// Redundant API_BASE_URL removed, using CONFIG.API_BASE_URL
 
 /**
  * Main function to handle upload to Cloudflare R2 via our NestJS backend
@@ -8,14 +8,22 @@ const API_BASE_URL = 'http://localhost:3001';
  */
 async function uploadToR2(dataUrl, filename, mimeType) {
     try {
-        console.log('Starting R2 upload process...');
+        console.log(`[SnapRec] uploadToR2: Starting upload for ${filename}, dataUrl length: ${dataUrl?.length || 0}`);
 
+        if (!dataUrl || dataUrl.length < 100) {
+            console.error('[SnapRec] uploadToR2: Invalid or too short dataUrl');
+            return { success: false, error: 'Invalid data URL' };
+        }
         // 1. Request presigned URL from our backend
+<<<<<<< HEAD
 <<<<<<< HEAD
         const response = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload-url`, {
 =======
         const response = await fetch(`${API_BASE_URL}/recordings/upload-url`, {
 >>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
+=======
+        const urlResponse = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload-url`, {
+>>>>>>> 202c2cd (fix: resolve blank image uploads, database entry failure, and editor UI refinements)
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -26,56 +34,85 @@ async function uploadToR2(dataUrl, filename, mimeType) {
             }),
         });
 
-        if (!response.ok) {
+        if (!urlResponse.ok) {
             throw new Error('Failed to get presigned URL from backend');
         }
 
-        const { url } = await response.json();
-        console.log('Received presigned URL');
+        const { uploadUrl, fileUrl } = await urlResponse.json();
+        console.log('Received presigned URL and file URL:', fileUrl);
 
-        // 2. Convert Data URL to Blob
-        const blob = await (await fetch(dataUrl)).blob();
+        // 2. Create database entry IMMEDIATELY
+        const { snaprecSession } = await chrome.storage.local.get('snaprecSession');
+        const { guestId } = await chrome.storage.local.get('guestId');
 
-        // 3. Upload directly to Cloudflare R2
-        const uploadResponse = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': mimeType,
-            },
-            body: blob,
-        });
-
-        if (!uploadResponse.ok) {
-            throw new Error('Failed to upload file to R2');
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        if (snaprecSession?.accessToken) {
+            headers['Authorization'] = `Bearer ${snaprecSession.accessToken}`;
         }
 
+<<<<<<< HEAD
         console.log('File uploaded to R2 successfully');
 
         // 4. Save metadata to backend
 <<<<<<< HEAD
+=======
+>>>>>>> 202c2cd (fix: resolve blank image uploads, database entry failure, and editor UI refinements)
         const metaResponse = await fetch(`${CONFIG.API_BASE_URL}/recordings`, {
 =======
         const metaResponse = await fetch(`${API_BASE_URL}/recordings`, {
 >>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify({
                 title: filename,
-                fileName: filename,
-                type: mimeType.includes('video') ? 'video' : 'screenshot',
+                type: 'screenshot',
+                fileUrl: fileUrl,
+                userId: snaprecSession?.user?.id,
+                guestId: !snaprecSession ? (guestId || `guest_${Math.random().toString(36).substring(7)}`) : undefined,
             }),
         });
 
         if (!metaResponse.ok) {
-            console.warn('Metadata saving failed, but file is uploaded.');
-            return { success: true, uploaded: true, metaSaved: false, fileName: filename };
+            throw new Error('Failed to create database entry');
         }
 
         const recording = await metaResponse.json();
-        console.log('Metadata saved to database');
+        console.log('Database entry created:', recording.id);
 
+        // 3. Start R2 upload in the background (don't await it)
+        (async () => {
+            try {
+                console.log('[SnapRec] uploadToR2: Fetching blob from dataUrl...');
+                const blobResponse = await fetch(dataUrl);
+                const blob = await blobResponse.blob();
+                console.log(`[SnapRec] uploadToR2: Blob created, size: ${blob.size} bytes, type: ${blob.type}`);
+
+                if (blob.size === 0) {
+                    throw new Error('Created blob is empty (0 bytes)');
+                }
+
+                console.log('[SnapRec] Starting background upload to R2...');
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': mimeType,
+                    },
+                    body: blob,
+                });
+
+                if (!uploadResponse.ok) {
+                    console.error('Background R2 upload failed');
+                } else {
+                    console.log('Background R2 upload successful');
+                }
+            } catch (error) {
+                console.error('Error in background screenshot upload:', error);
+            }
+        })();
+
+        // 4. Return immediately with the share URL
         return {
             success: true,
             id: recording.id,
@@ -87,7 +124,7 @@ async function uploadToR2(dataUrl, filename, mimeType) {
         };
 
     } catch (error) {
-        console.error('R2 Upload Error:', error);
+        console.error('R2 fast upload error:', error);
         return { success: false, error: error.message };
     }
 }

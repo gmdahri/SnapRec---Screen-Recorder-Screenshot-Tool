@@ -108,7 +108,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             captureAndCropRegion(message.rect, sender.tab.id);
             return false; // No response needed
         case 'openFullEditor':
-            openEditor(message.dataUrl);
+            handleOpenEditor(message.dataUrl);
             return false; // No response needed
         default:
             // Unknown action - don't keep channel open
@@ -507,17 +507,46 @@ async function showPreview(dataUrl, type) {
     }
 }
 
+// Handle Open Editor with Predictive Upload
+async function handleOpenEditor(dataUrl) {
+    try {
+        console.log('[SnapRec] handleOpenEditor called, initiating predictive upload...');
+
+        // Start upload immediately
+        const filename = `SnapRec_${Date.now()}.png`;
+        const result = await uploadToR2(dataUrl, filename, 'image/png');
+
+        if (result && result.success) {
+            console.log('[SnapRec] Predictive upload initiated, recording ID:', result.id);
+            await openEditor(dataUrl, result.id, true);
+        } else {
+            console.warn('[SnapRec] Predictive upload failed, falling back to direct editor:', result?.error);
+            await openEditor(dataUrl);
+        }
+    } catch (error) {
+        console.error('[SnapRec] Error in handleOpenEditor:', error);
+        await openEditor(dataUrl);
+    }
+}
+
 // Open Editor
-async function openEditor(dataUrl) {
+async function openEditor(dataUrl, recordingId = null, uploadStarted = false) {
     try {
         console.log('Redirecting to web editor...');
         await chrome.storage.local.set({ editingImage: dataUrl });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         const editorUrl = `${CONFIG.WEB_BASE_URL}/editor`;
 =======
         const editorUrl = 'http://localhost:5173/editor';
 >>>>>>> 739ce20 (feat(editor): implement cropping, privacy tools polish, and persistent loading fixes)
+=======
+        const editorUrl = recordingId
+            ? `${CONFIG.WEB_BASE_URL}/editor/${recordingId}`
+            : `${CONFIG.WEB_BASE_URL}/editor`;
+
+>>>>>>> 202c2cd (fix: resolve blank image uploads, database entry failure, and editor UI refinements)
         const tab = await chrome.tabs.create({ url: editorUrl });
 
         // Wait for tab to load and inject data transfer script
@@ -528,14 +557,15 @@ async function openEditor(dataUrl) {
                 // Transfer data to the page context
                 chrome.scripting.executeScript({
                     target: { tabId: tab.id },
-                    func: (imageData) => {
+                    func: (imageData, started) => {
                         console.log('Injected script sending postMessage');
                         window.postMessage({
                             type: 'SNAPREC_EDIT_IMAGE',
-                            dataUrl: imageData
+                            dataUrl: imageData,
+                            uploadStarted: started
                         }, '*');
                     },
-                    args: [dataUrl]
+                    args: [dataUrl, uploadStarted]
                 });
             }
         });

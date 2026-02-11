@@ -10,6 +10,8 @@ export const useFabricEditor = () => {
     const [cropRect, setCropRect] = useState<fabric.Rect | null>(null);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [isReady, setIsReady] = useState(false);
+    const [isImageReady, setIsImageReady] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvas = useRef<fabric.Canvas | null>(null);
@@ -113,6 +115,7 @@ export const useFabricEditor = () => {
 
             // Set initial tool state
             handleToolChange(activeToolRef.current);
+            setIsReady(true);
         }
 
         const canvas = fabricCanvas.current;
@@ -263,14 +266,21 @@ export const useFabricEditor = () => {
     };
 
     const initCanvas = (dataUrl: string) => {
-        if (!fabricCanvas.current) return;
+        if (!fabricCanvas.current) {
+            console.warn('initCanvas called but fabricCanvas.current is null');
+            return;
+        }
         const canvas = fabricCanvas.current;
+        setIsImageReady(false);
+
+        console.log('INIT_CANVAS_START:', dataUrl);
 
         fabric.Image.fromURL(dataUrl, (img) => {
             if (!img) {
-                console.error('Failed to load image into fabric:', dataUrl);
+                console.error('INIT_CANVAS_ERROR: Failed to load image core object:', dataUrl);
                 return;
             }
+            console.log('INIT_CANVAS_SUCCESS: Image loaded into fabric');
             const imgWidth = img.width || 800;
             const imgHeight = img.height || 600;
 
@@ -294,6 +304,8 @@ export const useFabricEditor = () => {
 
                 canvas.renderAll();
                 saveState(); // Save initial state
+                setIsImageReady(true);
+                console.log('INIT_CANVAS_SUCCESS: Background image set on canvas');
             });
         }, { crossOrigin: 'anonymous' });
     };
@@ -301,6 +313,8 @@ export const useFabricEditor = () => {
     return {
         canvasRef,
         fabricCanvas,
+        isReady,
+        isImageReady,
         activeTool,
         strokeColor,
         setStrokeColor,

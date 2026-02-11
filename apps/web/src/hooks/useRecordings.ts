@@ -60,6 +60,12 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
 
     if (sessionError) {
         console.error('Supabase session error:', sessionError);
+        // If the refresh token is invalid, we should clear the session locally
+        if (sessionError.message.toLowerCase().includes('refresh_token')) {
+            await supabase.auth.signOut();
+            window.location.reload(); // Force a clean state
+            throw new Error('Your session has expired. Please log in again.');
+        }
         throw new Error('Authentication error. Please log in again.');
     }
 

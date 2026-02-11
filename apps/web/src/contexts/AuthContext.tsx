@@ -25,10 +25,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     useEffect(() => {
         // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error && error.message.toLowerCase().includes('refresh_token')) {
+                console.warn('Stale session detected, signing out...');
+                supabase.auth.signOut().then(() => {
+                    setSession(null);
+                    setUser(null);
+                    setLoading(false);
+                });
+            } else {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+            }
         });
 
         // Listen for auth changes

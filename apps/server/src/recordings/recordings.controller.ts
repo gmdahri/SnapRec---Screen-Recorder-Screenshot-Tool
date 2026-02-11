@@ -60,10 +60,17 @@ export class RecordingsController {
     async getAllRecordings(@Req() req: any) {
         const recordings = await this.recordingsService.findAll(req.user.id);
 
-        return recordings.map((recording) => ({
-            ...recording,
-            fileUrl: `/recordings/stream/${recording.fileUrl}`,
-        }));
+        return recordings.map((recording) => {
+            // Extract filename if it's a full URL to avoid nested proxies
+            const fileName = recording.fileUrl?.includes('://')
+                ? recording.fileUrl.split('/').pop()?.split('?')[0]
+                : recording.fileUrl;
+
+            return {
+                ...recording,
+                fileUrl: `/recordings/stream/${fileName}`,
+            };
+        });
     }
 
     @Get('status/:fileName')
@@ -112,9 +119,14 @@ export class RecordingsController {
             throw new NotFoundException(`Recording with ID "${id}" not found`);
         }
 
+        // Extract filename if it's a full URL
+        const fileName = recording.fileUrl?.includes('://')
+            ? recording.fileUrl.split('/').pop()?.split('?')[0]
+            : recording.fileUrl;
+
         return {
             ...recording,
-            fileUrl: `/recordings/stream/${recording.fileUrl}`,
+            fileUrl: `/recordings/stream/${fileName}`,
         };
     }
 

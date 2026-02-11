@@ -382,7 +382,7 @@ async function cropImage(dataUrl, rect) {
                 ctx.drawImage(img, x, y, width, height, 0, 0, width, height);
 
                 const croppedDataUrl = canvas.toDataURL('image/png');
-                console.log('[Offscreen] Image cropped successfully');
+                console.log(`[Offscreen] Image cropped successfully, dataUrl length: ${croppedDataUrl.length}`);
                 resolve(croppedDataUrl);
             } catch (error) {
                 console.error('[Offscreen] Crop error:', error);
