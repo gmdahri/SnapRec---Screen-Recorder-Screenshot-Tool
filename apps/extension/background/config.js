@@ -1,7 +1,7 @@
 // SnapRec Configuration
 const CONFIG = {
     API_BASE_URL: 'https://snaprec-backend.onrender.com',
-    WEB_BASE_URL: 'https://snaprec.pages.dev',
+    WEB_BASE_URL: 'https://snaprecorder.pages.dev',
     TIMEOUTS: {
         SCRIPT_INJECTION_DELAY: 250,
         COUNTDOWN_DURATION: 3500,

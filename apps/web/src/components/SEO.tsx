@@ -22,7 +22,7 @@ export const SEO: React.FC<SEOProps> = ({
     const fullTitle = title ? `${title} | ${siteTitle}` : `SnapRec - Instant Screen Recorder & Screenshot Tool`;
     const defaultDescription = 'Capture, record, and share your screen instantly. Powerful visual communication tool for professionals.';
     const metaDescription = description || defaultDescription;
-    const siteUrl = 'https://snaprec.pages.dev';
+    const siteUrl = 'https://snaprecorder.pages.dev';
     const currentUrl = url ? `${siteUrl}${url}` : siteUrl;
 
     return (
