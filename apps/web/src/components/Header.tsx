@@ -5,9 +5,10 @@ import UserMenu from './UserMenu';
 import LoginModal from './LoginModal';
 
 interface HeaderProps {
-    title?: string;
+    title?: React.ReactNode;
     showBackButton?: boolean;
     actions?: React.ReactNode;
+    center?: React.ReactNode;
     variant?: 'default' | 'transparent';
 }
 
@@ -15,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
     title,
     showBackButton = false,
     actions,
+    center,
     variant = 'default',
 }) => {
     const navigate = useNavigate();
@@ -31,8 +33,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center gap-3">
                     <Logo size="md" />
                     {title && (
-                        <span className="text-sm text-slate-500">/ {title}</span>
+                        <>
+                            <span className="text-sm text-slate-500">/</span>
+                            <div className="text-sm font-medium">{title}</div>
+                        </>
                     )}
+                </div>
+
+                <div className="flex-1 flex justify-center px-4">
+                    {center}
                 </div>
                 <div className="flex items-center gap-4">
                     {showBackButton && (

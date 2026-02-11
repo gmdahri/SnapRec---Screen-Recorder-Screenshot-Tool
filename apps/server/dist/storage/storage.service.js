@@ -58,6 +58,34 @@ let StorageService = StorageService_1 = class StorageService {
         });
         return (0, s3_request_presigner_1.getSignedUrl)(this.s3Client, command, { expiresIn: 3600 });
     }
+    async checkFileExists(fileName) {
+        try {
+            const command = new client_s3_1.HeadObjectCommand({
+                Bucket: this.bucketName,
+                Key: fileName,
+            });
+            await this.s3Client.send(command);
+            return true;
+        }
+        catch (error) {
+            if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+                return false;
+            }
+            throw error;
+        }
+    }
+    async getDownloadStream(fileName) {
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: fileName,
+        });
+        const response = await this.s3Client.send(command);
+        return {
+            stream: response.Body,
+            contentType: response.ContentType,
+            contentLength: response.ContentLength,
+        };
+    }
 };
 exports.StorageService = StorageService;
 exports.StorageService = StorageService = StorageService_1 = __decorate([

@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Readable } from 'stream';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -50,5 +51,35 @@ export class StorageService implements OnModuleInit {
         });
 
         return getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+    }
+
+    async checkFileExists(fileName: string): Promise<boolean> {
+        try {
+            const command = new HeadObjectCommand({
+                Bucket: this.bucketName,
+                Key: fileName,
+            });
+            await this.s3Client.send(command);
+            return true;
+        } catch (error: any) {
+            if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+                return false;
+            }
+            throw error;
+        }
+    }
+
+    async getDownloadStream(fileName: string) {
+        const command = new GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: fileName,
+        });
+
+        const response = await this.s3Client.send(command);
+        return {
+            stream: response.Body as Readable,
+            contentType: response.ContentType,
+            contentLength: response.ContentLength,
+        };
     }
 }
