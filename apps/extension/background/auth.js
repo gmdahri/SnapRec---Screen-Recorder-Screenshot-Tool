@@ -1,7 +1,7 @@
 // SnapRec Extension Auth Module
 // Handles authentication state between extension and web app
 
-const WEB_APP_URL = 'http://localhost:5173';
+const WEB_APP_URL = 'https://snaprec.page.dev';
 
 // Store auth session in chrome.storage.local
 async function storeSession(session) {

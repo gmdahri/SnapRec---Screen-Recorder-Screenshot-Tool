@@ -867,16 +867,15 @@ async function handleRecordingComplete() {
         console.log('[SnapRec] Creating database entry...');
         const { guestId } = await chrome.storage.local.get('guestId');
 
-        const recordingRes = await fetch(`${API_BASE_URL}/recordings`, {
+        const recordingRes = await fetch(`${CONFIG.API_BASE_URL}/recordings`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                title: `Video Recording ${new Date().toLocaleString()}`,
+                title: videoFileName,
                 type: 'video',
                 fileUrl: videoUploadRes.fileUrl,
-                thumbnailUrl: null,
                 userId: snaprecSession?.user?.id,
-                guestId: !snaprecSession ? guestId : undefined
+                guestId: !snaprecSession ? (guestId || `guest_${Math.random().toString(36).substring(7)}`) : undefined
             })
         }).then(r => r.json());
 
