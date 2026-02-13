@@ -56,6 +56,18 @@
         }
     });
 
+    // Watch for recording state changes via storage - more reliable than messages
+    // Content scripts in inactive tabs may miss direct messages, but storage
+    // listeners fire reliably across all tabs
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes.isRecording) {
+            if (changes.isRecording.newValue === false && recordingOverlay) {
+                console.log('[SnapRec Content] Recording stopped (via storage), hiding overlay');
+                hideRecordingOverlay();
+            }
+        }
+    });
+
     // Region Selection
     function startRegionSelection() {
         console.log('Starting region selection');

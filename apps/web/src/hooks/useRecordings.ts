@@ -11,6 +11,7 @@ export interface Recording {
     createdAt: string;
     duration?: number;
     views: number;
+    isReady?: boolean;
     description?: string;
     location?: string;
     user?: {
@@ -136,7 +137,7 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
 /**
  * Hook to fetch a single recording by ID
  */
-export function useRecording(id: string | undefined) {
+export function useRecording(id: string | undefined, refetchInterval?: number | false) {
     return useQuery({
         queryKey: recordingsKeys.detail(id!),
         queryFn: async ({ signal }) => {
@@ -149,6 +150,7 @@ export function useRecording(id: string | undefined) {
         },
         enabled: !!id,
         retry: 1,
+        refetchInterval: refetchInterval,
     });
 }
 

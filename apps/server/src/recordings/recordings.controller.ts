@@ -119,8 +119,11 @@ export class RecordingsController {
             throw new NotFoundException(`Recording with ID "${id}" not found`);
         }
 
+        const isReady = await this.storageService.checkFileExists(recording.fileUrl);
+
         return {
             ...recording,
+            isReady,
             fileUrl: `/recordings/stream/${recording.fileUrl}`,
         };
     }

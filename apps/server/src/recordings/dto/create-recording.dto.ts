@@ -2,6 +2,10 @@ import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 
 export class CreateRecordingDto {
     @IsString()
+    @IsOptional()
+    id?: string;
+
+    @IsString()
     @IsNotEmpty()
     title: string;
 
