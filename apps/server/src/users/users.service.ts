@@ -15,15 +15,21 @@ export class UsersService {
     /**
      * Find a user by their Supabase ID, or create one if not exists.
      * Handles race conditions from concurrent requests.
+     * Also backfills missing metadata on existing users.
      */
-    async findOrCreateBySupabaseId(supabaseId: string, email?: string): Promise<User> {
+    async findOrCreateBySupabaseId(
+        supabaseId: string,
+        userMeta?: { email?: string; fullName?: string; avatarUrl?: string },
+    ): Promise<User> {
         let user = await this.usersRepository.findOne({ where: { supabaseId } });
 
         if (!user) {
             try {
                 user = new User();
                 user.supabaseId = supabaseId;
-                if (email) user.email = email;
+                if (userMeta?.email) user.email = userMeta.email;
+                if (userMeta?.fullName) user.fullName = userMeta.fullName;
+                if (userMeta?.avatarUrl) user.avatarUrl = userMeta.avatarUrl;
                 await this.usersRepository.save(user);
                 this.logger.log(`Created new user with supabaseId: ${supabaseId}`);
             } catch (error: any) {
@@ -36,6 +42,16 @@ export class UsersService {
                 } else {
                     throw error;
                 }
+            }
+        } else if (userMeta) {
+            // Backfill missing metadata on existing users
+            let needsUpdate = false;
+            if (userMeta.email && !user.email) { user.email = userMeta.email; needsUpdate = true; }
+            if (userMeta.fullName && !user.fullName) { user.fullName = userMeta.fullName; needsUpdate = true; }
+            if (userMeta.avatarUrl && !user.avatarUrl) { user.avatarUrl = userMeta.avatarUrl; needsUpdate = true; }
+            if (needsUpdate) {
+                await this.usersRepository.save(user);
+                this.logger.log(`Updated metadata for user with supabaseId: ${supabaseId}`);
             }
         }
 

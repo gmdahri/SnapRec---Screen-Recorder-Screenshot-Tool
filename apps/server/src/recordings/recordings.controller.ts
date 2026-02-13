@@ -45,13 +45,15 @@ export class RecordingsController {
         if (req.user && !createRecordingDto.userId) {
             createRecordingDto.userId = req.user.id;
         }
-        return this.recordingsService.create(createRecordingDto);
+        const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
+        return this.recordingsService.create(createRecordingDto, userMeta);
     }
 
     @UseGuards(JwtAuthGuard)
     @Post('claim')
     async claimRecordings(@Req() req: any, @Body() claimRecordingsDto: ClaimRecordingsDto) {
-        await this.recordingsService.claimRecordings(req.user.id, claimRecordingsDto.recordingIds);
+        const userMeta = { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl };
+        await this.recordingsService.claimRecordings(req.user.id, claimRecordingsDto.recordingIds, userMeta);
         return { success: true };
     }
 
@@ -157,11 +159,13 @@ export class RecordingsController {
         @Body() addReactionDto: AddReactionDto,
         @Req() req: any,
     ) {
+        const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
         return this.recordingsService.addReaction(
             id,
             addReactionDto.type,
             req.user?.id,
             addReactionDto.guestId,
+            userMeta,
         );
     }
 
@@ -172,11 +176,13 @@ export class RecordingsController {
         @Body() addCommentDto: AddCommentDto,
         @Req() req: any,
     ) {
+        const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
         return this.recordingsService.addComment(
             id,
             addCommentDto.content,
             req.user?.id,
             addCommentDto.guestId,
+            userMeta,
         );
     }
 }

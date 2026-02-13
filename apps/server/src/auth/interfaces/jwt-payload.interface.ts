@@ -5,4 +5,10 @@ export interface JwtPayload {
     role: string;
     iat: number;
     exp: number;
+    user_metadata?: {
+        full_name?: string;
+        avatar_url?: string;
+        name?: string;
+        picture?: string;
+    };
 }
