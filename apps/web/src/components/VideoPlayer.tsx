@@ -103,7 +103,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const formatTime = (time: number) => {
         if (isNaN(time) || !isFinite(time)) return '--:--';
-        if (time === 0) return '0:00';
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -184,10 +183,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     onClick={handleSeek}
                 >
                     <div
-                        className="absolute h-full bg-primary rounded-full transition-all relative"
+                        className="absolute h-full bg-primary rounded-full transition-all pointer-events-none"
                         style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
                     >
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 size-3.5 bg-white rounded-full shadow-lg scale-0 group-hover/progress:scale-100 transition-transform" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 size-3.5 bg-white rounded-full shadow-lg scale-0 group-hover/progress:scale-100 transition-transform pointer-events-none" />
                     </div>
                 </div>
 
@@ -208,7 +207,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                         </button>
 
                         <span className="text-white/90 text-sm font-semibold tabular-nums ml-2 bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                            {formatTime(currentTime)} <span className="text-white/40 mx-1">/</span> {formatTime(duration)}
+                            {formatTime(currentTime)} <span className="text-white/40 mx-1">/</span> {duration > 0 ? formatTime(duration) : '--:--'}
                         </span>
                     </div>
 
