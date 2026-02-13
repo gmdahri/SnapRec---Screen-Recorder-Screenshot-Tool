@@ -10,13 +10,17 @@ export class StorageService implements OnModuleInit {
     private bucketName: string;
 
     constructor(private configService: ConfigService) {
-        const accountId = this.configService.get<string>('R2_ACCOUNT_ID') || '';
+        const accountId = (this.configService.get<string>('R2_ACCOUNT_ID') || '').trim();
         const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID') || '';
         const secretAccessKey = this.configService.get<string>('R2_SECRET_ACCESS_KEY') || '';
 
+        const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+        this.logger.log(`Initializing R2 Storage with endpoint: ${endpoint}`);
+
         this.s3Client = new S3Client({
             region: 'auto',
-            endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+            endpoint: endpoint,
+            forcePathStyle: true,
             credentials: {
                 accessKeyId,
                 secretAccessKey,

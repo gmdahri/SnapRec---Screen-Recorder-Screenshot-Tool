@@ -253,6 +253,20 @@ async function stopRecording() {
             console.log('[Offscreen] Recording stopped, creating blob...');
 
             try {
+                // Stop tracks immediately to remove the "Sharing screen" banner
+                if (recordingStream) {
+                    recordingStream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('[Offscreen] Track stopped:', track.kind);
+                    });
+                    recordingStream = null;
+                }
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                    console.log('[Offscreen] AudioContext closed');
+                }
+
                 const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
                 console.log('[Offscreen] Blob created, size:', blob.size);
                 currentRecordingBlob = blob;

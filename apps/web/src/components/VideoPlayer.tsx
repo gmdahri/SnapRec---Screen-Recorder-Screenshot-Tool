@@ -3,17 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 interface VideoPlayerProps {
     src?: string;
     isProcessing?: boolean;
-    retryCount?: number;
-    pollingTimedOut?: boolean;
-    onRefresh?: () => void;
+    isReady?: boolean;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     src,
     isProcessing,
-    retryCount,
-    pollingTimedOut,
-    onRefresh
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -169,7 +164,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             />
 
             {/* Large Center Play Button */}
-            {!isPlaying && !isProcessing && !pollingTimedOut && src && (
+            {!isPlaying && !isProcessing && src && (
                 <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
                     <button
                         className="size-20 bg-primary/90 backdrop-blur-sm flex items-center justify-center rounded-full shadow-[0_0_30px_rgba(124,58,237,0.5)] border border-white/20 transition-transform duration-300 hover:scale-110 pointer-events-auto"
@@ -283,35 +278,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                         <p className="text-white/60 text-base max-w-[320px] leading-relaxed">
                             Hang tight! We're making sure your recording looks perfect for everyone.
                         </p>
-                        {retryCount !== undefined && retryCount > 0 && (
-                            <div className="mt-8 flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-2xl">
-                                <span className="size-2.5 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(124,58,237,1)]" />
-                                <span className="text-white/40 text-xs font-black uppercase tracking-[0.2em]">
-                                    Stage {Math.min(retryCount, 30)} of 30
-                                </span>
-                            </div>
-                        )}
                     </div>
-                </div>
-            )}
-
-            {/* Timeout Overlay */}
-            {pollingTimedOut && !src && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#171022]/90 backdrop-blur-xl transition-all z-50 text-center px-10">
-                    <div className="size-20 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex items-center justify-center mb-8 shadow-2xl">
-                        <span className="material-symbols-outlined text-amber-500 text-5xl">upload</span>
-                    </div>
-                    <h3 className="text-white text-3xl font-black mb-3 italic">Almost there...</h3>
-                    <p className="text-white/50 text-lg mb-10 max-w-[380px] leading-snug">
-                        Your file is traveling at warp speed, but it's taking a second to land. Keep this tab open!
-                    </p>
-                    <button
-                        onClick={onRefresh || (() => window.location.reload())}
-                        className="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-black text-lg rounded-2xl transition-all shadow-2xl shadow-primary/40 flex items-center gap-3 active:scale-95"
-                    >
-                        <span className="material-symbols-outlined text-2xl font-bold">refresh</span>
-                        Refresh Status
-                    </button>
                 </div>
             )}
         </div>

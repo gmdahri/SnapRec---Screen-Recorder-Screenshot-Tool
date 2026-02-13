@@ -8,7 +8,7 @@ importScripts('utils/storage.js');
 
 // Single consolidated message listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('[SnapRec v1.0.5] Background received message:', message.action);
+    console.log('[SnapRec v1.1.1] Background received message:', message.action);
 
     // Handle ping for service worker wake-up
     if (message.action === 'ping') {
@@ -596,7 +596,18 @@ async function injectRecordingOverlay(tabId, options) {
 async function stopRecording() {
     console.log('[SnapRec] stopRecording called manually');
 
+    // IMMEDIATELY broadcast hide overlay to all tabs and update state
+    // Don't wait for offscreen response - UI should be instant
+    await broadcastHideOverlay();
+
     try {
+        // Check if offscreen document actually exists before messaging it
+        if (!(await hasOffscreenDocument())) {
+            console.warn('[SnapRec] Offscreen document not found, skipping message');
+            await finalizeCleanup();
+            return;
+        }
+
         // Get recording data from offscreen document
         const response = await chrome.runtime.sendMessage({ action: 'offscreen_stopRecording' });
         console.log('[SnapRec] stopRecording response received:', response ? (response.success ? 'success' : 'failure') : 'null');
@@ -616,10 +627,30 @@ async function stopRecording() {
     }
 }
 
+// Broadcast hide overlay to ALL tabs immediately and in parallel
+async function broadcastHideOverlay() {
+    console.log('[SnapRec] Broadcasting hide overlay to all tabs');
+    recordingTabId = null;
+    await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
+
+    const tabs = await chrome.tabs.query({});
+    // Fire all messages in parallel - don't wait for individual responses
+    await Promise.allSettled(
+        tabs
+            .filter(tab => !TabUtils.isRestrictedUrl(tab.url))
+            .map(tab =>
+                chrome.tabs.sendMessage(tab.id, { action: 'hideRecordingOverlay' })
+                    .catch(() => { /* ignore tabs without content script */ })
+            )
+    );
+}
+
 async function finalizeCleanup() {
     console.log('[SnapRec] Finalizing cleanup');
-    recordingTabId = null;
     await closeOffscreenDocument();
+    // Overlay hiding already happened in broadcastHideOverlay
+    // Just ensure state is clean
+    recordingTabId = null;
     await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
 }
 
@@ -638,10 +669,18 @@ async function handleRecordingComplete() {
             console.log('[SnapRec] Using authenticated session');
         }
 
-        // Get presigned URL first
+        // Generate a UUID for the recording immediately
+        const recordingId = crypto.randomUUID();
+
+        // IMMEDIATELY redirect to /v/{id}
+        console.log('[SnapRec] Redirecting to share page immediately...');
+        const shareUrl = `${CONFIG.WEB_BASE_URL}/v/${recordingId}?fresh=true`;
+        await chrome.tabs.create({ url: shareUrl });
+
+        // Get presigned URL
         console.log('[SnapRec] Requesting presigned URL...');
         const videoFileName = `video_${Date.now()}.webm`;
-        const videoUploadRes = await fetch(`${API_BASE_URL}/recordings/upload-url`, {
+        const videoUploadRes = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload-url`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ fileName: videoFileName, contentType: 'video/webm' })
@@ -649,14 +688,15 @@ async function handleRecordingComplete() {
 
         console.log('[SnapRec] Got presigned URL:', !!videoUploadRes?.uploadUrl);
 
-        // Create database entry IMMEDIATELY
+        // Create database entry in the background
         console.log('[SnapRec] Creating database entry...');
         const { guestId } = await chrome.storage.local.get('guestId');
 
-        const recordingRes = await fetch(`${API_BASE_URL}/recordings`, {
+        const recordingRes = await fetch(`${CONFIG.API_BASE_URL}/recordings`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
+                id: recordingId,
                 title: `Video Recording ${new Date().toLocaleString()}`,
                 type: 'video',
                 fileUrl: videoUploadRes.fileUrl,
@@ -666,12 +706,7 @@ async function handleRecordingComplete() {
             })
         }).then(r => r.json());
 
-        console.log('[SnapRec] Recording created:', recordingRes.id);
-
-        // IMMEDIATELY redirect to /v/{id}
-        console.log('[SnapRec] Redirecting to share page...');
-        const shareUrl = `${CONFIG.WEB_BASE_URL}/v/${recordingRes.id}`;
-        await chrome.tabs.create({ url: shareUrl });
+        console.log('[SnapRec] Recording registered in background:', recordingRes.id);
 
         // Start upload in offscreen document without blocking
         console.log('[SnapRec] Triggering upload in offscreen document...');
@@ -733,5 +768,37 @@ chrome.commands.onCommand.addListener((command) => {
         case 'start-recording':
             startRecording({ source: 'screen', microphone: false, systemAudio: true, webcam: false });
             break;
+    }
+});
+
+// Re-inject overlay when switching tabs during recording
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    try {
+        const { isRecording, recordingOptions } = await chrome.storage.local.get(['isRecording', 'recordingOptions']);
+        if (isRecording) {
+            console.log('[SnapRec] Tab activated during recording, injecting overlay into tab:', activeInfo.tabId);
+            await injectRecordingOverlay(activeInfo.tabId, recordingOptions);
+        }
+    } catch (error) {
+        console.warn('[SnapRec] Could not inject overlay on tab activation (likely restricted page):', error.message);
+    }
+});
+
+// Re-inject overlay when a tab is refreshed or navigates during recording
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    try {
+        if (changeInfo.status === 'complete' && !TabUtils.isRestrictedUrl(tab.url)) {
+            const { isRecording, recordingOptions } = await chrome.storage.local.get(['isRecording', 'recordingOptions']);
+            if (isRecording) {
+                // Check if already injected to avoid duplicates
+                const isAlreadyInjected = await TabUtils.ensureContentScript(tabId);
+                console.log('[SnapRec] Tab updated during recording, isAlreadyInjected:', isAlreadyInjected);
+
+                console.log('[SnapRec] Injecting/Updating overlay in tab:', tabId);
+                await injectRecordingOverlay(tabId, recordingOptions);
+            }
+        }
+    } catch (error) {
+        console.warn('[SnapRec] Could not inject overlay on tab update (likely restricted page):', error.message);
     }
 });

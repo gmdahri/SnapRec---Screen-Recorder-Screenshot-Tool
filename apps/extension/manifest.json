@@ -63,10 +63,12 @@
     "notifications"
   ],
   "host_permissions": [
+    "<all_urls>",
     "https://www.googleapis.com/*",
     "https://snaprec-backend.onrender.com/*",
     "https://snaprecorder.pages.dev/*",
-    "https://*.r2.cloudflarestorage.com/*"
+    "https://*.r2.cloudflarestorage.com/*",
+    "http://localhost/*"
   ],
   "oauth2": {
     "client_id": "489525905608-ftrbjkob1ktitmhtsfhvs2vct3oar6ph.apps.googleusercontent.com",

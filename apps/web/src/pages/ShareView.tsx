@@ -10,91 +10,35 @@ const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
     const { showNotification } = useNotification();
-    const { data: recording, isLoading: loading } = useRecording(id);
+    const [pollInterval, setPollInterval] = useState<number | false>(3000);
+    const { data: recording, isLoading: loading } = useRecording(id, pollInterval);
     const addReaction = useAddReaction();
     const addComment = useAddComment();
     const claimMutation = useClaimRecordings();
 
-    const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [retryCount, setRetryCount] = useState(0);
-    const [pollingTimedOut, setPollingTimedOut] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [loginAction, setLoginAction] = useState('continue');
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
+    const isFresh = new URLSearchParams(window.location.search).get('fresh') === 'true';
+
+    // Stop polling once ready
     useEffect(() => {
-        if (!recording) return;
-
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-        const fileName = recording.fileUrl.split('?')[0].split('/').pop();
-        const streamUrl = `${API_BASE_URL}/recordings/stream/${fileName}`;
-
-        const checkStreamAvailability = async (fName: string, signal?: AbortSignal) => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/recordings/status/${fName}`, { signal });
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.ready;
-                }
-                return false;
-            } catch (e) {
-                return false;
-            }
-        };
-
-        let pollInterval: any;
-
-        const startPolling = async (fName: string, signal: AbortSignal) => {
-            setIsProcessing(true);
-            setPollingTimedOut(false);
-            const isAvailable = await checkStreamAvailability(fName, signal);
-
-            if (!isAvailable && !signal.aborted) {
-                pollInterval = setInterval(async () => {
-                    if (signal.aborted) {
-                        clearInterval(pollInterval);
-                        return;
-                    }
-
-                    setRetryCount(prev => {
-                        if (prev >= 30) {
-                            clearInterval(pollInterval);
-                            setIsProcessing(false);
-                            setPollingTimedOut(true);
-                            return prev;
-                        }
-                        return prev + 1;
-                    });
-
-                    const available = await checkStreamAvailability(fName, signal);
-                    if (available) {
-                        clearInterval(pollInterval);
-                        setIsProcessing(false);
-                        setDownloadUrl(streamUrl);
-                    }
-                }, 3000);
-            } else if (isAvailable) {
-                setIsProcessing(false);
-                setDownloadUrl(streamUrl);
-            }
-        };
-
-        const controller = new AbortController();
-
-        if (recording.type === 'video') {
-            startPolling(fileName!, controller.signal);
-        } else {
-            setDownloadUrl(streamUrl);
+        if (recording?.isReady || (recording?.type === 'screenshot' && recording)) {
+            setPollInterval(false);
         }
+    }, [recording?.isReady, recording?.type]);
 
-        return () => {
-            controller.abort();
-            if (pollInterval) clearInterval(pollInterval);
-        };
-    }, [recording]);
+    // Derive processing state and download URL
+    const isRegistering = isFresh && !recording && !loading;
+    const isProcessing = recording?.type === 'video' && !recording.isReady;
+
+    let downloadUrl = null;
+    if (recording) {
+        downloadUrl = recording.fileUrl;
+    }
 
     // Auto-trigger pending action after login
     useEffect(() => {
@@ -165,12 +109,24 @@ const ShareView: React.FC = () => {
 
 
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
-                <div className="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            </div>
-        );
+    // Show loader if we are fetching data, OR if this is a "fresh" redirect and we're waiting for registration
+    if (loading || (isFresh && !recording && (isRegistering || !recording))) {
+        // Only show 404 if it's NOT fresh or if registration polling actually timed out
+        const isActuallyNotFound = !loading && !recording && (!isFresh || (isFresh && !isRegistering && !loading));
+
+        if (!isActuallyNotFound) {
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark">
+                    <div className="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                    {(isRegistering || (isFresh && !recording)) && (
+                        <div className="text-center animate-pulse">
+                            <p className="text-lg font-bold text-slate-800 dark:text-white">Registering your recording...</p>
+                            <p className="text-slate-500 text-sm mt-1">This will only take a moment.</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
     }
 
     if (!recording) {
@@ -236,9 +192,6 @@ const ShareView: React.FC = () => {
                                 <VideoPlayer
                                     src={downloadUrl || undefined}
                                     isProcessing={isProcessing}
-                                    retryCount={retryCount}
-                                    pollingTimedOut={pollingTimedOut}
-                                    onRefresh={() => window.location.reload()}
                                 />
                             </div>
                             {/* Reaction Bar */}

@@ -24,6 +24,9 @@ export class RecordingsService {
 
     async create(createRecordingDto: CreateRecordingDto): Promise<Recording> {
         const recording = new Recording();
+        if (createRecordingDto.id) {
+            recording.id = createRecordingDto.id;
+        }
         recording.title = createRecordingDto.title;
         recording.fileUrl = createRecordingDto.fileUrl;
         recording.type = createRecordingDto.type;
