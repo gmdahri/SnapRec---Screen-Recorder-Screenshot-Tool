@@ -22,7 +22,7 @@ export class RecordingsService {
         private readonly usersService: UsersService,
     ) { }
 
-    async create(createRecordingDto: CreateRecordingDto): Promise<Recording> {
+    async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Recording> {
         const recording = new Recording();
         if (createRecordingDto.id) {
             recording.id = createRecordingDto.id;
@@ -33,7 +33,7 @@ export class RecordingsService {
 
         const userId = createRecordingDto.userId || createRecordingDto.guestId;
         if (userId) {
-            recording.user = await this.usersService.findOrCreateBySupabaseId(userId);
+            recording.user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
         }
 
         return this.recordingsRepository.save(recording);
@@ -63,7 +63,7 @@ export class RecordingsService {
         return recording;
     }
 
-    async addReaction(recordingId: string, type: string, userId?: string, guestId?: string): Promise<Reaction> {
+    async addReaction(recordingId: string, type: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Reaction> {
         const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
         if (!recording) throw new NotFoundException('Recording not found');
 
@@ -82,7 +82,7 @@ export class RecordingsService {
             reaction.recording = recording;
             reaction.type = type;
             if (userId) {
-                reaction.user = await this.usersService.findOrCreateBySupabaseId(userId);
+                reaction.user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
             } else if (guestId) {
                 reaction.guestId = guestId;
             }
@@ -91,7 +91,7 @@ export class RecordingsService {
         return this.reactionsRepository.save(reaction);
     }
 
-    async addComment(recordingId: string, content: string, userId?: string, guestId?: string): Promise<Comment> {
+    async addComment(recordingId: string, content: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Comment> {
         const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
         if (!recording) throw new NotFoundException('Recording not found');
 
@@ -100,7 +100,7 @@ export class RecordingsService {
         comment.content = content;
 
         if (userId) {
-            comment.user = await this.usersService.findOrCreateBySupabaseId(userId);
+            comment.user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
         } else if (guestId) {
             comment.guestId = guestId;
         }
@@ -108,8 +108,8 @@ export class RecordingsService {
         return this.commentsRepository.save(comment);
     }
 
-    async claimRecordings(userId: string, recordingIds: string[]): Promise<void> {
-        const user = await this.usersService.findOrCreateBySupabaseId(userId);
+    async claimRecordings(userId: string, recordingIds: string[], userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<void> {
+        const user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
 
         if (recordingIds.length === 0) {
             return;

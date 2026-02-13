@@ -35,10 +35,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
             throw new UnauthorizedException('Invalid token');
         }
 
+        const meta = payload.user_metadata;
+
         return {
             id: payload.sub,
             email: payload.email,
             role: payload.role,
+            fullName: meta?.full_name || meta?.name || null,
+            avatarUrl: meta?.avatar_url || meta?.picture || null,
         };
     }
 }
