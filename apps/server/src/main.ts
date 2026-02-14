@@ -28,14 +28,16 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const allowedOrigins = configService.get<string>('ALLOWED_ORIGINS');
 
-  if (allowedOrigins) {
-    app.enableCors({
-      origin: allowedOrigins.split(','),
-      credentials: true,
-    });
-  } else {
-    app.enableCors();
-  }
+  const origins = allowedOrigins
+    ? allowedOrigins.split(',').map((o) => o.trim())
+    : ['https://snaprecorder.pages.dev', 'http://localhost:5173'];
+
+  app.enableCors({
+    origin: origins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
   const port = configService.get<number>('PORT', 3001);
 
   await app.listen(port);
