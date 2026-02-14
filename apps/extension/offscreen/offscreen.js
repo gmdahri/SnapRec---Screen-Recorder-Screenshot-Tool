@@ -6,6 +6,10 @@ let recordedChunks = [];
 let recordingStream = null;
 let audioContext = null;
 
+// Track ALL original streams so we can stop every hardware capture
+let originalDisplayStream = null;
+let originalMicStream = null;
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Offscreen] Received message:', message.action);
@@ -104,6 +108,7 @@ async function startRecording(options) {
             }
 
             displayStream = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints);
+            originalDisplayStream = displayStream; // Store original reference
             console.log('[Offscreen] Got display stream via getDisplayMedia');
         } catch (displayError) {
             console.error('[Offscreen] getDisplayMedia failed:', displayError);
@@ -116,6 +121,7 @@ async function startRecording(options) {
             try {
                 console.log('[Offscreen] Requesting microphone access...');
                 const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                originalMicStream = micStream; // Store original reference
                 audioTracks = micStream.getAudioTracks();
                 console.log('[Offscreen] Microphone tracks acquired:', audioTracks.length);
             } catch (e) {
@@ -257,9 +263,24 @@ async function stopRecording() {
                 if (recordingStream) {
                     recordingStream.getTracks().forEach(track => {
                         track.stop();
-                        console.log('[Offscreen] Track stopped:', track.kind);
+                        console.log('[Offscreen] Combined track stopped:', track.kind);
                     });
                     recordingStream = null;
+                }
+                // Stop original hardware streams immediately
+                if (originalDisplayStream) {
+                    originalDisplayStream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('[Offscreen] Original display track stopped:', track.kind);
+                    });
+                    originalDisplayStream = null;
+                }
+                if (originalMicStream) {
+                    originalMicStream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('[Offscreen] Original mic track stopped:', track.kind);
+                    });
+                    originalMicStream = null;
                 }
                 if (audioContext) {
                     audioContext.close();
@@ -373,10 +394,33 @@ function resumeRecording() {
 function cleanup() {
     console.log('[Offscreen] Cleaning up resources');
 
+    // Stop ALL original streams to release hardware (camera light, mic)
+    if (originalDisplayStream) {
+        originalDisplayStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('[Offscreen] Original display track stopped:', track.kind);
+        });
+        originalDisplayStream = null;
+    }
+
+    if (originalMicStream) {
+        originalMicStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('[Offscreen] Original mic track stopped:', track.kind);
+        });
+        originalMicStream = null;
+    }
+
     if (recordingStream) {
         recordingStream.getTracks().forEach(track => track.stop());
         recordingStream = null;
     }
+
+    if (pendingStream) {
+        pendingStream.getTracks().forEach(track => track.stop());
+        pendingStream = null;
+    }
+    pendingVideoTracks = null;
 
     if (audioContext) {
         audioContext.close();
