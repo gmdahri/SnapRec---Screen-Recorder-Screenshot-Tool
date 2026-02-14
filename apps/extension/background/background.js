@@ -8,7 +8,8 @@ importScripts('utils/storage.js');
 
 // Single consolidated message listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('[SnapRec v1.1.1] Background received message:', message.action);
+    const version = chrome.runtime.getManifest().version;
+    console.log(`[SnapRec v${version}] Background received message:`, message.action);
 
     // Handle ping for service worker wake-up
     if (message.action === 'ping') {
@@ -122,6 +123,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // Unknown action - don't keep channel open
             return false;
     }
+});
+
+// Handle extension update available
+chrome.runtime.onUpdateAvailable.addListener((details) => {
+    console.log('[SnapRec] Update available:', details.version);
+    console.log('[SnapRec] Reloading extension to apply update...');
+    // We can choose when to reload. For SnapRec, since it's a productivity tool,
+    // we'll reload immediately if not currently recording.
+    chrome.storage.local.get(['isRecording'], (result) => {
+        if (!result.isRecording) {
+            chrome.runtime.reload();
+        } else {
+            console.log('[SnapRec] Recording in progress, holding update until next start.');
+        }
+    });
 });
 
 // Drive Upload Handler
