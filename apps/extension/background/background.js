@@ -5,6 +5,7 @@ importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
 importScripts('utils/contentScriptManager.js');
 importScripts('utils/storage.js');
+importScripts('auth.js');
 
 // Single consolidated message listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
