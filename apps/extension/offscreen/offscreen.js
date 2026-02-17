@@ -39,11 +39,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Async response
 
-        case 'offscreen_uploadVideo':
-            uploadVideo(message.uploadUrl)
-                .then(() => sendResponse({ success: true }))
-                .catch(error => sendResponse({ success: false, error: error.message }));
-            return true; // Async response
 
         case 'offscreen_pauseRecording':
             pauseRecording();
@@ -69,8 +64,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Async response
 
-        default:
-            return false; // Unknown action
+        case 'offscreen_getRecordingBlob':
+            getRecordingBlobBase64()
+                .then(dataUrl => sendResponse({ success: true, dataUrl }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
     }
 });
 
@@ -260,39 +258,19 @@ async function stopRecording() {
 
             try {
                 // Stop tracks immediately to remove the "Sharing screen" banner
-                if (recordingStream) {
-                    recordingStream.getTracks().forEach(track => {
-                        track.stop();
-                        console.log('[Offscreen] Combined track stopped:', track.kind);
-                    });
-                    recordingStream = null;
-                }
-                // Stop original hardware streams immediately
-                if (originalDisplayStream) {
-                    originalDisplayStream.getTracks().forEach(track => {
-                        track.stop();
-                        console.log('[Offscreen] Original display track stopped:', track.kind);
-                    });
-                    originalDisplayStream = null;
-                }
-                if (originalMicStream) {
-                    originalMicStream.getTracks().forEach(track => {
-                        track.stop();
-                        console.log('[Offscreen] Original mic track stopped:', track.kind);
-                    });
-                    originalMicStream = null;
-                }
-                if (audioContext) {
-                    audioContext.close();
-                    audioContext = null;
-                    console.log('[Offscreen] AudioContext closed');
-                }
+                cleanupTracks();
 
                 const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
                 console.log('[Offscreen] Blob created, size:', blob.size);
                 currentRecordingBlob = blob;
 
-                // Don't cleanup yet, we need the blob for upload
+                // Notify background that we have the blob
+                chrome.runtime.sendMessage({
+                    action: 'offscreen_recordingBlobReady',
+                    size: blob.size,
+                    type: blob.type
+                });
+
                 resolve({ size: blob.size });
             } catch (error) {
                 console.error('[Offscreen] Error creating blob:', error);
@@ -305,38 +283,17 @@ async function stopRecording() {
     });
 }
 
-async function uploadVideo(uploadUrl) {
+async function getRecordingBlobBase64() {
     if (!currentRecordingBlob) {
-        throw new Error('No recording blob available to upload');
+        throw new Error('No recording blob available');
     }
 
-    console.log('[Offscreen] Uploading blob to R2...', currentRecordingBlob.size);
-
-    console.log('[Offscreen] Initiating fetch PUT request to:', uploadUrl.split('?')[0]);
-    const response = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: currentRecordingBlob,
-        headers: {
-            'Content-Type': currentRecordingBlob.type || 'video/webm'
-        }
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(currentRecordingBlob);
     });
-
-    console.log('[Offscreen] Fetch response received, ok:', response.ok, 'status:', response.status);
-
-    if (!response.ok) {
-        console.error('[Offscreen] Upload failed:', response.statusText);
-        chrome.runtime.sendMessage({
-            action: 'offscreen_uploadError',
-            error: response.statusText
-        });
-        throw new Error(`Upload failed: ${response.statusText}`);
-    }
-
-    console.log('[Offscreen] Upload successful, notifying background...');
-    chrome.runtime.sendMessage({ action: 'offscreen_uploadComplete' });
-
-    cleanup();
-    currentRecordingBlob = null;
 }
 
 async function cropImage(dataUrl, rect) {
@@ -391,9 +348,7 @@ function resumeRecording() {
     }
 }
 
-function cleanup() {
-    console.log('[Offscreen] Cleaning up resources');
-
+function cleanupTracks() {
     // Stop ALL original streams to release hardware (camera light, mic)
     if (originalDisplayStream) {
         originalDisplayStream.getTracks().forEach(track => {
@@ -426,7 +381,11 @@ function cleanup() {
         audioContext.close();
         audioContext = null;
     }
+}
 
+function cleanup() {
+    console.log('[Offscreen] Cleaning up resources');
+    cleanupTracks();
     mediaRecorder = null;
     recordedChunks = [];
 }

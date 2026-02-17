@@ -1,17 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout, VideoPlayer, LoginModal, SEO } from '../components';
 import { parseUTCDate } from '../lib/dateUtils';
-import { useRecording, useAddReaction, useAddComment, useClaimRecordings } from '../hooks/useRecordings';
+import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useMemo } from 'react';
 
 const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { showNotification } = useNotification();
+    const isFreshParam = new URLSearchParams(window.location.search).get('fresh') === 'true';
+    const isFresh = !id || isFreshParam;
+    const [fallbackDate] = useState(() => new Date().toISOString());
+
+    const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
+    const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(() => sessionStorage.getItem('snaprec_local_video_blob'));
+
+    const effectiveId = id || localId;
+
+    const [isUploaded, setIsUploaded] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [pollInterval, setPollInterval] = useState<number | false>(3000);
-    const { data: recording, isLoading: loading } = useRecording(id, pollInterval);
+
+    const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
+        enabled: (!!id && !isFreshParam) || isUploaded || isUploading
+    });
+
     const addReaction = useAddReaction();
     const addComment = useAddComment();
     const claimMutation = useClaimRecordings();
@@ -20,38 +37,100 @@ const ShareView: React.FC = () => {
     const [commentText, setCommentText] = useState('');
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [loginAction, setLoginAction] = useState('continue');
-    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+    const [pendingAction, setPendingActionState] = useState<string | null>(localStorage.getItem('share_pending_action'));
 
-    const isFresh = new URLSearchParams(window.location.search).get('fresh') === 'true';
+    const setPendingAction = (action: string | null) => {
+        if (action) {
+            localStorage.setItem('share_pending_action', action);
+        } else {
+            localStorage.removeItem('share_pending_action');
+        }
+        setPendingActionState(action);
+    };
 
-    // Stop polling once ready
+    const getUploadUrlMutation = useGetUploadUrl();
+    const createRecordingMutation = useCreateRecording();
+
+    // Stop polling once ready or if it's a new local-only recording
     useEffect(() => {
         if (recording?.isReady || (recording?.type === 'screenshot' && recording)) {
             setPollInterval(false);
+            setIsUploaded(true);
         }
     }, [recording?.isReady, recording?.type]);
 
-    // Derive processing state and download URL
-    const isRegistering = isFresh && !recording && !loading;
-    const isProcessing = recording?.type === 'video' && !recording.isReady;
+    // Extension Message Listener for local video data
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'SNAPREC_VIDEO_DATA') {
+                console.log('Received video data from extension with id:', event.data.id);
+                setLocalVideoBlob(event.data.dataUrl);
+                sessionStorage.setItem('snaprec_local_video_blob', event.data.dataUrl);
+                if (event.data.id) {
+                    setLocalId(event.data.id);
+                    sessionStorage.setItem('snaprec_local_video_id', event.data.id);
+                }
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
+
+
+    // Use a unified recording object with fallbacks for "fresh" local-only state
+    const recordingData = useMemo(() => {
+        const base = recording || (isFresh ? {
+            id: effectiveId || '',
+            title: 'New Recording',
+            type: 'video' as const,
+            views: 0,
+            createdAt: fallbackDate,
+            reactions: [],
+            comments: [],
+            description: '',
+            thumbnailUrl: '',
+            location: '',
+            user: null
+        } : null);
+
+        if (!base) return null;
+
+        return {
+            ...base,
+            reactions: base.reactions || [],
+            comments: base.comments || []
+        };
+    }, [recording, isFresh, effectiveId, fallbackDate]);
+
+    // Derive processing state
+    const isProcessing = recordingData?.type === 'video' && !(recordingData as any).isReady;
 
     let downloadUrl = null;
-    if (recording) {
-        downloadUrl = recording.fileUrl;
+    if (recordingData && 'fileUrl' in recordingData) {
+        downloadUrl = (recordingData as any).fileUrl;
     }
 
     // Auto-trigger pending action after login
     useEffect(() => {
         if (user && pendingAction) {
-            pendingAction();
+            console.log('Executing pending action after login:', pendingAction);
+            if (pendingAction === 'share') {
+                handleUploadToCloud();
+            } else if (pendingAction === 'save') {
+                handleSaveClick();
+            } else if (pendingAction === 'download') {
+                handleDownload();
+            }
             setPendingAction(null);
         }
     }, [user, pendingAction]);
 
     const handleReaction = (type: string) => {
+        // Reactions are less critical to persist across redirect for now, 
+        // but let's keep the modal if not logged in.
         if (!user) {
             setLoginAction(`react with "${type}"`);
-            setPendingAction(() => () => handleReaction(type));
             setIsLoginModalOpen(true);
             return;
         }
@@ -62,7 +141,6 @@ const ShareView: React.FC = () => {
     const handlePostComment = () => {
         if (!user) {
             setLoginAction('post a comment');
-            setPendingAction(() => () => handlePostComment());
             setIsLoginModalOpen(true);
             return;
         }
@@ -75,7 +153,7 @@ const ShareView: React.FC = () => {
     const handleDownload = () => {
         if (!user) {
             setLoginAction('download this video');
-            setPendingAction(() => () => handleDownload());
+            setPendingAction('download');
             setIsLoginModalOpen(true);
             return;
         }
@@ -86,10 +164,65 @@ const ShareView: React.FC = () => {
         }
     };
 
+    const handleUploadToCloud = async () => {
+        if (!user) {
+            setLoginAction('generate a shareable link');
+            setPendingAction('share');
+            setIsLoginModalOpen(true);
+            return;
+        }
+
+        if (!localVideoBlob || isUploading) return;
+
+        setIsUploading(true);
+        try {
+            const blob = await (await fetch(localVideoBlob)).blob();
+            const fileName = `video-${id}-${Date.now()}.webm`;
+
+            const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
+                fileName,
+                contentType: 'video/webm'
+            });
+
+            await uploadFile(uploadUrl, blob, 'video/webm');
+
+            const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
+            if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
+
+            await createRecordingMutation.mutateAsync({
+                id: effectiveId!,
+                title: `Video Recording ${new Date().toLocaleString()}`,
+                fileUrl,
+                type: 'video',
+                userId: user?.id,
+                guestId: !user ? guestId : undefined,
+            });
+
+            setIsUploaded(true);
+
+            // Redirect to the public URL immediately
+            navigate(`/v/${effectiveId}`, { replace: true });
+
+            // Copy to clipboard
+            const shareUrl = `${window.location.origin}/v/${effectiveId}`;
+
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                showNotification('Shareable link generated and copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Shareable link generated successfully!', 'success');
+            }
+        } catch (error: any) {
+            showNotification(error.message || 'Upload failed. Please try again.', 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleSaveClick = () => {
         if (!user) {
             setLoginAction('save this recording to your account');
-            setPendingAction(() => () => handleSaveClick());
+            setPendingAction('save');
             setIsLoginModalOpen(true);
             return;
         }
@@ -109,27 +242,22 @@ const ShareView: React.FC = () => {
 
 
 
-    // Show loader if we are fetching data, OR if this is a "fresh" redirect and we're waiting for registration
-    if (loading || (isFresh && !recording && (isRegistering || !recording))) {
-        // Only show 404 if it's NOT fresh or if registration polling actually timed out
-        const isActuallyNotFound = !loading && !recording && (!isFresh || (isFresh && !isRegistering && !loading));
-
-        if (!isActuallyNotFound) {
-            return (
-                <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark">
-                    <div className="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                    {(isRegistering || (isFresh && !recording)) && (
-                        <div className="text-center animate-pulse">
-                            <p className="text-lg font-bold text-slate-800 dark:text-white">Registering your recording...</p>
-                            <p className="text-slate-500 text-sm mt-1">This will only take a moment.</p>
-                        </div>
-                    )}
+    // Show loader if we are fetching data, OR if this is a "fresh" redirect and we have nothing yet
+    // Improved condition: Only show loader if we have NO data to show at all
+    const hasNothingToShow = isFresh && !recording && !localVideoBlob;
+    if (loading || (hasNothingToShow && !isUploaded)) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark">
+                <div className="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                <div className="text-center animate-pulse">
+                    <p className="text-lg font-bold text-slate-800 dark:text-white">Preparing your recording...</p>
+                    <p className="text-slate-500 text-sm mt-1">This will only take a moment.</p>
                 </div>
-            );
-        }
+            </div>
+        );
     }
 
-    if (!recording) {
+    if (!recordingData) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark p-6">
                 <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">error</span>
@@ -142,21 +270,34 @@ const ShareView: React.FC = () => {
 
     const HeaderActions = (
         <div className="flex items-center gap-4">
-            <button
-                onClick={handleDownload}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-sm font-bold transition-all"
-            >
-                <span className="material-symbols-outlined text-[20px]">download</span>
-                Download
-            </button>
+            {isUploaded && (
+                <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-sm font-bold transition-all"
+                >
+                    <span className="material-symbols-outlined text-[20px]">download</span>
+                    Download
+                </button>
+            )}
 
-            <button
-                onClick={handleSaveClick}
-                disabled={claimMutation.isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-bold transition-all hover:opacity-90 shadow-md shadow-primary/20 disabled:opacity-50"
-            >
-                {claimMutation.isPending ? 'Saving...' : (user && recording.user?.supabaseId === user.id ? 'Saved in account' : 'Save to your account')}
-            </button>
+            {!isUploaded ? (
+                <button
+                    onClick={handleUploadToCloud}
+                    disabled={isUploading || (recordingData?.type === 'video' && !localVideoBlob)}
+                    className={`flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-bold transition-all hover:opacity-90 shadow-md shadow-primary/20 disabled:opacity-50 ${isUploading ? 'animate-pulse' : ''}`}
+                >
+                    <span className="material-symbols-outlined text-[20px]">{isUploading ? 'sync' : 'cloud_upload'}</span>
+                    {isUploading ? 'Generating...' : (recordingData?.type === 'video' && !localVideoBlob ? 'Waiting for video...' : 'Generate Shareable Link')}
+                </button>
+            ) : (
+                <button
+                    onClick={handleSaveClick}
+                    disabled={claimMutation.isPending}
+                    className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-bold transition-all hover:opacity-90 shadow-md shadow-primary/20 disabled:opacity-50"
+                >
+                    {claimMutation.isPending ? 'Saving...' : (user && recordingData?.user?.supabaseId === user.id ? 'Saved in account' : 'Save to your account')}
+                </button>
+            )}
         </div>
     );
 
@@ -166,13 +307,30 @@ const ShareView: React.FC = () => {
             headerActions={HeaderActions}
         >
             <SEO
-                title={recording.title}
-                description={recording.description || `Watch this ${recording.type} shared via SnapRec.`}
+                title={recordingData.title}
+                description={recordingData.description || `Watch this ${recordingData.type} shared via SnapRec.`}
                 url={`/v/${id}`}
                 type="video.other"
-                image={recording.thumbnailUrl}
+                image={recordingData.thumbnailUrl}
             />
             <div className="bg-background-light dark:bg-background-dark transition-colors duration-300 min-h-screen pb-20">
+                {isFresh && !isUploaded && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/30 p-3">
+                        <div className="max-w-[1440px] mx-auto px-6 lg:px-20 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 text-sm font-medium">
+                                <span className="material-symbols-outlined text-[20px]">visibility_off</span>
+                                <span>This recording is not yet public. Only you can see it right now.</span>
+                            </div>
+                            <button
+                                onClick={handleUploadToCloud}
+                                disabled={isUploading || !localVideoBlob}
+                                className="text-amber-900 dark:text-amber-100 text-xs font-bold underline hover:no-underline disabled:opacity-50"
+                            >
+                                {isUploading ? 'Generating Link...' : 'Generate Shareable Link'}
+                            </button>
+                        </div>
+                    </div>
+                )}
                 <main className="max-w-[1440px] mx-auto px-6 lg:px-20 py-8">
                     <div className="flex flex-col lg:flex-row gap-8">
                         {/* Main Content Area (Left) */}
@@ -180,25 +338,44 @@ const ShareView: React.FC = () => {
                             {/* Headline */}
                             <div className="flex flex-col gap-2">
                                 <h1 className="text-[#130d1c] dark:text-white tracking-tight text-3xl font-bold leading-tight">
-                                    {recording.title}
+                                    {recordingData.title}
                                 </h1>
                                 <div className="flex items-center gap-4 text-sm text-slate-500">
-                                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">visibility</span> {recording.views} views</span>
-                                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">calendar_today</span> {parseUTCDate(recording.createdAt).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">visibility</span> {recordingData.views} views</span>
+                                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">calendar_today</span> {parseUTCDate(recordingData.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
-                            {/* Media Player */}
-                            <div className="w-full">
-                                <VideoPlayer
-                                    src={downloadUrl || undefined}
-                                    isProcessing={isProcessing}
-                                />
+                            <div className="w-full relative">
+                                {recordingData.type === 'screenshot' ? (
+                                    <div className="relative w-full min-h-[400px] bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden shadow-2xl flex items-center justify-center border border-slate-200 dark:border-slate-800">
+                                        <img
+                                            src={downloadUrl || undefined}
+                                            alt={recordingData.title}
+                                            className="max-w-full max-h-[80vh] object-contain shadow-lg"
+                                            onLoad={() => console.log('Screenshot loaded in viewer')}
+                                            onError={(e) => console.error('Screenshot failed to load in viewer', e)}
+                                        />
+                                    </div>
+                                ) : (
+                                    <>
+                                        <VideoPlayer
+                                            src={downloadUrl || localVideoBlob || undefined}
+                                            isProcessing={isProcessing && !localVideoBlob}
+                                        />
+                                        {recordingData.type === 'video' && !downloadUrl && !localVideoBlob && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm z-40 rounded-xl">
+                                                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                                <p className="font-bold text-primary">Receiving video data...</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
                             {/* Reaction Bar */}
                             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                                 <div className="flex flex-wrap gap-2">
                                     {['like', 'love', 'celebrate', 'insightful', 'curious'].map((type) => {
-                                        const count = (recording.reactions || []).filter(r => r.type === type).length;
+                                        const count = (recordingData.reactions || []).filter(r => r.type === type).length;
                                         const iconMap: Record<string, string> = {
                                             like: 'thumb_up',
                                             love: 'favorite',
@@ -206,7 +383,7 @@ const ShareView: React.FC = () => {
                                             insightful: 'lightbulb',
                                             curious: 'help'
                                         };
-                                        const isActive = (recording.reactions || []).some(r =>
+                                        const isActive = (recordingData.reactions || []).some(r =>
                                             user && r.user?.supabaseId === user.id
                                         );
 
@@ -248,19 +425,19 @@ const ShareView: React.FC = () => {
                                 <div className="flex items-center gap-5">
                                     <div
                                         className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 border-2 border-primary/20 flex items-center justify-center bg-slate-100 dark:bg-slate-800"
-                                        style={recording.user?.avatarUrl ? { backgroundImage: `url('${recording.user.avatarUrl}')` } : {}}
+                                        style={recordingData.user?.avatarUrl ? { backgroundImage: `url('${recordingData.user.avatarUrl}')` } : {}}
                                     >
-                                        {!recording.user?.avatarUrl && (
+                                        {!recordingData.user?.avatarUrl && (
                                             <span className="material-symbols-outlined text-slate-400 text-3xl">person</span>
                                         )}
                                     </div>
                                     <div className="flex flex-col justify-center">
                                         <p className="text-[#130d1c] dark:text-white text-xl font-bold leading-tight">
-                                            {recording.user?.fullName || 'Guest User'}
+                                            {recordingData.user?.fullName || 'Guest User'}
                                         </p>
                                         <p className="text-primary text-sm font-semibold">SnapRec User</p>
-                                        {recording.location && (
-                                            <p className="text-slate-400 text-xs mt-1">Recorded in {recording.location}</p>
+                                        {recordingData.location && (
+                                            <p className="text-slate-400 text-xs mt-1">Recorded in {recordingData.location}</p>
                                         )}
                                     </div>
                                 </div>
@@ -275,17 +452,17 @@ const ShareView: React.FC = () => {
                             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col h-full max-h-[600px]">
                                 <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                     <h3 className="font-bold text-lg text-[#130d1c] dark:text-white">Comments</h3>
-                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-bold">{(recording.comments || []).length}</span>
+                                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-bold">{(recordingData?.comments || []).length}</span>
                                 </div>
                                 {/* Comment List */}
                                 <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                                    {(!recording.comments || recording.comments.length === 0) ? (
+                                    {(!recordingData?.comments || (recordingData.comments as any[]).length === 0) ? (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-400 py-10">
                                             <span className="material-symbols-outlined text-4xl mb-2">chat_bubble_outline</span>
                                             <p className="text-sm">No comments yet</p>
                                         </div>
                                     ) : (
-                                        recording.comments.map((comment) => (
+                                        (recordingData.comments as any[]).map((comment: any) => (
                                             <div key={comment.id} className="flex gap-3">
                                                 <div className="size-8 rounded-full bg-slate-200 shrink-0 overflow-hidden flex items-center justify-center">
                                                     {comment.user?.avatarUrl ? (

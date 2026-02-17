@@ -104,21 +104,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             captureAndCropRegion(message.rect, sender.tab.id);
             return false; // No response needed
         case 'openFullEditor':
-            const filename = `SnapRec_Capture_${Date.now()}.png`;
-            uploadToR2(message.dataUrl, filename, 'image/png')
-                .then(result => {
-                    if (result.success && result.id) {
-                        openEditor(message.dataUrl, result.id);
-                    } else {
-                        console.warn('Pre-upload failed, opening editor with local data only');
-                        openEditor(message.dataUrl);
-                    }
-                })
-                .catch(err => {
-                    console.error('Upload error:', err);
-                    openEditor(message.dataUrl);
-                });
+            // SKIP pre-upload, go straight to editor with local data
+            openEditor(message.dataUrl);
             return false; // No response needed
+        case 'offscreen_recordingBlobReady':
+            console.log('[SnapRec] Recording blob ready in offscreen, size:', message.size);
+            // We'll wait for the web tab to request this blob
+            return false;
+        case 'offscreen_uploadError':
+            console.error('[SnapRec] Offscreen encountered upload error:', message.error);
+            return false;
         default:
             // Unknown action - don't keep channel open
             return false;
@@ -430,7 +425,14 @@ async function openEditor(dataUrl, id = null) {
                 chrome.scripting.executeScript({
                     target: { tabId: tab.id },
                     func: (imageData) => {
-                        console.log('Injected script sending postMessage');
+                        console.log('Injected script setting sessionStorage and sending postMessage');
+                        // Store in sessionStorage as a robust fallback
+                        try {
+                            sessionStorage.setItem('snaprec_editing_image', imageData);
+                        } catch (e) {
+                            console.warn('Failed to save to sessionStorage (likely size limit):', e);
+                        }
+
                         window.postMessage({
                             type: 'SNAPREC_EDIT_IMAGE',
                             dataUrl: imageData
@@ -673,67 +675,45 @@ async function finalizeCleanup() {
 // ... existing code ...
 
 async function handleRecordingComplete() {
-    console.log('[SnapRec] handleRecordingComplete called');
+    console.log('[SnapRec] handleRecordingComplete called (local-first)');
     try {
-        // Get auth session first
-        const { snaprecSession } = await chrome.storage.local.get('snaprecSession');
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        if (snaprecSession?.accessToken) {
-            headers['Authorization'] = `Bearer ${snaprecSession.accessToken}`;
-            console.log('[SnapRec] Using authenticated session');
-        }
-
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
 
-        // IMMEDIATELY redirect to /v/{id}
+        // IMMEDIATELY redirect to /v (generic preview)
         console.log('[SnapRec] Redirecting to share page immediately...');
-        const shareUrl = `${CONFIG.WEB_BASE_URL}/v/${recordingId}?fresh=true`;
-        await chrome.tabs.create({ url: shareUrl });
+        const shareUrl = `${CONFIG.WEB_BASE_URL}/v`;
+        const tab = await chrome.tabs.create({ url: shareUrl });
 
-        // Get presigned URL
-        console.log('[SnapRec] Requesting presigned URL...');
-        const videoFileName = `video_${Date.now()}.webm`;
-        const videoUploadRes = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload-url`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ fileName: videoFileName, contentType: 'video/webm' })
-        }).then(r => r.json());
+        // Wait for tab to load and inject video blob bridge
+        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+            if (tabId === tab.id && info.status === 'complete') {
+                chrome.tabs.onUpdated.removeListener(listener);
 
-        console.log('[SnapRec] Got presigned URL:', !!videoUploadRes?.uploadUrl);
-
-        // Create database entry in the background
-        console.log('[SnapRec] Creating database entry...');
-        const { guestId } = await chrome.storage.local.get('guestId');
-
-        const recordingRes = await fetch(`${CONFIG.API_BASE_URL}/recordings`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                id: recordingId,
-                title: `Video Recording ${new Date().toLocaleString()}`,
-                type: 'video',
-                fileUrl: videoUploadRes.fileUrl,
-                thumbnailUrl: null,
-                userId: snaprecSession?.user?.id,
-                guestId: !snaprecSession ? guestId : undefined
-            })
-        }).then(r => r.json());
-
-        console.log('[SnapRec] Recording registered in background:', recordingRes.id);
-
-        // Start upload in offscreen document without blocking
-        console.log('[SnapRec] Triggering upload in offscreen document...');
-        chrome.runtime.sendMessage({
-            action: 'offscreen_uploadVideo',
-            uploadUrl: videoUploadRes.uploadUrl
-        }).catch(err => {
-            console.error('[SnapRec] Failed to start upload:', err);
+                // Ask offscreen for the blob
+                chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlob' }, (response) => {
+                    if (response?.success && response.dataUrl) {
+                        console.log('[SnapRec] Got video blob from offscreen, sending to tab');
+                        chrome.scripting.executeScript({
+                            target: { tabId: tab.id },
+                            func: (videoDataUrl, id) => {
+                                console.log('Injected script sending postMessage (VIDEO) with id:', id);
+                                window.postMessage({
+                                    type: 'SNAPREC_VIDEO_DATA',
+                                    dataUrl: videoDataUrl,
+                                    id: id
+                                }, '*');
+                            },
+                            args: [response.dataUrl, recordingId]
+                        });
+                    } else {
+                        console.error('[SnapRec] Failed to get video blob from offscreen:', response?.error);
+                    }
+                });
+            }
         });
 
-        // State cleanup happens in the new listener below
+        // We skip all backend calls here - web app will handle it now.
     } catch (error) {
         console.error('[SnapRec] Error handling recording completion:', error);
         await finalizeCleanup();

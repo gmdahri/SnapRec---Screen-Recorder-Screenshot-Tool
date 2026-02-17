@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { createArrow } from '../lib/CanvasUtils';
 
@@ -11,6 +11,7 @@ export const useFabricEditor = () => {
     const [zoomLevel, setZoomLevel] = useState(1);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [isCanvasReady, setIsCanvasReady] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvas = useRef<fabric.Canvas | null>(null);
@@ -46,7 +47,7 @@ export const useFabricEditor = () => {
         }
     }, [strokeColor, strokeWidth]);
 
-    const saveState = () => {
+    const saveState = useCallback(() => {
         const canvas = fabricCanvas.current;
         if (!canvas) return;
         const json = JSON.stringify(canvas.toJSON());
@@ -58,33 +59,33 @@ export const useFabricEditor = () => {
 
         history.current = newHistory;
         setHistoryIndex(newHistory.length - 1);
-    };
+    }, [historyIndex]);
 
-    const undo = () => {
+    const undo = useCallback(() => {
+        const canvas = fabricCanvas.current;
+        if (!canvas) return;
         if (historyIndex > 0) {
-            const canvas = fabricCanvas.current;
-            if (!canvas) return;
             const prevState = history.current[historyIndex - 1];
             canvas.loadFromJSON(prevState, () => {
                 canvas.renderAll();
-                setHistoryIndex(historyIndex - 1);
+                setHistoryIndex(prev => prev - 1);
             });
         }
-    };
+    }, [historyIndex]);
 
-    const redo = () => {
+    const redo = useCallback(() => {
+        const canvas = fabricCanvas.current;
+        if (!canvas) return;
         if (historyIndex < history.current.length - 1) {
-            const canvas = fabricCanvas.current;
-            if (!canvas) return;
             const nextState = history.current[historyIndex + 1];
             canvas.loadFromJSON(nextState, () => {
                 canvas.renderAll();
-                setHistoryIndex(historyIndex + 1);
+                setHistoryIndex(prev => prev + 1);
             });
         }
-    };
+    }, [historyIndex]);
 
-    const handleSetZoom = (newZoom: number) => {
+    const handleSetZoom = useCallback((newZoom: number) => {
         const canvas = fabricCanvas.current;
         if (!canvas) return;
         const zoom = Math.max(0.1, Math.min(5, newZoom));
@@ -98,9 +99,72 @@ export const useFabricEditor = () => {
             });
         }
         canvas.renderAll();
-    };
+    }, []);
 
-    const setupCanvasEvents = () => {
+    const addText = useCallback(() => {
+        const canvas = fabricCanvas.current;
+        if (!canvas) return;
+        const text = new fabric.IText('Double click to edit', {
+            left: 100,
+            top: 100,
+            fontFamily: 'Outfit',
+            fontSize: 24,
+            fill: strokeColorRef.current,
+        });
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        saveState();
+    }, [saveState]);
+
+    const handleToolChange = useCallback((tool: string) => {
+        setActiveTool(tool);
+        const canvas = fabricCanvas.current;
+        if (!canvas) return;
+        canvas.isDrawingMode = tool === 'pen';
+        if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+            canvas.freeDrawingBrush.color = strokeColorRef.current;
+            canvas.freeDrawingBrush.width = strokeWidthRef.current;
+        }
+        canvas.selection = tool === 'select';
+        canvas.forEachObject((obj) => {
+            obj.selectable = tool === 'select' || (tool === 'text' && obj instanceof fabric.IText);
+        });
+        canvas.renderAll();
+    }, []);
+
+    const handleCropConfirm = useCallback(() => {
+        const canvas = fabricCanvas.current;
+        if (!canvas || !cropRect) return;
+        const left = cropRect.left || 0;
+        const top = cropRect.top || 0;
+        const width = cropRect.width || 0;
+        const height = cropRect.height || 0;
+        const croppedDataUrl = canvas.toDataURL({ left, top, width, height, format: 'png' });
+        canvas.clear();
+        fabric.Image.fromURL(croppedDataUrl, (img) => {
+            canvas.setDimensions({ width, height });
+            canvas.setBackgroundImage(img, () => {
+                canvas.renderAll();
+                saveState();
+            });
+        }, { crossOrigin: 'anonymous' });
+        setIsCropping(false);
+        setCropRect(null);
+        handleToolChange('select');
+    }, [cropRect, handleToolChange, saveState]);
+
+    const handleCropCancel = useCallback(() => {
+        const canvas = fabricCanvas.current;
+        if (canvas && cropRect) {
+            canvas.remove(cropRect);
+            canvas.renderAll();
+        }
+        setIsCropping(false);
+        setCropRect(null);
+        handleToolChange('select');
+    }, [cropRect, handleToolChange]);
+
+    const setupCanvasEvents = useCallback(() => {
         if (!canvasRef.current) return;
 
         // Initialize fabric canvas if not already done
@@ -199,74 +263,16 @@ export const useFabricEditor = () => {
                 saveState();
             }
         });
-    };
+    }, [handleToolChange, saveState]);
 
-    const handleToolChange = (tool: string) => {
-        setActiveTool(tool);
-        const canvas = fabricCanvas.current;
-        if (!canvas) return;
-        canvas.isDrawingMode = tool === 'pen';
-        if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
-            canvas.freeDrawingBrush.color = strokeColor;
-            canvas.freeDrawingBrush.width = strokeWidth;
+    const initCanvas = useCallback((dataUrl: string) => {
+        if (!fabricCanvas.current) {
+            console.error('initCanvas: fabricCanvas.current is null');
+            return;
         }
-        canvas.selection = tool === 'select';
-        canvas.forEachObject((obj) => {
-            obj.selectable = tool === 'select' || (tool === 'text' && obj instanceof fabric.IText);
-        });
-        canvas.renderAll();
-    };
-
-    const addText = () => {
         const canvas = fabricCanvas.current;
-        if (!canvas) return;
-        const text = new fabric.IText('Double click to edit', {
-            left: 100,
-            top: 100,
-            fontFamily: 'Outfit',
-            fontSize: 24,
-            fill: strokeColor,
-        });
-        canvas.add(text);
-        canvas.setActiveObject(text);
-        saveState();
-    };
-
-    const handleCropConfirm = () => {
-        const canvas = fabricCanvas.current;
-        if (!canvas || !cropRect) return;
-        const left = cropRect.left || 0;
-        const top = cropRect.top || 0;
-        const width = cropRect.width || 0;
-        const height = cropRect.height || 0;
-        const croppedDataUrl = canvas.toDataURL({ left, top, width, height, format: 'png' });
-        canvas.clear();
-        fabric.Image.fromURL(croppedDataUrl, (img) => {
-            canvas.setDimensions({ width, height });
-            canvas.setBackgroundImage(img, () => {
-                canvas.renderAll();
-                saveState();
-            });
-        }, { crossOrigin: 'anonymous' });
-        setIsCropping(false);
-        setCropRect(null);
-        handleToolChange('select');
-    };
-
-    const handleCropCancel = () => {
-        const canvas = fabricCanvas.current;
-        if (canvas && cropRect) {
-            canvas.remove(cropRect);
-            canvas.renderAll();
-        }
-        setIsCropping(false);
-        setCropRect(null);
-        handleToolChange('select');
-    };
-
-    const initCanvas = (dataUrl: string) => {
-        if (!fabricCanvas.current) return;
-        const canvas = fabricCanvas.current;
+        console.log('initCanvas: Initializing with dataUrl start:', dataUrl?.substring(0, 100), 'length:', dataUrl?.length);
+        setIsInitializing(true);
 
         const loadImageWithCORS = (url: string, crossOrigin?: string) => {
             return new Promise<fabric.Image>((resolve, reject) => {
@@ -281,12 +287,12 @@ export const useFabricEditor = () => {
         };
 
         loadImageWithCORS(dataUrl, 'anonymous')
-            .catch(() => {
-                console.warn('CORS-enabled load failed, trying without crossOrigin:', dataUrl);
+            .catch((err) => {
+                console.warn('CORS-enabled load failed, trying without crossOrigin:', err);
                 return loadImageWithCORS(dataUrl);
             })
             .then((img) => {
-                console.log('Successfully loaded image into fabric:', dataUrl);
+                console.log('Successfully loaded image into fabric. Dimensions:', img.width, 'x', img.height);
                 const imgWidth = img.width || 800;
                 const imgHeight = img.height || 600;
 
@@ -296,6 +302,7 @@ export const useFabricEditor = () => {
                 });
 
                 canvas.setBackgroundImage(img, () => {
+                    console.log('Background image set, calculating zoom...');
                     // Calculate initial fit zoom
                     const container = document.querySelector('.canvas-bg');
                     if (container && container.clientWidth > 0) {
@@ -305,6 +312,7 @@ export const useFabricEditor = () => {
                         const scaleX = availableWidth / imgWidth;
                         const scaleY = availableHeight / imgHeight;
                         const fitZoom = Math.min(scaleX, scaleY, 1);
+                        console.log('Setting fit zoom:', fitZoom);
                         handleSetZoom(fitZoom);
                     } else {
                         handleSetZoom(1);
@@ -312,12 +320,14 @@ export const useFabricEditor = () => {
 
                     canvas.renderAll();
                     saveState(); // Save initial state
+                    setIsInitializing(false);
                 });
             })
             .catch((err) => {
-                console.error('Final image load failure:', err, dataUrl);
+                console.error('Final image load failure:', err);
+                setIsInitializing(false);
             });
-    };
+    }, [handleSetZoom, saveState]);
 
     return {
         canvasRef,
@@ -341,6 +351,7 @@ export const useFabricEditor = () => {
         setupCanvasEvents,
         saveState,
         initCanvas,
-        isCanvasReady
+        isCanvasReady,
+        isInitializing
     };
 };

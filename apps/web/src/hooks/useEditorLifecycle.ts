@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecording, useGetUploadUrl, useCreateRecording, useUpdateRecording, uploadFile } from './useRecordings';
@@ -7,14 +7,25 @@ import { fabric } from 'fabric';
 
 export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.Canvas | null>) => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { showNotification } = useNotification();
     const [title, setTitle] = useState(`Screenshot ${new Date().toLocaleString()}`);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
-    const [hasAutoUploaded, setHasAutoUploaded] = useState(!!id);
+    const [isUploaded, setIsUploaded] = useState(!!id);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-    const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [pendingAction, setPendingActionState] = useState<string | null>(localStorage.getItem('editor_pending_action'));
     const [isUploading, setIsUploading] = useState(false);
+
+    // Wrapper to sync with localStorage
+    const setPendingAction = useCallback((action: string | null) => {
+        if (action) {
+            localStorage.setItem('editor_pending_action', action);
+        } else {
+            localStorage.removeItem('editor_pending_action');
+        }
+        setPendingActionState(action);
+    }, []);
 
     // Use centralized React Query hook to fetch existing recording
     const { data: recording, isError } = useRecording(id);
@@ -31,18 +42,37 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
 
     useEffect(() => {
         if (recording && recording.fileUrl) {
-            setCapturedImage(recording.fileUrl);
+            // Only update if we don't already have an image (e.g., initial load of existing recording)
+            // This prevents the "white flicker" or redundant reload after a fresh upload
+            if (!capturedImage) {
+                console.log('useEditorLifecycle: Setting capturedImage from fetched recording');
+                setCapturedImage(recording.fileUrl);
+            }
             setTitle(recording.title);
-            setHasAutoUploaded(true);
+            setIsUploaded(true);
         }
-    }, [recording]);
+    }, [recording, capturedImage]);
 
-    const handleUploadToCloud = async () => {
+    const handleUploadToCloud = useCallback(async () => {
         if (!fabricCanvas.current || isUploading) return;
+
+        // Safety check: Don't upload if canvas is empty/not loaded
+        if (!fabricCanvas.current.backgroundImage) {
+            console.warn('useEditorLifecycle: Upload aborted, background image not set');
+            return;
+        }
 
         setIsUploading(true);
         try {
-            const dataUrl = fabricCanvas.current.toDataURL({ format: 'png', quality: 0.8 });
+            const canvas = fabricCanvas.current;
+            const zoom = canvas.getZoom() || 1;
+            console.log('useEditorLifecycle: Exporting with zoom:', zoom);
+
+            const dataUrl = canvas.toDataURL({
+                format: 'png',
+                multiplier: 1 / zoom, // Always export at original resolution
+                enableRetinaScaling: false // Avoid double-scaling on Retina screens
+            });
             const blob = await (await fetch(dataUrl)).blob();
             const fileName = id ? `update-${id}-${Date.now()}.png` : `screenshot-${Date.now()}.png`;
 
@@ -74,16 +104,25 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
                 });
 
                 if (data && data.id) {
-                    window.history.pushState({}, '', `/editor/${data.id}`);
+                    const shareUrl = `${window.location.origin}/editor/${data.id}`;
+                    navigate(`/editor/${data.id}`, { replace: true });
+
+                    // Copy to clipboard
+                    try {
+                        await navigator.clipboard.writeText(shareUrl);
+                        showNotification('Shareable link generated and copied to clipboard!', 'success');
+                    } catch (err) {
+                        showNotification('Shareable link generated successfully!', 'success');
+                    }
                 }
-                showNotification('Saved to Cloud successfully', 'success');
             }
+            setIsUploaded(true);
         } catch (error: any) {
             showNotification(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
             setIsUploading(false);
         }
-    };
+    }, [id, title, user, isUploading, fabricCanvas, navigate, showNotification, getUploadUrlMutation, createRecordingMutation, updateRecordingMutation]);
 
     return {
         id,
@@ -91,8 +130,8 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
         setTitle,
         capturedImage,
         setCapturedImage,
-        hasAutoUploaded,
-        setHasAutoUploaded,
+        isUploaded,
+        setIsUploaded,
         isUploading,
         showLoginPrompt,
         setShowLoginPrompt,

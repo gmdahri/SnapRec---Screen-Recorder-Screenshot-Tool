@@ -60,7 +60,7 @@ function App() {
                 {/* Editor and VideoPreview accessible without login, but with limited features */}
                 <Route path="/editor/:id?" element={<Editor />} />
                 <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
-                <Route path="/v/:id" element={<ShareView />} />
+                <Route path="/v/:id?" element={<ShareView />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
