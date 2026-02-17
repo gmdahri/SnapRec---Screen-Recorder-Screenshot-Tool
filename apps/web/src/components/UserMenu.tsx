@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { NavLink } from 'react-router-dom';
 
 interface UserMenuProps {
     onSignIn?: () => void;
@@ -76,7 +77,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
                             </div>
                         </div>
                     </div>
-                    <div className="p-2">
+                    <div className="p-2 flex flex-col gap-1">
+                        <NavLink
+                            to="/settings"
+                            onClick={() => setShowMenu(false)}
+                            className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        >
+                            <span className="material-symbols-outlined text-[20px]">settings</span>
+                            <span>Settings</span>
+                        </NavLink>
+                        <div className="h-[1px] bg-[#ece7f4] dark:bg-[#2d2245] my-1 mx-2"></div>
                         <button
                             onClick={() => {
                                 signOut();
