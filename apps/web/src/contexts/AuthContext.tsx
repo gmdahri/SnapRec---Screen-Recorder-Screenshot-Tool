@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -72,31 +72,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
 
         return () => subscription.unsubscribe();
-    }, [claimMutation]);
+    }, []); // Stability: removing claimMutation dependency to avoid re-subscribing on every render
 
-    const signInWithGoogle = async () => {
-        hasClaimedRef.current = false; // Reset on new sign in
+    const signInWithGoogle = useCallback(async () => {
+        hasClaimedRef.current = false;
+        const currentPath = window.location.pathname + window.location.search;
+        const redirectTo = `${window.location.origin}/auth/callback`;
+        console.log('SignIn: Storing return path:', currentPath);
+        localStorage.setItem('auth_return_path', currentPath);
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: redirectTo,
+                skipBrowserRedirect: false
             },
         });
         if (error) {
             console.error('Error signing in with Google:', error);
         }
-    };
+    }, []);
 
-    const signOut = async () => {
-        hasClaimedRef.current = false; // Reset on sign out
+    const signOut = useCallback(async () => {
+        hasClaimedRef.current = false;
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error('Error signing out:', error);
         }
-    };
+    }, []);
+
+    const value = useMemo(() => ({
+        user,
+        session,
+        guestId,
+        loading,
+        signInWithGoogle,
+        signOut
+    }), [user, session, guestId, loading, signInWithGoogle, signOut]);
 
     return (
-        <AuthContext.Provider value={{ user, session, guestId, loading, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

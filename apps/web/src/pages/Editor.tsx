@@ -6,11 +6,11 @@ import { EditorProvider, useEditor } from './Editor/context/EditorContext';
 const EditorContent: React.FC = () => {
     const {
         canvasRef, fabricCanvas, capturedImage, setCapturedImage,
-        hasAutoUploaded, setHasAutoUploaded, isUploading,
+        isUploaded, isUploading,
         showLoginPrompt, setShowLoginPrompt,
-        handleUploadToCloud, setupCanvasEvents, initCanvas, isCanvasReady,
+        setupCanvasEvents, initCanvas, isCanvasReady, isInitializing,
         undo, redo, historyIndex, history, handleActionClick,
-        id, title, setTitle, user
+        title, setTitle, user
     } = useEditor();
 
     // Initial Setup
@@ -20,28 +20,34 @@ const EditorContent: React.FC = () => {
         }
     }, [canvasRef, fabricCanvas, setupCanvasEvents]);
 
-    // Extension Message Listener
+    // Extension Message Listener & Session Fallback
     useEffect(() => {
+        // 1. Check if there's an image in sessionStorage (from extension injection)
+        const savedImage = sessionStorage.getItem('snaprec_editing_image');
+        if (savedImage) {
+            console.log('Editor: Found image in sessionStorage');
+            setCapturedImage(savedImage);
+            // Don't clear immediately, we might need it on refresh if not saved yet
+        }
+
         const handleMessage = (event: MessageEvent) => {
             if (event.data?.type === 'SNAPREC_EDIT_IMAGE') {
+                console.log('Editor: Received message SNAPREC_EDIT_IMAGE');
                 setCapturedImage(event.data.dataUrl);
+                sessionStorage.setItem('snaprec_editing_image', event.data.dataUrl);
             }
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
     }, [setCapturedImage]);
 
-    // Auto-upload when image is received
-    useEffect(() => {
-        if (capturedImage && !hasAutoUploaded && !isUploading) {
-            handleUploadToCloud();
-            setHasAutoUploaded(true);
-        }
-    }, [capturedImage, hasAutoUploaded, isUploading, handleUploadToCloud, setHasAutoUploaded]);
+    // No auto-upload!
 
-    // Initialize from capturedImage when ready
+    const lastInitImage = React.useRef<string | null>(null);
     useEffect(() => {
-        if (capturedImage && isCanvasReady && fabricCanvas.current && !fabricCanvas.current.backgroundImage) {
+        if (capturedImage && isCanvasReady && fabricCanvas.current && capturedImage !== lastInitImage.current) {
+            console.log('Editor: Initializing canvas with new capturedImage');
+            lastInitImage.current = capturedImage;
             initCanvas(capturedImage);
         }
     }, [capturedImage, isCanvasReady, initCanvas]);
@@ -72,18 +78,19 @@ const EditorContent: React.FC = () => {
                 icon="download"
                 variant="secondary"
                 title="Download to your computer"
+                disabled={isInitializing}
             >
                 Download
             </GatedButton>
             <GatedButton
                 onClick={() => handleActionClick('share')}
-                icon={isUploading ? 'sync' : (id && user ? 'save' : 'cloud_upload')}
+                icon={isUploading ? 'sync' : (isUploaded && user ? 'save' : 'cloud_upload')}
                 variant="primary"
                 className={`px-5 ${isUploading ? 'animate-pulse' : ''}`}
-                disabled={isUploading}
-                title={id && user ? 'Update recording' : 'Save to your account'}
+                disabled={isUploading || isInitializing}
+                title={isUploaded && user ? 'Update recording' : 'Generate shareable link'}
             >
-                {isUploading ? (id && user ? 'Updating...' : 'Saving...') : (id && user ? 'Update' : 'Save to your account')}
+                {isUploading ? (isUploaded && user ? 'Updating...' : 'Generating...') : (isUploaded && user ? 'Update' : 'Generate Shareable Link')}
             </GatedButton>
         </div>
     );

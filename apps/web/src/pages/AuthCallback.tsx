@@ -5,7 +5,12 @@ import { supabase } from '../lib/supabase';
 const AuthCallback: React.FC = () => {
     const navigate = useNavigate();
 
+    const hasRun = React.useRef(false);
+
     useEffect(() => {
+        if (hasRun.current) return;
+        hasRun.current = true;
+
         // Handle the OAuth callback
         const handleCallback = async () => {
             const { data, error } = await supabase.auth.getSession();
@@ -16,12 +21,14 @@ const AuthCallback: React.FC = () => {
                 return;
             }
 
+            console.log('AuthCallback: Session data:', data);
             if (data.session) {
-                // Successfully authenticated, redirect to dashboard
-                navigate('/dashboard');
+                const returnPath = localStorage.getItem('auth_return_path');
+                localStorage.removeItem('auth_return_path');
+                console.log('AuthCallback: Redirecting to:', returnPath || '/dashboard');
+                navigate(returnPath || '/dashboard', { replace: true });
             } else {
-                // No session, redirect to login
-                navigate('/login');
+                navigate('/login', { replace: true });
             }
         };
 

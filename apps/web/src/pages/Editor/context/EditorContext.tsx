@@ -1,4 +1,4 @@
-import React, { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, useCallback, type ReactNode } from 'react';
 import { useFabricEditor } from '../../../hooks/useFabricEditor';
 import { useEditorLifecycle } from '../../../hooks/useEditorLifecycle';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -16,12 +16,18 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const fabricEditor = useFabricEditor();
     const editorLifecycle = useEditorLifecycle(fabricEditor.fabricCanvas);
 
-    const handleActionClick = (action: string) => {
+    const handleActionClick = useCallback((action: string) => {
         if (!user) {
             editorLifecycle.setPendingAction(action);
             editorLifecycle.setShowLoginPrompt(true);
             return;
         }
+
+        if (fabricEditor.isInitializing || !fabricEditor.fabricCanvas.current?.backgroundImage) {
+            console.warn('EditorContext: Action ignored because canvas is still initializing or empty');
+            return;
+        }
+
         if (action === 'export') {
             const link = document.createElement('a');
             link.download = 'screenshot.png';
@@ -30,22 +36,28 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         } else if (action === 'share') {
             editorLifecycle.handleUploadToCloud();
         }
-    };
+    }, [user, editorLifecycle, fabricEditor.fabricCanvas, fabricEditor.isInitializing]);
 
-    const value = {
+    const value = useMemo(() => ({
         ...fabricEditor,
         ...editorLifecycle,
         user,
         handleActionClick,
-    };
+    }), [fabricEditor, editorLifecycle, user, handleActionClick]);
 
-    // Auto-trigger pending action when user logs in
+    // Auto-trigger pending action when user logs in - WAIT for canvas to be fully ready with image
     React.useEffect(() => {
-        if (user && editorLifecycle.pendingAction) {
-            handleActionClick(editorLifecycle.pendingAction);
+        const canExecute = user &&
+            editorLifecycle.pendingAction &&
+            !fabricEditor.isInitializing &&
+            !!fabricEditor.fabricCanvas.current?.backgroundImage;
+
+        if (canExecute) {
+            console.log('Executing pending action after login:', editorLifecycle.pendingAction);
+            handleActionClick(editorLifecycle.pendingAction as string);
             editorLifecycle.setPendingAction(null);
         }
-    }, [user, editorLifecycle.pendingAction, handleActionClick]);
+    }, [user, editorLifecycle.pendingAction, fabricEditor.isInitializing, handleActionClick, fabricEditor.fabricCanvas]);
 
     return (
         <EditorContext.Provider value={value}>

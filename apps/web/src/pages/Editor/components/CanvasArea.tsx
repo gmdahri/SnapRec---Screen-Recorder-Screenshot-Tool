@@ -4,7 +4,8 @@ import { useEditor } from '../context/EditorContext';
 export const CanvasArea: React.FC = () => {
     const {
         canvasRef, isCropping, capturedImage, zoomLevel,
-        handleSetZoom, initCanvas, handleCropConfirm, handleCropCancel
+        handleSetZoom, initCanvas, handleCropConfirm, handleCropCancel,
+        isInitializing
     } = useEditor();
 
     return (
@@ -32,10 +33,16 @@ export const CanvasArea: React.FC = () => {
                                 </button>
                             </div>
                         )}
-                        {!capturedImage && (
+                        {!capturedImage && !isInitializing && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-50 bg-background-light dark:bg-background-dark">
                                 <span className="material-symbols-outlined text-6xl">image_not_supported</span>
                                 <p className="font-medium">Waiting for image from extension...</p>
+                            </div>
+                        )}
+                        {isInitializing && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm z-40">
+                                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                <p className="font-bold text-primary">Loading screenshot...</p>
                             </div>
                         )}
                     </div>

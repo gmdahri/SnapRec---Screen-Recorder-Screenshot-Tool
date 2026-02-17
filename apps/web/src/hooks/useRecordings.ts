@@ -39,6 +39,7 @@ export interface Recording {
 }
 
 interface CreateRecordingInput {
+    id?: string;
     title: string;
     type: string;
     fileUrl: string;
@@ -90,7 +91,10 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
             throw new Error('Session expired. Please log in again.');
         }
         const errorText = await response.text().catch(() => '');
-        console.error(`API Error: ${response.status}`, errorText);
+        // Don't log 404 as a full error to reduce console noise during polling/fresh registration
+        if (response.status !== 404) {
+            console.error(`API Error: ${response.status}`, errorText);
+        }
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 
@@ -137,7 +141,7 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
 /**
  * Hook to fetch a single recording by ID
  */
-export function useRecording(id: string | undefined, refetchInterval?: number | false) {
+export function useRecording(id: string | undefined, refetchInterval?: number | false, options: { enabled?: boolean } = {}) {
     return useQuery({
         queryKey: recordingsKeys.detail(id!),
         queryFn: async ({ signal }) => {
@@ -148,7 +152,7 @@ export function useRecording(id: string | undefined, refetchInterval?: number | 
                 thumbnailUrl: recording.thumbnailUrl ? ensureAbsoluteUrl(recording.thumbnailUrl) : undefined
             };
         },
-        enabled: !!id,
+        enabled: (options.enabled !== undefined ? options.enabled : true) && !!id,
         retry: 1,
         refetchInterval: refetchInterval,
     });

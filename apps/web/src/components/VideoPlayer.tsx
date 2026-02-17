@@ -41,6 +41,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             const d = videoRef.current.duration;
             if (isFinite(d)) {
                 setDuration(d);
+            } else if (d === Infinity) {
+                // Trick for WebM blobs: seek to end to force duration calculation
+                videoRef.current.currentTime = 1e10;
             }
         }
     };
@@ -50,6 +53,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             const d = videoRef.current.duration;
             if (isFinite(d)) {
                 setDuration(d);
+                if (videoRef.current.currentTime > 0 && !isPlaying) {
+                    videoRef.current.currentTime = 0;
+                }
             }
         }
     };

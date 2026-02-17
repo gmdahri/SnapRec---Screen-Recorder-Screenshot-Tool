@@ -30,10 +30,15 @@
         switch (message.action) {
             case 'startRegionSelect':
                 startRegionSelection();
-                return false; // No async response needed
+                sendResponse({ success: true });
+                return false;
             case 'captureFullPage':
-                captureFullPage();
-                return false; // No async response needed
+                captureFullPage().then(() => {
+                    sendResponse({ success: true });
+                }).catch(err => {
+                    sendResponse({ success: false, error: err.message });
+                });
+                return true; // Async
             case 'showCountdown':
                 showCountdown().then(() => {
                     sendResponse({ success: true });
