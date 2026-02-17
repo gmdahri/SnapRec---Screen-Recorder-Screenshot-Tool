@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout, VideoPlayer, LoginModal, SEO } from '../components';
+import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd } from '../components';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
@@ -518,13 +518,10 @@ const ShareView: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            {/* Ad/Promo Card */}
-                            <div className="bg-gradient-to-br from-primary to-indigo-600 rounded-xl p-6 text-white shadow-lg">
-                                <h4 className="text-lg font-bold mb-2">Want to record like this?</h4>
-                                <p className="text-sm text-white/80 mb-4 leading-relaxed">Join 50,000+ professionals using SnapRec to communicate faster with video.</p>
-                                <button className="w-full bg-white text-primary font-bold py-2 rounded-lg text-sm hover:bg-opacity-90 transition-all">
-                                    Install Extension — Free
-                                </button>
+
+                            {/* Sidebar Ad Placement */}
+                            <div className="mt-4">
+                                <GoogleAd className="w-full !min-h-[250px]" style={{ maxHeight: '300px' }} />
                             </div>
                         </aside>
                     </div>
@@ -557,14 +554,14 @@ const ShareView: React.FC = () => {
                         </div>
                     </section>
                 </main>
-            </div>
+            </div >
 
             <LoginModal
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
                 actionDescription={loginAction}
             />
-        </MainLayout>
+        </MainLayout >
     );
 };
 

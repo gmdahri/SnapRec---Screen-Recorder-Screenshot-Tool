@@ -3,10 +3,10 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, type Recording } from '../hooks/useRecordings';
-import { MainLayout, AddToChromeButton } from '../components';
+import { MainLayout, AddToChromeButton, GoogleAd } from '../components';
 
 const DashboardOverview: React.FC = () => {
-    const { user, loading: authLoading, signOut } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const { showNotification } = useNotification();
     const navigate = useNavigate();
 
@@ -50,14 +50,6 @@ const DashboardOverview: React.FC = () => {
                         <span className="material-symbols-outlined">analytics</span>
                         <span className="font-semibold text-sm">Analytics</span>
                     </NavLink>
-                    <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
-                        <span className="material-symbols-outlined">settings</span>
-                        <span className="font-semibold text-sm">Settings</span>
-                    </NavLink>
-                    <button onClick={signOut} className="flex items-center gap-3 px-3 py-2 text-red-500 hover:text-red-600 transition-colors w-full text-left">
-                        <span className="material-symbols-outlined">logout</span>
-                        <span className="font-semibold text-sm">Sign Out</span>
-                    </button>
                 </nav>
             </div>
         </aside>
@@ -111,6 +103,11 @@ const DashboardOverview: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Dashboard Ad Banner */}
+                <div className="mb-8">
+                    <GoogleAd className="w-full !min-h-[100px]" style={{ maxHeight: '120px' }} />
                 </div>
 
                 {/* Quick Actions */}
