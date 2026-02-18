@@ -11,5 +11,25 @@
   },
   "dependencies": {
     "rxjs": "^7.8.2"
+  },
+  "overrides": {
+    "fast-xml-parser": "5.3.6",
+    "tar": "7.5.8",
+    "ajv": "8.18.0",
+    "qs": "6.14.2",
+    "cross-spawn": "7.0.6",
+    "lodash": "4.17.21",
+    "got": "11.8.5",
+    "braces": "3.0.3",
+    "micromatch": "4.0.8",
+    "@aws-sdk/xml-builder": {
+      "fast-xml-parser": "5.3.6"
+    },
+    "chokidar": {
+      "braces": "3.0.3"
+    },
+    "readdirp": {
+      "braces": "3.0.3"
+    }
   }
 }
