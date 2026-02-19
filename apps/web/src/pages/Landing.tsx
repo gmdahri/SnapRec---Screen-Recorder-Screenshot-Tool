@@ -1,10 +1,16 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LandingNavbar, LandingFooter, AddToChromeButton } from '../components';
+import { LandingNavbar, LandingFooter, AddToChromeButton, SEO } from '../components';
 
 const Landing: React.FC = () => {
     return (
         <div className="min-h-screen bg-white text-slate-900 font-display">
+            <SEO
+                url="/"
+                title="Free Screen Recorder & Screenshot Tool for Chrome"
+                description="SnapRec is a free Chrome extension to record your screen, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits."
+                keywords="screen recorder, screenshot tool, chrome extension, screen capture, record screen, free screen recorder, full page screenshot, annotate screenshot, share screen recording"
+            />
             <LandingNavbar />
 
             <main>

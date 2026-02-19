@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MainLayout, GatedButton, LoginModal } from '../components';
+import { MainLayout, GatedButton, LoginModal, SEO } from '../components';
 import { Toolbar, PropertySidebar, CanvasArea } from './Editor/components';
 import { EditorProvider, useEditor } from './Editor/context/EditorContext';
 
@@ -96,46 +96,54 @@ const EditorContent: React.FC = () => {
     );
 
     return (
-        <MainLayout
-            title={
-                <div className="flex items-center gap-1 group/title max-w-xl">
-                    {user ? (
-                        <>
-                            <input
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
-                            />
-                            <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
-                        </>
-                    ) : (
-                        <div
-                            onClick={() => setShowLoginPrompt(true)}
-                            className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer flex items-center gap-1"
-                            title="Login to edit title"
-                        >
-                            <span>{title}</span>
-                            <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">lock</span>
-                        </div>
-                    )}
-                </div>
-            }
-            showBackButton={true}
-            headerActions={EditorActions}
-            noScroll={true}
-        >
-            <div className="flex-1 flex h-full overflow-hidden">
-                <Toolbar />
-                <CanvasArea />
-                <PropertySidebar />
-            </div>
-
-            <LoginModal
-                isOpen={showLoginPrompt}
-                onClose={() => setShowLoginPrompt(false)}
-                actionDescription="upload and share"
+        <>
+            <SEO
+                url="/editor"
+                title="Screenshot & Image Editor"
+                description="Free online screenshot editor. Annotate, draw, highlight, blur, and add text to your screenshots. Share your edited images instantly with a link."
+                keywords="screenshot editor, image annotator, online photo editor, annotate screenshot, draw on screenshot, blur screenshot"
             />
-        </MainLayout>
+            <MainLayout
+                title={
+                    <div className="flex items-center gap-1 group/title max-w-xl">
+                        {user ? (
+                            <>
+                                <input
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
+                                />
+                                <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                            </>
+                        ) : (
+                            <div
+                                onClick={() => setShowLoginPrompt(true)}
+                                className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer flex items-center gap-1"
+                                title="Login to edit title"
+                            >
+                                <span>{title}</span>
+                                <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">lock</span>
+                            </div>
+                        )}
+                    </div>
+                }
+                showBackButton={true}
+                headerActions={EditorActions}
+                noScroll={true}
+            >
+                <div className="flex-1 flex h-full overflow-hidden">
+                    <Toolbar />
+                    <CanvasArea />
+                    <PropertySidebar />
+                </div>
+
+                <LoginModal
+                    isOpen={showLoginPrompt}
+                    onClose={() => setShowLoginPrompt(false)}
+                    actionDescription="upload and share"
+                />
+            </MainLayout>
+        </>
     );
 };
 
