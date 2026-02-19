@@ -521,7 +521,11 @@ const ShareView: React.FC = () => {
 
                             {/* Sidebar Ad Placement */}
                             <div className="mt-4">
-                                <GoogleAd className="w-full !min-h-[250px]" style={{ maxHeight: '300px' }} />
+                                <GoogleAd
+                                    className="w-full !min-h-[250px]"
+                                    style={{ maxHeight: '300px' }}
+                                    slotId={import.meta.env.VITE_ADSENSE_SHARE_SLOT}
+                                />
                             </div>
                         </aside>
                     </div>

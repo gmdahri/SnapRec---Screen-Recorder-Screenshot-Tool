@@ -1,8 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 interface GoogleAdProps {
     className?: string;
     style?: React.CSSProperties;
+    /** Optional: override the default slot ID from env. Use a unique slot per placement. */
+    slotId?: string;
+    /** Optional: suggest an ad format ('auto', 'horizontal', 'vertical', 'rectangle'). Defaults to 'auto'. */
+    format?: 'auto' | 'horizontal' | 'vertical' | 'rectangle';
 }
 
 /**
@@ -10,46 +14,66 @@ interface GoogleAdProps {
  * 
  * Renders a Google AdSense display ad unit.
  * Uses environment variables for Client ID and Slot ID.
+ * Each placement should ideally use its own slotId prop.
  */
-const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {} }) => {
+const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId, format = "auto" }) => {
     const CLIENT_ID = import.meta.env.VITE_ADSENSE_CLIENT_ID;
-    const SLOT_ID = import.meta.env.VITE_ADSENSE_SLOT_ID;
+    const SLOT_ID = slotId || import.meta.env.VITE_ADSENSE_SLOT_ID;
     const adRef = useRef<HTMLElement | null>(null);
+    const pushAttempted = useRef(false);
 
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    const pushAd = useCallback(() => {
+        try {
+            const ins = adRef.current;
+            if (!ins) return;
+            // Prevent double-push for this specific ad unit
+            if (pushAttempted.current) return;
+            if (ins.getAttribute('data-adsbygoogle-status')) return;
+
+            pushAttempted.current = true;
+            (window as any).adsbygoogle = (window as any).adsbygoogle || [];
+            (window as any).adsbygoogle.push({});
+        } catch (e) {
+            // Suppress "already have ads" errors which are common in dev/hot-reload
+            if (e instanceof Error && !e.message.includes('already have ads')) {
+                console.error("AdSense error:", e);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (!CLIENT_ID || !SLOT_ID || isLocalhost) return;
 
-        // Dynamically inject the AdSense script with the real client ID
-        if (!document.querySelector('script[src*="adsbygoogle"]')) {
+        const existingScript = document.querySelector('script[src*="adsbygoogle"]') as HTMLScriptElement | null;
+
+        if (existingScript) {
+            // Script tag already exists — check if it's loaded
+            if ((window as any).adsbygoogle) {
+                // Script is already loaded and ready
+                requestAnimationFrame(() => pushAd());
+            } else {
+                // Script tag exists but hasn't loaded yet — listen for load
+                const onLoad = () => requestAnimationFrame(() => pushAd());
+                existingScript.addEventListener('load', onLoad);
+                return () => existingScript.removeEventListener('load', onLoad);
+            }
+        } else {
+            // First mount — inject the script and wait for onload
             const script = document.createElement('script');
             script.async = true;
             script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${CLIENT_ID}`;
             script.crossOrigin = 'anonymous';
+            script.onload = () => requestAnimationFrame(() => pushAd());
+            script.onerror = () => console.error('AdSense script failed to load');
             document.head.appendChild(script);
         }
 
-        const pushAd = () => {
-            try {
-                const ins = adRef.current;
-                // Check if this specific unit is already initialized using the AdSense status attribute
-                if (ins && (ins as any).getAttribute('data-adsbygoogle-status')) return;
-
-                (window as any).adsbygoogle = (window as any).adsbygoogle || [];
-                (window as any).adsbygoogle.push({});
-            } catch (e) {
-                // Suppress "already have ads" errors which are common in dev/hot-reload
-                if (e instanceof Error && !e.message.includes('already have ads')) {
-                    console.error("AdSense error:", e);
-                }
-            }
+        return () => {
+            pushAttempted.current = false;
         };
-
-        // Delay to ensure the script is loaded and DOM is stable
-        const timer = setTimeout(pushAd, 300);
-        return () => clearTimeout(timer);
-    }, [CLIENT_ID, SLOT_ID, isLocalhost]);
+    }, [CLIENT_ID, SLOT_ID, isLocalhost, pushAd]);
 
     if (!CLIENT_ID || !SLOT_ID) {
         return (
@@ -85,9 +109,8 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {} }) => {
                 style={{ display: 'block', ...style }}
                 data-ad-client={CLIENT_ID}
                 data-ad-slot={SLOT_ID}
-                data-ad-format="auto"
+                data-ad-format={format}
                 data-full-width-responsive="true"
-                data-adtest="off"
             ></ins>
         </div>
     );
