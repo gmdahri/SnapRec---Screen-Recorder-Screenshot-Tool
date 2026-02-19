@@ -107,7 +107,12 @@ const DashboardOverview: React.FC = () => {
 
                 {/* Dashboard Ad Banner */}
                 <div className="mb-8">
-                    <GoogleAd className="w-full !min-h-[100px]" style={{ maxHeight: '120px' }} />
+                    <GoogleAd
+                        className="w-full"
+                        style={{ minHeight: '250px' }}
+                        format="horizontal"
+                        slotId={import.meta.env.VITE_ADSENSE_DASHBOARD_SLOT}
+                    />
                 </div>
 
                 {/* Quick Actions */}

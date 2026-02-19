@@ -82,7 +82,11 @@ export const PropertySidebar: React.FC = () => {
             </div>
 
             <div className="p-4 border-t border-[#ece7f4] dark:border-[#2d2245]">
-                <GoogleAd className="scale-90 origin-top" style={{ minHeight: '200px' }} />
+                <GoogleAd
+                    className="scale-90 origin-top"
+                    style={{ minHeight: '200px' }}
+                    slotId={import.meta.env.VITE_ADSENSE_EDITOR_SLOT}
+                />
             </div>
 
             <div className="h-[1px] bg-[#ece7f4] dark:bg-[#2d2245] mx-5"></div>
