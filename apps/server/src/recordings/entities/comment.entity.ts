@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, Index } from 'typeorm';
 import { Recording } from './recording.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -13,9 +13,11 @@ export class Comment {
     @Column({ nullable: true })
     guestId: string;
 
+    @Index()
     @ManyToOne(() => Recording, (recording) => recording.comments, { onDelete: 'CASCADE' })
     recording: Recording;
 
+    @Index()
     @ManyToOne(() => User, { nullable: true })
     user: User;
 

@@ -60,7 +60,11 @@ export class RecordingsController {
     @UseGuards(JwtAuthGuard)
     @Get()
     async getAllRecordings(@Req() req: any) {
+        this.logger.log(`Fetching recordings for user ${req.user.id}`);
+        const start = Date.now();
         const recordings = await this.recordingsService.findAll(req.user.id);
+        const end = Date.now();
+        this.logger.log(`Found ${recordings.length} recordings in ${end - start}ms`);
 
         return recordings.map((recording) => ({
             ...recording,

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Reaction } from './reaction.entity';
 import { Comment } from './comment.entity';
@@ -35,6 +35,7 @@ export class Recording {
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt: Date;
 
+    @Index()
     @ManyToOne(() => User, (user) => user.recordings)
     user: User;
 
