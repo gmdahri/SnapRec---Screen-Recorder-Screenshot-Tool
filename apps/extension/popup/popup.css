@@ -2,6 +2,59 @@
  * Uses design-system.css as base
  */
 
+/* Update Available Banner */
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background: linear-gradient(135deg, #7b25f4 0%, #a855f7 100%);
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.update-banner .update-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.update-banner .btn-update {
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.update-banner .btn-update:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.update-banner.hidden {
+  display: none !important;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* Popup Container */
 .popup-container {
   width: 360px;
@@ -11,7 +64,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(123, 37, 244, 0.2);
-  box-shadow: 
+  box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.2),
     0 0 20px rgba(123, 37, 244, 0.1);
   overflow-y: auto;
