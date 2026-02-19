@@ -154,12 +154,31 @@ async function checkForUpdate() {
             return;
         }
 
-        const data = await response.json();
+        // Guard against responses that return HTML (e.g. SPA 404 redirect)
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
+            console.warn('[SnapRec] Version check returned unexpected content-type:', contentType);
+            return;
+        }
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (_) {
+            console.warn('[SnapRec] Version check response is not valid JSON — version.json may not be deployed yet.');
+            return;
+        }
+
         const latestVersion = data.version;
+        if (!latestVersion) {
+            console.warn('[SnapRec] Version check response missing "version" field.');
+            return;
+        }
 
         console.log(`[SnapRec] Update check: installed=${currentVersion}, latest=${latestVersion}`);
 
-        if (latestVersion && isNewerVersion(currentVersion, latestVersion)) {
+        if (isNewerVersion(currentVersion, latestVersion)) {
             console.log(`[SnapRec] Update available: v${latestVersion}`);
 
             const { updateVersion: previouslyFlagged } = await chrome.storage.local.get('updateVersion');
@@ -184,6 +203,7 @@ async function checkForUpdate() {
         console.warn('[SnapRec] Update check failed:', e.message);
     }
 }
+
 
 // Check on startup
 checkForUpdate();
