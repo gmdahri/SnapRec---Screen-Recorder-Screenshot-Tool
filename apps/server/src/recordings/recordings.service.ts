@@ -40,13 +40,15 @@ export class RecordingsService {
     }
 
     async findAll(userId?: string): Promise<Recording[]> {
+        const query: any = {
+            order: { createdAt: 'DESC' },
+        };
+
         if (userId) {
-            return this.recordingsRepository.find({
-                where: { user: { supabaseId: userId } },
-                order: { createdAt: 'DESC' },
-            });
+            query.where = { user: { supabaseId: userId } };
         }
-        return this.recordingsRepository.find({ order: { createdAt: 'DESC' } });
+
+        return this.recordingsRepository.find(query);
     }
 
     async findOne(id: string): Promise<Recording | null> {
