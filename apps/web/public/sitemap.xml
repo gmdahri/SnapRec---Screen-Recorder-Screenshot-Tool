@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Home / Landing -->
+  <url>
+    <loc>https://snaprecorder.pages.dev/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Editor (public, no auth required) -->
+  <url>
+    <loc>https://snaprecorder.pages.dev/editor</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Login -->
+  <url>
+    <loc>https://snaprecorder.pages.dev/login</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://snaprecorder.pages.dev/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+</urlset>

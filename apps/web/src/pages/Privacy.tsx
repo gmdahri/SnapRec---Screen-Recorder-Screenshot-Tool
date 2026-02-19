@@ -1,6 +1,14 @@
+import { SEO } from '../components';
+
 const Privacy = () => {
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+            <SEO
+                url="/privacy"
+                title="Privacy Policy"
+                description="SnapRec's Privacy Policy. We do not collect or store personal data. All screen recordings and screenshots remain on your device unless you choose to upload them."
+                noIndex={false}
+            />
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="bg-indigo-600 px-8 py-10 text-white">
                     <div className="flex items-center gap-3 mb-4">
