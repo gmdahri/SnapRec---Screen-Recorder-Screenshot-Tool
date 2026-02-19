@@ -3,8 +3,8 @@ import React, { useEffect, useRef, useCallback } from 'react';
 interface GoogleAdProps {
     className?: string;
     style?: React.CSSProperties;
-    /** Optional: override the default slot ID from env. Use a unique slot per placement. */
-    slotId?: string;
+    /** Required: the ad slot ID for this specific placement from your AdSense dashboard. */
+    slotId: string;
     /** Optional: suggest an ad format ('auto', 'horizontal', 'vertical', 'rectangle'). Defaults to 'auto'. */
     format?: 'auto' | 'horizontal' | 'vertical' | 'rectangle';
 }
@@ -13,12 +13,11 @@ interface GoogleAdProps {
  * GoogleAd Component
  * 
  * Renders a Google AdSense display ad unit.
- * Uses environment variables for Client ID and Slot ID.
- * Each placement should ideally use its own slotId prop.
+ * Each placement must provide its own slotId from the AdSense dashboard.
  */
 const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId, format = "auto" }) => {
     const CLIENT_ID = import.meta.env.VITE_ADSENSE_CLIENT_ID;
-    const SLOT_ID = slotId || import.meta.env.VITE_ADSENSE_SLOT_ID;
+    const SLOT_ID = slotId;
     const adRef = useRef<HTMLElement | null>(null);
     const pushAttempted = useRef(false);
 
