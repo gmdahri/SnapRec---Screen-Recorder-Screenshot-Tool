@@ -35,7 +35,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   initRecordOptions();
   initSettings();
   loadRecentCaptures();
+  initUpdateBanner();
 });
+
+// Update Banner
+async function initUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  const versionSpan = document.getElementById('updateVersion');
+  const updateBtn = document.getElementById('updateNowBtn');
+
+  // Trigger a fresh update check in background
+  sendMessage({ action: 'checkForUpdate' }).catch(() => { });
+
+  // Check if an update has already been flagged
+  try {
+    const { updateAvailable, updateVersion } = await chrome.storage.local.get(['updateAvailable', 'updateVersion']);
+    if (updateAvailable && updateVersion) {
+      versionSpan.textContent = updateVersion;
+      banner.classList.remove('hidden');
+    }
+  } catch (e) {
+    console.warn('Could not check update state:', e);
+  }
+
+  // "Update Now" reloads the extension to apply the pending update
+  updateBtn.addEventListener('click', () => {
+    chrome.runtime.reload();
+  });
+}
 
 // Mode Toggle
 function initModeToggle() {

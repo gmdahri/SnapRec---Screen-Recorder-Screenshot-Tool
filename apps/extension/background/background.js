@@ -18,6 +18,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    // Handle update check request from popup
+    if (message.action === 'checkForUpdate') {
+        checkForUpdate().then(() => sendResponse({ success: true }));
+        return true;
+    }
+
     // Handle captureVisibleForFullPage specially - it needs async sendResponse
     if (message.action === 'captureVisibleForFullPage') {
         const windowId = sender.tab ? sender.tab.windowId : null;
@@ -121,17 +127,57 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-// Handle extension update available
+// --- Auto-Update System ---
+const UPDATE_CHECK_ALARM = 'snaprec-update-check';
+
+async function checkForUpdate() {
+    try {
+        const [status, details] = await chrome.runtime.requestUpdateCheck();
+        console.log('[SnapRec] Update check result:', status, details);
+        if (status === 'update_available') {
+            await chrome.storage.local.set({
+                updateAvailable: true,
+                updateVersion: details.version
+            });
+            console.log('[SnapRec] Update v' + details.version + ' flagged for popup notification.');
+        } else if (status === 'no_update') {
+            await chrome.storage.local.set({ updateAvailable: false, updateVersion: null });
+        }
+    } catch (e) {
+        console.warn('[SnapRec] Update check failed:', e.message);
+    }
+}
+
+// Check on startup
+checkForUpdate();
+
+// Schedule periodic checks
+chrome.alarms.create(UPDATE_CHECK_ALARM, {
+    periodInMinutes: CONFIG.UPDATE_CHECK_INTERVAL_MINUTES || 30
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === UPDATE_CHECK_ALARM) {
+        console.log('[SnapRec] Periodic update check triggered.');
+        checkForUpdate();
+    }
+});
+
+// Handle extension update available (fired by Chrome when update is downloaded)
 chrome.runtime.onUpdateAvailable.addListener((details) => {
-    console.log('[SnapRec] Update available:', details.version);
-    console.log('[SnapRec] Reloading extension to apply update...');
-    // We can choose when to reload. For SnapRec, since it's a productivity tool,
-    // we'll reload immediately if not currently recording.
+    console.log('[SnapRec] Update available and ready:', details.version);
+    // Store the update info so popup can show notification
+    chrome.storage.local.set({
+        updateAvailable: true,
+        updateVersion: details.version
+    });
+    // Auto-apply if not currently recording
     chrome.storage.local.get(['isRecording'], (result) => {
         if (!result.isRecording) {
+            console.log('[SnapRec] No recording in progress, reloading to apply update...');
             chrome.runtime.reload();
         } else {
-            console.log('[SnapRec] Recording in progress, holding update until next start.');
+            console.log('[SnapRec] Recording in progress, update will apply when recording stops.');
         }
     });
 });
