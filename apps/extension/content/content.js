@@ -643,66 +643,42 @@
         previewContainer.className = 'snaprec-mini-preview';
         previewContainer.innerHTML = `
             <div class="snaprec-preview-header">
-                <div class="snaprec-drag-handle">
-                    <span class="snaprec-drag-dot"></span>
-                    <span class="snaprec-drag-dot"></span>
-                    <span class="snaprec-drag-dot"></span>
-                    <span class="snaprec-drag-dot"></span>
-                    <span class="snaprec-drag-dot"></span>
-                </div>
-                <div class="snaprec-close-mini" title="Close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </div>
+                <div class="snaprec-drag-handle"></div>
             </div>
             <div class="snaprec-preview-body">
                 <div class="snaprec-preview-img-container">
                     <img src="${dataUrl}" class="snaprec-preview-img" alt="Captured screenshot">
+                    <div class="snaprec-preview-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 7l-7 5 7 5V7z"></path>
+                            <rect x="1" y="5" width="15" height="14" rx="2"></rect>
+                        </svg>
+                        <span>Preview</span>
+                    </div>
                 </div>
             </div>
             <div class="snaprec-preview-footer">
-                <div class="snaprec-mini-btn" data-action="edit" title="Edit (Pen)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
+                <div class="snaprec-footer-top">
+                    <div class="snaprec-footer-title">
+                        <h3>Capture Complete</h3>
+                        <p>Last capture • Ready to edit</p>
+                    </div>
+                    <button class="snaprec-share-btn" id="snaprec-edit-btn-top">
+                        Edit Clip
+                    </button>
                 </div>
-                <div class="snaprec-mini-btn" data-action="copy" title="Copy to clipboard">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-                    </svg>
-                </div>
-                <div class="snaprec-mini-btn" data-action="save" title="Save to computer">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                </div>
-                <div class="snaprec-mini-btn" data-action="region" title="Capture another region">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                    </svg>
-                </div>
-                <div class="snaprec-mini-btn" data-action="share" title="Share link">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"></path>
-                        <polyline points="16 6 12 2 8 6"></polyline>
-                        <line x1="12" y1="2" x2="12" y2="15"></line>
-                    </svg>
-                </div>
-                <div class="snaprec-mini-btn" data-action="pin" title="Pin window">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 10V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2h7"></path>
-                        <path d="M7 11V7"></path>
-                        <path d="M11 11V7"></path>
-                        <path d="M15 11v-4"></path>
-                    </svg>
+                <div class="snaprec-actions-grid">
+                    <button class="snaprec-action-item discard" id="snaprec-discard-btn">
+                        <div class="snaprec-action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                        </div>
+                        <span class="snaprec-action-label">Discard Image</span>
+                    </button>
                 </div>
             </div>
         `;
@@ -721,8 +697,19 @@
             if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
         }
 
-        // Close button
-        previewContainer.querySelector('.snaprec-close-mini').addEventListener('click', () => {
+        // Action Buttons
+        const editBtnTop = previewContainer.querySelector('#snaprec-edit-btn-top');
+        const discardBtn = previewContainer.querySelector('#snaprec-discard-btn');
+
+        const handleEdit = () => {
+            chrome.runtime.sendMessage({ action: 'openFullEditor', dataUrl: dataUrl });
+            previewContainer.remove();
+            if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
+        };
+
+        editBtnTop.addEventListener('click', handleEdit);
+
+        discardBtn.addEventListener('click', () => {
             closePreview();
         });
 
@@ -763,78 +750,6 @@
             document.removeEventListener('mousemove', onPreviewMouseMove);
             document.removeEventListener('mouseup', onPreviewMouseUp);
         }
-
-        // Action Buttons
-        previewContainer.querySelectorAll('.snaprec-mini-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const action = btn.dataset.action;
-                console.log('[SnapRec] Mini preview action:', action);
-
-                switch (action) {
-                    case 'edit':
-                        chrome.runtime.sendMessage({ action: 'openFullEditor', dataUrl: dataUrl });
-                        previewContainer.remove();
-                        break;
-                    case 'copy':
-                        try {
-                            const blob = await (await fetch(dataUrl)).blob();
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ [blob.type]: blob })
-                            ]);
-                            btn.style.color = '#10B981'; // Green for success
-                            setTimeout(() => btn.style.color = '', 1000);
-                        } catch (err) {
-                            console.error('Failed to copy:', err);
-                        }
-                        break;
-                    case 'save':
-                        chrome.runtime.sendMessage({ action: 'saveScreenshot', dataUrl: dataUrl });
-                        break;
-                    case 'region':
-                        previewContainer.remove();
-                        startRegionSelection();
-                        break;
-                    case 'share':
-                        btn.style.opacity = '0.5';
-                        btn.style.pointerEvents = 'none';
-                        chrome.runtime.sendMessage({
-                            action: 'uploadToR2',
-                            dataUrl: dataUrl,
-                            filename: `SnapRec_${Date.now()}.png`,
-                            mimeType: 'image/png'
-                        }, (response) => {
-                            if (response && response.success) {
-                                btn.style.color = '#10B981'; // Green success
-                                // Automatically open the share link with claim parameter
-                                window.open(response.shareUrl + '?claim=true', '_blank');
-                                setTimeout(() => closePreview(), 2000);
-                            } else {
-                                btn.style.color = '#EF4444'; // Red error
-                                btn.style.opacity = '1';
-                                btn.style.pointerEvents = 'auto';
-                            }
-                        });
-                        break;
-                    case 'pin':
-                        const isPinned = btn.style.color === 'rgb(139, 92, 246)';
-                        btn.style.color = isPinned ? '' : '#8B5CF6';
-                        if (!isPinned) {
-                            // Pinned: clear timeout
-                            if (autoCloseTimeout) {
-                                clearTimeout(autoCloseTimeout);
-                                autoCloseTimeout = null;
-                            }
-                        } else {
-                            // Unpinned: restart timeout
-                            autoCloseTimeout = setTimeout(() => {
-                                closePreview();
-                            }, 10000);
-                        }
-                        break;
-                }
-            });
-        });
-
         // Entry animation
         previewContainer.style.transform = 'translateY(20px) scale(0.95)';
         previewContainer.style.opacity = '0';
