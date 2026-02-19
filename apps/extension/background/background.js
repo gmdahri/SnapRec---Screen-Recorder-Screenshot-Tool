@@ -129,24 +129,81 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // --- Auto-Update System ---
 const UPDATE_CHECK_ALARM = 'snaprec-update-check';
+const VERSION_CHECK_URL = `${CONFIG.WEB_BASE_URL}/version.json`;
+
+/**
+ * Compares two semver strings. Returns true if remoteVersion > localVersion.
+ */
+function isNewerVersion(localVersion, remoteVersion) {
+    const local = localVersion.split('.').map(Number);
+    const remote = remoteVersion.split('.').map(Number);
+    for (let i = 0; i < 3; i++) {
+        if ((remote[i] || 0) > (local[i] || 0)) return true;
+        if ((remote[i] || 0) < (local[i] || 0)) return false;
+    }
+    return false;
+}
 
 async function checkForUpdate() {
     try {
-        const [status, details] = await chrome.runtime.requestUpdateCheck();
-        console.log('[SnapRec] Update check result:', status, details);
-        if (status === 'update_available') {
-            await chrome.storage.local.set({
-                updateAvailable: true,
-                updateVersion: details.version
-            });
-            console.log('[SnapRec] Update v' + details.version + ' flagged for popup notification.');
-        } else if (status === 'no_update') {
+        const currentVersion = chrome.runtime.getManifest().version;
+        const response = await fetch(`${VERSION_CHECK_URL}?t=${Date.now()}`, { cache: 'no-store' });
+
+        if (!response.ok) {
+            console.warn('[SnapRec] Version check request failed:', response.status);
+            return;
+        }
+
+        // Guard against responses that return HTML (e.g. SPA 404 redirect)
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
+            console.warn('[SnapRec] Version check returned unexpected content-type:', contentType);
+            return;
+        }
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (_) {
+            console.warn('[SnapRec] Version check response is not valid JSON — version.json may not be deployed yet.');
+            return;
+        }
+
+        const latestVersion = data.version;
+        if (!latestVersion) {
+            console.warn('[SnapRec] Version check response missing "version" field.');
+            return;
+        }
+
+        console.log(`[SnapRec] Update check: installed=${currentVersion}, latest=${latestVersion}`);
+
+        if (isNewerVersion(currentVersion, latestVersion)) {
+            console.log(`[SnapRec] Update available: v${latestVersion}`);
+
+            const { updateVersion: previouslyFlagged } = await chrome.storage.local.get('updateVersion');
+
+            // Store update info for the popup banner
+            await chrome.storage.local.set({ updateAvailable: true, updateVersion: latestVersion });
+
+            // Only show a system notification once per discovered version
+            if (previouslyFlagged !== latestVersion) {
+                chrome.notifications.create('snaprec-update', {
+                    type: 'basic',
+                    iconUrl: '../icons/icon128.png',
+                    title: 'SnapRec Update Available 🎉',
+                    message: `Version ${latestVersion} is ready. Open the extension to update.`,
+                    priority: 2
+                });
+            }
+        } else {
             await chrome.storage.local.set({ updateAvailable: false, updateVersion: null });
         }
     } catch (e) {
         console.warn('[SnapRec] Update check failed:', e.message);
     }
 }
+
 
 // Check on startup
 checkForUpdate();
@@ -163,23 +220,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     }
 });
 
-// Handle extension update available (fired by Chrome when update is downloaded)
-chrome.runtime.onUpdateAvailable.addListener((details) => {
-    console.log('[SnapRec] Update available and ready:', details.version);
-    // Store the update info so popup can show notification
-    chrome.storage.local.set({
-        updateAvailable: true,
-        updateVersion: details.version
-    });
-    // Auto-apply if not currently recording
-    chrome.storage.local.get(['isRecording'], (result) => {
-        if (!result.isRecording) {
-            console.log('[SnapRec] No recording in progress, reloading to apply update...');
-            chrome.runtime.reload();
-        } else {
-            console.log('[SnapRec] Recording in progress, update will apply when recording stops.');
-        }
-    });
+// Clicking the update notification opens the extension popup
+chrome.notifications.onClicked.addListener((notificationId) => {
+    if (notificationId === 'snaprec-update') {
+        chrome.action.openPopup().catch(() => {
+            // openPopup() requires a user gesture in some Chrome versions; silently fail
+        });
+        chrome.notifications.clear('snaprec-update');
+    }
 });
 
 // Drive Upload Handler
