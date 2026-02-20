@@ -14,7 +14,8 @@ import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import Privacy from './pages/Privacy';
 import Landing from './pages/Landing';
-
+import Changelog from './pages/Changelog';
+import HowItWorks from './pages/HowItWorks';
 
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -62,6 +63,8 @@ function App() {
                 <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
                 <Route path="/v/:id?" element={<ShareView />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/changelog" element={<Changelog />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
             </Router>
