@@ -8,11 +8,25 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- How It Works -->
+  <url>
+    <loc>https://snaprecorder.pages.dev/how-it-works</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Editor (public, no auth required) -->
   <url>
     <loc>https://snaprecorder.pages.dev/editor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- Changelog -->
+  <url>
+    <loc>https://snaprecorder.pages.dev/changelog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 
   <!-- Login -->

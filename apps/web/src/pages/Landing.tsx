@@ -1,6 +1,95 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, AddToChromeButton, SEO } from '../components';
+
+const faqs = [
+    {
+        q: 'Is SnapRec really free?',
+        a: 'Yes — SnapRec is 100% free with no hidden limits. There are no watermarks on your recordings or screenshots, no time caps on recordings, and no mandatory sign-up to start capturing.',
+    },
+    {
+        q: 'Does SnapRec work on Edge and Brave?',
+        a: 'Absolutely. SnapRec works on all Chromium-based browsers including Google Chrome, Microsoft Edge, and Brave. Just install it from the Chrome Web Store.',
+    },
+    {
+        q: 'Can I record with audio and webcam?',
+        a: 'Yes. SnapRec supports system audio, microphone input, and webcam overlay — all at the same time. Perfect for tutorials, demos, and walkthroughs.',
+    },
+    {
+        q: 'Where are my recordings stored?',
+        a: 'You can download captures locally or upload them to the cloud for instant link sharing. Your data is stored securely and you can delete it anytime from your dashboard.',
+    },
+    {
+        q: 'Do I need to create an account?',
+        a: 'No account is needed for basic capturing and downloading. Sign in with Google only when you want cloud sharing, your personal library, or analytics.',
+    },
+];
+
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'SoftwareApplication',
+            name: 'SnapRec',
+            applicationCategory: 'BrowserApplication',
+            operatingSystem: 'Chrome, Edge, Brave',
+            url: 'https://snaprecorder.pages.dev',
+            description:
+                'Free screen recorder & screenshot tool for Chrome. Record with audio, capture full-page screenshots, annotate, and share via link instantly. No watermarks.',
+            offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+            },
+            featureList: [
+                'Screen recording with webcam and audio',
+                'Full-page, visible area, and region screenshots',
+                'Built-in annotation editor',
+                'Cloud sharing via link',
+                'No watermarks or time limits',
+            ],
+        },
+        {
+            '@type': 'FAQPage',
+            mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: f.a,
+                },
+            })),
+        },
+    ],
+};
+
+const FAQItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="border-b border-slate-200 last:border-b-0">
+            <button
+                onClick={() => setOpen(!open)}
+                className="w-full flex justify-between items-center py-6 text-left group cursor-pointer"
+            >
+                <span className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors pr-4">
+                    {q}
+                </span>
+                <span
+                    className={`material-symbols-outlined text-slate-400 group-hover:text-primary transition-all duration-300 flex-shrink-0 ${open ? 'rotate-180' : ''
+                        }`}
+                >
+                    expand_more
+                </span>
+            </button>
+            <div
+                className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-60 pb-6' : 'max-h-0'
+                    }`}
+            >
+                <p className="text-slate-500 leading-relaxed">{a}</p>
+            </div>
+        </div>
+    );
+};
 
 const Landing: React.FC = () => {
     return (
@@ -10,6 +99,11 @@ const Landing: React.FC = () => {
                 title="Free Screen Recorder & Screenshot Tool for Chrome"
                 description="SnapRec is a free Chrome extension to record your screen, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits."
                 keywords="screen recorder, screenshot tool, chrome extension, screen capture, record screen, free screen recorder, full page screenshot, annotate screenshot, share screen recording"
+            />
+            {/* JSON-LD Structured Data */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <LandingNavbar />
 
@@ -45,6 +139,34 @@ const Landing: React.FC = () => {
                                     <span className="material-symbols-outlined">play_circle</span>
                                     Watch how it works
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Social Proof Stats */}
+                <section className="py-12 border-y border-slate-100">
+                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                            <div>
+                                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
+                                    100%
+                                </p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Free Forever</p>
+                            </div>
+                            <div>
+                                <p className="text-3xl md:text-4xl font-black text-slate-900">0</p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Watermarks</p>
+                            </div>
+                            <div>
+                                <p className="text-3xl md:text-4xl font-black text-slate-900">∞</p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Recording Length</p>
+                            </div>
+                            <div>
+                                <p className="text-3xl md:text-4xl font-black text-slate-900">
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">3+</span>
+                                </p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Browsers Supported</p>
                             </div>
                         </div>
                     </div>
@@ -147,6 +269,23 @@ const Landing: React.FC = () => {
                                 </div>
                             </div>
                             <p className="text-slate-500 text-xs mt-8">Works on Chrome, Edge, and Brave.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* FAQ Section */}
+                <section id="faq" className="py-24 bg-slate-50/50">
+                    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-14">
+                            <h2 className="text-4xl font-black mb-4">Frequently Asked Questions</h2>
+                            <p className="text-slate-500 font-medium">
+                                Everything you need to know about SnapRec.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-10">
+                            {faqs.map((faq, idx) => (
+                                <FAQItem key={idx} q={faq.q} a={faq.a} />
+                            ))}
                         </div>
                     </div>
                 </section>
