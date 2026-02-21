@@ -13,20 +13,21 @@ const ShareView: React.FC = () => {
     const { user } = useAuth();
     const { showNotification } = useNotification();
     const isFreshParam = new URLSearchParams(window.location.search).get('fresh') === 'true';
-    const isFresh = !id || isFreshParam;
+    const isValidId = id && id !== 'undefined';
+    const isFresh = !isValidId || isFreshParam;
     const [fallbackDate] = useState(() => new Date().toISOString());
 
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(() => sessionStorage.getItem('snaprec_local_video_blob'));
 
-    const effectiveId = id || localId;
+    const effectiveId = (isValidId ? id : undefined) || localId;
 
     const [isUploaded, setIsUploaded] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [pollInterval, setPollInterval] = useState<number | false>(3000);
 
     const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
-        enabled: (!!id && !isFreshParam) || isUploaded || isUploading
+        enabled: (!!isValidId && !isFreshParam) || isUploaded || isUploading
     });
 
     const addReaction = useAddReaction();
@@ -189,8 +190,8 @@ const ShareView: React.FC = () => {
             const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
             if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
 
-            await createRecordingMutation.mutateAsync({
-                id: effectiveId!,
+            const createdRecording = await createRecordingMutation.mutateAsync({
+                id: effectiveId,
                 title: `Video Recording ${new Date().toLocaleString()}`,
                 fileUrl,
                 type: 'video',
@@ -198,13 +199,19 @@ const ShareView: React.FC = () => {
                 guestId: !user ? guestId : undefined,
             });
 
+            const recordingId = createdRecording?.id || effectiveId;
+            if (!recordingId) {
+                showNotification('Failed to get recording ID. Please try again.', 'error');
+                return;
+            }
+
             setIsUploaded(true);
 
             // Redirect to the public URL immediately
-            navigate(`/v/${effectiveId}`, { replace: true });
+            navigate(`/v/${recordingId}`, { replace: true });
 
             // Copy to clipboard
-            const shareUrl = `${window.location.origin}/v/${effectiveId}`;
+            const shareUrl = `${window.location.origin}/v/${recordingId}`;
 
             try {
                 await navigator.clipboard.writeText(shareUrl);

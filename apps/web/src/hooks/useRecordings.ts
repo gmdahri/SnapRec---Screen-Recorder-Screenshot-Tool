@@ -142,6 +142,7 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
  * Hook to fetch a single recording by ID
  */
 export function useRecording(id: string | undefined, refetchInterval?: number | false, options: { enabled?: boolean } = {}) {
+    const isValidId = !!id && id !== 'undefined';
     return useQuery({
         queryKey: recordingsKeys.detail(id!),
         queryFn: async ({ signal }) => {
@@ -152,7 +153,7 @@ export function useRecording(id: string | undefined, refetchInterval?: number | 
                 thumbnailUrl: recording.thumbnailUrl ? ensureAbsoluteUrl(recording.thumbnailUrl) : undefined
             };
         },
-        enabled: (options.enabled !== undefined ? options.enabled : true) && !!id,
+        enabled: (options.enabled !== undefined ? options.enabled : true) && isValidId,
         retry: 1,
         refetchInterval: refetchInterval,
     });
