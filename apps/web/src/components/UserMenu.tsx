@@ -7,7 +7,7 @@ interface UserMenuProps {
 }
 
 export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
-    const { user, signOut } = useAuth();
+    const { user, loading, signOut } = useAuth();
     const [showMenu, setShowMenu] = useState(false);
 
     // Close menu when clicking outside
@@ -18,6 +18,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
             return () => document.removeEventListener('click', handleClickOutside);
         }
     }, [showMenu]);
+
+    if (loading) {
+        return (
+            <div className="size-9 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+        );
+    }
 
     if (!user) {
         return (

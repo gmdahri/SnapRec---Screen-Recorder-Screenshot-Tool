@@ -10,7 +10,7 @@ const EditorContent: React.FC = () => {
         showLoginPrompt, setShowLoginPrompt,
         setupCanvasEvents, initCanvas, isCanvasReady, isInitializing,
         undo, redo, historyIndex, history, handleActionClick,
-        title, setTitle, user
+        title, setTitle, user, loading
     } = useEditor();
 
     // Initial Setup
@@ -106,7 +106,9 @@ const EditorContent: React.FC = () => {
             <MainLayout
                 title={
                     <div className="flex items-center gap-1 group/title max-w-xl">
-                        {user ? (
+                        {loading ? (
+                            <div className="w-[124px] h-5 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                        ) : user ? (
                             <>
                                 <input
                                     value={title}
