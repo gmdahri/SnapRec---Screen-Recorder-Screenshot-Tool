@@ -6,13 +6,14 @@ import { useAuth } from '../../../contexts/AuthContext';
 type EditorContextType = ReturnType<typeof useFabricEditor> &
     ReturnType<typeof useEditorLifecycle> & {
         user: any;
+        loading: boolean;
         handleActionClick: (action: string) => void;
     };
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const fabricEditor = useFabricEditor();
     const editorLifecycle = useEditorLifecycle(fabricEditor.fabricCanvas);
 
@@ -42,8 +43,9 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         ...fabricEditor,
         ...editorLifecycle,
         user,
+        loading,
         handleActionClick,
-    }), [fabricEditor, editorLifecycle, user, handleActionClick]);
+    }), [fabricEditor, editorLifecycle, user, loading, handleActionClick]);
 
     // Auto-trigger pending action when user logs in - WAIT for canvas to be fully ready with image
     React.useEffect(() => {
