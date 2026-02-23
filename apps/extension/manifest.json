@@ -67,7 +67,8 @@
     "<all_urls>",
     "https://www.googleapis.com/*",
     "https://snaprec-backend.onrender.com/*",
-    "https://snaprecorder.pages.dev/*",
+    "https://www.snaprecorder.org/*",
+    "https://snaprecorder.org/*",
     "https://*.r2.cloudflarestorage.com/*"
   ],
   "oauth2": {

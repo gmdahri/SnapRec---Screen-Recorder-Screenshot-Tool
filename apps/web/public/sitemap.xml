@@ -3,42 +3,42 @@
 
   <!-- Home / Landing -->
   <url>
-    <loc>https://snaprecorder.pages.dev/</loc>
+    <loc>https://www.snaprecorder.org/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- How It Works -->
   <url>
-    <loc>https://snaprecorder.pages.dev/how-it-works</loc>
+    <loc>https://www.snaprecorder.org/how-it-works</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- Editor (public, no auth required) -->
   <url>
-    <loc>https://snaprecorder.pages.dev/editor</loc>
+    <loc>https://www.snaprecorder.org/editor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Changelog -->
   <url>
-    <loc>https://snaprecorder.pages.dev/changelog</loc>
+    <loc>https://www.snaprecorder.org/changelog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Login -->
   <url>
-    <loc>https://snaprecorder.pages.dev/login</loc>
+    <loc>https://www.snaprecorder.org/login</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <!-- Privacy Policy -->
   <url>
-    <loc>https://snaprecorder.pages.dev/privacy</loc>
+    <loc>https://www.snaprecorder.org/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
