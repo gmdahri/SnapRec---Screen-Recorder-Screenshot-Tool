@@ -11,6 +11,7 @@ import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RecordingsModule } from './recordings/recordings.module';
+import { MailModule } from './mail/mail.module';
 import { DataSource } from 'typeorm';
 
 @Module({
@@ -39,6 +40,7 @@ import { DataSource } from 'typeorm';
     AuthModule,
     UsersModule,
     RecordingsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

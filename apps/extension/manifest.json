@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SnapRec - Screen Recorder & Screenshot Tool",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Free screen recorder & screenshot tool. Record with audio, capture full-page, annotate, and share via link instantly. No watermarks.",
   "icons": {
     "16": "icons/icon16.png",
@@ -67,7 +67,8 @@
     "<all_urls>",
     "https://www.googleapis.com/*",
     "https://snaprec-backend.onrender.com/*",
-    "https://snaprecorder.pages.dev/*",
+    "https://www.snaprecorder.org/*",
+    "https://snaprecorder.org/*",
     "https://*.r2.cloudflarestorage.com/*"
   ],
   "oauth2": {

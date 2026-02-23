@@ -33,7 +33,7 @@ const jsonLd = {
             name: 'SnapRec',
             applicationCategory: 'BrowserApplication',
             operatingSystem: 'Chrome, Edge, Brave',
-            url: 'https://snaprecorder.pages.dev',
+            url: 'https://www.snaprecorder.org',
             description:
                 'Free screen recorder & screenshot tool for Chrome. Record with audio, capture full-page screenshots, annotate, and share via link instantly. No watermarks.',
             offers: {

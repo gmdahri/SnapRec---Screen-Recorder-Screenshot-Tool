@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class UsersService {
@@ -10,6 +11,7 @@ export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
+        private readonly mailService: MailService,
     ) { }
 
     /**
@@ -32,6 +34,12 @@ export class UsersService {
                 if (userMeta?.avatarUrl) user.avatarUrl = userMeta.avatarUrl;
                 await this.usersRepository.save(user);
                 this.logger.log(`Created new user with supabaseId: ${supabaseId}`);
+
+                // Fire-and-forget: send welcome email without blocking user creation
+                if (user.email) {
+                    this.mailService.sendWelcomeEmail(user.email, user.fullName)
+                        .catch(err => this.logger.error('Failed to queue welcome email', err));
+                }
             } catch (error: any) {
                 // Handle race condition - user might have been created by another request
                 if (error.code === '23505') { // Postgres unique constraint violation
