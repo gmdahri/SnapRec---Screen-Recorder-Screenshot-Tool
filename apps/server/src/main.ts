@@ -30,7 +30,7 @@ async function bootstrap() {
 
   const origins = allowedOrigins
     ? allowedOrigins.split(',').map((o) => o.trim())
-    : ['https://snaprecorder.pages.dev', 'http://localhost:5173'];
+    : ['https://www.snaprecorder.org', 'https://snaprecorder.org', 'http://localhost:5173'];
 
   app.enableCors({
     origin: origins,
