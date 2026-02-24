@@ -10,7 +10,7 @@ export const CanvasArea: React.FC = () => {
 
     return (
         <section className="flex-1 bg-background-light dark:bg-background-dark p-12 overflow-auto relative canvas-bg">
-            <div className="max-w-5xl mx-auto flex flex-col items-center justify-center min-h-full">
+            <div className="max-w-5xl mx-auto flex flex-col items-center pt-8 pb-24 min-h-full">
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/5 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                     <div className={`relative bg-white dark:bg-[#1c142b] rounded-lg shadow-2xl border border-[#ece7f4] dark:border-[#2d2245] min-h-[400px] min-w-[400px] overflow-hidden transition-opacity duration-300 ${isInitializing ? 'opacity-0' : 'opacity-100'}`}>
