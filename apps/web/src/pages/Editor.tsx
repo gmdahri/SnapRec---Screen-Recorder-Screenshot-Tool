@@ -86,7 +86,7 @@ const EditorContent: React.FC = () => {
                 onClick={() => handleActionClick('share')}
                 icon={isUploading ? 'sync' : (isUploaded && user ? 'save' : 'cloud_upload')}
                 variant="primary"
-                className={`px-5 ${isUploading ? 'animate-pulse' : ''}`}
+                className={`px-5 w-[240px] justify-center ${isUploading ? 'animate-pulse' : ''}`}
                 disabled={isUploading || isInitializing}
                 title={isUploaded && user ? 'Update recording' : 'Generate shareable link'}
             >
