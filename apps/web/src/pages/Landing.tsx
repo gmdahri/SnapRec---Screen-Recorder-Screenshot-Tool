@@ -116,7 +116,10 @@ const Landing: React.FC = () => {
                         <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[60%] bg-blue-400/10 rounded-full blur-[120px]"></div>
                     </div>
 
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+                        <a href="https://www.producthunt.com/products/snap-recorder?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-snap-recorder" target="_blank" rel="noopener noreferrer" className="mb-8 inline-block transform hover:scale-105 transition-transform duration-300">
+                            <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1083910&theme=light&t=1771930696147" alt="Snap Recorder - Free screen recorder & screenshot tool | Product Hunt" style={{ width: '250px', height: '54px' }} width="250" height="54" />
+                        </a>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[1.1] mb-8">
                             Capture Your Ideas,<br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
