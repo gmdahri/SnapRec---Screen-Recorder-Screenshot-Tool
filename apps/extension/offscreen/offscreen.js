@@ -69,6 +69,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .then(dataUrl => sendResponse({ success: true, dataUrl }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
+
+        case 'offscreen_storeRecordingBlob':
+            storeRecordingBlobToIDB()
+                .then(result => sendResponse({ success: true, size: result.size, type: result.type }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
     }
 });
 
@@ -293,6 +299,43 @@ async function getRecordingBlobBase64() {
         reader.onloadend = () => resolve(reader.result);
         reader.onerror = reject;
         reader.readAsDataURL(currentRecordingBlob);
+    });
+}
+
+// Store the raw Blob directly into IndexedDB to avoid base64 conversion overhead
+async function storeRecordingBlobToIDB() {
+    if (!currentRecordingBlob) {
+        throw new Error('No recording blob available');
+    }
+
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('SnapRecDB', 2);
+
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('recordings')) {
+                db.createObjectStore('recordings');
+            }
+        };
+
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            const transaction = db.transaction(['recordings'], 'readwrite');
+            const store = transaction.objectStore('recordings');
+            store.put(currentRecordingBlob, 'latest_video_blob');
+
+            transaction.oncomplete = () => {
+                console.log('[Offscreen] Blob stored in IndexedDB, size:', currentRecordingBlob.size);
+                resolve({ size: currentRecordingBlob.size, type: currentRecordingBlob.type });
+            };
+            transaction.onerror = () => {
+                reject(new Error('Failed to store blob in IndexedDB'));
+            };
+        };
+
+        request.onerror = () => {
+            reject(new Error('Failed to open IndexedDB for blob storage'));
+        };
     });
 }
 
