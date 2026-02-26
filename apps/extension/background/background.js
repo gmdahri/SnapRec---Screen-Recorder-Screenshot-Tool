@@ -793,6 +793,34 @@ async function handleRecordingComplete() {
                             target: { tabId: tab.id },
                             func: (videoDataUrl, id) => {
                                 console.log('Injected script sending postMessage (VIDEO) with id:', id);
+
+                                // 1. Attempt to persist the blob in IndexedDB for survival across redirects/refreshes
+                                try {
+                                    const request = indexedDB.open('SnapRecDB', 1);
+
+                                    request.onupgradeneeded = (e) => {
+                                        const db = e.target.result;
+                                        if (!db.objectStoreNames.contains('recordings')) {
+                                            db.createObjectStore('recordings');
+                                        }
+                                    };
+
+                                    request.onsuccess = (e) => {
+                                        const db = e.target.result;
+                                        const transaction = db.transaction(['recordings'], 'readwrite');
+                                        const store = transaction.objectStore('recordings');
+                                        store.put(videoDataUrl, 'latest_video');
+                                        store.put(id, 'latest_id');
+                                    };
+
+                                    request.onerror = (e) => {
+                                        console.warn('Failed to open IndexedDB to store fallback recording', e);
+                                    };
+                                } catch (err) {
+                                    console.warn('IndexedDB operations failed synchronously', err);
+                                }
+
+                                // 2. Send volatile postMessage for instant synchronous reactivity
                                 window.postMessage({
                                     type: 'SNAPREC_VIDEO_DATA',
                                     dataUrl: videoDataUrl,
