@@ -781,9 +781,9 @@ async function handleRecordingComplete() {
         const tab = await chrome.tabs.create({ url: shareUrl });
 
         // Wait for tab to load and inject video blob bridge
-        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        const listener = (tabId, info) => {
             if (tabId === tab.id && info.status === 'complete') {
-                chrome.tabs.onUpdated.removeListener(listener);
+                console.log('[SnapRec] Tab load complete, attempting injection...');
 
                 // Ask offscreen for the blob
                 chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlob' }, (response) => {
@@ -796,7 +796,8 @@ async function handleRecordingComplete() {
 
                                 // 1. Attempt to persist the blob in IndexedDB for survival across redirects/refreshes
                                 try {
-                                    const request = indexedDB.open('SnapRecDB', 1);
+                                    // Bump version to 2 to force onupgradeneeded if store is missing
+                                    const request = indexedDB.open('SnapRecDB', 2);
 
                                     request.onupgradeneeded = (e) => {
                                         const db = e.target.result;
@@ -828,13 +829,23 @@ async function handleRecordingComplete() {
                                 }, '*');
                             },
                             args: [response.dataUrl, recordingId]
+                        }).then(() => {
+                            console.log('[SnapRec] Injection successful, cleaning up offscreen document.');
+                            chrome.tabs.onUpdated.removeListener(listener);
+                            finalizeCleanup();
+                        }).catch((err) => {
+                            console.warn('[SnapRec] Injection failed (page may be unreachable/error page). Waiting for user or browser to refresh...', err);
+                            // Do not remove listener. Wait for automatic or manual refresh.
                         });
                     } else {
                         console.error('[SnapRec] Failed to get video blob from offscreen:', response?.error);
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        finalizeCleanup();
                     }
                 });
             }
-        });
+        };
+        chrome.tabs.onUpdated.addListener(listener);
 
         // We skip all backend calls here - web app will handle it now.
     } catch (error) {

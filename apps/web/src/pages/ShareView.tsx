@@ -24,7 +24,16 @@ const ShareView: React.FC = () => {
     const loadFromIndexedDB = async () => {
         return new Promise<{ blob: string | null, id: string | null }>((resolve) => {
             try {
-                const request = indexedDB.open('SnapRecDB', 1);
+                // Ensure version 2 is used to match background injection version
+                const request = indexedDB.open('SnapRecDB', 2);
+
+                request.onupgradeneeded = (e: any) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) {
+                        db.createObjectStore('recordings');
+                    }
+                };
+
                 request.onsuccess = (e: any) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('recordings')) {
@@ -301,7 +310,7 @@ const ShareView: React.FC = () => {
 
             // Clear fallback resilient storage to free up browser space once uploaded
             try {
-                const request = indexedDB.open('SnapRecDB', 1);
+                const request = indexedDB.open('SnapRecDB', 2);
                 request.onsuccess = (e: any) => {
                     const db = e.target.result;
                     if (db.objectStoreNames.contains('recordings')) {
