@@ -785,18 +785,22 @@ async function handleRecordingComplete() {
             if (tabId === tab.id && info.status === 'complete') {
                 console.log('[SnapRec] Tab load complete, attempting injection...');
 
-                // Ask offscreen for the blob
-                chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlob' }, (response) => {
-                    if (response?.success && response.dataUrl) {
-                        console.log('[SnapRec] Got video blob from offscreen, sending to tab');
+                // Ask offscreen to store the raw blob directly in IndexedDB
+                // This avoids converting to base64 and passing through executeScript args
+                // which breaks for large videos (QuotaExceededError / truncation)
+                chrome.runtime.sendMessage({ action: 'offscreen_storeRecordingBlob' }, (storeResponse) => {
+                    if (storeResponse?.success) {
+                        console.log('[SnapRec] Blob stored in IDB by offscreen, size:', storeResponse.size);
+
+                        // Inject a lightweight script that only signals the web page
+                        // The web page will read the blob from IndexedDB itself
                         chrome.scripting.executeScript({
                             target: { tabId: tab.id },
-                            func: (videoDataUrl, id) => {
-                                console.log('Injected script sending postMessage (VIDEO) with id:', id);
+                            func: (id) => {
+                                console.log('Injected script sending postMessage (VIDEO via IDB) with id:', id);
 
-                                // 1. Attempt to persist the blob in IndexedDB for survival across redirects/refreshes
+                                // Store the recording ID in IndexedDB too
                                 try {
-                                    // Bump version to 2 to force onupgradeneeded if store is missing
                                     const request = indexedDB.open('SnapRecDB', 2);
 
                                     request.onupgradeneeded = (e) => {
@@ -810,37 +814,115 @@ async function handleRecordingComplete() {
                                         const db = e.target.result;
                                         const transaction = db.transaction(['recordings'], 'readwrite');
                                         const store = transaction.objectStore('recordings');
-                                        store.put(videoDataUrl, 'latest_video');
                                         store.put(id, 'latest_id');
                                     };
-
-                                    request.onerror = (e) => {
-                                        console.warn('Failed to open IndexedDB to store fallback recording', e);
-                                    };
                                 } catch (err) {
-                                    console.warn('IndexedDB operations failed synchronously', err);
+                                    console.warn('IndexedDB ID store failed', err);
                                 }
 
-                                // 2. Send volatile postMessage for instant synchronous reactivity
+                                // Signal the web page to read from IndexedDB
                                 window.postMessage({
                                     type: 'SNAPREC_VIDEO_DATA',
-                                    dataUrl: videoDataUrl,
+                                    fromIDB: true,
                                     id: id
                                 }, '*');
                             },
-                            args: [response.dataUrl, recordingId]
+                            args: [recordingId]
                         }).then(() => {
-                            console.log('[SnapRec] Injection successful, cleaning up offscreen document.');
+                            console.log('[SnapRec] IDB signal injection successful, cleaning up offscreen document.');
                             chrome.tabs.onUpdated.removeListener(listener);
                             finalizeCleanup();
                         }).catch((err) => {
-                            console.warn('[SnapRec] Injection failed (page may be unreachable/error page). Waiting for user or browser to refresh...', err);
-                            // Do not remove listener. Wait for automatic or manual refresh.
+                            console.warn('[SnapRec] Injection failed, trying legacy base64 fallback...', err);
+
+                            // Fallback: try the old base64 approach for small recordings
+                            chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlob' }, (response) => {
+                                if (response?.success && response.dataUrl) {
+                                    chrome.scripting.executeScript({
+                                        target: { tabId: tab.id },
+                                        func: (videoDataUrl, id) => {
+                                            console.log('Injected script sending postMessage (VIDEO fallback) with id:', id);
+                                            try {
+                                                const request = indexedDB.open('SnapRecDB', 2);
+                                                request.onupgradeneeded = (e) => {
+                                                    const db = e.target.result;
+                                                    if (!db.objectStoreNames.contains('recordings')) {
+                                                        db.createObjectStore('recordings');
+                                                    }
+                                                };
+                                                request.onsuccess = (e) => {
+                                                    const db = e.target.result;
+                                                    const txn = db.transaction(['recordings'], 'readwrite');
+                                                    const store = txn.objectStore('recordings');
+                                                    store.put(videoDataUrl, 'latest_video');
+                                                    store.put(id, 'latest_id');
+                                                };
+                                            } catch (err) {
+                                                console.warn('IndexedDB fallback store failed', err);
+                                            }
+                                            window.postMessage({
+                                                type: 'SNAPREC_VIDEO_DATA',
+                                                dataUrl: videoDataUrl,
+                                                id: id
+                                            }, '*');
+                                        },
+                                        args: [response.dataUrl, recordingId]
+                                    }).then(() => {
+                                        chrome.tabs.onUpdated.removeListener(listener);
+                                        finalizeCleanup();
+                                    }).catch(() => {
+                                        chrome.tabs.onUpdated.removeListener(listener);
+                                        finalizeCleanup();
+                                    });
+                                } else {
+                                    chrome.tabs.onUpdated.removeListener(listener);
+                                    finalizeCleanup();
+                                }
+                            });
                         });
                     } else {
-                        console.error('[SnapRec] Failed to get video blob from offscreen:', response?.error);
-                        chrome.tabs.onUpdated.removeListener(listener);
-                        finalizeCleanup();
+                        console.error('[SnapRec] Failed to store blob in IDB:', storeResponse?.error);
+                        // Fallback to legacy base64 approach
+                        chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlob' }, (response) => {
+                            if (response?.success && response.dataUrl) {
+                                chrome.scripting.executeScript({
+                                    target: { tabId: tab.id },
+                                    func: (videoDataUrl, id) => {
+                                        try {
+                                            const request = indexedDB.open('SnapRecDB', 2);
+                                            request.onupgradeneeded = (e) => {
+                                                const db = e.target.result;
+                                                if (!db.objectStoreNames.contains('recordings')) {
+                                                    db.createObjectStore('recordings');
+                                                }
+                                            };
+                                            request.onsuccess = (e) => {
+                                                const db = e.target.result;
+                                                const txn = db.transaction(['recordings'], 'readwrite');
+                                                const store = txn.objectStore('recordings');
+                                                store.put(videoDataUrl, 'latest_video');
+                                                store.put(id, 'latest_id');
+                                            };
+                                        } catch (err) { }
+                                        window.postMessage({
+                                            type: 'SNAPREC_VIDEO_DATA',
+                                            dataUrl: videoDataUrl,
+                                            id: id
+                                        }, '*');
+                                    },
+                                    args: [response.dataUrl, recordingId]
+                                }).then(() => {
+                                    chrome.tabs.onUpdated.removeListener(listener);
+                                    finalizeCleanup();
+                                }).catch(() => {
+                                    chrome.tabs.onUpdated.removeListener(listener);
+                                    finalizeCleanup();
+                                });
+                            } else {
+                                chrome.tabs.onUpdated.removeListener(listener);
+                                finalizeCleanup();
+                            }
+                        });
                     }
                 });
             }

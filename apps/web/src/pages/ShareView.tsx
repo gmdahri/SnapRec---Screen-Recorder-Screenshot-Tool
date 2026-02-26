@@ -61,7 +61,7 @@ const ShareView: React.FC = () => {
 
     // Helper: Initialize from fallback DB if memory is wiped (e.g., refresh)
     const loadFromIndexedDB = async () => {
-        return new Promise<{ blob: string | null, id: string | null }>((resolve) => {
+        return new Promise<{ blob: string | null, rawBlob: Blob | null, id: string | null }>((resolve) => {
             try {
                 // Ensure version 2 is used to match background injection version
                 const request = indexedDB.open('SnapRecDB', 2);
@@ -76,28 +76,37 @@ const ShareView: React.FC = () => {
                 request.onsuccess = (e: any) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('recordings')) {
-                        resolve({ blob: null, id: null });
+                        resolve({ blob: null, rawBlob: null, id: null });
                         return;
                     }
                     const transaction = db.transaction(['recordings'], 'readonly');
                     const store = transaction.objectStore('recordings');
 
                     let dbBlob: string | null = null;
+                    let dbRawBlob: Blob | null = null;
                     let dbId: string | null = null;
 
-                    store.get('latest_video').onsuccess = (ev: any) => {
-                        dbBlob = ev.target.result;
-                        store.get('latest_id').onsuccess = (idEv: any) => {
-                            dbId = idEv.target.result;
-                            resolve({ blob: dbBlob, id: dbId });
+                    // First try the new raw Blob key
+                    store.get('latest_video_blob').onsuccess = (blobEv: any) => {
+                        if (blobEv.target.result instanceof Blob) {
+                            dbRawBlob = blobEv.target.result;
+                        }
+
+                        // Then try the legacy string key
+                        store.get('latest_video').onsuccess = (ev: any) => {
+                            dbBlob = ev.target.result;
+                            store.get('latest_id').onsuccess = (idEv: any) => {
+                                dbId = idEv.target.result;
+                                resolve({ blob: dbBlob, rawBlob: dbRawBlob, id: dbId });
+                            };
                         };
                     };
-                    transaction.onerror = () => resolve({ blob: null, id: null });
+                    transaction.onerror = () => resolve({ blob: null, rawBlob: null, id: null });
                 };
-                request.onerror = () => resolve({ blob: null, id: null });
+                request.onerror = () => resolve({ blob: null, rawBlob: null, id: null });
             } catch (err) {
                 console.warn('IDB fallback load failed', err);
-                resolve({ blob: null, id: null });
+                resolve({ blob: null, rawBlob: null, id: null });
             }
         });
     };
@@ -118,18 +127,28 @@ const ShareView: React.FC = () => {
             applyBlob(storedBlobUrl);
         } else {
             // Attempt resilient fallback if session storage is wiped on refresh
-            loadFromIndexedDB().then(({ blob, id }) => {
-                if (blob) {
+            loadFromIndexedDB().then(({ blob, rawBlob, id }) => {
+                // Prefer raw Blob (new path) over base64 string (legacy path)
+                if (rawBlob) {
+                    const blobUrl = URL.createObjectURL(rawBlob);
+                    console.log('Loaded raw blob from IDB on refresh, size:', rawBlob.size);
+                    setLocalVideoBlob(blobUrl);
+                } else if (blob) {
                     applyBlob(blob);
 
-                    // Recover session state
+                    // Recover session state only for small blobs
+                    if (blob.length < 2 * 1024 * 1024) {
+                        try {
+                            sessionStorage.setItem('snaprec_local_video_blob', blob);
+                        } catch (e) { }
+                    }
+                }
+
+                if (id) {
                     try {
-                        sessionStorage.setItem('snaprec_local_video_blob', blob);
-                        if (id) {
-                            sessionStorage.setItem('snaprec_local_video_id', id);
-                            if (!localId) setLocalId(id);
-                        }
+                        sessionStorage.setItem('snaprec_local_video_id', id);
                     } catch (e) { }
+                    if (!localId) setLocalId(id);
                 }
             });
         }
@@ -177,25 +196,93 @@ const ShareView: React.FC = () => {
 
     // Extension Message Listener for local video data
     useEffect(() => {
+        const loadBlobFromIDB = (): Promise<Blob | null> => {
+            return new Promise((resolve) => {
+                try {
+                    const request = indexedDB.open('SnapRecDB', 2);
+
+                    request.onupgradeneeded = (e: any) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('recordings')) {
+                            db.createObjectStore('recordings');
+                        }
+                    };
+
+                    request.onsuccess = (e: any) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('recordings')) {
+                            resolve(null);
+                            return;
+                        }
+                        const transaction = db.transaction(['recordings'], 'readonly');
+                        const store = transaction.objectStore('recordings');
+                        const getReq = store.get('latest_video_blob');
+
+                        getReq.onsuccess = () => {
+                            const result = getReq.result;
+                            if (result instanceof Blob) {
+                                resolve(result);
+                            } else {
+                                resolve(null);
+                            }
+                        };
+                        getReq.onerror = () => resolve(null);
+                    };
+                    request.onerror = () => resolve(null);
+                } catch (err) {
+                    console.warn('Failed to load blob from IDB', err);
+                    resolve(null);
+                }
+            });
+        };
+
         const handleMessage = async (event: MessageEvent) => {
             if (event.data?.type === 'SNAPREC_VIDEO_DATA') {
                 console.log('Received video data from extension with id:', event.data.id);
 
-                const dataUrl = event.data.dataUrl;
-                if (!dataUrl) return;
-
-                if (dataUrl.startsWith('data:')) {
-                    const blobUrl = await convertBase64ToBlobUrl(dataUrl);
-                    setLocalVideoBlob(blobUrl);
+                // New IDB path: blob was stored directly in IndexedDB by the offscreen document
+                if (event.data.fromIDB) {
+                    console.log('Loading video blob from IndexedDB (no base64 conversion)...');
+                    const blob = await loadBlobFromIDB();
+                    if (blob) {
+                        const blobUrl = URL.createObjectURL(blob);
+                        console.log('Video blob loaded from IDB, size:', blob.size, 'type:', blob.type);
+                        setLocalVideoBlob(blobUrl);
+                    } else {
+                        console.warn('No blob found in IndexedDB, falling back to loadFromIndexedDB (legacy)');
+                        // Try the legacy 'latest_video' key (base64 data URL stored as string)
+                        const { blob: legacyBlob } = await loadFromIndexedDB();
+                        if (legacyBlob) {
+                            if (legacyBlob.startsWith('data:')) {
+                                const blobUrl = await convertBase64ToBlobUrl(legacyBlob);
+                                setLocalVideoBlob(blobUrl);
+                            } else {
+                                setLocalVideoBlob(legacyBlob);
+                            }
+                        }
+                    }
                 } else {
-                    setLocalVideoBlob(dataUrl);
+                    // Legacy path: dataUrl was passed directly via postMessage
+                    const dataUrl = event.data.dataUrl;
+                    if (!dataUrl) return;
+
+                    if (dataUrl.startsWith('data:')) {
+                        const blobUrl = await convertBase64ToBlobUrl(dataUrl);
+                        setLocalVideoBlob(blobUrl);
+                    } else {
+                        setLocalVideoBlob(dataUrl);
+                    }
+
+                    // Only try sessionStorage for small data (< 2MB)
+                    if (dataUrl.length < 2 * 1024 * 1024) {
+                        try {
+                            sessionStorage.setItem('snaprec_local_video_blob', dataUrl);
+                        } catch (e) {
+                            console.warn('QuotaExceededError: Cannot save video to sessionStorage');
+                        }
+                    }
                 }
 
-                try {
-                    sessionStorage.setItem('snaprec_local_video_blob', dataUrl);
-                } catch (e) {
-                    console.warn('QuotaExceededError: Cannot save video to sessionStorage');
-                }
                 if (event.data.id) {
                     setLocalId(event.data.id);
                     try {
