@@ -20,20 +20,75 @@ const ShareView: React.FC = () => {
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
 
-    // Initial load from sessionStorage
+    // Helper: Initialize from fallback DB if memory is wiped (e.g., refresh)
+    const loadFromIndexedDB = async () => {
+        return new Promise<{ blob: string | null, id: string | null }>((resolve) => {
+            try {
+                const request = indexedDB.open('SnapRecDB', 1);
+                request.onsuccess = (e: any) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) {
+                        resolve({ blob: null, id: null });
+                        return;
+                    }
+                    const transaction = db.transaction(['recordings'], 'readonly');
+                    const store = transaction.objectStore('recordings');
+
+                    let dbBlob: string | null = null;
+                    let dbId: string | null = null;
+
+                    store.get('latest_video').onsuccess = (ev: any) => {
+                        dbBlob = ev.target.result;
+                        store.get('latest_id').onsuccess = (idEv: any) => {
+                            dbId = idEv.target.result;
+                            resolve({ blob: dbBlob, id: dbId });
+                        };
+                    };
+                    transaction.onerror = () => resolve({ blob: null, id: null });
+                };
+                request.onerror = () => resolve({ blob: null, id: null });
+            } catch (err) {
+                console.warn('IDB fallback load failed', err);
+                resolve({ blob: null, id: null });
+            }
+        });
+    };
+
+    // Initial load from sessionStorage or IndexedDB
     useEffect(() => {
         const storedBlobUrl = sessionStorage.getItem('snaprec_local_video_blob');
-        if (storedBlobUrl) {
-            if (storedBlobUrl.startsWith('data:')) {
-                fetch(storedBlobUrl)
+
+        const applyBlob = (dataUrl: string) => {
+            if (dataUrl.startsWith('data:')) {
+                fetch(dataUrl)
                     .then(res => res.blob())
                     .then(blob => setLocalVideoBlob(URL.createObjectURL(blob)))
-                    .catch(() => setLocalVideoBlob(storedBlobUrl));
+                    .catch(() => setLocalVideoBlob(dataUrl));
             } else {
-                setLocalVideoBlob(storedBlobUrl);
+                setLocalVideoBlob(dataUrl);
             }
+        };
+
+        if (storedBlobUrl) {
+            applyBlob(storedBlobUrl);
+        } else {
+            // Attempt resilient fallback if session storage is wiped on refresh
+            loadFromIndexedDB().then(({ blob, id }) => {
+                if (blob) {
+                    applyBlob(blob);
+
+                    // Recover session state
+                    try {
+                        sessionStorage.setItem('snaprec_local_video_blob', blob);
+                        if (id) {
+                            sessionStorage.setItem('snaprec_local_video_id', id);
+                            if (!localId) setLocalId(id);
+                        }
+                    } catch (e) { }
+                }
+            });
         }
-    }, []);
+    }, [localId]);
 
     const effectiveId = (isValidId ? id : undefined) || localId;
 
@@ -243,6 +298,18 @@ const ShareView: React.FC = () => {
                 showNotification('Failed to get recording ID. Please try again.', 'error');
                 return;
             }
+
+            // Clear fallback resilient storage to free up browser space once uploaded
+            try {
+                const request = indexedDB.open('SnapRecDB', 1);
+                request.onsuccess = (e: any) => {
+                    const db = e.target.result;
+                    if (db.objectStoreNames.contains('recordings')) {
+                        const txn = db.transaction(['recordings'], 'readwrite');
+                        txn.objectStore('recordings').clear();
+                    }
+                };
+            } catch (e) { }
 
             setIsUploaded(true);
 
