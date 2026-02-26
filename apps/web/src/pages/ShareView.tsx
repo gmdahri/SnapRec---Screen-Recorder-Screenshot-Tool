@@ -15,24 +15,29 @@ const convertBase64ToBlobUrl = async (dataUrl: string): Promise<string> => {
     } catch (e) {
         console.warn('Fetch base64 conversion failed, using manual fallback', e);
         try {
-            const parts = dataUrl.split(',');
-            const match = parts[0].match(/:(.*?);/);
-            const contentType = match ? match[1] : 'video/webm';
-            const base64Data = parts[1];
+            // Split the data URL
+            const splitIndex = dataUrl.indexOf(',');
+            const metadata = dataUrl.substring(0, splitIndex);
+            const base64Data = dataUrl.substring(splitIndex + 1);
 
-            const byteCharacters = atob(base64Data);
-            const byteArrays = [];
+            // Extract the MIME type
+            const mimeMatch = metadata.match(/:(.*?);/);
+            const contentType = mimeMatch ? mimeMatch[1] : 'video/webm';
 
-            for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-                const slice = byteCharacters.slice(offset, offset + 1024);
-                const byteNumbers = new Array(slice.length);
-                for (let i = 0; i < slice.length; i++) {
-                    byteNumbers[i] = slice.charCodeAt(i);
-                }
-                byteArrays.push(new Uint8Array(byteNumbers));
+            // Decode the base64 string
+            const byteString = atob(base64Data);
+
+            // Create an ArrayBuffer and a view (Uint8Array)
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            // Fill the view with the binary data
+            for (let i = 0; i < byteString.length; i++) {
+                uint8Array[i] = byteString.charCodeAt(i);
             }
 
-            const blob = new Blob(byteArrays, { type: contentType });
+            // Create the Blob
+            const blob = new Blob([arrayBuffer], { type: contentType });
             return URL.createObjectURL(blob);
         } catch (manualError) {
             console.error('Manual base64 conversion failed', manualError);
