@@ -7,6 +7,40 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
 
+const convertBase64ToBlobUrl = async (dataUrl: string): Promise<string> => {
+    try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        return URL.createObjectURL(blob);
+    } catch (e) {
+        console.warn('Fetch base64 conversion failed, using manual fallback', e);
+        try {
+            const parts = dataUrl.split(',');
+            const match = parts[0].match(/:(.*?);/);
+            const contentType = match ? match[1] : 'video/webm';
+            const base64Data = parts[1];
+
+            const byteCharacters = atob(base64Data);
+            const byteArrays = [];
+
+            for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+                const slice = byteCharacters.slice(offset, offset + 1024);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                byteArrays.push(new Uint8Array(byteNumbers));
+            }
+
+            const blob = new Blob(byteArrays, { type: contentType });
+            return URL.createObjectURL(blob);
+        } catch (manualError) {
+            console.error('Manual base64 conversion failed', manualError);
+            return dataUrl; // Last resort
+        }
+    }
+};
+
 const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -69,10 +103,7 @@ const ShareView: React.FC = () => {
 
         const applyBlob = (dataUrl: string) => {
             if (dataUrl.startsWith('data:')) {
-                fetch(dataUrl)
-                    .then(res => res.blob())
-                    .then(blob => setLocalVideoBlob(URL.createObjectURL(blob)))
-                    .catch(() => setLocalVideoBlob(dataUrl));
+                convertBase64ToBlobUrl(dataUrl).then(blobUrl => setLocalVideoBlob(blobUrl));
             } else {
                 setLocalVideoBlob(dataUrl);
             }
@@ -149,14 +180,8 @@ const ShareView: React.FC = () => {
                 if (!dataUrl) return;
 
                 if (dataUrl.startsWith('data:')) {
-                    try {
-                        const res = await fetch(dataUrl);
-                        const blob = await res.blob();
-                        setLocalVideoBlob(URL.createObjectURL(blob));
-                    } catch (e) {
-                        console.warn('Failed to convert base64 to blob URL', e);
-                        setLocalVideoBlob(dataUrl);
-                    }
+                    const blobUrl = await convertBase64ToBlobUrl(dataUrl);
+                    setLocalVideoBlob(blobUrl);
                 } else {
                     setLocalVideoBlob(dataUrl);
                 }
