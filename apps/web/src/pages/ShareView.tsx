@@ -18,7 +18,22 @@ const ShareView: React.FC = () => {
     const [fallbackDate] = useState(() => new Date().toISOString());
 
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
-    const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(() => sessionStorage.getItem('snaprec_local_video_blob'));
+    const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
+
+    // Initial load from sessionStorage
+    useEffect(() => {
+        const storedBlobUrl = sessionStorage.getItem('snaprec_local_video_blob');
+        if (storedBlobUrl) {
+            if (storedBlobUrl.startsWith('data:')) {
+                fetch(storedBlobUrl)
+                    .then(res => res.blob())
+                    .then(blob => setLocalVideoBlob(URL.createObjectURL(blob)))
+                    .catch(() => setLocalVideoBlob(storedBlobUrl));
+            } else {
+                setLocalVideoBlob(storedBlobUrl);
+            }
+        }
+    }, []);
 
     const effectiveId = (isValidId ? id : undefined) || localId;
 
@@ -62,14 +77,38 @@ const ShareView: React.FC = () => {
 
     // Extension Message Listener for local video data
     useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
+        const handleMessage = async (event: MessageEvent) => {
             if (event.data?.type === 'SNAPREC_VIDEO_DATA') {
                 console.log('Received video data from extension with id:', event.data.id);
-                setLocalVideoBlob(event.data.dataUrl);
-                sessionStorage.setItem('snaprec_local_video_blob', event.data.dataUrl);
+
+                const dataUrl = event.data.dataUrl;
+                if (!dataUrl) return;
+
+                if (dataUrl.startsWith('data:')) {
+                    try {
+                        const res = await fetch(dataUrl);
+                        const blob = await res.blob();
+                        setLocalVideoBlob(URL.createObjectURL(blob));
+                    } catch (e) {
+                        console.warn('Failed to convert base64 to blob URL', e);
+                        setLocalVideoBlob(dataUrl);
+                    }
+                } else {
+                    setLocalVideoBlob(dataUrl);
+                }
+
+                try {
+                    sessionStorage.setItem('snaprec_local_video_blob', dataUrl);
+                } catch (e) {
+                    console.warn('QuotaExceededError: Cannot save video to sessionStorage');
+                }
                 if (event.data.id) {
                     setLocalId(event.data.id);
-                    sessionStorage.setItem('snaprec_local_video_id', event.data.id);
+                    try {
+                        sessionStorage.setItem('snaprec_local_video_id', event.data.id);
+                    } catch (e) {
+                        console.warn('QuotaExceededError: Cannot save video ID to sessionStorage');
+                    }
                 }
             }
         };
