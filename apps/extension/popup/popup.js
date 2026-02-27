@@ -58,9 +58,39 @@ async function initUpdateBanner() {
     console.warn('Could not check update state:', e);
   }
 
-  // "Update Now" reloads the extension to apply the pending update
-  updateBtn.addEventListener('click', () => {
-    chrome.runtime.reload();
+  // "Update Now" triggers a real update check and applies it
+  updateBtn.addEventListener('click', async () => {
+    updateBtn.textContent = 'Checking...';
+    updateBtn.disabled = true;
+
+    try {
+      // Request Chrome to check for and download the update from the Web Store
+      if (chrome.runtime.requestUpdateCheck) {
+        const [status] = await chrome.runtime.requestUpdateCheck();
+        console.log('[SnapRec] Update check status:', status);
+
+        if (status === 'update_available') {
+          updateBtn.textContent = 'Installing...';
+          // Reload to apply the downloaded update
+          chrome.runtime.reload();
+        } else if (status === 'no_update') {
+          // Already up to date — just reload to pick up any pending update
+          chrome.runtime.reload();
+        } else if (status === 'throttled') {
+          // Chrome is rate-limiting update checks — open the CWS listing instead
+          chrome.tabs.create({ url: `https://chromewebstore.google.com/detail/${chrome.runtime.id}` });
+          window.close();
+        }
+      } else {
+        // Fallback for environments without requestUpdateCheck (e.g., unpacked)
+        chrome.runtime.reload();
+      }
+    } catch (e) {
+      console.warn('[SnapRec] Update check failed:', e);
+      // Fallback: open the Chrome Web Store listing
+      chrome.tabs.create({ url: `https://chromewebstore.google.com/detail/${chrome.runtime.id}` });
+      window.close();
+    }
   });
 }
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SnapRec - Screen Recorder & Screenshot Tool",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Free screen recorder & screenshot tool. Record with audio, capture full-page, annotate, and share via link instantly. No watermarks.",
   "icons": {
     "16": "icons/icon16.png",
