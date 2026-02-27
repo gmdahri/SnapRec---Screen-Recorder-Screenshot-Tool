@@ -77,18 +77,19 @@ async function initUpdateBanner() {
           // Already up to date — just reload to pick up any pending update
           chrome.runtime.reload();
         } else if (status === 'throttled') {
-          // Chrome is rate-limiting update checks — open the CWS listing instead
-          chrome.tabs.create({ url: `https://chromewebstore.google.com/detail/${chrome.runtime.id}` });
+          // Chrome is rate-limiting update checks — open the download page
+          chrome.tabs.create({ url: 'https://www.snaprecorder.org/#download' });
           window.close();
         }
       } else {
         // Fallback for environments without requestUpdateCheck (e.g., unpacked)
-        chrome.runtime.reload();
+        chrome.tabs.create({ url: 'https://www.snaprecorder.org/#download' });
+        window.close();
       }
     } catch (e) {
       console.warn('[SnapRec] Update check failed:', e);
-      // Fallback: open the Chrome Web Store listing
-      chrome.tabs.create({ url: `https://chromewebstore.google.com/detail/${chrome.runtime.id}` });
+      // Fallback: open the download page on the website
+      chrome.tabs.create({ url: 'https://www.snaprecorder.org/#download' });
       window.close();
     }
   });
