@@ -21,19 +21,23 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
 
     if (loading) {
         return (
-            <div className="size-9 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+            <div className="w-[110px] h-9 flex items-center justify-end">
+                <div className="size-9 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+            </div>
         );
     }
 
     if (!user) {
         return (
-            <button
-                onClick={onSignIn}
-                className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-                <span className="material-symbols-outlined text-[18px]">login</span>
-                <span>Sign In</span>
-            </button>
+            <div className="w-[110px] h-9 flex items-center justify-end">
+                <button
+                    onClick={onSignIn}
+                    className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                    <span className="material-symbols-outlined text-[18px]">login</span>
+                    <span>Sign In</span>
+                </button>
+            </div>
         );
     }
 

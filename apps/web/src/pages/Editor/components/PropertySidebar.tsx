@@ -9,7 +9,7 @@ export const PropertySidebar: React.FC = () => {
     } = useEditor();
 
     return (
-        <aside className="w-72 border-l border-[#ece7f4] dark:border-[#2d2245] bg-white dark:bg-[#1c142b] flex flex-col overflow-y-auto">
+        <aside className="w-72 shrink-0 border-l border-[#ece7f4] dark:border-[#2d2245] bg-white dark:bg-[#1c142b] flex flex-col overflow-y-auto">
             <div className="p-5 border-b border-[#ece7f4] dark:border-[#2d2245]">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[#6c499c]">Properties</h3>
             </div>

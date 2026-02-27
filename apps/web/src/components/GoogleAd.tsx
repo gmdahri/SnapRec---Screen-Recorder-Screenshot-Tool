@@ -101,11 +101,11 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
     }
 
     return (
-        <div className={`google-ad-container overflow-hidden rounded-xl ${className}`} style={style}>
+        <div className={`google-ad-container overflow-hidden rounded-xl ${className}`} style={{ minHeight: '90px', ...style }}>
             <ins
                 ref={adRef as any}
                 className="adsbygoogle"
-                style={{ display: 'block', ...style }}
+                style={{ display: 'block', minHeight: '90px', ...style }}
                 data-ad-client={CLIENT_ID}
                 data-ad-slot={SLOT_ID}
                 data-ad-format={format}

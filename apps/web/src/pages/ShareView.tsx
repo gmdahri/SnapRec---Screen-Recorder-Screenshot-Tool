@@ -578,7 +578,7 @@ const ShareView: React.FC = () => {
                 type="video.other"
                 image={recordingData.thumbnailUrl}
             />
-            <div className="bg-background-light dark:bg-background-dark transition-colors duration-300 min-h-screen pb-20">
+            <div className="bg-background-light dark:bg-background-dark transition-colors duration-300 pb-20">
                 {isFresh && !isUploaded && (
                     <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/30 p-3">
                         <div className="max-w-[1440px] mx-auto px-6 lg:px-20 flex items-center justify-between gap-4">
