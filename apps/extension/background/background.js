@@ -830,9 +830,9 @@ async function handleRecordingComplete() {
                             const db = e.target.result;
                             const transaction = db.transaction(['recordings'], 'readwrite');
                             const store = transaction.objectStore('recordings');
+                            store.clear(); // Wipe all stale data before writing fresh recording
                             store.put(blob, 'latest_video_blob');
                             store.put(id, 'latest_id');
-                            store.delete('latest_video'); // Clear stale base64 data from previous sessions
 
                             transaction.oncomplete = () => {
                                 console.log('Injected script: blob stored in web page IDB, signaling React app');
