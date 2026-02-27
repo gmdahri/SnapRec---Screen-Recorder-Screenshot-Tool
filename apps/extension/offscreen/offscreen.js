@@ -75,6 +75,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .then(result => sendResponse({ success: true, size: result.size, type: result.type }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
+
+        case 'offscreen_getRecordingBlobAsArrayBuffer':
+            getRecordingBlobAsArray()
+                .then(result => sendResponse({ success: true, blobArray: result.blobArray, mimeType: result.mimeType, size: result.size }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
     }
 });
 
@@ -337,6 +343,24 @@ async function storeRecordingBlobToIDB() {
             reject(new Error('Failed to open IndexedDB for blob storage'));
         };
     });
+}
+
+// Return the recording blob as a serializable array of byte values
+// This can be passed through chrome.scripting.executeScript args
+// and reconstructed as a Blob in the target page's context
+async function getRecordingBlobAsArray() {
+    if (!currentRecordingBlob) {
+        throw new Error('No recording blob available');
+    }
+
+    const arrayBuffer = await currentRecordingBlob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    // Convert to plain array for serialization through Chrome messaging
+    return {
+        blobArray: Array.from(uint8Array),
+        mimeType: currentRecordingBlob.type || 'video/webm',
+        size: currentRecordingBlob.size
+    };
 }
 
 async function cropImage(dataUrl, rect) {
