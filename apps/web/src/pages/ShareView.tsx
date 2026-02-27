@@ -58,6 +58,9 @@ const ShareView: React.FC = () => {
 
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
+    // Guard against race condition: if the message handler has already set the blob,
+    // don't let the initial useEffect's async callback overwrite it with stale data
+    const videoBlobSetByMessage = React.useRef(false);
 
     // Helper: Initialize from fallback DB if memory is wiped (e.g., refresh)
     const loadFromIndexedDB = async () => {
@@ -117,9 +120,16 @@ const ShareView: React.FC = () => {
 
         const applyBlob = (dataUrl: string) => {
             if (dataUrl.startsWith('data:')) {
-                convertBase64ToBlobUrl(dataUrl).then(blobUrl => setLocalVideoBlob(blobUrl));
+                convertBase64ToBlobUrl(dataUrl).then(blobUrl => {
+                    // Don't overwrite if the message handler has already set a fresh blob
+                    if (!videoBlobSetByMessage.current) {
+                        setLocalVideoBlob(blobUrl);
+                    }
+                });
             } else {
-                setLocalVideoBlob(dataUrl);
+                if (!videoBlobSetByMessage.current) {
+                    setLocalVideoBlob(dataUrl);
+                }
             }
         };
 
@@ -128,6 +138,9 @@ const ShareView: React.FC = () => {
         } else {
             // Attempt resilient fallback if session storage is wiped on refresh
             loadFromIndexedDB().then(({ blob, rawBlob, id }) => {
+                // Don't overwrite if the message handler has already set a fresh blob
+                if (videoBlobSetByMessage.current) return;
+
                 // Prefer raw Blob (new path) over base64 string (legacy path)
                 if (rawBlob) {
                     const blobUrl = URL.createObjectURL(rawBlob);
@@ -240,13 +253,14 @@ const ShareView: React.FC = () => {
             if (event.data?.type === 'SNAPREC_VIDEO_DATA') {
                 console.log('Received video data from extension with id:', event.data.id);
 
-                // New IDB path: blob was stored directly in IndexedDB by the offscreen document
+                // New IDB path: blob was stored directly in IndexedDB by the injected script
                 if (event.data.fromIDB) {
                     console.log('Loading video blob from IndexedDB (no base64 conversion)...');
                     const blob = await loadBlobFromIDB();
                     if (blob) {
                         const blobUrl = URL.createObjectURL(blob);
                         console.log('Video blob loaded from IDB, size:', blob.size, 'type:', blob.type);
+                        videoBlobSetByMessage.current = true;
                         setLocalVideoBlob(blobUrl);
                     } else {
                         console.warn('No blob found in IndexedDB, falling back to loadFromIndexedDB (legacy)');
