@@ -82,25 +82,37 @@ const ShareView: React.FC = () => {
                         resolve({ blob: null, rawBlob: null, id: null });
                         return;
                     }
-                    const transaction = db.transaction(['recordings'], 'readonly');
+                    const transaction = db.transaction(['recordings'], 'readwrite');
                     const store = transaction.objectStore('recordings');
 
-                    let dbBlob: string | null = null;
-                    let dbRawBlob: Blob | null = null;
-                    let dbId: string | null = null;
-
-                    // First try the new raw Blob key
-                    store.get('latest_video_blob').onsuccess = (blobEv: any) => {
-                        if (blobEv.target.result instanceof Blob) {
-                            dbRawBlob = blobEv.target.result;
+                    // TTL check: expire data older than 1 hour
+                    const VIDEO_TTL_MS = 60 * 60 * 1000; // 1 hour
+                    store.get('latest_video_timestamp').onsuccess = (tsEv: any) => {
+                        const timestamp = tsEv.target.result;
+                        if (timestamp && (Date.now() - timestamp) > VIDEO_TTL_MS) {
+                            console.log('IDB video data expired (older than 1 hour), clearing');
+                            store.clear();
+                            resolve({ blob: null, rawBlob: null, id: null });
+                            return;
                         }
 
-                        // Then try the legacy string key
-                        store.get('latest_video').onsuccess = (ev: any) => {
-                            dbBlob = ev.target.result;
-                            store.get('latest_id').onsuccess = (idEv: any) => {
-                                dbId = idEv.target.result;
-                                resolve({ blob: dbBlob, rawBlob: dbRawBlob, id: dbId });
+                        let dbBlob: string | null = null;
+                        let dbRawBlob: Blob | null = null;
+                        let dbId: string | null = null;
+
+                        // First try the new raw Blob key
+                        store.get('latest_video_blob').onsuccess = (blobEv: any) => {
+                            if (blobEv.target.result instanceof Blob) {
+                                dbRawBlob = blobEv.target.result;
+                            }
+
+                            // Then try the legacy string key
+                            store.get('latest_video').onsuccess = (ev: any) => {
+                                dbBlob = ev.target.result;
+                                store.get('latest_id').onsuccess = (idEv: any) => {
+                                    dbId = idEv.target.result;
+                                    resolve({ blob: dbBlob, rawBlob: dbRawBlob, id: dbId });
+                                };
                             };
                         };
                     };
