@@ -534,16 +534,14 @@ const ShareView: React.FC = () => {
     }
 
     const HeaderActions = (
-        <div className="flex items-center gap-4">
-            {isUploaded && (
-                <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-sm font-bold transition-all"
-                >
-                    <span className="material-symbols-outlined text-[20px]">download</span>
-                    Download
-                </button>
-            )}
+        <div className="flex items-center gap-4 min-h-[40px]">
+            <button
+                onClick={handleDownload}
+                className={`flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 text-sm font-bold transition-all ${!isUploaded ? 'invisible' : ''}`}
+            >
+                <span className="material-symbols-outlined text-[20px]">download</span>
+                Download
+            </button>
 
             {!isUploaded ? (
                 <button

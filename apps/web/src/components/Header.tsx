@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {center}
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 min-w-[200px] justify-end">
+                <div className="flex items-center gap-4 shrink-0 min-w-[340px] min-h-[40px] justify-end">
                     {actions}
                     <UserMenu onSignIn={() => setShowLoginModal(true)} />
                 </div>

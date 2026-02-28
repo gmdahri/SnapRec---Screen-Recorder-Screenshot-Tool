@@ -31,22 +31,33 @@ const jsonLd = {
         {
             '@type': 'SoftwareApplication',
             name: 'SnapRec',
+            alternateName: ['SnapRec Screen Recorder', 'SnapRec Screenshot Tool', 'Snap Recorder'],
             applicationCategory: 'BrowserApplication',
+            applicationSubCategory: 'Screen Recorder',
             operatingSystem: 'Chrome, Edge, Brave',
+            browserRequirements: 'Requires a Chromium-based browser (Chrome, Edge, Brave)',
+            softwareVersion: '1.2.3',
             url: 'https://www.snaprecorder.org',
+            downloadUrl: 'https://chrome.google.com/webstore',
             description:
-                'Free screen recorder & screenshot tool for Chrome. Record with audio, capture full-page screenshots, annotate, and share via link instantly. No watermarks.',
+                'Free screen recorder & screenshot tool for Chrome. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits.',
             offers: {
                 '@type': 'Offer',
                 price: '0',
                 priceCurrency: 'USD',
+                availability: 'https://schema.org/InStock',
             },
             featureList: [
-                'Screen recording with webcam and audio',
-                'Full-page, visible area, and region screenshots',
-                'Built-in annotation editor',
-                'Cloud sharing via link',
+                'Free screen recorder with 4K support',
+                'Screen recording with webcam overlay and audio',
+                'Full-page screenshot capture',
+                'Visible area and region screenshot capture',
+                'Built-in screenshot annotation editor',
+                'Cloud sharing via instant link',
                 'No watermarks or time limits',
+                'Works on Chrome, Edge, and Brave browsers',
+                'Screen recorder Chrome extension',
+                'Screenshot Chrome extension',
             ],
         },
         {
@@ -59,6 +70,12 @@ const jsonLd = {
                     text: f.a,
                 },
             })),
+        },
+        {
+            '@type': 'WebSite',
+            name: 'SnapRec',
+            url: 'https://www.snaprecorder.org',
+            description: 'Free screen recorder & screenshot tool for Chrome, Edge & Brave.',
         },
     ],
 };
@@ -97,13 +114,9 @@ const Landing: React.FC = () => {
             <SEO
                 url="/"
                 title="Free Screen Recorder & Screenshot Tool for Chrome"
-                description="SnapRec is a free Chrome extension to record your screen, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits."
-                keywords="screen recorder, screenshot tool, chrome extension, screen capture, record screen, free screen recorder, full page screenshot, annotate screenshot, share screen recording"
-            />
-            {/* JSON-LD Structured Data */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                description="SnapRec is a 100% free screen recorder & screenshot Chrome extension. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits."
+                keywords="screen recorder, free screen recorder, screen recorder 4k, screen recorder extension, screenshot tool, screenshot extension, chrome screen recorder, screen capture, record screen online, free screen recording, screen recorder no watermark, full page screenshot, screen recording tool, best free screen recorder, screen recorder chrome extension, screenshot chrome extension, online screen recorder, screen recorder with audio, screen recorder with webcam, screen capture tool, capture screen chrome, 4k screen recorder free"
+                jsonLd={jsonLd}
             />
             <LandingNavbar />
 
@@ -179,8 +192,8 @@ const Landing: React.FC = () => {
                 <section id="features" className="py-24 bg-slate-50/50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
-                            <h2 className="text-4xl font-black mb-4">The ultimate tool for creators</h2>
-                            <p className="text-slate-500 font-medium">Everything you need to capture and share content professionally.</p>
+                            <h2 className="text-4xl font-black mb-4">The Ultimate Free Screen Recorder & Screenshot Tool</h2>
+                            <p className="text-slate-500 font-medium">Everything you need to record your screen in 4K, capture screenshots, and share content professionally.</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
@@ -190,13 +203,13 @@ const Landing: React.FC = () => {
                                     <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform duration-500">
                                         <span className="material-symbols-outlined text-4xl">videocam</span>
                                     </div>
-                                    <h3 className="text-2xl font-black mb-3 text-slate-900 leading-tight">Screen Recording</h3>
+                                    <h3 className="text-2xl font-black mb-3 text-slate-900 leading-tight">Free Screen Recording in 4K</h3>
                                     <p className="text-slate-500 font-medium leading-relaxed max-w-md">
-                                        Instantly capture your screen, webcam, and audio with crystal-clear quality. No lag, just seamless recording.
+                                        Record your screen in 4K with webcam overlay and system audio. No watermarks, no time limits — just seamless, crystal-clear recording.
                                     </p>
                                 </div>
                                 <div className="mt-8 flex gap-2">
-                                    <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">4K Support</span>
+                                    <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">4K Screen Recorder</span>
                                     <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">Webcam Overlay</span>
                                     <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">System Audio</span>
                                 </div>
@@ -220,9 +233,9 @@ const Landing: React.FC = () => {
                                 <div className="size-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 mb-6 group-hover:rotate-12 transition-transform duration-500">
                                     <span className="material-symbols-outlined text-4xl">edit_note</span>
                                 </div>
-                                <h3 className="text-2xl font-black mb-3">Annotation Tools</h3>
+                                <h3 className="text-2xl font-black mb-3">Screenshot Annotation Tools</h3>
                                 <p className="text-slate-500 font-medium text-sm">
-                                    Draw, highlight, and add text to your screenshots with our powerful editor.
+                                    Draw, highlight, blur, and add text to your screenshots with our powerful built-in editor.
                                 </p>
                             </div>
 
@@ -255,7 +268,7 @@ const Landing: React.FC = () => {
                                 Take SnapRec everywhere
                             </h2>
                             <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
-                                Install our Chrome extension to capture full-page screenshots and record your screen from any tab with a single click.
+                                Install our free screen recorder & screenshot Chrome extension to capture full-page screenshots and record your screen from any tab with a single click.
                             </p>
 
                             <div className="flex flex-col md:flex-row items-center justify-center gap-6">

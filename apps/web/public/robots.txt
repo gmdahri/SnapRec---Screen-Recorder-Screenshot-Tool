@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /library
+Disallow: /analytics
+Disallow: /settings
+Disallow: /auth
+Disallow: /login
 
 Sitemap: https://www.snaprecorder.org/sitemap.xml
