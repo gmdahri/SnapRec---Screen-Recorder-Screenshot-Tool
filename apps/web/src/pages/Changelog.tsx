@@ -76,8 +76,8 @@ const Changelog: React.FC = () => {
             <SEO
                 url="/changelog"
                 title="Changelog — What's New in SnapRec"
-                description="See the latest updates, new features, and bug fixes in SnapRec — the free screen recorder and screenshot tool for Chrome."
-                keywords="snaprec changelog, snaprec updates, screen recorder updates, new features"
+                description="See the latest updates, new features, and bug fixes in SnapRec — the free screen recorder & screenshot Chrome extension. 4K recording, annotation tools, and more."
+                keywords="snaprec changelog, snaprec updates, screen recorder updates, new features, free screen recorder updates, screenshot tool changelog"
             />
             <LandingNavbar />
 

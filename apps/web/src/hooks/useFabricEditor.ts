@@ -47,18 +47,36 @@ export const useFabricEditor = () => {
         }
     }, [strokeColor, strokeWidth]);
 
+    const saveDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const saveIdleHandle = useRef<number | null>(null);
+
     const saveState = useCallback(() => {
-        const canvas = fabricCanvas.current;
-        if (!canvas) return;
-        const json = JSON.stringify(canvas.toJSON());
-        if (history.current[historyIndex] === json) return;
+        // Debounce: batch rapid interactions into a single save
+        if (saveDebounceTimer.current) clearTimeout(saveDebounceTimer.current);
+        if (saveIdleHandle.current) cancelIdleCallback(saveIdleHandle.current);
 
-        const newHistory = history.current.slice(0, historyIndex + 1);
-        newHistory.push(json);
-        if (newHistory.length > 50) newHistory.shift();
+        saveDebounceTimer.current = setTimeout(() => {
+            // Yield to browser via requestIdleCallback so serialization doesn't block INP
+            const doSave = () => {
+                const canvas = fabricCanvas.current;
+                if (!canvas) return;
+                const json = JSON.stringify(canvas.toJSON());
+                if (history.current[historyIndex] === json) return;
 
-        history.current = newHistory;
-        setHistoryIndex(newHistory.length - 1);
+                const newHistory = history.current.slice(0, historyIndex + 1);
+                newHistory.push(json);
+                if (newHistory.length > 50) newHistory.shift();
+
+                history.current = newHistory;
+                setHistoryIndex(newHistory.length - 1);
+            };
+
+            if ('requestIdleCallback' in window) {
+                saveIdleHandle.current = requestIdleCallback(doSave, { timeout: 500 });
+            } else {
+                doSave();
+            }
+        }, 150);
     }, [historyIndex]);
 
     const undo = useCallback(() => {
@@ -67,8 +85,11 @@ export const useFabricEditor = () => {
         if (historyIndex > 0) {
             const prevState = history.current[historyIndex - 1];
             canvas.loadFromJSON(prevState, () => {
-                canvas.renderAll();
-                setHistoryIndex(prev => prev - 1);
+                // Yield a frame so the browser can paint before committing state
+                requestAnimationFrame(() => {
+                    canvas.renderAll();
+                    setHistoryIndex(prev => prev - 1);
+                });
             });
         }
     }, [historyIndex]);
@@ -79,8 +100,10 @@ export const useFabricEditor = () => {
         if (historyIndex < history.current.length - 1) {
             const nextState = history.current[historyIndex + 1];
             canvas.loadFromJSON(nextState, () => {
-                canvas.renderAll();
-                setHistoryIndex(prev => prev + 1);
+                requestAnimationFrame(() => {
+                    canvas.renderAll();
+                    setHistoryIndex(prev => prev + 1);
+                });
             });
         }
     }, [historyIndex]);
@@ -126,9 +149,16 @@ export const useFabricEditor = () => {
             canvas.freeDrawingBrush.width = strokeWidthRef.current;
         }
         canvas.selection = tool === 'select';
-        canvas.forEachObject((obj) => {
-            obj.selectable = tool === 'select' || (tool === 'text' && obj instanceof fabric.IText);
-        });
+        // Only iterate objects when switching to select/text (where selectability matters)
+        // Skip the expensive loop for drawing tools
+        if (tool === 'select' || tool === 'text') {
+            canvas.forEachObject((obj) => {
+                obj.selectable = tool === 'select' || (tool === 'text' && obj instanceof fabric.IText);
+            });
+        } else if (canvas.getObjects().length > 0) {
+            // For drawing tools, just disable selection on all objects in one pass
+            canvas.forEachObject((obj) => { obj.selectable = false; });
+        }
         canvas.renderAll();
     }, []);
 

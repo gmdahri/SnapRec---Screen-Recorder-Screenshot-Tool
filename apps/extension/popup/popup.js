@@ -63,33 +63,35 @@ async function initUpdateBanner() {
     updateBtn.textContent = 'Checking...';
     updateBtn.disabled = true;
 
+    const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/bbddmnmffamnnidcdhnflpbdkckhhacj';
+
     try {
       // Request Chrome to check for and download the update from the Web Store
       if (chrome.runtime.requestUpdateCheck) {
-        const [status] = await chrome.runtime.requestUpdateCheck();
-        console.log('[SnapRec] Update check status:', status);
+        chrome.runtime.requestUpdateCheck((status) => {
+          console.log('[SnapRec] Update check status:', status);
 
-        if (status === 'update_available') {
-          updateBtn.textContent = 'Installing...';
-          // Reload to apply the downloaded update
-          chrome.runtime.reload();
-        } else if (status === 'no_update') {
-          // Already up to date — just reload to pick up any pending update
-          chrome.runtime.reload();
-        } else if (status === 'throttled') {
-          // Chrome is rate-limiting update checks — open the download page
-          chrome.tabs.create({ url: 'https://www.snaprecorder.org/#download' });
-          window.close();
-        }
+          if (status === 'update_available') {
+            updateBtn.textContent = 'Installing...';
+            // Reload to apply the downloaded update
+            chrome.runtime.reload();
+          } else {
+            // Either 'no_update', 'throttled', or actual error.
+            // Since our version.json said there's an update, it means the CWS hasn't synced for this user yet,
+            // or we're being rate limited. Send them to the store page where they can manually force it.
+            chrome.tabs.create({ url: CHROME_STORE_URL });
+            window.close();
+          }
+        });
       } else {
-        // Fallback for environments without requestUpdateCheck (e.g., unpacked)
-        chrome.tabs.create({ url: 'https://www.snaprecorder.org/#download' });
+        // Fallback for environments without requestUpdateCheck
+        chrome.tabs.create({ url: CHROME_STORE_URL });
         window.close();
       }
     } catch (e) {
       console.warn('[SnapRec] Update check failed:', e);
-      // Fallback: open the download page on the website
-      chrome.tabs.create({ url: 'https://www.snaprecorder.org/#download' });
+      // Fallback: open the Chrome store page
+      chrome.tabs.create({ url: CHROME_STORE_URL });
       window.close();
     }
   });

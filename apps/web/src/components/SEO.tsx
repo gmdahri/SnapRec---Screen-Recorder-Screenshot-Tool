@@ -10,6 +10,8 @@ interface SEOProps {
     type?: string;
     /** Set to true for auth-gated pages that should not be indexed */
     noIndex?: boolean;
+    /** Optional JSON-LD structured data object to embed on the page */
+    jsonLd?: Record<string, unknown>;
 }
 
 export const SEO: React.FC<SEOProps> = ({
@@ -20,10 +22,11 @@ export const SEO: React.FC<SEOProps> = ({
     url,
     type = 'website',
     noIndex = false,
+    jsonLd,
 }) => {
     const siteTitle = 'SnapRec';
-    const fullTitle = title ? `${title} | ${siteTitle}` : `SnapRec - Free Screen Recorder & Screenshot Tool for Chrome`;
-    const defaultDescription = 'Free screen recorder and screenshot tool for Chrome. Capture full-page screenshots, record your screen with audio, annotate and share instantly via link. No watermarks.';
+    const fullTitle = title ? `${title} | ${siteTitle}` : `Free Screen Recorder & Screenshot Tool — SnapRec Chrome Extension`;
+    const defaultDescription = 'SnapRec is a 100% free screen recorder & screenshot tool for Chrome. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link. No watermarks, no time limits.';
     const metaDescription = description || defaultDescription;
     const siteUrl = 'https://www.snaprecorder.org';
     const currentUrl = url ? `${siteUrl}${url}` : siteUrl;
@@ -53,6 +56,13 @@ export const SEO: React.FC<SEOProps> = ({
             <meta name="twitter:title" content={fullTitle} />
             <meta name="twitter:description" content={metaDescription} />
             <meta name="twitter:image" content={metaImage} />
+
+            {/* JSON-LD Structured Data */}
+            {jsonLd && (
+                <script type="application/ld+json">
+                    {JSON.stringify(jsonLd)}
+                </script>
+            )}
         </Helmet>
     );
 };

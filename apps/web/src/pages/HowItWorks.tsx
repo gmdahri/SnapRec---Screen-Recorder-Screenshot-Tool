@@ -68,14 +68,34 @@ const useCases = [
     },
 ];
 
+const howToJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Record Your Screen & Take Screenshots in Chrome',
+    description:
+        'Learn how to use SnapRec to record your screen in 4K, capture full-page screenshots, annotate images, and share via link — all free, no watermarks.',
+    totalTime: 'PT1M',
+    tool: {
+        '@type': 'HowToTool',
+        name: 'SnapRec Chrome Extension',
+    },
+    step: steps.map((s, i) => ({
+        '@type': 'HowToStep',
+        position: i + 1,
+        name: s.title,
+        text: s.description,
+    })),
+};
+
 const HowItWorks: React.FC = () => {
     return (
         <div className="min-h-screen bg-white text-slate-900 font-display">
             <SEO
                 url="/how-it-works"
                 title="How to Record Your Screen & Take Screenshots in Chrome"
-                description="Learn how to use SnapRec to record your screen, capture full-page screenshots, annotate images, and share via link — all free, no watermarks, in Chrome, Edge, or Brave."
-                keywords="how to record screen chrome, how to take full page screenshot, screen recording tutorial, chrome screenshot extension, how to capture screen"
+                description="Learn how to use SnapRec to record your screen in 4K, capture full-page screenshots, annotate images, and share via link — all free, no watermarks, in Chrome, Edge, or Brave."
+                keywords="how to record screen chrome, how to take full page screenshot, screen recording tutorial, chrome screenshot extension, how to capture screen, free screen recorder chrome, 4k screen recorder free, screen capture tool, chrome screen recorder extension, best screenshot extension, screen recorder extension free"
+                jsonLd={howToJsonLd}
             />
             <LandingNavbar />
 
@@ -108,9 +128,8 @@ const HowItWorks: React.FC = () => {
                             {steps.map((step, idx) => (
                                 <div
                                     key={idx}
-                                    className={`flex flex-col md:flex-row items-center gap-8 md:gap-12 ${
-                                        idx % 2 !== 0 ? 'md:flex-row-reverse' : ''
-                                    }`}
+                                    className={`flex flex-col md:flex-row items-center gap-8 md:gap-12 ${idx % 2 !== 0 ? 'md:flex-row-reverse' : ''
+                                        }`}
                                 >
                                     {/* Number + Icon */}
                                     <div className="flex-shrink-0 relative">

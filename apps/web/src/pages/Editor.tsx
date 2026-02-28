@@ -53,7 +53,7 @@ const EditorContent: React.FC = () => {
     }, [capturedImage, isCanvasReady, initCanvas]);
 
     const EditorActions = (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-h-[40px]">
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                 <button
                     onClick={undo}
@@ -99,9 +99,9 @@ const EditorContent: React.FC = () => {
         <>
             <SEO
                 url="/editor"
-                title="Screenshot & Image Editor"
-                description="Free online screenshot editor. Annotate, draw, highlight, blur, and add text to your screenshots. Share your edited images instantly with a link."
-                keywords="screenshot editor, image annotator, online photo editor, annotate screenshot, draw on screenshot, blur screenshot"
+                title="Screenshot & Image Editor — Free Online Annotation Tool"
+                description="Free online screenshot editor. Annotate, draw, highlight, blur, and add text to your screenshots instantly. Edit and share your images with a link — no sign-up required."
+                keywords="screenshot editor, image annotator, online photo editor, annotate screenshot, draw on screenshot, blur screenshot, screenshot editor online free, screenshot tool chrome, edit screenshot online, free screenshot annotation tool, screenshot extension editor"
             />
             <MainLayout
                 title={
