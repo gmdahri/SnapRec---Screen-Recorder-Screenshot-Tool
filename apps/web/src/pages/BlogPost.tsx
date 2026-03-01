@@ -26,6 +26,21 @@ const BlogPost: React.FC = () => {
                 description={post.description}
                 keywords={post.keywords}
                 type="article"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "Article",
+                    "headline": post.title,
+                    "image": [
+                        "https://www.snaprecorder.org/og-image.png"
+                    ],
+                    "datePublished": new Date(post.date).toISOString(),
+                    "dateModified": new Date(post.date).toISOString(),
+                    "author": [{
+                        "@type": "Organization",
+                        "name": "SnapRec Team",
+                        "url": "https://www.snaprecorder.org"
+                    }]
+                }}
             />
             <LandingNavbar />
 
@@ -80,13 +95,21 @@ const BlogPost: React.FC = () => {
                     {/* Article Content */}
                     <div
                         className="prose prose-lg prose-slate max-w-none 
-                                    prose-headings:font-black prose-headings:tracking-tight 
-                                    prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
-                                    prose-h3:text-2xl prose-h3:mt-8 
-                                    prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                                    prose-li:marker:text-primary
-                                    prose-img:rounded-2xl prose-img:shadow-lg
-                                    prose-strong:font-bold prose-strong:text-slate-900"
+                                    prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 
+                                    prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-8 prose-h2:pb-4 prose-h2:border-b-2 prose-h2:border-slate-100
+                                    prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-6
+                                    prose-p:text-slate-600 prose-p:leading-[1.8] prose-p:mb-8 prose-p:text-[1.125rem]
+                                    prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+                                    prose-li:text-slate-600 prose-li:marker:text-primary prose-li:leading-relaxed prose-li:mb-2
+                                    prose-ul:mt-6 prose-ul:mb-10 prose-ul:pl-6
+                                    prose-ol:mt-6 prose-ol:mb-10 prose-ol:pl-6
+                                    prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:text-primary-900 prose-blockquote:italic prose-blockquote:my-10
+                                    prose-img:rounded-3xl prose-img:shadow-2xl prose-img:border prose-img:border-slate-100 prose-img:my-12
+                                    prose-strong:font-black prose-strong:text-slate-900 prose-strong:bg-yellow-100/50 prose-strong:px-1 prose-strong:rounded
+                                    prose-code:text-primary prose-code:bg-primary/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
+                                    prose-table:border-collapse prose-table:w-full prose-table:text-sm prose-table:my-12 prose-table:shadow-sm prose-table:rounded-xl prose-table:overflow-hidden
+                                    prose-th:bg-slate-50 prose-th:text-slate-800 prose-th:p-5 prose-th:text-left prose-th:border prose-th:border-slate-200 prose-th:font-black
+                                    prose-td:p-5 prose-td:border prose-td:border-slate-200 prose-td:text-slate-600"
                         dangerouslySetInnerHTML={{ __html: post.content }}
                     />
 
