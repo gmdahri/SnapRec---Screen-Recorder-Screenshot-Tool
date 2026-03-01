@@ -15,6 +15,7 @@ export const LandingNavbar: React.FC = () => {
                         <a href="/#features" className="text-slate-600 hover:text-primary font-medium transition-colors">Features</a>
                         <NavLink to="/how-it-works" className="text-slate-600 hover:text-primary font-medium transition-colors">How It Works</NavLink>
                         <a href="/#extension" className="text-slate-600 hover:text-primary font-medium transition-colors">Extension</a>
+                        <NavLink to="/blog" className="text-slate-600 hover:text-primary font-medium transition-colors">Blog</NavLink>
                         <NavLink to="/changelog" className="text-slate-600 hover:text-primary font-medium transition-colors">Changelog</NavLink>
                     </div>
 

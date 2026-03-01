@@ -16,6 +16,8 @@ import Privacy from './pages/Privacy';
 import Landing from './pages/Landing';
 import Changelog from './pages/Changelog';
 import HowItWorks from './pages/HowItWorks';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -65,6 +67,8 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/changelog" element={<Changelog />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
             </Router>

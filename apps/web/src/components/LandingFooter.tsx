@@ -20,6 +20,7 @@ export const LandingFooter: React.FC = () => {
                             <li><a href="/#features" className="hover:text-primary transition-colors">Features</a></li>
                             <li><a href="/#extension" className="hover:text-primary transition-colors">Chrome Extension</a></li>
                             <li><NavLink to="/how-it-works" className="hover:text-primary transition-colors">How It Works</NavLink></li>
+                            <li><NavLink to="/blog" className="hover:text-primary transition-colors">Blog</NavLink></li>
                             <li><NavLink to="/changelog" className="hover:text-primary transition-colors">Changelog</NavLink></li>
                         </ul>
                     </div>
