@@ -41,4 +41,41 @@
     <priority>0.4</priority>
   </url>
 
+  <!-- Blog URLs -->
+  <url>
+    <loc>https://www.snaprecorder.org/blog</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/how-to-record-screen-chrome-free</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/best-free-screen-recorders-no-watermark</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/how-to-take-full-page-screenshot-chrome</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/snaprec-vs-loom-free-alternative</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/record-screen-with-audio-webcam-chrome</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
