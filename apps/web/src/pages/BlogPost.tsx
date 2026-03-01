@@ -26,6 +26,21 @@ const BlogPost: React.FC = () => {
                 description={post.description}
                 keywords={post.keywords}
                 type="article"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "Article",
+                    "headline": post.title,
+                    "image": [
+                        "https://www.snaprecorder.org/og-image.png"
+                    ],
+                    "datePublished": new Date(post.date).toISOString(),
+                    "dateModified": new Date(post.date).toISOString(),
+                    "author": [{
+                        "@type": "Organization",
+                        "name": "SnapRec Team",
+                        "url": "https://www.snaprecorder.org"
+                    }]
+                }}
             />
             <LandingNavbar />
 
