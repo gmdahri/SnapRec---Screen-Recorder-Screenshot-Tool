@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd } from '../components';
+import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
@@ -634,6 +634,27 @@ const ShareView: React.FC = () => {
                                     </>
                                 )}
                             </div>
+
+                            {/* Growth Engine: "Made with SnapRec" branding strip */}
+                            <a
+                                href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex items-center justify-center gap-2.5 py-2.5 px-4 mt-3 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/60 dark:to-slate-900/60 border border-slate-200/60 dark:border-slate-700/40 hover:border-primary/30 dark:hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5"
+                            >
+                                <img
+                                    src="/logo.png"
+                                    alt="SnapRec"
+                                    className="size-5 rounded group-hover:scale-110 transition-transform duration-300"
+                                />
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
+                                    Made with <span className="font-bold text-slate-700 dark:text-slate-200">SnapRec</span>
+                                    <span className="hidden sm:inline"> — Free screen recorder for Chrome</span>
+                                </span>
+                                <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-1">
+                                    Try it free →
+                                </span>
+                            </a>
                             {/* Reaction Bar */}
                             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                                 <div className="flex flex-wrap gap-2">
@@ -800,24 +821,17 @@ const ShareView: React.FC = () => {
                             <div className="max-w-xl text-center md:text-left z-10">
                                 <h2 className="text-2xl lg:text-3xl font-bold text-[#130d1c] dark:text-white mb-4">Instantly record your screen and share.</h2>
                                 <p className="text-slate-500 dark:text-slate-400 text-lg">
-                                    The easiest way to send quick video messages, bug reports, or product walkthroughs. No upload wait times.
+                                    The easiest way to send quick video messages, bug reports, or product walkthroughs. 100% free, no watermarks.
                                 </p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 z-10">
-                                <button className="flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg shadow-primary/30">
-                                    <span className="material-symbols-outlined">download</span>
-                                    Get SnapRec Free
-                                </button>
-                                <button className="flex items-center justify-center gap-2 px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-grey dark:text-white rounded-xl font-bold text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
-                                    View Pricing
-                                </button>
+                                <AddToChromeButton size="lg" />
                             </div>
                         </div>
-                        <div className="mt-8 flex justify-center gap-8 text-slate-400 text-sm">
-                            <a className="hover:text-primary transition-colors" href="#">Privacy Policy</a>
-                            <a className="hover:text-primary transition-colors" href="#">Terms of Service</a>
-                            <a className="hover:text-primary transition-colors" href="#">Help Center</a>
-                            <p>© 2024 SnapRec Inc.</p>
+                        <div className="mt-8 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
+                            <a className="hover:text-primary transition-colors" href="/privacy">Privacy Policy</a>
+                            <a className="hover:text-primary transition-colors" href="/how-it-works">How it Works</a>
+                            <p>© {new Date().getFullYear()} SnapRec</p>
                         </div>
                     </section>
                 </main>
