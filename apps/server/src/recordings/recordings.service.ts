@@ -110,11 +110,12 @@ export class RecordingsService {
         return this.commentsRepository.save(comment);
     }
 
-    async claimRecordings(userId: string, recordingIds: string[], userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<void> {
+    async claimRecordings(userId: string, recordingIds: string[], userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<{ claimed: string[] }> {
         const user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
+        const claimed: string[] = [];
 
         if (recordingIds.length === 0) {
-            return;
+            return { claimed };
         }
 
         const recordings = await this.recordingsRepository.find({
@@ -126,11 +127,13 @@ export class RecordingsService {
             // Only claim guest recordings (no owner) or recordings already owned by this user
             if (recording.user === null || recording.user?.supabaseId === userId) {
                 recording.user = user;
+                claimed.push(recording.id);
             }
             // Else: recording belongs to another user; skip (do not allow stealing)
         }
 
         await this.recordingsRepository.save(recordings);
+        return { claimed };
     }
 
     async update(id: string, updateRecordingDto: UpdateRecordingDto, userId: string): Promise<Recording> {
