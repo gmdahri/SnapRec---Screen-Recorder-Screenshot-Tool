@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { useRecording, useGetUploadUrl, useCreateRecording, useUpdateRecording, uploadFile } from './useRecordings';
+import { useRecording, useGetUploadUrl, useCreateRecording, useUpdateRecording, uploadFile, addGuestRecordingId } from './useRecordings';
 import { fabric } from 'fabric';
 
 export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.Canvas | null>) => {
@@ -104,6 +104,9 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
                 });
 
                 if (data && data.id) {
+                    if (!user) {
+                        addGuestRecordingId(data.id);
+                    }
                     const shareUrl = `${window.location.origin}/editor/${data.id}`;
                     navigate(`/editor/${data.id}`, { replace: true });
 

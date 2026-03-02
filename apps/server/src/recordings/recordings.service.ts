@@ -118,11 +118,16 @@ export class RecordingsService {
         }
 
         const recordings = await this.recordingsRepository.find({
-            where: { id: In(recordingIds) }
+            where: { id: In(recordingIds) },
+            relations: ['user'],
         });
 
         for (const recording of recordings) {
-            recording.user = user;
+            // Only claim guest recordings (no owner) or recordings already owned by this user
+            if (recording.user === null || recording.user?.supabaseId === userId) {
+                recording.user = user;
+            }
+            // Else: recording belongs to another user; skip (do not allow stealing)
         }
 
         await this.recordingsRepository.save(recordings);
