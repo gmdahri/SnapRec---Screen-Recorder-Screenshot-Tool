@@ -116,9 +116,9 @@ const Landing: React.FC = () => {
         <div className="min-h-screen bg-white text-slate-900 font-display">
             <SEO
                 url="/"
-                title="Free Screen Recorder & Screenshot Tool for Chrome"
-                description="SnapRec is a 100% free screen recorder & screenshot Chrome extension. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits."
-                keywords="screen recorder, free screen recorder, screen recorder 4k, screen recorder extension, screenshot tool, screenshot extension, chrome screen recorder, screen capture, record screen online, free screen recording, screen recorder no watermark, full page screenshot, screen recording tool, best free screen recorder, screen recorder chrome extension, screenshot chrome extension, online screen recorder, screen recorder with audio, screen recorder with webcam, screen capture tool, capture screen chrome, 4k screen recorder free"
+                title="Free Screen Recorder for Chrome — No Watermarks, 4K"
+                description="Record your screen in 4K with one click. Free Chrome extension — no watermarks, no time limits. Full-page screenshots, webcam overlay, instant share. Try SnapRec free."
+                keywords="free screen recorder, screen recorder chrome, chrome screen recorder, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, screen recorder extension, screenshot tool chrome, full page screenshot, screen capture chrome"
                 jsonLd={jsonLd}
             />
             <LandingNavbar />
