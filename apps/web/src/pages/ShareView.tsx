@@ -353,9 +353,13 @@ const ShareView: React.FC = () => {
     // Derive processing state
     const isProcessing = recordingData?.type === 'video' && !(recordingData as any).isReady;
 
-    let downloadUrl = null;
+    let downloadUrl: string | null = null;
     if (recordingData && 'fileUrl' in recordingData) {
-        downloadUrl = (recordingData as any).fileUrl;
+        const raw = (recordingData as any).fileUrl;
+        // Avoid using malformed URLs (e.g. video-undefined-*.webm) as video src to prevent poor LCP
+        if (typeof raw === 'string' && !raw.includes('undefined')) {
+            downloadUrl = raw;
+        }
     }
 
     // Auto-trigger pending action after login
@@ -424,7 +428,8 @@ const ShareView: React.FC = () => {
         setIsUploading(true);
         try {
             const blob = await (await fetch(localVideoBlob)).blob();
-            const fileName = `video-${id}-${Date.now()}.webm`;
+            const safeId = effectiveId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`);
+            const fileName = `video-${safeId}-${Date.now()}.webm`;
 
             const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
                 fileName,
