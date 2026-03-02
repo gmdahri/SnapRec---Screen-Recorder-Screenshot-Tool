@@ -9,7 +9,7 @@ export const PropertySidebar: React.FC = () => {
     } = useEditor();
 
     return (
-        <aside className="w-72 shrink-0 border-l border-[#ece7f4] dark:border-[#2d2245] bg-white dark:bg-[#1c142b] flex flex-col overflow-y-auto">
+        <aside className="w-72 min-w-[18rem] shrink-0 grow-0 border-l border-[#ece7f4] dark:border-[#2d2245] bg-white dark:bg-[#1c142b] flex flex-col overflow-y-auto min-h-0" style={{ contain: 'layout', width: '18rem' }}>
             <div className="p-5 border-b border-[#ece7f4] dark:border-[#2d2245]">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[#6c499c]">Properties</h3>
             </div>
@@ -81,10 +81,10 @@ export const PropertySidebar: React.FC = () => {
                 </div>
             </div>
 
-            <div className="p-4 border-t border-[#ece7f4] dark:border-[#2d2245]">
+            <div className="p-4 border-t border-[#ece7f4] dark:border-[#2d2245] min-h-[200px]">
                 <GoogleAd
                     className="scale-90 origin-top"
-                    style={{ minHeight: '200px' }}
+                    style={{ minHeight: '200px', height: '200px' }}
                     slotId={import.meta.env.VITE_ADSENSE_EDITOR_SLOT}
                 />
             </div>

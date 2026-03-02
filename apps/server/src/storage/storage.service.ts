@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -81,5 +81,14 @@ export class StorageService implements OnModuleInit {
         } catch (err) {
             return false;
         }
+    }
+
+    /** Delete a file from R2 by key (fileName). Used for cleanup and wipe scripts. */
+    async deleteObject(key: string): Promise<void> {
+        const command = new DeleteObjectCommand({
+            Bucket: this.bucketName,
+            Key: key,
+        });
+        await this.s3Client.send(command);
     }
 }
