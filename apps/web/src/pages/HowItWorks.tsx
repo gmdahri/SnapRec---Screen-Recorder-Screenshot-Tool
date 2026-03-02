@@ -121,6 +121,22 @@ const HowItWorks: React.FC = () => {
                     </div>
                 </section>
 
+                {/* Video */}
+                <section className="py-8">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 aspect-video">
+                            <iframe
+                                src="https://www.youtube.com/embed/tEY5kA97Zq8?start=2"
+                                title="How to use SnapRec - Screen recorder & screenshot tool"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                                className="absolute inset-0 w-full h-full"
+                            />
+                        </div>
+                        <p className="text-center text-slate-500 text-sm mt-4">Watch the full walkthrough, then follow the steps below.</p>
+                    </div>
+                </section>
+
                 {/* Steps */}
                 <section className="py-20">
                     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
