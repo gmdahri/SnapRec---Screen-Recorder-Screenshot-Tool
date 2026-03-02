@@ -200,6 +200,34 @@ const Landing: React.FC = () => {
                     </div>
                 </section>
 
+                {/* How it works — Video */}
+                <section className="py-20">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-10">
+                            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
+                                See SnapRec in action
+                            </h2>
+                            <p className="text-slate-500 font-medium">
+                                Watch how to record your screen, capture screenshots, and share in under a minute.
+                            </p>
+                        </div>
+                        <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 aspect-video">
+                            <iframe
+                                src="https://www.youtube.com/embed/tEY5kA97Zq8?start=2"
+                                title="How to use SnapRec - Screen recorder & screenshot tool"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                                className="absolute inset-0 w-full h-full"
+                            />
+                        </div>
+                        <p className="text-center text-slate-500 text-sm mt-4">
+                            <NavLink to="/how-it-works" className="text-primary font-semibold hover:underline">
+                                Step-by-step guide →
+                            </NavLink>
+                        </p>
+                    </div>
+                </section>
+
                 {/* Features Bento Grid */}
                 <section id="features" className="py-24 bg-slate-50/50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
