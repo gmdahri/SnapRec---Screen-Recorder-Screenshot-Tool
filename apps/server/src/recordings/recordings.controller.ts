@@ -53,8 +53,8 @@ export class RecordingsController {
     @Post('claim')
     async claimRecordings(@Req() req: any, @Body() claimRecordingsDto: ClaimRecordingsDto) {
         const userMeta = { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl };
-        await this.recordingsService.claimRecordings(req.user.id, claimRecordingsDto.recordingIds, userMeta);
-        return { success: true };
+        const { claimed } = await this.recordingsService.claimRecordings(req.user.id, claimRecordingsDto.recordingIds, userMeta);
+        return { success: true, claimed };
     }
 
     @UseGuards(JwtAuthGuard)

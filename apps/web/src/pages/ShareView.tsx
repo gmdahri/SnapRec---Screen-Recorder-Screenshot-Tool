@@ -495,8 +495,13 @@ const ShareView: React.FC = () => {
         if (!id) return;
 
         claimMutation.mutate([id], {
-            onSuccess: () => {
-                showNotification('Recording saved to your account!', 'success');
+            onSuccess: (data: { claimed?: string[] }) => {
+                const claimed = data?.claimed ?? [];
+                if (claimed.includes(id)) {
+                    showNotification('Recording saved to your account!', 'success');
+                } else {
+                    showNotification('This recording is owned by another user and cannot be saved to your account.', 'error');
+                }
             },
             onError: (err: any) => {
                 showNotification(err.message || 'Failed to save recording', 'error');
@@ -504,6 +509,11 @@ const ShareView: React.FC = () => {
             }
         });
     };
+
+    // Show "Save to your account" only for guest recordings (no owner) or recordings already owned by current user
+    const canSaveToAccount =
+        recordingData &&
+        (!recordingData.user || (user && recordingData.user.supabaseId === user.id));
 
 
 
@@ -552,7 +562,7 @@ const ShareView: React.FC = () => {
                     <span className="material-symbols-outlined text-[20px]">{isUploading ? 'sync' : 'cloud_upload'}</span>
                     {isUploading ? 'Generating...' : (recordingData?.type === 'video' && !localVideoBlob ? 'Waiting for video...' : 'Generate Shareable Link')}
                 </button>
-            ) : (
+            ) : canSaveToAccount ? (
                 <button
                     onClick={handleSaveClick}
                     disabled={claimMutation.isPending}
@@ -560,7 +570,7 @@ const ShareView: React.FC = () => {
                 >
                     {claimMutation.isPending ? 'Saving...' : (user && recordingData?.user?.supabaseId === user.id ? 'Saved in account' : 'Save to your account')}
                 </button>
-            )}
+            ) : null}
         </div>
     );
 

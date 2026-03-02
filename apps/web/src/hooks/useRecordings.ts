@@ -267,21 +267,22 @@ export function useGetUploadUrl() {
 }
 
 /**
- * Hook to claim guest recordings after login
+ * Hook to claim guest recordings after login.
+ * API returns { claimed: string[] } — only those IDs were actually claimed (not owned by another user).
  */
 export function useClaimRecordings() {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (recordingIds: string[]) =>
-            fetchWithAuth<{ success: boolean }>('/recordings/claim', {
+            fetchWithAuth<{ success: boolean; claimed: string[] }>('/recordings/claim', {
                 method: 'POST',
                 body: JSON.stringify({ recordingIds }),
             }),
-        onSuccess: (_, recordingIds) => {
+        onSuccess: (data, recordingIds) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.all });
-            recordingIds.forEach(id => {
-                queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+            (data?.claimed ?? recordingIds).forEach((recId) => {
+                queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(recId) });
             });
         },
     });
