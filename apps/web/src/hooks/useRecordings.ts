@@ -107,6 +107,22 @@ export const recordingsKeys = {
     detail: (id: string) => ['recordings', id] as const,
 };
 
+const GUEST_RECORDING_IDS_KEY = 'guestRecordingIds';
+
+/** Append a recording ID so it can be claimed after the user signs in. */
+export function addGuestRecordingId(recordingId: string): void {
+    try {
+        const raw = localStorage.getItem(GUEST_RECORDING_IDS_KEY);
+        const ids: string[] = raw ? JSON.parse(raw) : [];
+        if (!ids.includes(recordingId)) {
+            ids.push(recordingId);
+            localStorage.setItem(GUEST_RECORDING_IDS_KEY, JSON.stringify(ids));
+        }
+    } catch (e) {
+        console.warn('Failed to store guest recording id for claim', e);
+    }
+}
+
 // ============= QUERIES =============
 
 const ensureAbsoluteUrl = (url: string) => {
