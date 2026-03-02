@@ -36,6 +36,7 @@ import { DataSource } from 'typeorm';
         },
       }),
     }),
+    TypeOrmModule.forFeature([User, Recording]),
     StorageModule,
     AuthModule,
     UsersModule,

@@ -107,6 +107,28 @@ export const recordingsKeys = {
     detail: (id: string) => ['recordings', id] as const,
 };
 
+// ============= PUBLIC STATS =============
+
+interface PublicStats {
+    users: number;
+    recordings: number;
+    screenshots: number;
+    videos: number;
+}
+
+export function useStats() {
+    return useQuery({
+        queryKey: ['public-stats'],
+        queryFn: async (): Promise<PublicStats> => {
+            const res = await fetch(`${API_BASE_URL}/stats`);
+            if (!res.ok) throw new Error('Failed to fetch stats');
+            return res.json();
+        },
+        staleTime: 1000 * 60 * 10, // 10 minutes
+        retry: 1,
+    });
+}
+
 const GUEST_RECORDING_IDS_KEY = 'guestRecordingIds';
 
 /** Append a recording ID so it can be claimed after the user signs in. */

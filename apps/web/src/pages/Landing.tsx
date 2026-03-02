@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, AddToChromeButton, SEO } from '../components';
+import { useStats } from '../hooks/useRecordings';
 
 const faqs = [
     {
@@ -109,6 +110,8 @@ const FAQItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 };
 
 const Landing: React.FC = () => {
+    const { data: stats } = useStats();
+
     return (
         <div className="min-h-screen bg-white text-slate-900 font-display">
             <SEO
@@ -151,10 +154,13 @@ const Landing: React.FC = () => {
                                 >
                                     Login to Dashboard
                                 </NavLink>
-                                <button className="flex items-center gap-2 text-slate-400 hover:text-primary font-bold transition-colors">
+                                <NavLink
+                                    to="/how-it-works"
+                                    className="flex items-center gap-2 text-slate-400 hover:text-primary font-bold transition-colors"
+                                >
                                     <span className="material-symbols-outlined">play_circle</span>
                                     Watch how it works
-                                </button>
+                                </NavLink>
                             </div>
                         </div>
                     </div>
@@ -166,23 +172,29 @@ const Landing: React.FC = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                             <div>
                                 <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
-                                    100%
+                                    {stats ? stats.users.toLocaleString() : '—'}
                                 </p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Free Forever</p>
-                            </div>
-                            <div>
-                                <p className="text-3xl md:text-4xl font-black text-slate-900">0</p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Watermarks</p>
-                            </div>
-                            <div>
-                                <p className="text-3xl md:text-4xl font-black text-slate-900">∞</p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Recording Length</p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Users</p>
                             </div>
                             <div>
                                 <p className="text-3xl md:text-4xl font-black text-slate-900">
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">3+</span>
+                                    {stats ? stats.recordings.toLocaleString() : '—'}
                                 </p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Browsers Supported</p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Captures Created</p>
+                            </div>
+                            <div>
+                                <p className="text-3xl md:text-4xl font-black text-slate-900">
+                                    {stats ? stats.screenshots.toLocaleString() : '—'}
+                                </p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Screenshots</p>
+                            </div>
+                            <div>
+                                <p className="text-3xl md:text-4xl font-black text-slate-900">
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">
+                                        {stats ? stats.videos.toLocaleString() : '—'}
+                                    </span>
+                                </p>
+                                <p className="text-slate-500 font-medium text-sm mt-1">Videos Recorded</p>
                             </div>
                         </div>
                     </div>
@@ -273,14 +285,15 @@ const Landing: React.FC = () => {
 
                             <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                                 <AddToChromeButton variant="white" size="lg" />
-                                <div className="flex -space-x-3">
-                                    {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className="size-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden">
-                                            <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" />
-                                        </div>
-                                    ))}
-                                    <div className="size-10 rounded-full border-2 border-slate-900 bg-primary flex items-center justify-center text-white text-xs font-bold">
-                                        +5k
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 text-emerald-400">
+                                        <span className="material-symbols-outlined text-xl">verified</span>
+                                        <span className="text-sm font-bold text-slate-300">Free forever</span>
+                                    </div>
+                                    <span className="text-slate-700">|</span>
+                                    <div className="flex items-center gap-1.5 text-amber-400">
+                                        <span className="material-symbols-outlined text-xl">star</span>
+                                        <span className="text-sm font-bold text-slate-300">No watermarks</span>
                                     </div>
                                 </div>
                             </div>
