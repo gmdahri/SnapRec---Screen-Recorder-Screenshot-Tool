@@ -590,6 +590,7 @@ const ShareView: React.FC = () => {
                 url={`/v/${id}`}
                 type="video.other"
                 image={recordingData.thumbnailUrl}
+                noIndex={true}
             />
             <div className="bg-background-light dark:bg-background-dark transition-colors duration-300 pb-20">
                 {isFresh && !isUploaded && (

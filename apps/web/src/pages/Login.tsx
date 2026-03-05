@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components';
 
@@ -15,6 +16,7 @@ const Login: React.FC = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-background-dark">
+            <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
             {/* Background Accent */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
@@ -65,9 +67,9 @@ const Login: React.FC = () => {
                     {/* Terms */}
                     <p className="text-center text-slate-400 dark:text-slate-500 text-xs mt-8">
                         By signing in, you agree to our{' '}
-                        <a href="#" className="text-primary hover:underline font-medium">Terms of Service</a>
+                        <a href="/terms" className="text-primary hover:underline font-medium">Terms of Service</a>
                         {' '}and{' '}
-                        <a href="#" className="text-primary hover:underline font-medium">Privacy Policy</a>
+                        <a href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</a>
                     </p>
                 </div>
 

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
 import { fetchWithAuth } from '../hooks/useRecordings';
 
@@ -48,6 +49,7 @@ const AuthCallback: React.FC = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1c142b] via-[#2d2245] to-[#1c142b]">
+            <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-white/60">Completing sign in...</p>

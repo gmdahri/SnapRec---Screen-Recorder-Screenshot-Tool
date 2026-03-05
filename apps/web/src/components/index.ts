@@ -14,3 +14,4 @@ export { AddToChromeButton } from './AddToChromeButton';
 export { default as GoogleAd } from './GoogleAd';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as SEO } from './SEO';
+export { CookieConsent } from './CookieConsent';
