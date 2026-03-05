@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSettings();
   loadRecentCaptures();
   initUpdateBanner();
+  initReviewBanner();
 });
 
 // Update Banner
@@ -265,4 +266,27 @@ async function loadRecentCaptures() {
     await chrome.storage.local.remove('recentCaptures');
     loadRecentCaptures();
   });
+}
+
+// Review Banner
+async function initReviewBanner() {
+  try {
+    const { captureCount = 0, reviewDismissed = false } = await chrome.storage.local.get(['captureCount', 'reviewDismissed']);
+    if (captureCount < 3 || reviewDismissed) return;
+
+    const banner = document.getElementById('reviewBanner');
+    banner.classList.remove('hidden');
+
+    document.getElementById('reviewRateBtn').addEventListener('click', async () => {
+      await chrome.storage.local.set({ reviewDismissed: true });
+      banner.classList.add('hidden');
+    });
+
+    document.getElementById('reviewDismissBtn').addEventListener('click', async () => {
+      await chrome.storage.local.set({ reviewDismissed: true });
+      banner.classList.add('hidden');
+    });
+  } catch (e) {
+    console.warn('Could not init review banner:', e);
+  }
 }

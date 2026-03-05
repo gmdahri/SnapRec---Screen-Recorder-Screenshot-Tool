@@ -14,6 +14,185 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
     {
+        slug: 'how-to-record-google-slides-presentation',
+        title: 'How to Record a Google Slides Presentation With Audio (Free, 2026)',
+        description: 'Google Slides has no built-in recorder. Learn how to record your presentation with audio and webcam using SnapRec — free, no watermarks, no time limits.',
+        keywords: 'record google slides, record google slides presentation, google slides recording, record google slides with audio, how to record google slides, screen record google slides, google slides screen recorder, record presentation free',
+        date: '2026-03-05',
+        readTime: '6 min read',
+        category: 'tutorial',
+        heroIcon: 'slideshow',
+        content: `
+<h2 id="intro">Why Record Google Slides Presentations</h2>
+<p>Recording your Google Slides presentations unlocks a world of possibilities that live presentations can't match. <strong>Flipped classrooms</strong> rely on pre-recorded lectures so students can watch at their own pace before class discussions. <strong>Async presentations</strong> let you share your pitch or update with colleagues across time zones without scheduling a meeting. <strong>Portfolio pieces</strong> — designers, educators, and consultants use recorded slide decks to showcase their work. And <strong>sales demos</strong> recorded once can be sent to dozens of prospects, scaling your outreach without repeating yourself.</p>
+<p>Here's the catch: unlike PowerPoint, which has a built-in recording feature, <strong>Google Slides has no native recording capability</strong>. There's no "Record Presentation" button hiding in the menu. To capture your slides with audio, you need a screen recorder. This guide shows you the easiest way to do it — for free.</p>
+
+<h2 id="what-you-need">What You Need</h2>
+<ul>
+<li><strong>Google Chrome</strong> (or any Chromium browser: Edge, Brave)</li>
+<li><strong>SnapRec extension</strong> — a free screen recorder and screenshot tool</li>
+<li><strong>Optional:</strong> A microphone for narration (most laptops have a built-in mic that works fine)</li>
+<li><strong>Optional:</strong> A webcam if you want to add your face to the recording</li>
+</ul>
+<p>That's it. No account required, no paid software, no complex setup.</p>
+
+<h2 id="method-1">Method 1: Record Google Slides with SnapRec (Recommended)</h2>
+<p>SnapRec is the fastest way to record a Google Slides presentation with audio. It runs directly in your browser, captures your tab (including audio), and gives you an instant shareable link when you're done. Here's the step-by-step process.</p>
+
+<h3>Step 1: Install SnapRec</h3>
+<p>Visit the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Chrome Web Store</a> and click <strong>"Add to Chrome"</strong>. The extension installs in under 10 seconds. No sign-up required.</p>
+
+<h3>Step 2: Open Your Presentation</h3>
+<p>Open your Google Slides deck in Chrome. When you're ready to record, enter <strong>Slideshow mode</strong> by clicking the "Present" button or pressing <code>Ctrl+F5</code> (Windows) / <code>Cmd+Enter</code> (Mac). Alternatively, you can present in a tab — the key is having your slides visible and ready to advance.</p>
+
+<h3>Step 3: Configure Recording</h3>
+<p>Click the SnapRec icon in your browser toolbar. Switch to <strong>Record</strong> mode (not Screenshot). Select <strong>Tab</strong> as your recording source — this captures only your presentation tab and ensures perfect audio sync. Enable your <strong>microphone</strong> for narration. If you want to appear on camera, optionally enable the <strong>webcam overlay</strong> so your face appears in a small circle in the corner.</p>
+
+<h3>Step 4: Start Recording</h3>
+<p>Hit the record button. Chrome will ask you to confirm which tab to share — select the tab with your Google Slides presentation. Recording begins immediately. Present your slides naturally, advancing with the arrow keys or by clicking. Your voice and any audio from the slides will be captured.</p>
+
+<h3>Step 5: Stop and Share</h3>
+<p>When you're done, click the stop button. Your recording opens in SnapRec's viewer within seconds. You get an <strong>instant shareable link</strong> — paste it into an email, Slack, or Google Classroom. Or <strong>download</strong> the video file (MP4/WebM) to upload to YouTube, your LMS, or keep it locally. No watermarks, no time limits.</p>
+
+<h2 id="method-2">Method 2: Record with OBS (Desktop Alternative)</h2>
+<p>If you prefer desktop software over a browser extension, <strong>OBS Studio</strong> is a powerful free option. It's more complex to set up but offers advanced control over sources, scenes, and encoding.</p>
+<ol>
+<li><strong>Download and install OBS</strong> from obsproject.com. The installer is 100–300 MB.</li>
+<li><strong>Add a Display Capture or Window Capture source</strong> — point it at your browser window or the specific tab showing your slides.</li>
+<li><strong>Add an Audio Input Capture</strong> for your microphone. Configure audio levels in the mixer.</li>
+<li><strong>Start recording</strong> when ready. When done, stop and find your file in the output folder you configured.</li>
+</ol>
+<p>OBS has a steeper learning curve — expect 15–30 minutes to configure sources, scenes, and settings. There's no built-in sharing; you'll need to upload the file manually. For most users recording Google Slides, SnapRec is the simpler choice.</p>
+
+<h2 id="tips">Tips for Better Presentation Recordings</h2>
+<ol>
+<li><strong>Use presenter notes</strong> — Google Slides lets you add speaker notes that only you see. Use them as a script or outline. Your notes stay in a separate window during Slideshow mode, so they won't appear in the recording.</li>
+<li><strong>Record in a quiet environment</strong> — background noise (fans, traffic, roommates) is distracting. Close windows, turn off fans if possible, and record when it's quiet.</li>
+<li><strong>Use tab recording for perfect audio</strong> — when you record the browser tab, Chrome captures the tab's audio directly. No system audio hassles, no sync issues. Your narration and any embedded video/audio in slides will sound crisp.</li>
+<li><strong>Keep slides simple</strong> — avoid dense text. Viewers can't ask you to slow down, so use bullet points and visuals that support your narration rather than replace it.</li>
+<li><strong>Do a test recording first</strong> — record 30 seconds, play it back, and check that your mic level is good and the slides are clearly visible. Fix any issues before the full run.</li>
+<li><strong>Use the webcam overlay for engagement</strong> — when teaching or pitching, a small webcam circle in the corner makes the recording feel personal. Viewers connect better when they can see your face.</li>
+</ol>
+
+<h2 id="comparison">Quick Comparison</h2>
+<table>
+<thead><tr><th>Feature</th><th>SnapRec</th><th>OBS</th><th>PowerPoint Recording</th></tr></thead>
+<tbody>
+<tr><td>Setup time</td><td>10 seconds</td><td>15–30 minutes</td><td>Built-in (N/A for Slides)</td></tr>
+<tr><td>Audio capture</td><td>Mic + tab audio</td><td>Full control</td><td>Mic + system</td></tr>
+<tr><td>Webcam overlay</td><td>Yes (PiP)</td><td>Yes (customizable)</td><td>Yes</td></tr>
+<tr><td>Sharing</td><td>Instant link or download</td><td>Manual upload</td><td>Export file</td></tr>
+<tr><td>Editing</td><td>Basic trim</td><td>Export to editor</td><td>Built-in trim</td></tr>
+<tr><td>Price</td><td>Free</td><td>Free</td><td>Requires Office (Slides has none)</td></tr>
+</tbody>
+</table>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<h3>Does Google Slides have a built-in recorder?</h3>
+<p>No. Unlike PowerPoint, which includes a native "Record Slide Show" feature, Google Slides has no built-in recording capability. You need a screen recorder like SnapRec to capture your presentation with audio.</p>
+
+<h3>Can I record with speaker notes visible?</h3>
+<p>Yes — use SnapRec's tab recording mode and present in Slideshow mode. Your speaker notes appear in a separate presenter window that isn't shared with the audience. The recording captures only the slides themselves, so your notes stay private.</p>
+
+<h3>How do I add my face to a Google Slides recording?</h3>
+<p>Enable SnapRec's webcam overlay before you start recording. Your camera feed appears as a small circle in the corner of the video. You can typically choose which corner to place it in. This works great for lectures, sales demos, and any presentation where seeing the presenter adds value.</p>
+        `,
+        faqs: [
+            { q: 'Does Google Slides have a built-in recorder?', a: "No. Unlike PowerPoint, which includes a native 'Record Slide Show' feature, Google Slides has no built-in recording capability. You need a screen recorder like SnapRec to capture your presentation with audio." },
+            { q: 'Can I record with speaker notes visible?', a: "Yes — use SnapRec's tab recording mode and present in Slideshow mode. Your speaker notes appear in a separate presenter window that isn't shared with the audience. The recording captures only the slides themselves, so your notes stay private." },
+            { q: 'How do I add my face to a Google Slides recording?', a: "Enable SnapRec's webcam overlay before you start recording. Your camera feed appears as a small circle in the corner of the video. You can typically choose which corner to place it in. This works great for lectures, sales demos, and any presentation where seeing the presenter adds value." },
+        ],
+    },
+    {
+        slug: 'screen-record-chrome-without-installing',
+        title: 'How to Screen Record on Chrome Without Installing Anything (2026)',
+        description: 'Can you screen record in Chrome without installing software? Learn the truth about built-in options, online recorders, and the best lightweight extension — SnapRec.',
+        keywords: 'screen record chrome without installing, chrome screen record no install, record screen chrome no extension, online screen recorder, browser screen recorder, chromebook screen record, work computer screen record',
+        date: '2026-03-05',
+        readTime: '6 min read',
+        category: 'tutorial',
+        heroIcon: 'videocam',
+        content: `
+<h2 id="intro">Why People Want to Screen Record Without Installing Software</h2>
+<p>There are plenty of reasons to avoid installing screen recording software. <strong>Privacy-conscious users</strong> don't want to grant broad permissions to desktop apps that can access their entire system. <strong>Chromebook users</strong> often can't install traditional applications at all — Chrome OS is built around the browser. And anyone on a <strong>work or school computer</strong> knows the frustration of install restrictions: IT policies block downloads, admin rights are locked down, and you're stuck with whatever's already on the machine.</p>
+<p>So the question is natural: can you actually screen record in Chrome without installing anything? Let's give you an honest answer.</p>
+
+<h2 id="can-you">Can You Actually Screen Record in Chrome Without Extensions?</h2>
+<p><strong>No.</strong> Chrome does not have a built-in screen recorder. There's no hidden feature in Settings, no secret shortcut, and no native way to capture your screen as video.</p>
+<p>You might have heard about Chrome DevTools' "Performance" recorder — that records JavaScript execution and rendering metrics for debugging, not your actual screen. It's a developer tool, not a screen recorder. The same goes for the "Recorder" panel in DevTools: it captures user flows for automated testing, not video of your display.</p>
+<p>The honest answer: to screen record in Chrome, you need either a browser extension or an online tool that runs in a tab. Both technically involve some form of "installation" — extensions add code to your browser, and online tools load scripts from their servers. The difference is how lightweight and reversible that process is.</p>
+
+<h2 id="method-1">Method 1: Online Screen Recorders (Browser-Based)</h2>
+<p>Tools like <a href="https://recordscreen.io" target="_blank" rel="noopener noreferrer">RecordScreen.io</a>, <a href="https://screenapp.io" target="_blank" rel="noopener noreferrer">ScreenApp.io</a>, and similar services let you record your screen directly in the browser. You visit their website, click "Start Recording," and grant permission when Chrome asks. No extension required.</p>
+<h3>Pros</h3>
+<ul>
+<li><strong>No extension install</strong> — just open a tab and go</li>
+<li>Works on Chromebooks and locked-down computers where extensions might be blocked</li>
+<li>Often free for basic use</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li><strong>Privacy concerns</strong> — your video is typically uploaded to their servers for processing and storage. You're trusting a third party with your recording.</li>
+<li><strong>Quality limits</strong> — many cap resolution at 720p or 1080p on free tiers</li>
+<li><strong>Watermarks</strong> — free plans often add logos or branding to your recordings</li>
+<li><strong>Limited editing</strong> — trimming and basic edits may require upgrading to paid plans</li>
+<li><strong>Dependence on their service</strong> — if the site is down or changes its terms, you're out of luck</li>
+</ul>
+
+<h2 id="method-2">Method 2: Lightweight Chrome Extension (Best Option)</h2>
+<p>If you're willing to add a small extension — and we mean <em>small</em> — <strong>SnapRec</strong> is the best option. It's under 1MB, installs in seconds, requires no account, and processes everything locally. Your recordings never leave your control until you choose to share them.</p>
+<h3>Step-by-Step: Record with SnapRec</h3>
+<ol>
+<li><strong>Install from the Chrome Web Store</strong> — Visit the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec listing</a> and click "Add to Chrome." Installation takes under 10 seconds.</li>
+<li><strong>Click the SnapRec icon</strong> — The extension icon appears in your toolbar. Click it to open the menu.</li>
+<li><strong>Choose your mode</strong> — Select <strong>Record Screen</strong>, then pick what to capture: full screen, a specific window, or a browser tab. Enable microphone and webcam if you want narration or a picture-in-picture overlay.</li>
+<li><strong>Record</strong> — Click the record button. Chrome will prompt you to confirm which screen or tab to share. Select it and recording begins immediately.</li>
+<li><strong>Share</strong> — When you're done, click stop. Your recording opens in SnapRec's viewer where you can download it, generate a shareable link, or save it to your library. No watermarks, no time limits, no upload to third-party servers unless you choose to share.</li>
+</ol>
+<p>SnapRec also doubles as a screenshot tool — full-page capture, region selection, and a built-in annotation editor. One extension, two essential workflows.</p>
+
+<h2 id="comparison">Comparison: Online Tools vs SnapRec vs Desktop Apps</h2>
+<table>
+<thead><tr><th>Feature</th><th>Online Tools</th><th>SnapRec</th><th>Desktop (OBS)</th></tr></thead>
+<tbody>
+<tr><td>Install required</td><td>No (browser only)</td><td>Yes (extension, &lt;1 MB)</td><td>Yes (100-300 MB app)</td></tr>
+<tr><td>Privacy</td><td>Video uploaded to their servers</td><td>Processed locally, you control sharing</td><td>Fully local</td></tr>
+<tr><td>Quality</td><td>Often 720p-1080p on free</td><td>Up to 4K</td><td>Up to 4K 60fps</td></tr>
+<tr><td>Watermarks</td><td>Common on free tiers</td><td>None</td><td>None</td></tr>
+<tr><td>Audio</td><td>Yes (mic, sometimes system)</td><td>Yes (mic + system)</td><td>Yes (advanced mixing)</td></tr>
+<tr><td>Webcam</td><td>Varies</td><td>Yes (PiP overlay)</td><td>Yes (fully customizable)</td></tr>
+<tr><td>Sharing</td><td>Via their platform</td><td>Instant link or download</td><td>Manual upload</td></tr>
+<tr><td>Editing</td><td>Limited on free</td><td>Basic trim, download for more</td><td>Export to external editor</td></tr>
+</tbody>
+</table>
+
+<h2 id="tips">Tips for Better Screen Recordings in Chrome</h2>
+<ol>
+<li><strong>Use tab recording for web demos</strong> — When recording a browser tab, Chrome captures the tab's audio directly. Perfect for app walkthroughs, tutorials, and meeting recordings. No system audio capture hassles.</li>
+<li><strong>Close unnecessary tabs and apps</strong> — Reduces distractions in your recording and keeps browser performance smooth. Notifications can also pop up at the worst moment — enable Do Not Disturb before hitting record.</li>
+<li><strong>Test your mic first</strong> — Record a 5-second clip to check levels. Built-in laptop mics pick up keyboard noise; a headset or external mic makes a big difference.</li>
+<li><strong>Plan before you record</strong> — Open the tabs, files, or windows you'll need. Nothing kills a recording's flow like watching someone search for a file for 30 seconds.</li>
+<li><strong>Share via link instead of attachment</strong> — Video files are large. Use SnapRec's shareable link feature instead of emailing 50MB attachments. Viewers can watch in their browser instantly.</li>
+</ol>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>Is there a built-in screen recorder in Chrome?</h3>
+<p>No. Chrome does not include a native screen recorder. You need either a browser extension like SnapRec or an online screen recording tool that runs in a tab. Chrome DevTools has performance and automation recorders, but those are for developers, not general screen capture.</p>
+
+<h3>Are online screen recorders safe?</h3>
+<p>It depends. With most online tools, your video is uploaded to their servers for processing and storage. That means a third party has access to your recording. If you're capturing sensitive work, confidential data, or personal information, that's a privacy risk. Extensions like SnapRec process recordings locally — nothing leaves your computer until you explicitly choose to share it.</p>
+
+<h3>Can I screen record on a school or work Chromebook?</h3>
+<p>Yes, if Chrome extensions are allowed. SnapRec works on all Chromium browsers — Chrome, Edge, Brave — including Chromebooks. Some schools and organizations restrict which extensions can be installed. If SnapRec isn't available, check with your IT department; many approve it for educational and productivity use. Online recorders are an alternative when extensions are blocked, but be aware of the privacy trade-offs.</p>
+        `,
+        faqs: [
+            { q: 'Is there a built-in screen recorder in Chrome?', a: "No. Chrome does not include a native screen recorder. You need either a browser extension like SnapRec or an online screen recording tool that runs in a tab. Chrome DevTools has performance and automation recorders, but those are for developers, not general screen capture." },
+            { q: 'Are online screen recorders safe?', a: "It depends. With most online tools, your video is uploaded to their servers for processing and storage. That means a third party has access to your recording. If you're capturing sensitive work, confidential data, or personal information, that's a privacy risk. Extensions like SnapRec process recordings locally — nothing leaves your computer until you explicitly choose to share it." },
+            { q: 'Can I screen record on a school or work Chromebook?', a: "Yes, if Chrome extensions are allowed. SnapRec works on all Chromium browsers — Chrome, Edge, Brave — including Chromebooks. Some schools and organizations restrict which extensions can be installed. If SnapRec isn't available, check with your IT department; many approve it for educational and productivity use. Online recorders are an alternative when extensions are blocked, but be aware of the privacy trade-offs." },
+        ],
+    },
+    {
         slug: 'how-to-record-screen-chrome-free',
         title: 'How to Record Your Screen on Chrome for Free (2026)',
         description: 'Learn how to record your screen on Chrome for free with no watermarks, no time limits, and 4K quality. Step-by-step guide using SnapRec.',
@@ -1156,6 +1335,156 @@ export const blogPosts: BlogPost[] = [
         faqs: [
             { q: 'Does SnapRec work on school-managed Chromebooks?', a: 'SnapRec is a Chrome Web Store extension, so it works on any device that can install Chrome extensions. Some school districts restrict extension installs — check with your IT administrator if SnapRec is approved or request it.' },
             { q: 'Can students also use SnapRec?', a: "Yes. Students can use SnapRec for presentations, project submissions, and peer feedback. It's free for everyone." },
+        ],
+    },
+    {
+        slug: 'best-free-loom-alternatives-2026',
+        title: '5 Best Free Loom Alternatives in 2026 — No Watermarks, No Limits',
+        description: 'Loom limits free recordings to 5 minutes and adds watermarks. Compare the best free Loom alternatives: SnapRec, OBS, Vidyard, Tella, and Screenpal.',
+        keywords: 'loom alternative free, best loom alternative 2026, free screen recorder no watermark, loom free alternative no limits, screen recorder like loom, loom competitor free, best free screen recording tool',
+        date: '2026-03-05',
+        readTime: '8 min read',
+        category: 'comparison',
+        heroIcon: 'compare',
+        content: `
+<h2 id="intro">Why People Look for Loom Alternatives</h2>
+<p>Loom has long been a go-to tool for async video messaging, but its free plan has become increasingly restrictive. In 2024, Loom limited free recordings to <strong>5 minutes</strong> per video and began adding <strong>watermarks</strong> to free-tier recordings. You also need an account to get started, and cloud storage on the free tier is capped — making it frustrating for anyone who needs longer recordings or a truly unlimited experience.</p>
+<p>If you're tired of hitting the 5-minute wall or don't want your videos branded with a watermark, here are the 5 best free Loom alternatives in 2026 that deliver no watermarks and no artificial limits.</p>
+
+<h2 id="comparison">Quick Comparison Table</h2>
+<table>
+<thead><tr><th>Tool</th><th>Free Plan</th><th>Watermark</th><th>Time Limit</th><th>Audio</th><th>Webcam</th><th>Cloud Sharing</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><strong>SnapRec</strong></td><td>100% Free</td><td>❌ None</td><td>∞ Unlimited</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Free</td><td>Most users</td></tr>
+<tr><td><strong>OBS Studio</strong></td><td>Free, open source</td><td>❌ None</td><td>∞ Unlimited</td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td><td>Power users</td></tr>
+<tr><td><strong>Vidyard</strong></td><td>Free tier + paid</td><td>❌ None</td><td>Limited (free)</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td><td>Sales teams</td></tr>
+<tr><td><strong>Tella</strong></td><td>Free tier + paid</td><td>❌ None</td><td>Limited (free)</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td><td>Polished videos</td></tr>
+<tr><td><strong>Screenpal</strong></td><td>Free tier + paid</td><td>✅ Yes (free)</td><td>15 min (free)</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td><td>Education</td></tr>
+</tbody>
+</table>
+
+<h2 id="snaprec">#1. SnapRec — Best Overall Free Alternative</h2>
+<p><strong>Price:</strong> 100% Free | <strong>Platform:</strong> Chrome, Edge, Brave</p>
+<p>SnapRec is a lightweight Chrome extension that does everything Loom's free plan should: unlimited screen recording, no watermarks, up to 4K quality, webcam overlay, and instant cloud sharing via link. No account required to start recording.</p>
+<h3>Pros</h3>
+<ul>
+<li>Truly free — no premium tier, no watermarks, no time limits, no forced sign-up</li>
+<li>4K recording with webcam overlay, microphone, and system audio</li>
+<li>Instant cloud sharing — generate a shareable link in one click</li>
+<li>Built-in screenshot tool with full-page capture and annotation editor</li>
+<li>Works on Chrome, Edge, Brave — and Chromebooks</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Browser-based only (no native desktop app)</li>
+<li>No viewer analytics or engagement tracking</li>
+</ul>
+<p><strong>Verdict:</strong> SnapRec is the clear winner for anyone who wants a free Loom alternative with zero restrictions. If you need unlimited recordings, no watermarks, and instant sharing — all without paying a cent — <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">install SnapRec from the Chrome Web Store</a>.</p>
+
+<h2 id="obs">#2. OBS Studio — Best for Power Users</h2>
+<p><strong>Price:</strong> Free, open source | <strong>Platform:</strong> Windows, Mac, Linux</p>
+<p>OBS (Open Broadcaster Software) is the gold standard for professional screen recording and live streaming. It offers unlimited recording, no watermarks, and complete control over every aspect of your capture — but it comes with a steep learning curve.</p>
+<h3>Pros</h3>
+<ul>
+<li>Extremely powerful — scenes, sources, filters, and custom layouts</li>
+<li>Supports live streaming to Twitch, YouTube, and other platforms</li>
+<li>100% free and open source with no limitations</li>
+<li>Advanced audio mixing and multiple capture sources</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Complex setup — not beginner-friendly; requires 15-30 minutes to configure</li>
+<li>No built-in cloud sharing — you manage files locally</li>
+<li>Resource-intensive — can slow down lower-end machines</li>
+</ul>
+<p><strong>Verdict:</strong> OBS is unbeatable for streamers and power users who need studio-grade control. If you're recording quick demos or bug reports, a simpler tool like SnapRec will save you time.</p>
+
+<h2 id="vidyard">#3. Vidyard — Best for Sales Teams</h2>
+<p><strong>Price:</strong> Free tier + paid plans | <strong>Platform:</strong> Chrome extension + desktop app</p>
+<p>Vidyard is built for sales professionals. It offers video messaging with CRM integrations (Salesforce, HubSpot), viewer analytics, and custom branding. The free tier is generous but has limits.</p>
+<h3>Pros</h3>
+<ul>
+<li>CRM integrations for tracking who watched your videos</li>
+<li>Custom thumbnails and CTAs for sales videos</li>
+<li>Viewer analytics and engagement data</li>
+<li>Chrome extension for quick recording</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Free tier limits recording length and storage</li>
+<li>Best features (analytics, integrations) require paid plans</li>
+<li>Overkill for casual users who just need to record and share</li>
+</ul>
+<p><strong>Verdict:</strong> Vidyard shines for sales teams that need to track prospect engagement. For general-purpose recording without CRM needs, SnapRec is simpler and fully free.</p>
+
+<h2 id="tella">#4. Tella — Best for Polished Videos</h2>
+<p><strong>Price:</strong> Free tier + paid plans | <strong>Platform:</strong> Web app + Chrome extension</p>
+<p>Tella focuses on creating polished, professional-looking videos with a clean interface. It offers scene-based recording, easy editing, and a modern sharing experience — but the free plan has restrictions.</p>
+<h3>Pros</h3>
+<ul>
+<li>Beautiful, intuitive interface for creating polished videos</li>
+<li>Scene-based recording and easy trimming</li>
+<li>Clean sharing experience with customizable player</li>
+<li>Good for product demos and marketing content</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Free tier limits recording length and exports</li>
+<li>Some features require a paid subscription</li>
+<li>Heavier than a simple extension — more setup involved</li>
+</ul>
+<p><strong>Verdict:</strong> Tella is great if you prioritize polish and editing. For quick, no-fuss recordings with no limits, SnapRec delivers without the complexity.</p>
+
+<h2 id="screenpal">#5. Screenpal — Best for Education</h2>
+<p><strong>Price:</strong> Free tier + paid plans | <strong>Platform:</strong> Desktop app + Chrome extension</p>
+<p>Screenpal (formerly Screencast-O-Matic) has been a staple in education for years. It offers easy recording, basic editing, and cloud hosting. The free plan adds a watermark and limits recordings to 15 minutes.</p>
+<h3>Pros</h3>
+<ul>
+<li>Simple and beginner-friendly — popular with teachers</li>
+<li>Built-in video editor for basic trimming</li>
+<li>Works on desktop and in the browser</li>
+<li>Google Classroom and LMS integrations on paid plans</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Watermark on free recordings</li>
+<li>15-minute limit on free plan</li>
+<li>Full features require a paid subscription</li>
+</ul>
+<p><strong>Verdict:</strong> Screenpal works well if your school provides licenses. For teachers paying out of pocket or anyone who wants no watermarks, SnapRec is the better free option.</p>
+
+<h2 id="verdict">The Verdict</h2>
+<p>For most users looking to replace Loom without paying, <strong>SnapRec is the best choice</strong>. It's 100% free with no watermarks, no time limits, and no account required. You get 4K recording, webcam overlay, and instant cloud sharing — everything Loom's free plan used to offer, without the restrictions.</p>
+<p>Choose based on your needs:</p>
+<ul>
+<li><strong>SnapRec</strong> — Best for most users: unlimited, free, no watermarks, instant sharing</li>
+<li><strong>OBS Studio</strong> — Best when you need live streaming or advanced multi-source setups</li>
+<li><strong>Vidyard</strong> — Best for sales teams with CRM integrations and viewer analytics</li>
+<li><strong>Tella</strong> — Best when you need polished, edited videos with a premium feel</li>
+<li><strong>Screenpal</strong> — Best when your school or org already provides licenses</li>
+</ul>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>What happened to Loom's free plan?</h3>
+<p>In 2024, Loom restricted free recordings to 5 minutes per video and began adding watermarks to free-tier recordings. The free plan also limits total storage and the number of videos you can keep. These changes pushed many users to look for alternatives.</p>
+
+<h3>Can I import my Loom recordings into another tool?</h3>
+<p>You can download your recordings from Loom and re-upload them to another platform, but there's no direct import or migration tool. Your videos remain in Loom's library until you manually download and move them.</p>
+
+<h3>Which Loom alternative works on Chromebook?</h3>
+<p>SnapRec works on any Chromium-based browser, including Chrome on Chromebook. Install it from the Chrome Web Store and you can record and share without any desktop app. OBS and most desktop tools don't run natively on Chromebook.</p>
+        `,
+        faqs: [
+            { q: "What happened to Loom's free plan?", a: 'In 2024, Loom restricted free recordings to 5 minutes per video and began adding watermarks to free-tier recordings. The free plan also limits total storage and the number of videos you can keep.' },
+            { q: 'Can I import my Loom recordings into another tool?', a: "You can download your recordings from Loom and re-upload them to another platform, but there's no direct import or migration tool." },
+            { q: 'Which Loom alternative works on Chromebook?', a: 'SnapRec works on any Chromium-based browser, including Chrome on Chromebook. Install it from the Chrome Web Store and you can record and share without any desktop app.' },
+        ],
+        listItems: [
+            { name: 'SnapRec', position: 1 },
+            { name: 'OBS Studio', position: 2 },
+            { name: 'Vidyard', position: 3 },
+            { name: 'Tella', position: 4 },
+            { name: 'Screenpal', position: 5 },
         ],
     },
 ];

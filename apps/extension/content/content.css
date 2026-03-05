@@ -414,3 +414,25 @@
 .snaprec-action-item.discard .snaprec-action-label {
     color: #ef4444;
 }
+
+.snaprec-review-cta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 12px;
+    color: #64748b;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.snaprec-review-cta a {
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.snaprec-review-cta a:hover {
+    text-decoration: underline;
+}

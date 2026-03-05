@@ -447,6 +447,10 @@ async function captureAndCropRegion(rect, tabId) {
 async function processScreenshot(dataUrl, type) {
     try {
         console.log(`Processing screenshot, type: ${type}`);
+
+        const { captureCount = 0 } = await chrome.storage.local.get('captureCount');
+        await chrome.storage.local.set({ captureCount: captureCount + 1 });
+
         await showPreview(dataUrl, type);
 
         // Add to recent captures if small enough
@@ -772,6 +776,9 @@ async function finalizeCleanup() {
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
     try {
+        const { captureCount = 0 } = await chrome.storage.local.get('captureCount');
+        await chrome.storage.local.set({ captureCount: captureCount + 1 });
+
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
 
