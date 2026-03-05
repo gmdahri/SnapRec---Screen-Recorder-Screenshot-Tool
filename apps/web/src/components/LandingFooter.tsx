@@ -28,7 +28,10 @@ export const LandingFooter: React.FC = () => {
                     <div>
                         <h4 className="font-bold text-slate-900 mb-6">Company</h4>
                         <ul className="space-y-4 text-sm text-slate-600">
+                            <li><NavLink to="/about" className="hover:text-primary transition-colors">About</NavLink></li>
+                            <li><NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink></li>
                             <li><NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</NavLink></li>
+                            <li><NavLink to="/terms" className="hover:text-primary transition-colors">Terms of Service</NavLink></li>
                             <li><a href="/#faq" className="hover:text-primary transition-colors">FAQ</a></li>
                         </ul>
                     </div>

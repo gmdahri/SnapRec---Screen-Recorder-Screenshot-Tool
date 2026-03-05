@@ -57,8 +57,14 @@ const Blog: React.FC = () => {
                                 Blog
                             </span>
                         </h1>
-                        <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+                        <p className="text-slate-500 text-lg max-w-2xl mx-auto mb-6">
                             Tutorials, comparisons, and tips to help you capture and share your screen like a pro.
+                        </p>
+                        <p className="text-slate-400 text-base max-w-3xl mx-auto leading-relaxed">
+                            Whether you're a student recording a presentation, a remote worker creating async
+                            video updates, or a developer sharing bug reports — our guides cover everything
+                            from step-by-step screen recording tutorials to in-depth comparisons of the best
+                            free tools. New articles published weekly.
                         </p>
                     </div>
 

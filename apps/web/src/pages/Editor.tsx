@@ -102,6 +102,7 @@ const EditorContent: React.FC = () => {
                 title="Screenshot & Image Editor — Free Online Annotation Tool"
                 description="Free online screenshot editor. Annotate, draw, highlight, blur, and add text to your screenshots instantly. Edit and share your images with a link — no sign-up required."
                 keywords="screenshot editor, image annotator, online photo editor, annotate screenshot, draw on screenshot, blur screenshot, screenshot editor online free, screenshot tool chrome, edit screenshot online, free screenshot annotation tool, screenshot extension editor"
+                noIndex={true}
             />
             <MainLayout
                 title={

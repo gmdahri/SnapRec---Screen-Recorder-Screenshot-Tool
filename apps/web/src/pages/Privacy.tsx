@@ -16,7 +16,7 @@ const Privacy = () => {
                         <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
                     </div>
                     <p className="text-indigo-100 text-lg">SnapRec - Screen Recorder & Screenshot Tool</p>
-                    <p className="text-indigo-200 mt-2">Last updated: January 27, 2026</p>
+                    <p className="text-indigo-200 mt-2">Last updated: March 5, 2026</p>
                 </div>
 
                 <div className="px-8 py-10 space-y-8">
@@ -30,15 +30,19 @@ const Privacy = () => {
 
                     <section>
                         <h2 className="text-2xl font-bold text-slate-900 mb-4 pb-2 border-b-2 border-indigo-100">1. Information We Collect</h2>
-                        <p className="text-slate-600 mb-4 font-semibold">We do not collect any personal information.</p>
-                        <p className="text-slate-600 mb-4">SnapRec operates entirely on your local device. The extension does not:</p>
+                        <p className="text-slate-600 mb-4 font-semibold">The SnapRec Chrome extension does not collect any personal information.</p>
+                        <p className="text-slate-600 mb-4">The extension operates entirely on your local device and does not:</p>
                         <ul className="list-disc pl-6 space-y-2 text-slate-600">
                             <li>Collect personal data</li>
                             <li>Track your browsing activity</li>
-                            <li>Store any screenshots or recordings on external servers</li>
-                            <li>Use cookies or tracking technologies</li>
-                            <li>Send any data to third parties</li>
+                            <li>Store any screenshots or recordings on external servers (unless you opt in to cloud sharing)</li>
                         </ul>
+                        <p className="text-slate-600 mt-4">
+                            <strong>Our website</strong> (snaprecorder.org) uses third-party advertising services
+                            (Google AdSense) which may collect information via cookies and similar technologies.
+                            See Section 5 ("Advertising & Third-Party Technologies") and Section 6 ("Cookies")
+                            below for details.
+                        </p>
                     </section>
 
                     <section>
@@ -75,7 +79,45 @@ const Privacy = () => {
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-4 pb-2 border-b-2 border-indigo-100">5. Data Security</h2>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-4 pb-2 border-b-2 border-indigo-100">5. Advertising & Third-Party Technologies</h2>
+                        <p className="text-slate-600 mb-4">
+                            Our website (snaprecorder.org) uses Google AdSense to display advertisements.
+                            When you visit our website, third-party vendors, including Google, may place and
+                            read cookies on your browser or use web beacons to collect information as a
+                            result of ad serving. These cookies may be used to serve ads based on your prior
+                            visits to our website or other websites on the internet.
+                        </p>
+                        <p className="text-slate-600 mb-4">
+                            Google's use of advertising cookies enables it and its partners to serve ads to
+                            you based on your visits to our site and/or other sites on the internet. You may
+                            opt out of personalized advertising by visiting{' '}
+                            <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Google Ads Settings</a>.
+                        </p>
+                        <p className="text-slate-600 mb-4">
+                            For more information about how Google uses data when you use our website, please
+                            visit:{' '}
+                            <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                                How Google uses data when you use our partners' sites or apps
+                            </a>.
+                        </p>
+                        <p className="text-slate-600 mb-4"><strong>Important:</strong> This advertising applies only to our website. The SnapRec Chrome extension itself does not display ads, does not use cookies, and does not collect any user data.</p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-4 pb-2 border-b-2 border-indigo-100">6. Cookies</h2>
+                        <p className="text-slate-600 mb-4">Our website uses the following types of cookies:</p>
+                        <ul className="list-disc pl-6 space-y-2 text-slate-600">
+                            <li><strong>Essential cookies:</strong> Used by our authentication provider (Supabase) to manage your login session when you sign in to your dashboard.</li>
+                            <li><strong>Advertising cookies:</strong> Placed by Google AdSense and its partners to serve relevant advertisements and measure ad performance. These are third-party cookies.</li>
+                        </ul>
+                        <p className="text-slate-600 mt-4">
+                            You can control or disable cookies through your browser settings. However,
+                            disabling cookies may affect the functionality of certain features on our website.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-4 pb-2 border-b-2 border-indigo-100">7. Data Security</h2>
                         <p className="text-slate-600 mb-4">Since all data remains on your device or in your private cloud storage:</p>
                         <ul className="list-disc pl-6 space-y-2 text-slate-600">
                             <li>You have complete control over your captures</li>

@@ -18,8 +18,12 @@ import Changelog from './pages/Changelog';
 import HowItWorks from './pages/HowItWorks';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
+import About from './pages/About';
+import Terms from './pages/Terms';
+import Contact from './pages/Contact';
 
 import { HelmetProvider } from 'react-helmet-async';
+import { CookieConsent } from './components';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,12 +69,16 @@ function App() {
                 <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
                 <Route path="/v/:id?" element={<ShareView />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
                 <Route path="/changelog" element={<Changelog />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
+              <CookieConsent />
             </Router>
           </AuthProvider>
         </NotificationProvider>
