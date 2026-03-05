@@ -14,9 +14,9 @@ export const LandingNavbar: React.FC = () => {
                     <div className="hidden md:flex items-center gap-8">
                         <a href="/#features" className="text-slate-600 hover:text-primary font-medium transition-colors">Features</a>
                         <NavLink to="/how-it-works" className="text-slate-600 hover:text-primary font-medium transition-colors">How It Works</NavLink>
-                        <a href="/#extension" className="text-slate-600 hover:text-primary font-medium transition-colors">Extension</a>
                         <NavLink to="/blog" className="text-slate-600 hover:text-primary font-medium transition-colors">Blog</NavLink>
-                        <NavLink to="/changelog" className="text-slate-600 hover:text-primary font-medium transition-colors">Changelog</NavLink>
+                        <NavLink to="/about" className="text-slate-600 hover:text-primary font-medium transition-colors">About</NavLink>
+                        <NavLink to="/contact" className="text-slate-600 hover:text-primary font-medium transition-colors">Contact</NavLink>
                     </div>
 
                     <div className="flex items-center gap-4">
