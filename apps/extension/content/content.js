@@ -632,12 +632,25 @@
     }
 
     // Mini Preview Window
-    function showMiniPreview(dataUrl) {
+    async function showMiniPreview(dataUrl) {
         console.log('[SnapRec] Showing mini preview');
 
         // Remove existing preview if any
         const existing = document.querySelector('.snaprec-mini-preview');
         if (existing) existing.remove();
+
+        let showReview = false;
+        try {
+            const { captureCount = 0, reviewDismissed = false } = await chrome.storage.local.get(['captureCount', 'reviewDismissed']);
+            showReview = captureCount >= 3 && !reviewDismissed;
+        } catch (e) { /* ignore */ }
+
+        const reviewHtml = showReview ? `
+                <div class="snaprec-review-cta">
+                    <span>⭐</span>
+                    <span>Love SnapRec?</span>
+                    <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg/reviews" target="_blank" rel="noopener noreferrer" id="snaprec-review-link">Leave a review</a>
+                </div>` : '';
 
         const previewContainer = document.createElement('div');
         previewContainer.className = 'snaprec-mini-preview';
@@ -680,6 +693,7 @@
                         <span class="snaprec-action-label">Discard Image</span>
                     </button>
                 </div>
+                ${reviewHtml}
             </div>
         `;
 

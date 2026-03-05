@@ -149,4 +149,24 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- New Blog Posts (Mar 2026) -->
+  <url>
+    <loc>https://www.snaprecorder.org/blog/how-to-record-google-slides-presentation</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/screen-record-chrome-without-installing</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/best-free-loom-alternatives-2026</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
 </urlset>

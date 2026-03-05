@@ -29,6 +29,9 @@ const ROUTES = [
   '/blog/how-to-capture-scrolling-screenshot',
   '/blog/obs-vs-browser-screen-recorder',
   '/blog/screen-recorder-for-teachers-free',
+  '/blog/how-to-record-google-slides-presentation',
+  '/blog/screen-record-chrome-without-installing',
+  '/blog/best-free-loom-alternatives-2026',
 ];
 
 function startServer(port) {
