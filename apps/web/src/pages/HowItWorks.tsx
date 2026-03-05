@@ -70,21 +70,51 @@ const useCases = [
 
 const howToJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'HowTo',
-    name: 'How to Record Your Screen & Take Screenshots in Chrome',
-    description:
-        'Learn how to use SnapRec to record your screen in 4K, capture full-page screenshots, annotate images, and share via link — all free, no watermarks.',
-    totalTime: 'PT1M',
-    tool: {
-        '@type': 'HowToTool',
-        name: 'SnapRec Chrome Extension',
-    },
-    step: steps.map((s, i) => ({
-        '@type': 'HowToStep',
-        position: i + 1,
-        name: s.title,
-        text: s.description,
-    })),
+    '@graph': [
+        {
+            '@type': 'HowTo',
+            name: 'How to Record Your Screen & Take Screenshots in Chrome',
+            description:
+                'Learn how to use SnapRec to record your screen in 4K, capture full-page screenshots, annotate images, and share via link — all free, no watermarks.',
+            totalTime: 'PT1M',
+            tool: {
+                '@type': 'HowToTool',
+                name: 'SnapRec Chrome Extension',
+            },
+            step: steps.map((s, i) => ({
+                '@type': 'HowToStep',
+                position: i + 1,
+                name: s.title,
+                text: s.description,
+            })),
+        },
+        {
+            '@type': 'VideoObject',
+            name: 'How to use SnapRec - Screen recorder & screenshot tool',
+            description: 'Watch the full walkthrough: record your screen in 4K, capture screenshots, annotate, and share — all free with SnapRec.',
+            thumbnailUrl: 'https://img.youtube.com/vi/tEY5kA97Zq8/maxresdefault.jpg',
+            uploadDate: '2026-02-01',
+            contentUrl: 'https://www.youtube.com/watch?v=tEY5kA97Zq8',
+            embedUrl: 'https://www.youtube.com/embed/tEY5kA97Zq8',
+            duration: 'PT1M30S',
+            publisher: { '@type': 'Organization', name: 'SnapRec' },
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
+                { '@type': 'ListItem', position: 2, name: 'How It Works' },
+            ],
+        },
+        {
+            '@type': 'WebPage',
+            name: 'How SnapRec Works',
+            speakable: {
+                '@type': 'SpeakableSpecification',
+                cssSelector: ['h1', 'h2', 'section p'],
+            },
+        },
+    ],
 };
 
 const HowItWorks: React.FC = () => {

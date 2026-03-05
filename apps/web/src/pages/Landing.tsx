@@ -39,7 +39,7 @@ const jsonLd = {
             browserRequirements: 'Requires a Chromium-based browser (Chrome, Edge, Brave)',
             softwareVersion: '1.2.3',
             url: 'https://www.snaprecorder.org',
-            downloadUrl: 'https://chrome.google.com/webstore',
+            downloadUrl: 'https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg',
             description:
                 'Free screen recorder & screenshot tool for Chrome. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits.',
             offers: {
@@ -60,6 +60,10 @@ const jsonLd = {
                 'Screen recorder Chrome extension',
                 'Screenshot Chrome extension',
             ],
+            speakable: {
+                '@type': 'SpeakableSpecification',
+                cssSelector: ['h1', '.hero-description', '#faq'],
+            },
         },
         {
             '@type': 'FAQPage',
@@ -77,6 +81,34 @@ const jsonLd = {
             name: 'SnapRec',
             url: 'https://www.snaprecorder.org',
             description: 'Free screen recorder & screenshot tool for Chrome, Edge & Brave.',
+        },
+        {
+            '@type': 'Organization',
+            name: 'SnapRec',
+            url: 'https://www.snaprecorder.org',
+            logo: 'https://www.snaprecorder.org/logo.png',
+            sameAs: [
+                'https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool',
+                'https://www.producthunt.com/products/snap-recorder',
+                'https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg',
+            ],
+            description: 'Free screen recorder & screenshot tool for Chrome, Edge & Brave.',
+            contactPoint: {
+                '@type': 'ContactPoint',
+                email: 'support@snaprec.com',
+                contactType: 'customer support',
+            },
+        },
+        {
+            '@type': 'VideoObject',
+            name: 'How to use SnapRec - Screen recorder & screenshot tool',
+            description: 'Learn how to record your screen in 4K, capture full-page screenshots, annotate, and share — all free with SnapRec.',
+            thumbnailUrl: 'https://img.youtube.com/vi/tEY5kA97Zq8/maxresdefault.jpg',
+            uploadDate: '2026-02-01',
+            contentUrl: 'https://www.youtube.com/watch?v=tEY5kA97Zq8',
+            embedUrl: 'https://www.youtube.com/embed/tEY5kA97Zq8',
+            duration: 'PT1M30S',
+            publisher: { '@type': 'Organization', name: 'SnapRec' },
         },
     ],
 };
@@ -142,7 +174,7 @@ const Landing: React.FC = () => {
                                 Share Your Vision
                             </span>
                         </h1>
-                        <p className="max-w-2xl mx-auto text-xl text-slate-500 mb-10 leading-relaxed">
+                        <p className="hero-description max-w-2xl mx-auto text-xl text-slate-500 mb-10 leading-relaxed">
                             SnapRec is the effortless screen recording and collaboration platform for teams that move fast. Record, share, and organize in seconds.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
