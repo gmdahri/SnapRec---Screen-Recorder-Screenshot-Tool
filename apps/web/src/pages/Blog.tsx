@@ -25,6 +25,25 @@ const Blog: React.FC = () => {
                 title="Blog — Screen Recording Tips, Tutorials & Comparisons"
                 description="Learn how to record your screen, take full-page screenshots, and boost productivity. Free tutorials, tool comparisons, and expert tips from the SnapRec team."
                 keywords="screen recorder blog, screen recording tips, screenshot tutorial, how to record screen, free screen recorder guide, chrome extension tips"
+                jsonLd={{
+                    '@context': 'https://schema.org',
+                    '@graph': [
+                        {
+                            '@type': 'CollectionPage',
+                            name: 'SnapRec Blog — Screen Recording Tips, Tutorials & Comparisons',
+                            description: 'Learn how to record your screen, take full-page screenshots, and boost productivity. Free tutorials, tool comparisons, and expert tips from the SnapRec team.',
+                            url: 'https://www.snaprecorder.org/blog',
+                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org' },
+                        },
+                        {
+                            '@type': 'BreadcrumbList',
+                            itemListElement: [
+                                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
+                                { '@type': 'ListItem', position: 2, name: 'Blog' },
+                            ],
+                        },
+                    ],
+                }}
             />
             <LandingNavbar />
 

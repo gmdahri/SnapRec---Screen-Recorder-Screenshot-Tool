@@ -1,13 +1,64 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, Navigate, NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../components';
 import { getPostBySlug, getRelatedPosts } from '../data/blogData';
+
+function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
+    if (!post) return undefined;
+    const siteUrl = 'https://www.snaprecorder.org';
+    const graph: Record<string, unknown>[] = [
+        {
+            '@type': 'Article',
+            headline: post.title,
+            image: [`${siteUrl}/og-image.png`],
+            datePublished: new Date(post.date).toISOString(),
+            dateModified: new Date(post.date).toISOString(),
+            author: [{ '@type': 'Organization', name: 'SnapRec Team', url: siteUrl }],
+            speakable: {
+                '@type': 'SpeakableSpecification',
+                cssSelector: ['article h1', '.prose h2', '.prose p:first-of-type'],
+            },
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+                { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
+                { '@type': 'ListItem', position: 3, name: post.title },
+            ],
+        },
+    ];
+
+    if (post.faqs?.length) {
+        graph.push({
+            '@type': 'FAQPage',
+            mainEntity: post.faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
+        });
+    }
+
+    if (post.listItems?.length) {
+        graph.push({
+            '@type': 'ItemList',
+            itemListElement: post.listItems.map((item) => ({
+                '@type': 'ListItem',
+                position: item.position,
+                name: item.name,
+                ...(item.url ? { url: item.url } : {}),
+            })),
+        });
+    }
+
+    return { '@context': 'https://schema.org', '@graph': graph };
+}
 
 const BlogPost: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const post = getPostBySlug(slug || '');
 
-    // Scroll to top on load
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [slug]);
@@ -17,6 +68,7 @@ const BlogPost: React.FC = () => {
     }
 
     const relatedPosts = getRelatedPosts(post.slug, 3);
+    const jsonLd = useMemo(() => buildBlogPostJsonLd(post), [post]);
 
     return (
         <div className="min-h-screen bg-white text-slate-900 font-display">
@@ -26,21 +78,7 @@ const BlogPost: React.FC = () => {
                 description={post.description}
                 keywords={post.keywords}
                 type="article"
-                jsonLd={{
-                    "@context": "https://schema.org",
-                    "@type": "Article",
-                    "headline": post.title,
-                    "image": [
-                        "https://www.snaprecorder.org/og-image.png"
-                    ],
-                    "datePublished": new Date(post.date).toISOString(),
-                    "dateModified": new Date(post.date).toISOString(),
-                    "author": [{
-                        "@type": "Organization",
-                        "name": "SnapRec Team",
-                        "url": "https://www.snaprecorder.org"
-                    }]
-                }}
+                jsonLd={jsonLd}
             />
             <LandingNavbar />
 

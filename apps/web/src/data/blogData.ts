@@ -8,6 +8,8 @@ export interface BlogPost {
     category: 'tutorial' | 'comparison' | 'tips';
     heroIcon: string;
     content: string;
+    faqs?: { q: string; a: string }[];
+    listItems?: { name: string; url?: string; position: number }[];
 }
 
 export const blogPosts: BlogPost[] = [
@@ -96,6 +98,11 @@ export const blogPosts: BlogPost[] = [
 <h3>Does it work on Chromebook?</h3>
 <p>Yes! SnapRec works on any device that runs Chrome, including Chromebooks.</p>
         `,
+        faqs: [
+            { q: 'Can I record my screen on Chrome without an extension?', a: "Chrome doesn't have a built-in screen recorder. You need either a browser extension like SnapRec or a desktop application. SnapRec is the lightest option — it's under 1MB and works instantly." },
+            { q: 'Is SnapRec really free?', a: 'Yes, 100% free. No hidden limits, no watermarks, no time caps, and no mandatory sign-up.' },
+            { q: 'Does it work on Chromebook?', a: 'Yes! SnapRec works on any device that runs Chrome, including Chromebooks.' },
+        ],
     },
     {
         slug: 'best-free-screen-recorders-no-watermark',
@@ -211,6 +218,13 @@ export const blogPosts: BlogPost[] = [
 <li><strong>Use ShareX</strong> if you're a Windows power user who wants everything in one tool</li>
 </ul>
         `,
+        listItems: [
+            { name: 'SnapRec', position: 1 },
+            { name: 'OBS Studio', position: 2 },
+            { name: 'ShareX', position: 3 },
+            { name: 'Screencastify', position: 4 },
+            { name: 'Loom', position: 5 },
+        ],
     },
     {
         slug: 'how-to-take-full-page-screenshot-chrome',
@@ -277,6 +291,10 @@ export const blogPosts: BlogPost[] = [
 <h3>Why is my full-page screenshot cut off?</h3>
 <p>Some pages use lazy-loading for images. Try scrolling to the bottom of the page first before capturing, or use SnapRec which handles this automatically.</p>
         `,
+        faqs: [
+            { q: 'Can I take a scrolling screenshot on Chrome mobile?', a: 'Chrome on Android supports scrolling screenshots natively (Android 12+). On iOS, you can take a full-page screenshot in Safari but not Chrome.' },
+            { q: 'Why is my full-page screenshot cut off?', a: 'Some pages use lazy-loading for images. Try scrolling to the bottom of the page first before capturing, or use SnapRec which handles this automatically.' },
+        ],
     },
     {
         slug: 'snaprec-vs-loom-free-alternative',
@@ -406,6 +424,11 @@ export const blogPosts: BlogPost[] = [
 <h3>Does webcam recording affect video quality?</h3>
 <p>No. The webcam overlay is composited into the recording without affecting the screen capture resolution. You still get up to 4K quality for the screen portion.</p>
         `,
+        faqs: [
+            { q: "Why can't I hear system audio in my recording?", a: 'System audio capture works best when recording a browser tab. If you\'re recording the full screen, some operating systems (especially macOS) require additional configuration. Recording a specific tab gives you perfect audio every time.' },
+            { q: 'Can I change the webcam position during recording?', a: 'The webcam overlay position is set before recording starts. Choose the corner that works best for your content before hitting record.' },
+            { q: 'Does webcam recording affect video quality?', a: 'No. The webcam overlay is composited into the recording without affecting the screen capture resolution. You still get up to 4K quality for the screen portion.' },
+        ],
     },
     {
         slug: 'how-to-screenshot-on-chromebook',
@@ -475,6 +498,10 @@ export const blogPosts: BlogPost[] = [
 <h3>Can I screenshot on a school Chromebook?</h3>
 <p>Keyboard shortcuts usually work even on managed Chromebooks. Extensions may be restricted by your school's admin policy — check with your IT department.</p>
         `,
+        faqs: [
+            { q: 'Where do Chromebook screenshots go?', a: 'By default, screenshots save to the Downloads folder. You can access them via the Files app.' },
+            { q: 'Can I screenshot on a school Chromebook?', a: "Keyboard shortcuts usually work even on managed Chromebooks. Extensions may be restricted by your school's admin policy — check with your IT department." },
+        ],
     },
     {
         slug: 'screen-record-google-meet-free',
@@ -543,6 +570,10 @@ export const blogPosts: BlogPost[] = [
 <h3>Will the recording include both video and audio?</h3>
 <p>Yes, when you record the browser tab, SnapRec captures both the video and all audio from the meeting. Enable your microphone if you also want your side of the conversation recorded.</p>
         `,
+        faqs: [
+            { q: 'Can I record Google Meet without others knowing?', a: "SnapRec records your screen locally — there's no notification sent to other participants. However, always follow your organization's recording policies and local laws regarding consent." },
+            { q: 'Will the recording include both video and audio?', a: 'Yes, when you record the browser tab, SnapRec captures both the video and all audio from the meeting. Enable your microphone if you also want your side of the conversation recorded.' },
+        ],
     },
     {
         slug: 'best-screenshot-chrome-extensions-2026',
@@ -602,6 +633,15 @@ export const blogPosts: BlogPost[] = [
 <h2 id="verdict">The Verdict</h2>
 <p>For a free, all-in-one solution that handles screenshots, annotation, screen recording, and cloud sharing, <strong>SnapRec</strong> is the clear winner. If you only need one specific feature (like PDF export or GIFs), a specialized tool may fit better.</p>
         `,
+        listItems: [
+            { name: 'SnapRec', position: 1 },
+            { name: 'Lightshot', position: 2 },
+            { name: 'Nimbus Screenshot', position: 3 },
+            { name: 'FireShot', position: 4 },
+            { name: 'Awesome Screenshot', position: 5 },
+            { name: 'GoFullPage', position: 6 },
+            { name: 'Gyazo', position: 7 },
+        ],
     },
     {
         slug: 'how-to-blur-sensitive-info-screenshot',
@@ -660,6 +700,10 @@ export const blogPosts: BlogPost[] = [
 <h3>Is drawing a black box the same as blurring?</h3>
 <p>Both hide the information, but blurring looks more professional and clearly signals to viewers that content was intentionally redacted. A black box can sometimes look like a rendering error.</p>
         `,
+        faqs: [
+            { q: 'Can someone un-blur a screenshot?', a: 'When you export a blurred screenshot from SnapRec, the blur is permanently applied to the pixels. The original data beneath the blur is destroyed in the exported image and cannot be recovered.' },
+            { q: 'Is drawing a black box the same as blurring?', a: 'Both hide the information, but blurring looks more professional and clearly signals to viewers that content was intentionally redacted. A black box can sometimes look like a rendering error.' },
+        ],
     },
     {
         slug: 'screen-recording-tips-remote-work',
@@ -786,6 +830,10 @@ export const blogPosts: BlogPost[] = [
 <h3>Are annotations added permanently?</h3>
 <p>When you export/download the annotated screenshot, the annotations are baked into the image permanently. In the editor, you can undo changes before exporting.</p>
         `,
+        faqs: [
+            { q: 'Can I annotate existing images, not just screenshots?', a: "Yes. Open SnapRec's editor at snaprecorder.org/editor and paste or upload any image to annotate it." },
+            { q: 'Are annotations added permanently?', a: 'When you export/download the annotated screenshot, the annotations are baked into the image permanently. In the editor, you can undo changes before exporting.' },
+        ],
     },
     {
         slug: 'screencastify-vs-snaprec-free-alternative',
@@ -1030,6 +1078,10 @@ export const blogPosts: BlogPost[] = [
 <h2 id="verdict">The Verdict</h2>
 <p>Most people don't need OBS. If you're recording bug reports, demos, tutorials, or meeting recaps, a browser-based recorder like SnapRec is faster, simpler, and just as effective. Save OBS for when you genuinely need studio-level control.</p>
         `,
+        listItems: [
+            { name: 'OBS Studio', position: 1 },
+            { name: 'SnapRec', position: 2 },
+        ],
     },
     {
         slug: 'screen-recorder-for-teachers-free',
@@ -1101,6 +1153,10 @@ export const blogPosts: BlogPost[] = [
 <h3>Can students also use SnapRec?</h3>
 <p>Yes. Students can use SnapRec for presentations, project submissions, and peer feedback. It's free for everyone.</p>
         `,
+        faqs: [
+            { q: 'Does SnapRec work on school-managed Chromebooks?', a: 'SnapRec is a Chrome Web Store extension, so it works on any device that can install Chrome extensions. Some school districts restrict extension installs — check with your IT administrator if SnapRec is approved or request it.' },
+            { q: 'Can students also use SnapRec?', a: "Yes. Students can use SnapRec for presentations, project submissions, and peer feedback. It's free for everyone." },
+        ],
     },
 ];
 
