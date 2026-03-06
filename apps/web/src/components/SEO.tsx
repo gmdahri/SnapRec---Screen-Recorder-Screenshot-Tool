@@ -29,7 +29,8 @@ export const SEO: React.FC<SEOProps> = ({
     const defaultDescription = 'Record your screen in 4K with one click. Free Chrome extension — no watermarks, no time limits. Full-page screenshots, webcam overlay, instant share. Try SnapRec free.';
     const metaDescription = description || defaultDescription;
     const siteUrl = 'https://www.snaprecorder.org';
-    const currentUrl = url ? `${siteUrl}${url}` : siteUrl;
+    const cleanPath = url ? url.replace(/\/+$/, '') : '';
+    const currentUrl = cleanPath ? `${siteUrl}${cleanPath}` : siteUrl;
     const defaultImage = `${siteUrl}/og-image.png`;
     const metaImage = image || defaultImage;
 
