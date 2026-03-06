@@ -1487,6 +1487,344 @@ export const blogPosts: BlogPost[] = [
             { name: 'Screenpal', position: 5 },
         ],
     },
+    {
+        slug: 'how-to-record-zoom-meeting-free',
+        title: 'How to Record a Zoom Meeting for Free in 2026 (Without Host Permission)',
+        description: "Learn how to record any Zoom meeting for free — even as a participant without host permission. Step-by-step guide using SnapRec for Chrome.",
+        keywords: 'record zoom meeting free, how to record zoom meeting, record zoom without permission, zoom meeting recorder, free zoom recording, record zoom as participant, screen record zoom',
+        date: '2026-03-06',
+        readTime: '7 min read',
+        category: 'tutorial',
+        heroIcon: 'video_call',
+        content: `
+<h2 id="intro">Why You Might Need to Record a Zoom Meeting</h2>
+<p>Zoom meetings move fast. Whether it's a <strong>training session</strong> packed with details you'll need to reference later, a <strong>university lecture</strong> covering material for an upcoming exam, a <strong>client call</strong> where decisions are made in real time, or a <strong>team standup</strong> you want to review — the information shared during a call doesn't stick around once the meeting ends.</p>
+<p>Recording solves that problem. You get a permanent, searchable reference of everything that was said, shown, and discussed. But here's the catch: Zoom doesn't make recording easy for everyone. If you're not the host, you may not have permission to record at all. And even if you are the host, the free plan has its own set of frustrating limitations.</p>
+<p>This guide walks you through how to record any Zoom meeting for free — whether you're the host, a co-host, or just a regular participant.</p>
+
+<h2 id="zoom-built-in">Zoom's Built-in Recording: What You Actually Get</h2>
+<p>Before reaching for a third-party tool, it's worth understanding what Zoom offers natively — and where it falls short.</p>
+<ul>
+<li><strong>Host-only recording (free plan):</strong> Only the meeting host or a co-host can hit the "Record" button. Regular participants see no option at all unless the host explicitly grants permission.</li>
+<li><strong>Local recording only:</strong> Free-plan users can record to their local machine, but <strong>cloud recording is locked behind paid plans</strong> (Pro, Business, Enterprise). That means no instant sharing links — you get a raw video file on your hard drive.</li>
+<li><strong>40-minute meeting limit:</strong> Free Zoom meetings with more than two participants are capped at 40 minutes. Your recording stops when the meeting does.</li>
+<li><strong>No participant control:</strong> If the host doesn't enable recording for participants, there's no built-in workaround. You simply can't record.</li>
+</ul>
+<p>For many users — students in online classes, team members in company calls, freelancers on client meetings — these restrictions are dealbreakers. You need to record, but Zoom won't let you. That's where screen recording comes in.</p>
+
+<h2 id="method-1">Record Any Zoom Meeting with SnapRec (Free)</h2>
+<p>SnapRec is a free Chrome extension that records your screen independently of Zoom. It doesn't need host permission, doesn't depend on Zoom's recording infrastructure, and works whether you're running Zoom in the browser or the desktop app. Here's exactly how to use it.</p>
+
+<h3>Step 1: Install SnapRec</h3>
+<p>Visit the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Chrome Web Store</a> and click <strong>"Add to Chrome."</strong> Installation takes seconds. No account, no sign-up, no payment.</p>
+
+<h3>Step 2: Join Your Zoom Meeting</h3>
+<p>Join your Zoom meeting as you normally would — either through the desktop app or in your browser. If you're using the desktop app, make sure the meeting window is visible on screen. If you're joining via browser, stay on that tab.</p>
+
+<h3>Step 3: Open SnapRec and Configure</h3>
+<p>Click the <strong>SnapRec icon</strong> in your Chrome toolbar. Switch to <strong>Record</strong> mode. Choose your recording source:</p>
+<ul>
+<li><strong>Screen:</strong> Captures your entire display — perfect if Zoom is running in the desktop app.</li>
+<li><strong>Tab:</strong> Captures a single browser tab — ideal if you're running Zoom in the browser.</li>
+</ul>
+<p>Enable <strong>system audio</strong> to capture meeting audio (other participants' voices, shared audio). Enable your <strong>microphone</strong> if you want your own voice included. Optionally turn on the <strong>webcam overlay</strong> if you want your camera feed visible in the recording.</p>
+
+<h3>Step 4: Record the Meeting</h3>
+<p>Click the record button. Chrome will prompt you to select what to share — pick the Zoom window or the browser tab running the meeting. Recording begins immediately. Attend the meeting as normal — SnapRec runs quietly in the background.</p>
+
+<h3>Step 5: Stop and Save</h3>
+<p>When the meeting is over, click stop. Your recording opens in SnapRec's viewer instantly. From there you can:</p>
+<ul>
+<li><strong>Copy a shareable link</strong> to send to colleagues who missed the meeting</li>
+<li><strong>Download the file</strong> as MP4 or WebM for archiving</li>
+<li><strong>Trim</strong> the beginning or end if you started recording early</li>
+</ul>
+<p>No watermarks. No time limits. No file size restrictions.</p>
+
+<h2 id="method-2">Alternative: Use Zoom's Built-in Recorder</h2>
+<p>If you <em>are</em> the host (or the host has granted you permission), Zoom's own recorder is a reasonable option for simple use cases.</p>
+<ol>
+<li><strong>Start or join</strong> the meeting as the host.</li>
+<li>Click the <strong>"Record"</strong> button in the meeting toolbar at the bottom of the screen.</li>
+<li>Choose <strong>"Record on this Computer"</strong> (free plan) or <strong>"Record to the Cloud"</strong> (paid plan).</li>
+<li>A red indicator appears in the top-left corner, and all participants see a notification that the meeting is being recorded.</li>
+<li>Click <strong>"Stop Recording"</strong> when done. The file saves when the meeting ends.</li>
+</ol>
+<p>This works, but it comes with the limitations mentioned above: host-only, no cloud on free, and the 40-minute cap. For anything beyond basic use, a screen recorder gives you more flexibility.</p>
+
+<h2 id="tips">Tips for Better Zoom Recordings</h2>
+<ol>
+<li><strong>Close unnecessary tabs and apps</strong> — fewer distractions on screen means a cleaner recording, and your computer will run smoother without background processes competing for resources.</li>
+<li><strong>Use tab audio capture when possible</strong> — if Zoom is running in the browser, SnapRec's tab recording mode captures audio directly from the tab. This produces cleaner audio than routing through your system speakers and microphone.</li>
+<li><strong>Inform participants you're recording</strong> — even though SnapRec records your screen independently and doesn't notify anyone, it's good practice (and often a legal requirement) to let others know the meeting is being recorded.</li>
+<li><strong>Test audio before the real meeting</strong> — do a quick 30-second test recording to verify that both your microphone and system audio are capturing properly. Fix any issues before the important call.</li>
+<li><strong>Use Gallery View for multi-speaker meetings</strong> — if the meeting has multiple speakers, switch Zoom to Gallery View so all participants are visible. This gives your recording a more complete picture of the conversation.</li>
+</ol>
+
+<h2 id="comparison">Zoom Built-in vs. SnapRec vs. OBS</h2>
+<table>
+<thead><tr><th>Feature</th><th>Zoom Built-in</th><th>SnapRec</th><th>OBS Studio</th></tr></thead>
+<tbody>
+<tr><td>Free to use</td><td>Yes (limited)</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Needs host permission</td><td>Yes</td><td>No</td><td>No</td></tr>
+<tr><td>Captures meeting audio</td><td>Yes</td><td>Yes (system audio)</td><td>Yes (requires setup)</td></tr>
+<tr><td>Webcam overlay</td><td>N/A (built into Zoom)</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Instant sharing link</td><td>Cloud only (paid)</td><td>Yes</td><td>No</td></tr>
+<tr><td>Time limit</td><td>40 min (free plan)</td><td>None</td><td>None</td></tr>
+<tr><td>Setup complexity</td><td>Built-in</td><td>10 seconds</td><td>15–30 minutes</td></tr>
+<tr><td>Works on Chromebook</td><td>Limited</td><td>Yes</td><td>No</td></tr>
+</tbody>
+</table>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<h3>Can I record a Zoom meeting without the host knowing?</h3>
+<p>SnapRec records your screen independently of Zoom, so there's no in-app notification sent to other participants. The recording happens at the browser level, not through Zoom's API. That said, <strong>always check your local laws regarding recording consent</strong>. Many jurisdictions require all-party or one-party consent for recording conversations. When in doubt, let participants know.</p>
+
+<h3>Does SnapRec capture Zoom audio?</h3>
+<p>Yes — enable <strong>system audio capture</strong> in SnapRec to record everything you hear in the meeting, including other participants' voices, shared media, and any audio content. If you're recording a browser tab, tab audio capture gives you even cleaner results. Your own microphone can be captured simultaneously for a complete recording.</p>
+
+<h3>Can I record a Zoom meeting on Chromebook?</h3>
+<p>Yes. SnapRec works on any Chromium-based browser, including Chrome on Chromebooks. Since Chromebooks can't run desktop apps like OBS, a Chrome extension is your best option. Install SnapRec from the Chrome Web Store and record directly from your browser — no desktop software required.</p>
+        `,
+        faqs: [
+            { q: 'Can I record a Zoom meeting without the host knowing?', a: "SnapRec records your screen independently of Zoom, so there's no notification to other participants. Always check your local laws regarding recording consent." },
+            { q: 'Does SnapRec capture Zoom audio?', a: "Yes — enable system audio capture in SnapRec to record everything you hear in the meeting, including other participants' voices." },
+            { q: 'Can I record a Zoom meeting on Chromebook?', a: 'Yes, SnapRec works on any Chromium browser including Chrome on Chromebooks.' },
+        ],
+    },
+    {
+        slug: 'screen-recording-for-online-classes',
+        title: "Screen Recording for Online Classes — A Teacher's Complete Guide (2026)",
+        description: "The complete guide to screen recording for teachers and educators. Create video lessons, record live classes, and build a library of teaching resources — all free with SnapRec.",
+        keywords: 'screen recording for teachers, screen recording for online classes, record online class, teacher screen recorder, record lesson video free, screen recording for education, how to record online lecture, free screen recorder for teachers',
+        date: '2026-03-06',
+        readTime: '8 min read',
+        category: 'tutorial',
+        heroIcon: 'school',
+        content: `
+<h2 id="intro">Why Screen Recording Transforms Online Teaching</h2>
+<p>Screen recording has become one of the most valuable tools in an educator's toolkit — and it goes far beyond simply capturing a live class. <strong>Flipped classrooms</strong> rely on pre-recorded video lessons that students watch before class, freeing up in-person time for discussion and hands-on work. Students who were <strong>absent</strong> can catch up without needing one-on-one make-up sessions. Complex topics benefit from recordings that students can <strong>pause, rewind, and rewatch</strong> at their own pace — something a live lecture can never offer.</p>
+<p><strong>Asynchronous learning</strong> is now a permanent part of education. Whether you're teaching across time zones, supporting students with different schedules, or building a library of resources for future semesters, recorded lessons give your teaching a longer shelf life. And let's not forget <strong>parent communication</strong>: a quick recorded walkthrough of a lesson or assignment is far more effective than a written email trying to explain what students are working on.</p>
+<p>The best part? You don't need expensive software or a production studio. A browser, a microphone, and the right tool are all it takes.</p>
+
+<h2 id="what-to-record">What Can Teachers Record?</h2>
+<p>Screen recording is more versatile than most educators realize. Here are the most common — and most effective — use cases:</p>
+<ul>
+<li><strong>Slide-based lectures:</strong> Record yourself presenting Google Slides or PowerPoint while narrating. The foundation of any flipped classroom.</li>
+<li><strong>Live software demos:</strong> Walk students through a website, app, or tool step by step. Perfect for teaching digital literacy, coding, design software, or research skills.</li>
+<li><strong>Whiteboard explanations:</strong> Use a digital whiteboard (like Google Jamboard or Excalidraw) and record yourself working through math problems, diagramming processes, or sketching concepts.</li>
+<li><strong>Software tutorials:</strong> Show students exactly how to use Google Docs formatting, submit assignments in your LMS, or navigate a research database.</li>
+<li><strong>Feedback on student work:</strong> Open a student's essay, project, or submission and record yourself providing verbal feedback while highlighting specific areas. Far more personal and actionable than written comments.</li>
+<li><strong>Read-alouds and storytelling:</strong> For younger students, record yourself reading a book aloud while showing the pages on screen. Students can follow along at home.</li>
+</ul>
+
+<h2 id="getting-started">Getting Started with SnapRec</h2>
+<p>SnapRec is a free screen recorder built as a Chrome extension — which makes it ideal for educators who work primarily in a browser. There's nothing to download, no accounts to create, and it works on Chromebooks (which are standard in many schools). Here's how to set it up.</p>
+
+<h3>Step 1: Install the Extension</h3>
+<p>Go to the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Chrome Web Store</a> and click <strong>"Add to Chrome."</strong> The extension installs in seconds. Pin it to your toolbar for easy access by clicking the puzzle icon and selecting the pin next to SnapRec.</p>
+
+<h3>Step 2: Choose Your Recording Mode</h3>
+<p>Click the SnapRec icon and switch to <strong>Record</strong> mode. Select your source:</p>
+<ul>
+<li><strong>Tab:</strong> Records only the current browser tab — ideal for slide presentations, web-based demos, and anything running in Chrome.</li>
+<li><strong>Screen:</strong> Records your entire display — use this when you need to switch between applications during the lesson.</li>
+</ul>
+
+<h3>Step 3: Configure Audio and Webcam</h3>
+<p>Enable your <strong>microphone</strong> so students can hear your narration. Optionally enable the <strong>webcam overlay</strong> — seeing your face in the corner of the video creates a stronger sense of connection, especially for younger students. If your lesson includes audio or video content (like a YouTube clip), enable <strong>system audio</strong> so that's captured too.</p>
+
+<h3>Step 4: Record and Share</h3>
+<p>Hit record, teach your lesson, and click stop when you're done. SnapRec generates an <strong>instant shareable link</strong> you can paste directly into Google Classroom, your LMS, or an email. You can also <strong>download</strong> the video file to upload wherever you need it.</p>
+
+<h2 id="lesson-types">5 Types of Screen Recorded Lessons</h2>
+
+<h3>1. Slide-Based Lecture</h3>
+<p>The classic format. Open your slide deck, enter Slideshow mode, start SnapRec, and present. This works for any subject — history lectures, science lessons, language arts reviews. Add your webcam overlay so students see your face alongside the slides. Keep lectures between <strong>5 and 15 minutes</strong> for optimal student engagement.</p>
+
+<h3>2. Live Demo or Tutorial</h3>
+<p>Walk students through a process in real time: navigating a website, using a research tool, formatting a document, or coding a simple program. Narrate every click and decision so students can follow along on their own. Pause to explain <em>why</em> you're making each choice, not just <em>what</em> you're clicking.</p>
+
+<h3>3. Whiteboard Explanation</h3>
+<p>Open a digital whiteboard tool and work through problems live. This is especially powerful for <strong>math and science</strong> — students can see your problem-solving process, not just the final answer. Record yourself writing equations, drawing diagrams, and talking through your reasoning step by step.</p>
+
+<h3>4. Student Feedback Video</h3>
+<p>Open a student's submitted work on screen and record yourself reviewing it. Point to specific sentences, highlight areas that need improvement, and praise what they did well. A <strong>3-minute feedback video</strong> communicates more nuance and encouragement than a page of written comments — and students are more likely to watch it.</p>
+
+<h3>5. Read-Aloud or Storytelling</h3>
+<p>For elementary educators: display a book (digital or scanned pages) on screen and read it aloud. Use your webcam so students see your expressions. This creates an engaging, personal experience that students can revisit. Build a <strong>library of read-alouds</strong> over the semester for students to access anytime.</p>
+
+<h2 id="tips">Tips for Effective Teaching Videos</h2>
+<ol>
+<li><strong>Keep videos under 10 minutes.</strong> Research consistently shows that student attention drops sharply after 6–10 minutes of video. If your lesson is longer, break it into multiple short videos rather than one marathon recording.</li>
+<li><strong>Use the webcam overlay.</strong> Students — especially younger ones — engage more when they can see their teacher. It adds a human element to what would otherwise be a voice over slides.</li>
+<li><strong>Speak clearly and at a moderate pace.</strong> You're not presenting to a live audience that can interrupt with questions. Slow down slightly, articulate clearly, and leave brief pauses between key points.</li>
+<li><strong>Use annotation and highlighting.</strong> Draw attention to important content by using your cursor to point, or SnapRec's annotation tools to highlight key areas on screenshots you share alongside the video.</li>
+<li><strong>Organize videos in folders or playlists.</strong> As your library grows, organize recordings by unit, topic, or week. A well-organized video library becomes a powerful resource students can search and revisit throughout the year.</li>
+<li><strong>Do a quick test recording.</strong> Record 15 seconds, play it back, and check your audio levels and framing. Catching a problem before the full lesson saves time and frustration.</li>
+</ol>
+
+<h2 id="sharing">How to Share Videos with Students</h2>
+<p>You've recorded the lesson — now students need to see it. Here are the most common distribution methods:</p>
+<ul>
+<li><strong>SnapRec shareable link:</strong> After recording, SnapRec generates an instant link. Paste it directly into Google Classroom, Canvas, Schoology, or any LMS. Students click the link and watch — no downloads, no accounts needed on their end.</li>
+<li><strong>Google Classroom:</strong> Create an assignment or material, paste the SnapRec link, and post. Students access it from their Classroom stream alongside other materials.</li>
+<li><strong>LMS integration:</strong> Most learning management systems (Canvas, Moodle, Blackboard, Schoology) accept URL links in assignments and announcements. Paste your SnapRec link anywhere you'd normally add a resource.</li>
+<li><strong>Download and upload:</strong> If your school requires videos to be hosted on a specific platform (like a school YouTube channel or internal server), download the recording from SnapRec and upload it manually.</li>
+</ul>
+
+<h2 id="comparison">SnapRec vs. Screencastify vs. Loom for Education</h2>
+<table>
+<thead><tr><th>Feature</th><th>SnapRec</th><th>Screencastify</th><th>Loom</th></tr></thead>
+<tbody>
+<tr><td>Price</td><td>Free</td><td>Free (limited) / $49/yr</td><td>Free (limited) / $15/mo</td></tr>
+<tr><td>Recording time limit</td><td>None</td><td>30 min (free)</td><td>5 min (free)</td></tr>
+<tr><td>Watermark on free</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Webcam overlay</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>System audio capture</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Instant sharing link</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Works on Chromebook</td><td>Yes</td><td>Yes</td><td>Browser only</td></tr>
+<tr><td>No account required</td><td>Yes</td><td>No</td><td>No</td></tr>
+</tbody>
+</table>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<h3>Is SnapRec safe for schools?</h3>
+<p>Yes. SnapRec processes everything locally in your browser — recordings are created on your device, not uploaded to external servers during capture. It doesn't collect student data, doesn't require student accounts, and doesn't track usage. It's a <strong>privacy-first tool</strong> designed to work within the constraints of school environments.</p>
+
+<h3>Can I use SnapRec on a school-managed Chromebook?</h3>
+<p>Yes, as long as your school's IT administrator allows Chrome extensions from the Chrome Web Store. SnapRec is lightweight, doesn't require elevated permissions beyond standard screen capture APIs, and runs entirely in the browser. If your school has a whitelist policy for extensions, ask your IT team to add SnapRec.</p>
+
+<h3>How long can I record?</h3>
+<p>There are <strong>no time limits</strong> on SnapRec recordings. Record a full 45-minute class session, a quick 2-minute explanation, or anything in between. Unlike Screencastify (30-minute cap on free) or Loom (5-minute cap on free), SnapRec doesn't cut you off. The only limit is your device's available storage for the recording file.</p>
+        `,
+        faqs: [
+            { q: 'Is SnapRec safe for schools?', a: "Yes — SnapRec processes everything locally, doesn't collect student data, and doesn't require student accounts. It's privacy-first by design." },
+            { q: 'Can I use SnapRec on a school-managed Chromebook?', a: "Yes, if your school's IT admin allows Chrome extensions from the Web Store. SnapRec is lightweight and doesn't require special permissions beyond standard screen capture." },
+            { q: 'How long can I record?', a: "There are no time limits on SnapRec recordings. Record a full 45-minute class or a quick 2-minute explanation — it's up to you." },
+        ],
+    },
+    {
+        slug: 'how-to-create-video-bug-report',
+        title: 'How to Create a Video Bug Report With Screen Recording (Developer Guide)',
+        description: "Stop writing long bug descriptions. Learn how to create clear, effective video bug reports with screen recording — capture the bug, annotate, and share with one link.",
+        keywords: 'video bug report, screen recording bug report, how to report bugs, bug report screen recording, developer screen recorder, record bug free, visual bug report tool, bug reporting tool',
+        date: '2026-03-06',
+        readTime: '6 min read',
+        category: 'tips',
+        heroIcon: 'bug_report',
+        content: `
+<h2 id="intro">Why Video Bug Reports Beat Text Every Time</h2>
+<p>Every developer has been there: a bug report lands in the backlog that reads <em>"the button doesn't work."</em> Which button? On which page? What did you click before that? What browser? What happened — and what was supposed to happen? The ticket turns into a thread of clarifying questions, screenshots are requested, steps are painstakingly documented, and by the time the developer can actually reproduce the issue, an hour has been wasted on communication overhead.</p>
+<p><strong>Video bug reports eliminate this friction.</strong> A 30-second screen recording shows the exact steps to reproduce, the exact behavior that's broken, the browser and viewport, the URL, and often the console errors — all without writing a single paragraph. Show, don't tell. Developers see the bug with their own eyes and can start fixing it immediately.</p>
+<p>Here's why video bug reports are becoming standard practice on modern engineering teams:</p>
+<ul>
+<li><strong>Reduce back-and-forth</strong> — no more "can you clarify?" comments on the ticket.</li>
+<li><strong>Capture exact reproduction steps</strong> — the video is the proof. No ambiguity about what happened.</li>
+<li><strong>Save developer time</strong> — reproducing a bug from a video takes minutes, not hours of guesswork.</li>
+<li><strong>Include environmental context</strong> — the recording naturally shows the browser, viewport size, URL, and any visible console or network state.</li>
+<li><strong>Work across roles</strong> — QA engineers, designers, PMs, and even customers can file video bug reports without needing to speak developer jargon.</li>
+</ul>
+
+<h2 id="anatomy">Anatomy of a Great Video Bug Report</h2>
+<p>Not all video bug reports are created equal. A shaky, 5-minute recording with no narration and no context is only marginally better than a vague text description. Here's what a great video bug report includes:</p>
+<ol>
+<li><strong>Starting state:</strong> Show the page or app in its normal state before triggering the bug. This establishes the baseline.</li>
+<li><strong>Steps to reproduce:</strong> Walk through the exact actions — clicks, inputs, navigations — that trigger the bug. Narrate what you're doing as you do it.</li>
+<li><strong>The bug itself:</strong> When the unexpected behavior happens, pause briefly so viewers can see it clearly. Describe what you expected to happen versus what actually happened.</li>
+<li><strong>Environmental details:</strong> Make sure the browser's address bar is visible (shows the URL), and if relevant, open DevTools to show any console errors or failed network requests.</li>
+<li><strong>Browser and OS info:</strong> Mention what browser and version you're using, or make sure the browser's title bar is visible. Include OS if it might be relevant.</li>
+</ol>
+<p>A well-structured 30-second video following this pattern is worth more than a 500-word bug description.</p>
+
+<h2 id="how-to">How to Record a Bug Report with SnapRec</h2>
+<p>SnapRec is a free Chrome extension that makes recording bug reports fast and frictionless. No sign-ups, no file uploads, no time limits. Here's the step-by-step workflow.</p>
+
+<h3>Step 1: Navigate to the Bug</h3>
+<p>Open Chrome and go to the page where the bug occurs. Don't trigger the bug yet — you want the recording to capture the full reproduction from a clean starting state.</p>
+
+<h3>Step 2: Open SnapRec</h3>
+<p>Click the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec extension</a> in your toolbar. Switch to <strong>Record</strong> mode.</p>
+
+<h3>Step 3: Choose Your Recording Mode</h3>
+<p>For most bug reports, <strong>Tab</strong> recording is ideal — it captures exactly the tab where the bug occurs, without showing your other tabs, bookmarks, or desktop. If the bug involves interactions across multiple windows or desktop apps, choose <strong>Screen</strong> instead.</p>
+
+<h3>Step 4: Enable Audio and Start</h3>
+<p>Turn on your <strong>microphone</strong> so you can narrate what you're doing. Verbal context like <em>"I'm clicking this submit button and expecting a success message, but watch what happens..."</em> makes the bug report dramatically more useful. Hit record.</p>
+
+<h3>Step 5: Reproduce the Bug</h3>
+<p>Walk through the steps slowly and deliberately. Narrate each action. When the bug appears, pause for a second so it's clearly visible in the recording. If relevant, open <strong>Chrome DevTools</strong> (F12) to show any console errors or failed network requests — SnapRec captures everything visible on screen.</p>
+
+<h3>Step 6: Stop and Share</h3>
+<p>Click stop. SnapRec gives you an <strong>instant shareable link</strong>. Paste that link directly into your issue tracker — Jira, GitHub Issues, Linear, Notion, or even a Slack message. No file to upload, no attachment limits to worry about. The recipient clicks the link and sees the bug immediately.</p>
+
+<h2 id="screenshot-vs-video">When to Use a Screenshot vs. Video</h2>
+<p>Not every bug needs a video. Sometimes a well-annotated screenshot is faster and more effective. Here's a simple decision framework:</p>
+<p><strong>Use a screenshot when:</strong></p>
+<ul>
+<li>The bug is <strong>visual</strong> — a layout issue, misaligned element, wrong color, or typo</li>
+<li>The bug is <strong>static</strong> — it's visible on page load without any user interaction</li>
+<li>You need to highlight a <strong>specific element</strong> with arrows or labels</li>
+</ul>
+<p><strong>Use a video when:</strong></p>
+<ul>
+<li>The bug involves <strong>user interaction</strong> — clicks, form submissions, drag-and-drop</li>
+<li>The bug is <strong>timing-dependent</strong> — race conditions, flickering, animations gone wrong</li>
+<li>Reproduction requires <strong>multiple steps</strong> — navigate here, click this, type that, then the bug appears</li>
+<li>The bug involves <strong>state changes</strong> — something works once but fails on the second attempt</li>
+</ul>
+<p>SnapRec handles both: use its screenshot mode with annotation for visual bugs, and its recorder for everything else.</p>
+
+<h2 id="annotate">Annotate Screenshots for Context</h2>
+<p>When a screenshot is the right choice, raw screenshots aren't enough. A screenshot of a broken layout looks a lot like a screenshot of a working layout if the viewer doesn't know where to look. SnapRec's built-in annotation editor solves this.</p>
+<ul>
+<li><strong>Arrows:</strong> Point directly to the element that's broken. Draw the viewer's eye to exactly where the problem is.</li>
+<li><strong>Text labels:</strong> Add short notes like "This button should say 'Submit'" or "Expected: 3 columns, Actual: 2 columns."</li>
+<li><strong>Blur tool:</strong> Redact sensitive information — API keys, user emails, session tokens, or personal data — before sharing the screenshot with anyone.</li>
+<li><strong>Highlight boxes:</strong> Draw a rectangle around the problematic area to isolate it from the rest of the page.</li>
+</ul>
+<p>An annotated screenshot saves the recipient from playing "spot the difference" and immediately communicates both the problem and its location.</p>
+
+<h2 id="workflow">Integrating with Your Bug Tracking Workflow</h2>
+<p>The power of SnapRec's one-link sharing model is that it fits into <strong>any workflow without changing it</strong>. There's no integration to configure, no plugin to install, no API to connect. You just paste a URL.</p>
+<ul>
+<li><strong>Jira:</strong> Paste the SnapRec link in the ticket description or a comment. Jira renders it as a clickable link. Reviewers click through to watch the recording.</li>
+<li><strong>GitHub Issues:</strong> Add the link to the issue body alongside your text description. Markdown renders it as a link. Include it under a "Video" or "Reproduction" heading for structure.</li>
+<li><strong>Linear:</strong> Drop the link in the issue description. Linear's clean interface keeps it easily accessible.</li>
+<li><strong>Notion:</strong> Paste the SnapRec link into your bug tracking database or page. Notion may embed or preview it automatically.</li>
+<li><strong>Slack:</strong> Share the link in a channel or DM. Team members can watch the bug reproduction before even opening the ticket. Great for quick triage discussions.</li>
+</ul>
+<p>No attachments, no file size limits, no "can you upload that again — the file expired" messages. The link works until you delete the recording.</p>
+
+<h2 id="tips">Tips for Better Bug Reports</h2>
+<ol>
+<li><strong>Reproduce the bug first, then record.</strong> Don't start recording and then try to figure out how to trigger the bug. Confirm the reproduction steps on your own, then do a clean recording that follows those steps precisely.</li>
+<li><strong>Narrate your actions.</strong> Describe what you're clicking, what you're typing, and what you expect to happen. This turns a silent screen recording into a guided walkthrough that any developer can follow.</li>
+<li><strong>Show the console.</strong> Before or during the recording, press F12 to open Chrome DevTools. Console errors and failed network requests often contain the information developers need to diagnose the bug without even reproducing it themselves.</li>
+<li><strong>Include the URL.</strong> Make sure the browser's address bar is visible in the recording. This tells the developer exactly which page, route, and potentially which query parameters are involved.</li>
+<li><strong>Keep it short.</strong> A focused 30–60 second recording is ideal. If the bug requires a long setup, consider starting the recording right before the critical steps rather than from the very beginning of a flow.</li>
+<li><strong>One bug per report.</strong> Resist the temptation to record five different issues in one video. Each bug should get its own recording and its own ticket. This makes tracking, prioritizing, and resolving issues dramatically easier.</li>
+</ol>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<h3>Can I record console errors while screen recording?</h3>
+<p>Yes — open Chrome DevTools (press F12 or right-click and choose "Inspect") before starting your SnapRec recording. The recording captures everything visible on your screen, including the Console panel, Network tab, and any error messages. This is incredibly useful for developers reviewing the bug report, as console errors often point directly to the root cause.</p>
+
+<h3>How do I share a bug report video with my team?</h3>
+<p>After recording, SnapRec gives you an <strong>instant shareable link</strong>. Copy it and paste it into your issue tracker — Jira, GitHub Issues, Linear — or drop it in Slack. No file upload, no attachment limits, no expiration. Your team clicks the link and watches the recording immediately. You can also download the video file if you need to host it on your own infrastructure.</p>
+
+<h3>Can I blur sensitive data in my bug report?</h3>
+<p>Yes — use SnapRec's built-in <strong>annotation editor</strong> to blur any sensitive information before sharing. This is essential when your recording captures API keys, user credentials, personal data, or internal URLs that shouldn't be visible outside your team. Take a screenshot with SnapRec, blur the sensitive areas, and include the annotated screenshot alongside your video in the bug report.</p>
+        `,
+        faqs: [
+            { q: 'Can I record console errors while screen recording?', a: "Yes — open Chrome DevTools before recording with SnapRec. The recording captures everything visible on screen, including the console panel." },
+            { q: 'How do I share a bug report video with my team?', a: "After recording, SnapRec gives you an instant shareable link. Paste it into your issue tracker — Jira, GitHub, Linear — or drop it in Slack. No file uploads needed." },
+            { q: 'Can I blur sensitive data in my bug report?', a: "Yes — use SnapRec's built-in annotation editor to blur any sensitive information like API keys, user data, or credentials before sharing." },
+        ],
+    },
 ];
 
 export const getPostBySlug = (slug: string): BlogPost | undefined => {

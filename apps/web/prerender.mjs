@@ -35,6 +35,9 @@ const ROUTES = [
   '/blog/how-to-record-google-slides-presentation',
   '/blog/screen-record-chrome-without-installing',
   '/blog/best-free-loom-alternatives-2026',
+  '/blog/how-to-record-zoom-meeting-free',
+  '/blog/screen-recording-for-online-classes',
+  '/blog/how-to-create-video-bug-report',
 ];
 
 function startServer(port) {
