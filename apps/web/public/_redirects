@@ -1,9 +1,2 @@
 https://snaprecorder.pages.dev/* https://www.snaprecorder.org/:splat 301
-/blog/*/ /blog/:splat 301
-/how-it-works/ /how-it-works 301
-/changelog/ /changelog 301
-/privacy/ /privacy 301
-/about/ /about 301
-/terms/ /terms 301
-/contact/ /contact 301
 /* /index.html 200
