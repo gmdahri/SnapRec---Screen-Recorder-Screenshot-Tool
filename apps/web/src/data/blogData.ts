@@ -1825,6 +1825,192 @@ export const blogPosts: BlogPost[] = [
             { q: 'Can I blur sensitive data in my bug report?', a: "Yes — use SnapRec's built-in annotation editor to blur any sensitive information like API keys, user data, or credentials before sharing." },
         ],
     },
+    {
+        slug: 'how-to-record-microsoft-teams-meeting-free',
+        title: 'How to Record a Microsoft Teams Meeting for Free (2026)',
+        description: 'Record any Teams meeting with audio — even as a participant without host permission. Free guide using SnapRec: no time limits, no watermarks.',
+        keywords: 'record microsoft teams meeting, record teams meeting free, teams recording without host, how to record teams call, record teams meeting as participant, teams screen recorder, capture teams meeting',
+        date: '2026-03-10',
+        readTime: '5 min read',
+        category: 'tutorial',
+        heroIcon: 'groups',
+        content: `
+<h2 id="intro">Why Record Microsoft Teams Meetings?</h2>
+<p>Microsoft Teams has a built-in recording feature — but only meeting <strong>organizers and presenters</strong> can start it, and in some organizations, recording is disabled by policy. If you're a participant, need to capture a meeting that wasn't officially recorded, or want a copy that doesn't depend on your org's retention settings, you need another option.</p>
+<p>Recording the meeting yourself gives you a local or shareable copy for notes, compliance, or sharing with people who couldn't attend. Here's how to do it for free, with full audio.</p>
+
+<h2 id="built-in">Can Participants Record Teams Natively?</h2>
+<p><strong>No.</strong> In Teams, only users with the <strong>Record</strong> permission (typically organizers and presenters) can use the built-in "Start recording" button. Participants see the recording indicator when someone else is recording but cannot start or stop it. If your organization has disabled cloud recording, or you're joining as an external guest, the built-in option may not be available at all.</p>
+<p>That's why many people use a <strong>screen recorder</strong> to capture the meeting: it works regardless of your role or org settings.</p>
+
+<h2 id="method">How to Record Teams with SnapRec (Free)</h2>
+<p><a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec</a> is a free Chrome extension that captures your screen and tab audio. Use it to record the Teams tab (or window) and your microphone so you get both the meeting audio and your own voice.</p>
+
+<h3>Step 1: Join the Meeting in Chrome</h3>
+<p>Open Microsoft Teams in <strong>Chrome</strong> (teams.microsoft.com or the Teams web app). Join the meeting as usual. Make sure you can see and hear the participants — adjust your speaker volume so the meeting audio is clear.</p>
+
+<h3>Step 2: Open SnapRec</h3>
+<p>Click the SnapRec icon in your Chrome toolbar. Choose <strong>Record</strong> (not Screenshot). Select <strong>Tab</strong> as the source — this records only the Teams tab, so you don't capture your desktop or other apps. Enable your <strong>microphone</strong> if you want your voice in the recording.</p>
+
+<h3>Step 3: Start Recording</h3>
+<p>Click the record button. Chrome will ask you to pick the tab to share — select the tab where Teams is running. Recording starts immediately. The meeting audio (other participants) and your mic are both captured.</p>
+
+<h3>Step 4: Stop and Save</h3>
+<p>When the meeting ends (or when you're done), click stop. Your recording opens in SnapRec. You get a <strong>shareable link</strong> to send to colleagues or a <strong>download</strong> (MP4/WebM) to save locally. No watermarks, no time limits.</p>
+
+<h2 id="tips">Tips for Better Teams Recordings</h2>
+<ul>
+<li><strong>Use tab recording</strong> — Capturing the tab (not the whole screen) keeps the file focused and ensures Teams audio is captured cleanly by Chrome.</li>
+<li><strong>Mute notifications</strong> — Turn on Do Not Disturb or close other tabs so alerts don't pop up during the recording.</li>
+<li><strong>Check your mic</strong> — Do a short test clip to confirm your voice and meeting audio are both at a good level.</li>
+<li><strong>Respect privacy and policy</strong> — Inform participants that you're recording if your organization or local laws require it. Don't share recordings outside approved channels.</li>
+</ul>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>Can I record a Teams meeting without host permission?</h3>
+<p>Yes. When you use a screen recorder like SnapRec, you're capturing what's on your screen and in your tab. You don't need the host to enable recording — you're not using Teams' built-in feature. Just be sure to follow your organization's policies and any legal requirements about informing participants.</p>
+
+<h3>Will the recording include other people's voices?</h3>
+<p>Yes. When you record the Teams tab, Chrome captures the tab's audio output. That includes everyone speaking in the meeting (as you hear them). Your microphone is captured separately, so your own voice is also in the recording.</p>
+
+<h3>Is it legal to record a Teams meeting?</h3>
+<p>It depends on where you are and your organization's rules. Many jurisdictions require <em>consent</em> from one or all parties before recording. Check your local laws and your company's policy. When in doubt, announce at the start that the meeting is being recorded.</p>
+        `,
+        faqs: [
+            { q: 'Can I record a Teams meeting without host permission?', a: "Yes. A screen recorder like SnapRec captures your screen and tab audio — you don't need the host to enable Teams' built-in recording. Follow your org's policy and any consent requirements." },
+            { q: 'Will the recording include other people\'s voices?', a: "Yes. Recording the Teams tab captures the meeting audio (as you hear it) plus your microphone if you enable it." },
+            { q: 'Is it legal to record a Teams meeting?', a: "Laws vary by location; many require consent. Check local regulations and your organization's policy, and inform participants when required." },
+        ],
+    },
+    {
+        slug: 'screenshot-vs-screen-recording-when-to-use',
+        title: 'Screenshot vs Screen Recording: When to Use Which (2026 Guide)',
+        description: 'Not sure whether to send a screenshot or a screen recording? Learn when each works best for support, docs, and async communication.',
+        keywords: 'screenshot vs screen recording, when to use screenshot, when to use screen recording, screenshot or video, async communication, support documentation, screen capture guide',
+        date: '2026-03-10',
+        readTime: '5 min read',
+        category: 'tips',
+        heroIcon: 'compare',
+        content: `
+<h2 id="intro">Screenshots and Screen Recordings Solve Different Problems</h2>
+<p>Both capture what's on your screen — but one freezes a single moment; the other captures a sequence of actions over time. Choosing the right one saves everyone time and makes your message clearer. Here's when to use each.</p>
+
+<h2 id="use-screenshot">When to Use a Screenshot</h2>
+<p>Screenshots are best when the information is <strong>static</strong> and you need to point to something specific or keep a lightweight, easy-to-scan record.</p>
+<ul>
+<li><strong>UI bugs and layout issues</strong> — A broken button, misaligned text, or wrong color is obvious in one image. Add arrows or highlights in an editor and the recipient sees exactly what's wrong.</li>
+<li><strong>Settings and configuration</strong> — "Here's what my settings look like" is faster with a screenshot than with a video. Recipients can compare at a glance.</li>
+<li><strong>Error messages and codes</strong> — A single frame showing an error dialog or a snippet of code is easy to attach to a ticket or paste into chat.</li>
+<li><strong>Design feedback and mockups</strong> — Designers and PMs often need to reference a specific state of a page or app. One image with annotations (arrows, text, blur) is ideal.</li>
+<li><strong>Documentation and how-to steps</strong> — Step-by-step guides often use a screenshot per step so readers can match what they see on their screen.</li>
+</ul>
+<p><strong>Tip:</strong> Use an annotation tool (arrows, text, blur) so the viewer knows exactly where to look. SnapRec's built-in editor lets you annotate right after capturing.</p>
+
+<h2 id="use-recording">When to Use a Screen Recording</h2>
+<p>Screen recordings are best when the <strong>process</strong> or <strong>sequence</strong> matters — when one static image can't show what's happening.</p>
+<ul>
+<li><strong>Reproducing a bug</strong> — "Click here, then here, then it breaks" is much clearer in a 30-second video than in a long paragraph. Developers see the exact steps and result.</li>
+<li><strong>Product demos and walkthroughs</strong> — Showing how a feature works, or how you use an app, is natural as a short recording. You can narrate as you go.</li>
+<li><strong>Async updates and standups</strong> — Many remote teams send a quick screen + voice update instead of a meeting. A 1–2 minute recording can replace a status call.</li>
+<li><strong>Training and onboarding</strong> — "Here's how we do X" is easier to follow when the viewer sees the clicks and navigation, not just the end state.</li>
+<li><strong>Customer support</strong> — When a user can't describe the issue, asking them to record their screen (or recording your own fix) often resolves the ticket faster than back-and-forth messages.</li>
+</ul>
+<p><strong>Tip:</strong> Keep recordings short and focused. A 30–90 second clip with a clear start and end beats a 10-minute ramble.</p>
+
+<h2 id="comparison">Quick Comparison</h2>
+<table>
+<thead><tr><th>Use case</th><th>Screenshot</th><th>Screen recording</th></tr></thead>
+<tbody>
+<tr><td>Layout / visual bug</td><td>✅ Best</td><td>Overkill</td></tr>
+<tr><td>Error message or code</td><td>✅ Best</td><td>Rarely needed</td></tr>
+<tr><td>Multi-step bug reproduction</td><td>Possible but tedious</td><td>✅ Best</td></tr>
+<tr><td>Product demo / tutorial</td><td>Limited</td><td>✅ Best</td></tr>
+<tr><td>Async status update</td><td>Sometimes enough</td><td>✅ Best with voice</td></tr>
+<tr><td>File size and sharing</td><td>Small (image)</td><td>Larger (video); use link when possible</td></tr>
+</tbody>
+</table>
+
+<h2 id="combine">Using Both Together</h2>
+<p>In many workflows, screenshots and recordings complement each other. For a bug report, you might attach a <strong>screenshot</strong> with annotations pointing to the broken element, plus a short <strong>video</strong> showing the steps to reproduce. For documentation, you might use screenshots for each step and one short recording for the full flow. Tools like SnapRec support both: take a screenshot when you need a single frame, or hit record when you need to show a process.</p>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>Is a screenshot or screen recording better for support tickets?</h3>
+<p>It depends. Use a screenshot for static issues (layout, text, a single error). Use a screen recording when the problem only appears after a sequence of actions or involves timing, so the support team can see the exact steps.</p>
+
+<h3>How do I share a screen recording without huge file sizes?</h3>
+<p>Use a tool that generates a <strong>shareable link</strong> instead of sending the video file. SnapRec gives you a link after recording — paste it in the ticket or chat. Recipients watch in the browser; no attachment limits or download required.</p>
+
+<h3>Can I annotate a screenshot before sending?</h3>
+<p>Yes. Many screenshot tools (including SnapRec) open the capture in an editor where you can add arrows, text, highlights, and blur sensitive information before downloading or sharing.</p>
+        `,
+        faqs: [
+            { q: 'Is a screenshot or screen recording better for support tickets?', a: "Use a screenshot for static issues (layout, single error). Use a screen recording when the issue only appears after a sequence of actions or involves timing." },
+            { q: 'How do I share a screen recording without huge file sizes?', a: "Use a tool that gives you a shareable link (e.g. SnapRec). Paste the link in the ticket or chat so recipients watch in the browser — no large attachments." },
+            { q: 'Can I annotate a screenshot before sending?', a: "Yes. Tools like SnapRec open the capture in an editor where you can add arrows, text, highlights, and blur before sharing." },
+        ],
+    },
+    {
+        slug: 'how-to-record-product-demo-sales',
+        title: 'How to Record a Product Demo for Sales (Free & Easy in 2026)',
+        description: 'Record a polished product demo for prospects without expensive tools. Step-by-step guide: script, record, and share with SnapRec — no watermarks, no time limits.',
+        keywords: 'record product demo, sales demo video, product demo recording, how to record demo for sales, async sales demo, demo video for prospects, screen record product demo',
+        date: '2026-03-10',
+        readTime: '6 min read',
+        category: 'tutorial',
+        heroIcon: 'storefront',
+        content: `
+<h2 id="intro">Why Record Product Demos?</h2>
+<p>Live demos are great when you can get everyone on a call — but prospects are busy, time zones clash, and scheduling often drags deals out. <strong>Recorded product demos</strong> let you create one polished walkthrough and send it to multiple leads. They can watch when it fits their schedule, rewatch key parts, and share it with stakeholders. No back-and-forth to book a second call.</p>
+<p>With the right approach, a 3–5 minute recorded demo can feel personal and clear. Here's how to do it for free, with no watermarks or time limits.</p>
+
+<h2 id="prepare">Before You Record: Prep and Script</h2>
+<ol>
+<li><strong>Define the outcome.</strong> What should the viewer understand or feel after watching? One main message (e.g. "This is how you solve X") works better than trying to show every feature.</li>
+<li><strong>Use a clean environment.</strong> Close extra tabs, turn off notifications, and use a dedicated demo account or sanitized data. Nothing breaks trust like a stray Slack message or dummy data that looks fake.</li>
+<li><strong>Write a short script or outline.</strong> You don't need to read word-for-word, but bullet points keep you on track: intro (10 sec), problem (20 sec), key flow (2–3 min), CTA (20 sec).</li>
+<li><strong>Rehearse once.</strong> Run through the flow and check that the product behaves as expected. Fix any bugs or slow loading before you hit record.</li>
+</ol>
+
+<h2 id="record">How to Record the Demo with SnapRec</h2>
+<p><a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec</a> is a free Chrome extension that captures your screen and microphone. No account, no watermark, no time limit — ideal for sales demos.</p>
+
+<h3>Step 1: Open Your Product in Chrome</h3>
+<p>Load the app or page you're demoing. Resize the window so the UI looks good (no tiny text or cramped layout). If you're demoing a web app, use a clean browser profile or incognito so bookmarks and extensions don't distract.</p>
+
+<h3>Step 2: Set Up SnapRec</h3>
+<p>Click the SnapRec icon. Choose <strong>Record</strong>, then select <strong>Tab</strong> (to capture only the product) or <strong>Screen</strong> (if you need to show multiple windows). Enable your <strong>microphone</strong> so your voiceover is recorded. Optionally enable <strong>webcam</strong> if you want a small picture-in-picture of your face for a personal touch.</p>
+
+<h3>Step 3: Record</h3>
+<p>Start recording. Introduce yourself and the product briefly, then walk through the flow you outlined. Speak clearly and at a moderate pace. When you're done, summarize the main benefit and add a clear call-to-action (e.g. "Book a call to see this live" or "Start a free trial"). Then stop the recording.</p>
+
+<h3>Step 4: Share with Prospects</h3>
+<p>SnapRec gives you a <strong>shareable link</strong> as soon as you stop. Paste it into your email, CRM, or outreach message. Prospects click and watch in the browser — no sign-up or download. You can also download the video file (MP4/WebM) to upload to your own hosting, LinkedIn, or a sales platform if you prefer.</p>
+
+<h2 id="tips">Tips for Better Demo Videos</h2>
+<ul>
+<li><strong>Keep it short.</strong> 3–5 minutes is ideal. If the product has many features, record a short "overview" demo and offer deeper dives in follow-up or live calls.</li>
+<li><strong>Lead with the problem.</strong> Spend the first 20–30 seconds on the pain point the product solves. That hooks the viewer before you show the solution.</li>
+<li><strong>Use a good mic.</strong> Built-in laptop mics work, but a headset or external mic reduces echo and noise. Viewers forgive a simple screen; they notice bad audio.</li>
+<li><strong>One demo per use case.</strong> Different segments (e.g. sales vs. support) may need different demos. One focused video per audience performs better than a single 15-minute catch-all.</li>
+<li><strong>Add the link to your email template.</strong> Include the demo link in your outreach so prospects can watch before the call. It primes them and shortens the sales cycle.</li>
+</ul>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>How long should a product demo video be?</h3>
+<p>Aim for 3–5 minutes for a general product demo. That's long enough to show a clear flow and outcome, but short enough to hold attention. For a single feature or use case, 1–2 minutes is often enough.</p>
+
+<h3>Can I add my face to the demo video?</h3>
+<p>Yes. SnapRec supports a webcam overlay — your face appears in a small circle on the screen. Many viewers find it more engaging and personal than voiceover alone. Enable the webcam in SnapRec before you start recording.</p>
+
+<h3>Do I need to pay for a tool to record sales demos?</h3>
+<p>No. SnapRec is free with no watermarks or time limits. You can record, get a shareable link, and send it to prospects without a subscription. Paid tools add features like analytics or editing; for many teams, a simple recorded demo is enough to move deals forward.</p>
+        `,
+        faqs: [
+            { q: 'How long should a product demo video be?', a: 'Aim for 3–5 minutes for a general demo. For a single feature or use case, 1–2 minutes is often enough.' },
+            { q: 'Can I add my face to the demo video?', a: "Yes. SnapRec supports a webcam overlay so your face appears in a small circle on screen. Enable the webcam before you start recording." },
+            { q: 'Do I need to pay for a tool to record sales demos?', a: "No. SnapRec is free with no watermarks or time limits. You can record, get a shareable link, and send it to prospects without a subscription." },
+        ],
+    },
 ];
 
 export const getPostBySlug = (slug: string): BlogPost | undefined => {

@@ -100,8 +100,13 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
         );
     }
 
+    const wrapperStyle = { minHeight: '250px', ...style };
+    if (style?.height) {
+        wrapperStyle.height = style.height;
+        wrapperStyle.overflow = 'hidden';
+    }
     return (
-        <div className={`google-ad-container overflow-hidden rounded-xl ${className}`} style={{ minHeight: '250px', ...style }}>
+        <div className={`google-ad-container overflow-hidden rounded-xl ${className}`} style={wrapperStyle}>
             <ins
                 ref={adRef as any}
                 className="adsbygoogle"

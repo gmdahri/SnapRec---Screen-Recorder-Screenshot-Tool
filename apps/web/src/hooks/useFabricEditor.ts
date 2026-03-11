@@ -19,6 +19,7 @@ export const useFabricEditor = () => {
     const startPoint = useRef<{ x: number; y: number } | null>(null);
     const activeObject = useRef<fabric.Object | null>(null);
     const history = useRef<string[]>([]);
+    const renderScheduled = useRef(false);
 
     // Refs for listeners to avoid stale closures
     const activeToolRef = useRef(activeTool);
@@ -143,23 +144,24 @@ export const useFabricEditor = () => {
         setActiveTool(tool);
         const canvas = fabricCanvas.current;
         if (!canvas) return;
-        canvas.isDrawingMode = tool === 'pen';
-        if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
-            canvas.freeDrawingBrush.color = strokeColorRef.current;
-            canvas.freeDrawingBrush.width = strokeWidthRef.current;
-        }
-        canvas.selection = tool === 'select';
-        // Only iterate objects when switching to select/text (where selectability matters)
-        // Skip the expensive loop for drawing tools
-        if (tool === 'select' || tool === 'text') {
-            canvas.forEachObject((obj) => {
-                obj.selectable = tool === 'select' || (tool === 'text' && obj instanceof fabric.IText);
-            });
-        } else if (canvas.getObjects().length > 0) {
-            // For drawing tools, just disable selection on all objects in one pass
-            canvas.forEachObject((obj) => { obj.selectable = false; });
-        }
-        canvas.renderAll();
+        requestAnimationFrame(() => {
+            const c = fabricCanvas.current;
+            if (!c) return;
+            c.isDrawingMode = tool === 'pen';
+            if (c.isDrawingMode && c.freeDrawingBrush) {
+                c.freeDrawingBrush.color = strokeColorRef.current;
+                c.freeDrawingBrush.width = strokeWidthRef.current;
+            }
+            c.selection = tool === 'select';
+            if (tool === 'select' || tool === 'text') {
+                c.forEachObject((obj) => {
+                    obj.selectable = tool === 'select' || (tool === 'text' && obj instanceof fabric.IText);
+                });
+            } else if (c.getObjects().length > 0) {
+                c.forEachObject((obj) => { obj.selectable = false; });
+            }
+            c.renderAll();
+        });
     }, []);
 
     const handleCropConfirm = useCallback(() => {
@@ -245,8 +247,8 @@ export const useFabricEditor = () => {
 
         canvas.on('mouse:move', (options) => {
             if (!isDrawing.current || !activeObject.current || !startPoint.current) return;
-            const canvas = fabricCanvas.current!;
-            const pointer = canvas.getPointer(options.e);
+            const c = fabricCanvas.current!;
+            const pointer = c.getPointer(options.e);
             const tool = activeToolRef.current;
 
             if (tool === 'rectangle' || tool === 'blur' || tool === 'pixelate' || tool === 'crop') {
@@ -258,15 +260,21 @@ export const useFabricEditor = () => {
                     top: Math.min(pointer.y, startPoint.current.y),
                 });
             } else if (tool === 'arrow') {
-                canvas.remove(activeObject.current);
+                c.remove(activeObject.current);
                 const arrow = createArrow([startPoint.current.x, startPoint.current.y, pointer.x, pointer.y], {
                     stroke: strokeColorRef.current,
                     strokeWidth: strokeWidthRef.current,
                 });
-                canvas.add(arrow);
+                c.add(arrow);
                 activeObject.current = arrow;
             }
-            canvas.renderAll();
+            if (!renderScheduled.current) {
+                renderScheduled.current = true;
+                requestAnimationFrame(() => {
+                    renderScheduled.current = false;
+                    fabricCanvas.current?.renderAll();
+                });
+            }
         });
 
         canvas.on('mouse:up', () => {
