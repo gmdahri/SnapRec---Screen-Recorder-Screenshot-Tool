@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -8,8 +9,9 @@ import Dashboard from './pages/Dashboard';
 import DashboardOverview from './pages/DashboardOverview';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
-import Editor from './pages/Editor';
 import ShareView from './pages/ShareView';
+
+const Editor = React.lazy(() => import('./pages/Editor'));
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import Privacy from './pages/Privacy';
@@ -65,7 +67,16 @@ function App() {
                   </ProtectedRoute>
                 } />
                 {/* Editor and VideoPreview accessible without login, but with limited features */}
-                <Route path="/editor/:id?" element={<Editor />} />
+                <Route path="/editor/:id?" element={
+                  <Suspense fallback={
+                    <div className="h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark text-slate-600 dark:text-slate-400">
+                      <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="text-sm font-medium">Loading editor...</p>
+                    </div>
+                  }>
+                    <Editor />
+                  </Suspense>
+                } />
                 <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
                 <Route path="/v/:id?" element={<ShareView />} />
                 <Route path="/privacy" element={<Privacy />} />
