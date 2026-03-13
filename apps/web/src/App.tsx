@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import ShareView from './pages/ShareView';
 
 const Editor = React.lazy(() => import('./pages/Editor'));
+const VideoEditorPage = React.lazy(() => import('./pages/VideoEditor/VideoEditorPage'));
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import Privacy from './pages/Privacy';
@@ -77,6 +78,38 @@ function App() {
                     <Editor />
                   </Suspense>
                 } />
+                <Route
+                  path="/video-editor/project/:projectId"
+                  element={
+                    <ProtectedRoute>
+                      <Suspense
+                        fallback={
+                          <div className="h-screen flex items-center justify-center bg-[#f8fafc] text-slate-600">
+                            <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        }
+                      >
+                        <VideoEditorPage />
+                      </Suspense>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/video-editor"
+                  element={
+                    <ProtectedRoute>
+                      <Suspense
+                        fallback={
+                          <div className="h-screen flex items-center justify-center bg-[#f8fafc] text-slate-600">
+                            <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        }
+                      >
+                        <VideoEditorPage />
+                      </Suspense>
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
                 <Route path="/v/:id?" element={<ShareView />} />
                 <Route path="/privacy" element={<Privacy />} />

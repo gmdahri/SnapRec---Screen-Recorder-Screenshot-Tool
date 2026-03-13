@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
 import { parseUTCDate } from '../lib/dateUtils';
-import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile } from '../hooks/useRecordings';
+import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
@@ -183,6 +183,7 @@ const ShareView: React.FC = () => {
 
     const [isUploaded, setIsUploaded] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [videoEditorLoading, setVideoEditorLoading] = useState(false);
     const [pollInterval, setPollInterval] = useState<number | false>(3000);
 
     const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
@@ -372,6 +373,8 @@ const ShareView: React.FC = () => {
                 handleSaveClick();
             } else if (pendingAction === 'download') {
                 handleDownload();
+            } else if (pendingAction === 'videoEditor') {
+                handleOpenVideoEditor();
             }
             setPendingAction(null);
         }
@@ -415,6 +418,44 @@ const ShareView: React.FC = () => {
         }
     };
 
+    /** Upload local blob and create recording; returns server recording id or null */
+    const uploadLocalRecording = async (): Promise<string | null> => {
+        if (!user || !localVideoBlob) return null;
+        const blob = await (await fetch(localVideoBlob)).blob();
+        const safeId = effectiveId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`);
+        const fileName = `video-${safeId}-${Date.now()}.webm`;
+        const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
+            fileName,
+            contentType: 'video/webm',
+        });
+        await uploadFile(uploadUrl, blob, 'video/webm');
+        const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
+        if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
+        const createdRecording = await createRecordingMutation.mutateAsync({
+            id: effectiveId,
+            title: `Video Recording ${new Date().toLocaleString()}`,
+            fileUrl,
+            type: 'video',
+            userId: user?.id,
+            guestId: undefined,
+        });
+        const recordingId = createdRecording?.id || effectiveId;
+        if (!recordingId) return null;
+        try {
+            const request = indexedDB.open('SnapRecDB', 2);
+            request.onsuccess = (e: any) => {
+                const db = e.target.result;
+                if (db.objectStoreNames.contains('recordings')) {
+                    const txn = db.transaction(['recordings'], 'readwrite');
+                    txn.objectStore('recordings').clear();
+                }
+            };
+        } catch { /* empty */ }
+        setIsUploaded(true);
+        navigate(`/v/${recordingId}`, { replace: true });
+        return recordingId;
+    };
+
     const handleUploadToCloud = async () => {
         if (!user) {
             setLoginAction('generate a shareable link');
@@ -427,65 +468,58 @@ const ShareView: React.FC = () => {
 
         setIsUploading(true);
         try {
-            const blob = await (await fetch(localVideoBlob)).blob();
-            const safeId = effectiveId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`);
-            const fileName = `video-${safeId}-${Date.now()}.webm`;
-
-            const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
-                fileName,
-                contentType: 'video/webm'
-            });
-
-            await uploadFile(uploadUrl, blob, 'video/webm');
-
-            const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
-            if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
-
-            const createdRecording = await createRecordingMutation.mutateAsync({
-                id: effectiveId,
-                title: `Video Recording ${new Date().toLocaleString()}`,
-                fileUrl,
-                type: 'video',
-                userId: user?.id,
-                guestId: !user ? guestId : undefined,
-            });
-
-            const recordingId = createdRecording?.id || effectiveId;
+            const recordingId = await uploadLocalRecording();
             if (!recordingId) {
                 showNotification('Failed to get recording ID. Please try again.', 'error');
                 return;
             }
-
-            // Clear fallback resilient storage to free up browser space once uploaded
-            try {
-                const request = indexedDB.open('SnapRecDB', 2);
-                request.onsuccess = (e: any) => {
-                    const db = e.target.result;
-                    if (db.objectStoreNames.contains('recordings')) {
-                        const txn = db.transaction(['recordings'], 'readwrite');
-                        txn.objectStore('recordings').clear();
-                    }
-                };
-            } catch (e) { }
-
-            setIsUploaded(true);
-
-            // Redirect to the public URL immediately
-            navigate(`/v/${recordingId}`, { replace: true });
-
-            // Copy to clipboard
             const shareUrl = `${window.location.origin}/v/${recordingId}`;
-
             try {
                 await navigator.clipboard.writeText(shareUrl);
                 showNotification('Shareable link generated and copied to clipboard!', 'success');
-            } catch (err) {
+            } catch {
                 showNotification('Shareable link generated successfully!', 'success');
             }
         } catch (error: any) {
             showNotification(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handleOpenVideoEditor = async () => {
+        if (!user) {
+            setLoginAction('open the Video Editor');
+            setPendingAction('videoEditor');
+            setIsLoginModalOpen(true);
+            return;
+        }
+        if (videoEditorLoading) return;
+        setVideoEditorLoading(true);
+        try {
+            let recordingId: string | null = null;
+            if (isValidId && recording?.user?.supabaseId === user.id) {
+                recordingId = id!;
+            } else if (isValidId && isUploaded) {
+                recordingId = id!;
+            }
+            if (!recordingId && localVideoBlob) {
+                recordingId = await uploadLocalRecording();
+            }
+            if (!recordingId) {
+                showNotification('Upload the recording first or sign in as the owner.', 'error');
+                return;
+            }
+            // POST is idempotent per recording: server returns existing project if you already opened the editor for this video.
+            const project = await fetchWithAuth<{ id: string }>('/video-projects', {
+                method: 'POST',
+                body: JSON.stringify({ recordingId }),
+            });
+            navigate(`/video-editor/project/${project.id}`);
+        } catch (e: unknown) {
+            showNotification(e instanceof Error ? e.message : 'Could not open editor', 'error');
+        } finally {
+            setVideoEditorLoading(false);
         }
     };
 
@@ -624,6 +658,32 @@ const ShareView: React.FC = () => {
                                     <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">calendar_today</span> {parseUTCDate(recordingData.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
+                            {recordingData.type === 'video' && (localVideoBlob || downloadUrl) && (
+                                <button
+                                    type="button"
+                                    onClick={handleOpenVideoEditor}
+                                    disabled={videoEditorLoading || (recordingData?.type === 'video' && !localVideoBlob && !isValidId)}
+                                    className="group relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 w-full rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-primary via-violet-600 to-purple-700 text-white shadow-xl shadow-primary/25 border border-white/10 overflow-hidden text-left disabled:opacity-60"
+                                >
+                                    <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.06\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-90 pointer-events-none" aria-hidden />
+                                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
+                                        <span className="material-symbols-outlined text-3xl">auto_fix_high</span>
+                                    </div>
+                                    <div className="relative flex-1 min-w-0 text-left">
+                                        <p className="text-xs font-bold uppercase tracking-widest text-white/80 mb-1">Main feature</p>
+                                        <h2 className="text-xl sm:text-2xl font-black leading-tight">
+                                            {videoEditorLoading ? 'Preparing editor…' : 'Open in Video Editor'}
+                                        </h2>
+                                        <p className="text-sm text-white/90 mt-1 max-w-xl">
+                                            Trim clips, work on a multi-track timeline, then export — sign in once to unlock the editor.
+                                        </p>
+                                    </div>
+                                    <span className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-white text-primary px-6 py-3.5 text-sm font-bold shadow-lg group-hover:bg-violet-50 transition-colors">
+                                        {videoEditorLoading ? '…' : 'Video Editor'}
+                                        <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                                    </span>
+                                </button>
+                            )}
                             <div className="w-full relative">
                                 {recordingData.type === 'screenshot' ? (
                                     <div className="relative w-full min-h-[400px] bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden shadow-2xl flex items-center justify-center border border-slate-200 dark:border-slate-800">

@@ -101,6 +101,20 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
     return response.json();
 }
 
+/** Download binary (e.g. video stream) with the same auth as API calls. */
+export async function fetchBlobWithAuth(videoUrl: string): Promise<Blob> {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw new Error('Authentication error. Please log in again.');
+    const token = session?.access_token;
+    const response = await fetch(videoUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) {
+        throw new Error(`Could not download video (${response.status}).`);
+    }
+    return response.blob();
+}
+
 // Query Keys - centralized for cache management
 export const recordingsKeys = {
     all: ['recordings'] as const,
