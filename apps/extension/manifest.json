@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "SnapRec - Screen Recorder & Screenshot Tool",
-  "version": "1.2.5",
-  "description": "Free screen recorder & screenshot tool. Record with audio, capture full-page, annotate, and share via link instantly. No watermarks.",
+  "name": "Screen Recorder & Screenshot - SnapRec",
+  "version": "1.2.6",
+  "description": "Record your screen, capture full webpages, annotate screenshots, and share instantly with this Chrome recording tool.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -17,7 +17,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "SnapRec - Screen Recorder & Screenshot"
+    "default_title": "Screen Recorder & Screenshot - SnapRec"
   },
   "commands": {
     "capture-fullpage": {
