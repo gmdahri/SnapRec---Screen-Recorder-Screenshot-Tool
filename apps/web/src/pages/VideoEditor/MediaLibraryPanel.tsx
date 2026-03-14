@@ -1,10 +1,16 @@
 import { useMemo } from 'react';
 import { useVideoEditor } from './VideoEditorContext';
+import { EDITOR_LEFT_PANEL_WIDTH, EDITOR_STORAGE_LIMIT_BYTES } from './editorLayout';
 
-export function MediaLibraryPanel() {
+function formatStorageShort(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Nested gallery: Your media / Favorites + list (lives in right dock “Media gallery” tab) */
+export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolean } = {}) {
   const {
-    mediaLibraryOpen,
-    setMediaLibraryOpen,
     clips,
     selectedClipId,
     setSelectedClipId,
@@ -19,61 +25,52 @@ export function MediaLibraryPanel() {
     [clips, favoriteClipIds],
   );
 
-  if (!mediaLibraryOpen) return null;
+  const usedBytes = useMemo(
+    () => clips.reduce((sum, c) => sum + (c.sizeBytes ?? 0), 0),
+    [clips],
+  );
+  const pct = Math.min(100, (usedBytes / EDITOR_STORAGE_LIMIT_BYTES) * 100);
 
   return (
-    <aside className="w-80 shrink-0 bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg">
-      <div className="p-4 flex items-start justify-between gap-2 border-b border-slate-200 bg-gradient-to-b from-violet-50/60 to-white">
-        <div className="min-w-0">
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Media gallery</h2>
-          <p className="text-xs text-slate-500 mt-2">Save in the top bar when you’re done.</p>
+    <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+      {!omitTabRow ? (
+        <div className="flex border-b border-slate-100 px-2 pt-2 gap-1 shrink-0" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mediaLibraryTab === 'your'}
+            onClick={() => setMediaLibraryTab('your')}
+            className={`flex-1 py-2 px-1 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
+              mediaLibraryTab === 'your'
+                ? 'border-primary text-primary bg-violet-50/80'
+                : 'border-transparent text-slate-500 hover:bg-slate-50'
+            }`}
+          >
+            Your media <span className="opacity-70">({clips.length})</span>
+          </button>
+          <div
+            className="flex-1 py-2 px-1 text-center rounded-t-lg text-slate-400 cursor-not-allowed text-xs font-semibold bg-slate-50"
+            title="Coming soon"
+          >
+            Stock <span className="block text-[10px] text-amber-600">Soon</span>
+          </div>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mediaLibraryTab === 'favorites'}
+            onClick={() => setMediaLibraryTab('favorites')}
+            className={`flex-1 py-2 px-1 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
+              mediaLibraryTab === 'favorites'
+                ? 'border-primary text-primary bg-violet-50/80'
+                : 'border-transparent text-slate-500 hover:bg-slate-50'
+            }`}
+          >
+            Favorites <span className="opacity-70">({favoriteClips.length})</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="p-1 rounded-full hover:bg-slate-100 text-slate-400 text-lg leading-none"
-          onClick={() => setMediaLibraryOpen(false)}
-          aria-label="Close"
-        >
-          ×
-        </button>
-      </div>
+      ) : null}
 
-      <div className="flex border-b border-slate-100 px-2 pt-2 gap-1" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mediaLibraryTab === 'your'}
-          onClick={() => setMediaLibraryTab('your')}
-          className={`flex-1 py-2 px-1 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
-            mediaLibraryTab === 'your'
-              ? 'border-primary text-primary bg-violet-50/80'
-              : 'border-transparent text-slate-500 hover:bg-slate-50'
-          }`}
-        >
-          Your media <span className="opacity-70">({clips.length})</span>
-        </button>
-        <div
-          className="flex-1 py-2 px-1 text-center rounded-t-lg text-slate-400 cursor-not-allowed text-xs font-semibold bg-slate-50"
-          title="Coming soon"
-        >
-          Stock <span className="block text-[10px] text-amber-600">Soon</span>
-        </div>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mediaLibraryTab === 'favorites'}
-          onClick={() => setMediaLibraryTab('favorites')}
-          className={`flex-1 py-2 px-1 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
-            mediaLibraryTab === 'favorites'
-              ? 'border-primary text-primary bg-violet-50/80'
-              : 'border-transparent text-slate-500 hover:bg-slate-50'
-          }`}
-        >
-          Favorites <span className="opacity-70">({favoriteClips.length})</span>
-        </button>
-      </div>
-
-      <div className="p-3 border-b border-slate-100">
+      <div className="p-3 border-b border-slate-100 shrink-0">
         <button
           type="button"
           disabled
@@ -153,7 +150,9 @@ export function MediaLibraryPanel() {
                 <span className="text-amber-500 text-lg">★</span>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900 truncate">{c.name}</p>
-                  <p className="text-xs text-slate-500">{c.durationLabel} · {c.res}</p>
+                  <p className="text-xs text-slate-500">
+                    {c.durationLabel} · {c.res}
+                  </p>
                 </div>
               </button>
             ))
@@ -161,19 +160,25 @@ export function MediaLibraryPanel() {
         </div>
       )}
 
-      <div className="p-3 border-t border-slate-200 bg-slate-50 mt-auto">
+      <div className="p-3 border-t border-slate-200 bg-slate-50 shrink-0">
         <div className="flex justify-between text-xs text-slate-600 mb-1">
           <span>Storage</span>
-          <span>3.2 / 10 GB</span>
+          <span>
+            {formatStorageShort(usedBytes)} / 100 MB
+          </span>
         </div>
         <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-          <div className="h-full bg-primary w-[32%] rounded-full" />
+          <div
+            className="h-full bg-primary rounded-full transition-[width] duration-300"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
 
+/** Main media nav on the left (Your media, Stock, Favorites) */
 export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
   const {
     projectTitle,
@@ -182,19 +187,21 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
     mediaLibraryTab,
     setMediaLibraryTab,
     favoriteClipIds,
-    setMediaLibraryOpen,
+    setRightDockTab,
   } = useVideoEditor();
 
   const favCount = clips.filter((c) => favoriteClipIds.includes(c.id)).length;
 
   return (
-    <aside className="w-52 shrink-0 bg-white border-r border-slate-200 flex flex-col hidden lg:flex min-h-0">
+    <aside
+      className={`${EDITOR_LEFT_PANEL_WIDTH} bg-white border-r border-slate-200 flex flex-col hidden lg:flex min-h-0`}
+    >
       <div className="p-4 border-b border-slate-200 bg-gradient-to-b from-violet-50/50 to-white">
         <h2 className="text-lg font-extrabold text-primary leading-tight">
-          {variant === 'media' ? 'Media library' : 'Project'}
+          {variant === 'media' ? 'Media' : 'Project'}
         </h2>
         <p className="text-sm font-medium text-slate-800 truncate mt-1">{projectTitle}</p>
-        <p className="text-xs text-slate-500 mt-2">Open the gallery panel →</p>
+        <p className="text-xs text-slate-500 mt-2">Clips and favorites — add to the timeline.</p>
       </div>
       <ul className="p-2 space-y-1 flex-1 overflow-y-auto">
         <li>
@@ -202,7 +209,7 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
             type="button"
             onClick={() => {
               setMediaLibraryTab('your');
-              setMediaLibraryOpen(true);
+              setRightDockTab('mediaGallery');
             }}
             className={`w-full text-left py-2.5 px-3 rounded-xl text-sm font-medium transition-colors flex justify-between items-center ${
               mediaLibraryTab === 'your' ? 'bg-violet-50 text-primary' : 'hover:bg-slate-50 text-slate-700'
@@ -228,7 +235,7 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
             type="button"
             onClick={() => {
               setMediaLibraryTab('favorites');
-              setMediaLibraryOpen(true);
+              setRightDockTab('mediaGallery');
             }}
             className={`w-full text-left py-2.5 px-3 rounded-xl text-sm font-medium transition-colors flex justify-between items-center ${
               mediaLibraryTab === 'favorites' ? 'bg-violet-50 text-primary' : 'hover:bg-slate-50 text-slate-700'
@@ -240,5 +247,69 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
         </li>
       </ul>
     </aside>
+  );
+}
+
+/** Right dock “Media gallery” tab: same block as former left column + clip lists (no duplicate tab row). */
+export function MediaGalleryTabContent() {
+  const {
+    projectTitle,
+    hasTimelineContent,
+    clips,
+    mediaLibraryTab,
+    setMediaLibraryTab,
+    favoriteClipIds,
+  } = useVideoEditor();
+
+  const favCount = clips.filter((c) => favoriteClipIds.includes(c.id)).length;
+
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 p-4 border-b border-slate-200 bg-gradient-to-b from-violet-50/50 to-white">
+        <h2 className="text-lg font-extrabold text-primary leading-tight">Media</h2>
+        <p className="text-sm font-medium text-slate-800 truncate mt-1">{projectTitle}</p>
+        <p className="text-xs text-slate-500 mt-2">Your media, stock, and favorites — add clips to the timeline.</p>
+      </div>
+      <ul className="shrink-0 p-2 space-y-1 border-b border-slate-100 bg-white">
+        <li>
+          <button
+            type="button"
+            onClick={() => setMediaLibraryTab('your')}
+            className={`w-full text-left py-2.5 px-3 rounded-xl text-sm font-medium transition-colors flex justify-between items-center ${
+              mediaLibraryTab === 'your' ? 'bg-violet-50 text-primary' : 'hover:bg-slate-50 text-slate-700'
+            }`}
+          >
+            Your media
+            <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+              {hasTimelineContent ? clips.length : 0}
+            </span>
+          </button>
+        </li>
+        <li>
+          <div
+            className="w-full py-2.5 px-3 rounded-xl text-sm text-slate-400 cursor-not-allowed flex justify-between items-center bg-slate-50"
+            title="Coming soon"
+          >
+            Stock
+            <span className="text-xs text-amber-700 font-semibold">Soon</span>
+          </div>
+        </li>
+        <li>
+          <button
+            type="button"
+            onClick={() => setMediaLibraryTab('favorites')}
+            className={`w-full text-left py-2.5 px-3 rounded-xl text-sm font-medium transition-colors flex justify-between items-center ${
+              mediaLibraryTab === 'favorites' ? 'bg-violet-50 text-primary' : 'hover:bg-slate-50 text-slate-700'
+            }`}
+          >
+            Favorites
+            <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">{favCount}</span>
+          </button>
+        </li>
+      </ul>
+      <div className="min-h-0 min-w-0 flex-1 flex flex-col overflow-hidden">
+        <MediaGalleryNested omitTabRow />
+      </div>
+    </div>
   );
 }

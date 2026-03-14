@@ -7,9 +7,12 @@ export type VideoPlayerPlayback = {
 };
 
 export type VideoPlayerHandle = {
-  seek: (seconds: number) => void;
+  /** @param unrestricted When true, do not clamp to trim range — timeline scrub uses full duration */
+  seek: (seconds: number, opts?: { unrestricted?: boolean }) => void;
   play: () => void;
   pause: () => void;
+  /** Read clock from &lt;video&gt; so timeline playhead matches the element (avoids React/state desync). */
+  readPlaybackFromMedia: () => { currentTime: number; duration: number } | null;
 };
 
 interface VideoPlayerProps {
@@ -20,10 +23,13 @@ interface VideoPlayerProps {
   onPlaybackUpdate?: (state: VideoPlayerPlayback) => void;
   /** When set, playback stays within [start, end] (seconds); pauses at end. */
   playbackRange?: { start: number; end: number } | null;
+  /** Controlled preview speed; when set, syncs HTMLVideoElement and speed menu. */
+  playbackRate?: number;
+  onPlaybackRateChange?: (rate: number) => void;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer(
-  { src, isProcessing, onPlaybackUpdate, playbackRange },
+  { src, isProcessing, onPlaybackUpdate, playbackRange, playbackRate, onPlaybackRateChange },
   ref,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -48,18 +54,30 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   };
 
   useImperativeHandle(ref, () => ({
-    seek(seconds: number) {
+    seek(seconds: number, opts?: { unrestricted?: boolean }) {
       const el = videoRef.current;
       if (!el || isProcessing) return;
-      const d = isFinite(el.duration) ? el.duration : duration;
-      const r = rangeRef.current;
-      let t = Math.max(0, Math.min(seconds, d || 0));
-      if (r && r.end > r.start) {
-        t = Math.max(r.start, Math.min(t, r.end));
+      const fromEl = isFinite(el.duration) && el.duration > 0 ? el.duration : 0;
+      const fromState = isFinite(duration) && duration > 0 ? duration : 0;
+      const d = fromEl || fromState;
+      if (d <= 0) return;
+      let t = Math.max(0, Math.min(seconds, d));
+      if (!opts?.unrestricted) {
+        const r = rangeRef.current;
+        if (r && r.end > r.start) {
+          t = Math.max(r.start, Math.min(t, r.end));
+        }
       }
       el.currentTime = t;
       setCurrentTime(el.currentTime);
       emitPlayback();
+    },
+    readPlaybackFromMedia() {
+      const el = videoRef.current;
+      if (!el) return null;
+      const d = isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
+      if (!isFinite(d) || d <= 0) return null;
+      return { currentTime: el.currentTime, duration: d };
     },
     play() {
       if (!isProcessing) void videoRef.current?.play();
@@ -85,6 +103,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const rangeRef = useRef(playbackRange);
   rangeRef.current = playbackRange;
 
+  const controlledRate = playbackRate !== undefined;
+  const displayRate = controlledRate ? playbackRate! : playbackSpeed;
+
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
     const el = videoRef.current;
@@ -106,11 +127,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
-      const d = videoRef.current.duration;
+      const el = videoRef.current;
+      const d = el.duration;
+      el.playbackRate = controlledRate ? playbackRate! : playbackSpeed;
       if (isFinite(d)) {
         setDuration(d);
       } else if (d === Infinity) {
-        videoRef.current.currentTime = 1e10;
+        el.currentTime = 1e10;
       }
       emitPlayback();
     }
@@ -121,9 +144,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       const d = videoRef.current.duration;
       if (isFinite(d)) {
         setDuration(d);
-        if (videoRef.current.currentTime > 0 && !isPlaying) {
-          videoRef.current.currentTime = 0;
-        }
         emitPlayback();
       }
     }
@@ -164,7 +184,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const handleSpeedChange = (speed: number) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
-      setPlaybackSpeed(speed);
+      if (onPlaybackRateChange) onPlaybackRateChange(speed);
+      else setPlaybackSpeed(speed);
       setShowSpeedMenu(false);
     }
   };
@@ -197,13 +218,20 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     };
   }, []);
 
+  /** Only reload when src (or processing) changes — never on playbackRate or the video resets to t=0 on every speed change. */
   useEffect(() => {
     if (src && videoRef.current && !isProcessing) {
-      videoRef.current.load();
+      const el = videoRef.current;
+      el.load();
       setIsPlaying(false);
+      const rate = controlledRate ? playbackRate! : playbackSpeed;
+      queueMicrotask(() => {
+        if (videoRef.current) videoRef.current.playbackRate = rate;
+      });
       let pollCount = 0;
       const pollDuration = setInterval(() => {
         if (videoRef.current && isFinite(videoRef.current.duration)) {
+          videoRef.current.playbackRate = rate;
           setDuration(videoRef.current.duration);
           emitPlayback();
           clearInterval(pollDuration);
@@ -213,7 +241,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       }, 500);
       return () => clearInterval(pollDuration);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load() only on src/isProcessing
   }, [src, isProcessing]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || isProcessing) return;
+    el.playbackRate = controlledRate ? playbackRate! : playbackSpeed;
+  }, [playbackRate, playbackSpeed, controlledRate, isProcessing]);
 
   return (
     <div
@@ -229,6 +264,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         onLoadedMetadata={handleLoadedMetadata}
         onDurationChange={handleDurationChange}
         onCanPlay={handleDurationChange}
+        onSeeked={emitPlayback}
         onClick={togglePlay}
         playsInline
         preload="auto"
@@ -298,7 +334,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                 className="text-white/80 hover:text-white font-bold text-sm bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md transition-all border border-white/5 hover:border-white/20"
               >
-                {playbackSpeed}x
+                {displayRate}x
               </button>
               {showSpeedMenu && (
                 <div className="absolute bottom-full mb-2 right-0 bg-[#1a1325]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl min-w-[100px] py-1">
@@ -307,7 +343,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
                       key={speed}
                       type="button"
                       onClick={() => handleSpeedChange(speed)}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-primary/20 ${playbackSpeed === speed ? 'text-primary font-bold bg-primary/10' : 'text-white/70'}`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-primary/20 ${displayRate === speed ? 'text-primary font-bold bg-primary/10' : 'text-white/70'}`}
                     >
                       {speed}x
                     </button>

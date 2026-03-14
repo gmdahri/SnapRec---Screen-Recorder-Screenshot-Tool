@@ -15,6 +15,7 @@ import type {
   MediaClip,
   MediaLibraryTab,
   ProjectSummary,
+  RightDockTab,
 } from './types';
 import { fetchWithAuth, uploadFile } from '../../hooks/useRecordings';
 import { recordVideoSegmentToWebm } from './localVideoTrim';
@@ -29,6 +30,8 @@ export interface VideoProjectDto {
   videoUrl: string;
   timelineJson: Record<string, unknown> | null;
   updatedAt: string | null;
+  /** From R2 HeadObject; drives storage bar. */
+  fileSizeBytes?: number | null;
 }
 
 interface VideoEditorContextValue {
@@ -42,6 +45,9 @@ interface VideoEditorContextValue {
   setWorkspace: (w: EditorWorkspace) => void;
   mediaLibraryOpen: boolean;
   setMediaLibraryOpen: (o: boolean) => void;
+  /** Right panel: Properties or Media gallery (nested) */
+  rightDockTab: RightDockTab;
+  setRightDockTab: (t: RightDockTab) => void;
   mediaLibraryTab: MediaLibraryTab;
   setMediaLibraryTab: (t: MediaLibraryTab) => void;
   favoriteClipIds: string[];
@@ -75,6 +81,9 @@ interface VideoEditorContextValue {
   editorPlaybackTime: number;
   setEditorPlaybackTime: (n: number) => void;
   resetTrim: () => void;
+  /** Preview playback speed (0.5–2); persisted in timelineJson on Save. */
+  playbackRate: number;
+  setPlaybackRate: (r: number) => void;
   hasUnsavedChanges: boolean;
   saveProject: () => Promise<void>;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
@@ -97,6 +106,17 @@ interface VideoEditorContextValue {
 }
 
 const Ctx = createContext<VideoEditorContextValue | null>(null);
+
+const PLAYBACK_RATE_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+function normalizePlaybackRate(raw: unknown): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return 1;
+  const r = Math.min(4, Math.max(0.25, raw));
+  const nearest = PLAYBACK_RATE_PRESETS.reduce((best, p) =>
+    Math.abs(p - r) < Math.abs(best - r) ? p : best,
+  );
+  return nearest;
+}
 
 function clearStagingRef(
   revoker: React.MutableRefObject<string | null>,
@@ -123,7 +143,11 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [projectTitle, setProjectTitle] = useState('Project Untitled');
   const [activeTool, setActiveTool] = useState<EditorTool>('media');
   const [workspace, setWorkspace] = useState<EditorWorkspace>('empty');
-  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const [rightDockTab, setRightDockTab] = useState<RightDockTab>('mediaGallery');
+  const setMediaLibraryOpen = useCallback((open: boolean) => {
+    setRightDockTab(open ? 'mediaGallery' : 'properties');
+  }, []);
+  const mediaLibraryOpen = rightDockTab === 'mediaGallery';
   const [mediaLibraryTab, setMediaLibraryTab] = useState<MediaLibraryTab>('your');
   const [favoriteClipIds, setFavoriteClipIds] = useState<string[]>([]);
   const toggleFavoriteClip = useCallback((clipId: string) => {
@@ -180,6 +204,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [savedTitle, setSavedTitle] = useState('');
   const [savedTrimStart, setSavedTrimStart] = useState(0);
   const [savedTrimEnd, setSavedTrimEnd] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [savedPlaybackRate, setSavedPlaybackRate] = useState(1);
   const [stagedExportFile, setStagedExportFile] = useState<File | null>(null);
   const [stagedExportLabel, setStagedExportLabel] = useState<string | null>(null);
   const stagedBlobUrlRef = useRef<string | null>(null);
@@ -217,6 +243,11 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     }
     setStagedExportFile(file);
     setStagedExportLabel(file ? file.name : null);
+    if (file) {
+      setClips((prev) =>
+        prev.length ? [{ ...prev[0], sizeBytes: file.size }, ...prev.slice(1)] : prev,
+      );
+    }
   }, []);
 
   const refreshProjects = useCallback(async () => {
@@ -253,8 +284,12 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         setHasTimelineContent(true);
         setWorkspace('timeline');
         setActiveTool('media');
-        setMediaLibraryOpen(false);
+        setRightDockTab('mediaGallery');
         const clipId = 'timeline-1';
+        const sizeBytes =
+          typeof p.fileSizeBytes === 'number' && p.fileSizeBytes >= 0
+            ? p.fileSizeBytes
+            : undefined;
         setClips([
           {
             id: clipId,
@@ -262,6 +297,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
             durationLabel: '—',
             res: '—',
             fps: '—',
+            ...(sizeBytes !== undefined ? { sizeBytes } : {}),
           },
         ]);
         setSelectedClipId(clipId);
@@ -273,7 +309,11 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         } catch {
           setFavoriteClipIds([]);
         }
-        const tj = p.timelineJson as { trimStart?: number; trimEnd?: number } | null;
+        const tj = p.timelineJson as {
+          trimStart?: number;
+          trimEnd?: number;
+          playbackRate?: number;
+        } | null;
         let ts = 0;
         let te = 0;
         if (
@@ -285,8 +325,11 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
           ts = tj.trimStart;
           te = tj.trimEnd;
         }
+        const pr = normalizePlaybackRate(tj?.playbackRate);
         setTrimStartSec(ts);
         setTrimEndSec(te);
+        setPlaybackRate(pr);
+        setSavedPlaybackRate(pr);
         setSavedTitle(p.title);
         setSavedTrimStart(ts);
         setSavedTrimEnd(te);
@@ -310,6 +353,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       setEditorVideoSrc(null);
       setProjectLoadError(null);
       setScreen('projects');
+      setPlaybackRate(1);
+      setSavedPlaybackRate(1);
       clearStagingRef(stagedBlobUrlRef, setStagedExportFile, setStagedExportLabel);
       revokeWorkingVideoBlob();
       refreshProjects();
@@ -325,7 +370,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setHasTimelineContent(true);
     setWorkspace('timeline');
     if (!selectedClipId && clips[0]) setSelectedClipId(clips[0].id);
-    setMediaLibraryOpen(false);
+    setRightDockTab('mediaGallery');
   }, [clips, selectedClipId]);
 
   const openProject = useCallback(
@@ -348,6 +393,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setTrimStartSec(0);
     setTrimEndSec(0);
     setVideoDurationSec(0);
+    setPlaybackRate(1);
+    setSavedPlaybackRate(1);
     clearStagingRef(stagedBlobUrlRef, setStagedExportFile, setStagedExportLabel);
     revokeWorkingVideoBlob();
   }, [navigate, revokeWorkingVideoBlob]);
@@ -405,7 +452,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     const dirtyEdit =
       projectTitle.trim() !== savedTitle.trim() ||
       trimStartSec !== savedTrimStart ||
-      end !== savedEnd;
+      end !== savedEnd ||
+      playbackRate !== savedPlaybackRate;
     return dirtyEdit || !!stagedExportFile || localEffectsApplied.length > 0;
   }, [
     currentProjectId,
@@ -415,6 +463,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     trimEndSec,
     savedTrimStart,
     savedTrimEnd,
+    playbackRate,
+    savedPlaybackRate,
     stagedExportFile,
     localEffectsApplied.length,
   ]);
@@ -423,7 +473,12 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     if (!currentProjectId) return;
     const end = trimEndSec > trimStartSec ? trimEndSec : trimStartSec + 0.01;
     const title = projectTitle.trim() || 'Untitled';
-    const timelineJson = { trimStart: trimStartSec, trimEnd: end, version: 1 };
+    const timelineJson = {
+      trimStart: trimStartSec,
+      trimEnd: end,
+      version: 1,
+      playbackRate,
+    };
     setSaveStatus('saving');
     try {
       let newFileUrl: string | undefined;
@@ -460,6 +515,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       setSavedTitle(title);
       setSavedTrimStart(trimStartSec);
       setSavedTrimEnd(end);
+      setSavedPlaybackRate(playbackRate);
       setSaveStatus('saved');
       setLocalEffectsApplied([]);
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -472,6 +528,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     projectTitle,
     trimStartSec,
     trimEndSec,
+    playbackRate,
     stagedExportFile,
     refreshProjects,
     revokeWorkingVideoBlob,
@@ -489,6 +546,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       setWorkspace,
       mediaLibraryOpen,
       setMediaLibraryOpen,
+      rightDockTab,
+      setRightDockTab,
       mediaLibraryTab,
       setMediaLibraryTab,
       favoriteClipIds,
@@ -522,6 +581,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       editorPlaybackTime,
       setEditorPlaybackTime,
       resetTrim,
+      playbackRate,
+      setPlaybackRate,
       hasUnsavedChanges,
       saveProject,
       saveStatus,
@@ -545,6 +606,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       activeTool,
       workspace,
       mediaLibraryOpen,
+      rightDockTab,
       mediaLibraryTab,
       favoriteClipIds,
       toggleFavoriteClip,
@@ -569,6 +631,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       videoDurationSec,
       editorPlaybackTime,
       resetTrim,
+      playbackRate,
       hasUnsavedChanges,
       saveProject,
       saveStatus,

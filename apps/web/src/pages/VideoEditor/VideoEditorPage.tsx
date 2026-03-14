@@ -1,8 +1,8 @@
 import { SEO } from '../../components';
 import { VideoEditorProvider, useVideoEditor } from './VideoEditorContext';
 import { VideoEditorChrome } from './VideoEditorChrome';
-import { MediaLibraryPanel, LeftSidebarNav } from './MediaLibraryPanel';
 import { TrimSidebar } from './TrimSidebar';
+import { SpeedSidebar } from './SpeedSidebar';
 import { EditorWorkspace } from './EditorWorkspace';
 import { ExportModal } from './ExportModal';
 import { ShareModal } from './ShareModal';
@@ -43,12 +43,7 @@ function VideoEditorInner() {
   if (screen === 'projects') return <ProjectsView />;
   return (
     <VideoEditorChrome>
-      {workspace === 'trim' ? <TrimSidebar /> : (
-        <>
-          <LeftSidebarNav variant="media" />
-          <MediaLibraryPanel />
-        </>
-      )}
+      {workspace === 'trim' ? <TrimSidebar /> : workspace === 'speed' ? <SpeedSidebar /> : null}
       <EditorWorkspace />
     </VideoEditorChrome>
   );

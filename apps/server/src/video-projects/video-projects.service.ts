@@ -14,6 +14,7 @@ import { UsersService } from '../users/users.service';
 import { CreateVideoProjectDto } from './dto/create-video-project.dto';
 import { UpdateVideoProjectDto } from './dto/update-video-project.dto';
 import { RecordingsService } from '../recordings/recordings.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class VideoProjectsService {
@@ -26,6 +27,7 @@ export class VideoProjectsService {
     private readonly recordingRepo: Repository<Recording>,
     private readonly usersService: UsersService,
     private readonly recordingsService: RecordingsService,
+    private readonly storageService: StorageService,
   ) {}
 
   private streamPath(fileUrl: string) {
@@ -52,7 +54,7 @@ export class VideoProjectsService {
       relations: ['sourceRecording'],
     });
     if (existing?.sourceRecording) {
-      return this.toResponse(
+      return await this.toResponse(
         existing.id,
         existing.title,
         recording.id,
@@ -86,7 +88,7 @@ export class VideoProjectsService {
       throw err;
     }
 
-    return this.toResponse(id, title, recording.id, recording.fileUrl);
+    return await this.toResponse(id, title, recording.id, recording.fileUrl);
   }
 
   async findAll(supabaseUserId: string) {
@@ -96,16 +98,20 @@ export class VideoProjectsService {
       relations: ['sourceRecording'],
       order: { updatedAt: 'DESC' },
     });
-    return list.map((p) =>
-      this.toResponse(
-        p.id,
-        p.title,
-        p.sourceRecording.id,
-        p.sourceRecording.fileUrl,
-        p.timelineJson,
-        p.updatedAt,
-      ),
-    );
+    const out = [];
+    for (const p of list) {
+      out.push(
+        await this.toResponse(
+          p.id,
+          p.title,
+          p.sourceRecording.id,
+          p.sourceRecording.fileUrl,
+          p.timelineJson,
+          p.updatedAt,
+        ),
+      );
+    }
+    return out;
   }
 
   async findOne(projectId: string, supabaseUserId: string) {
@@ -117,7 +123,7 @@ export class VideoProjectsService {
     if (project.user.supabaseId !== supabaseUserId) {
       throw new ForbiddenException('Not your project');
     }
-    return this.toResponse(
+    return await this.toResponse(
       project.id,
       project.title,
       project.sourceRecording.id,
@@ -152,7 +158,7 @@ export class VideoProjectsService {
       if (rec) project.sourceRecording = rec;
     }
 
-    return this.toResponse(
+    return await this.toResponse(
       project.id,
       project.title,
       project.sourceRecording.id,
@@ -162,7 +168,7 @@ export class VideoProjectsService {
     );
   }
 
-  private toResponse(
+  private async toResponse(
     id: string,
     title: string,
     recordingId: string,
@@ -170,6 +176,7 @@ export class VideoProjectsService {
     timelineJson?: Record<string, unknown> | null,
     updatedAt?: Date,
   ) {
+    const fileSizeBytes = await this.storageService.getContentLength(fileUrl);
     return {
       id,
       title,
@@ -178,6 +185,7 @@ export class VideoProjectsService {
       videoUrl: this.streamPath(fileUrl),
       timelineJson: timelineJson ?? null,
       updatedAt: updatedAt?.toISOString?.() ?? null,
+      fileSizeBytes,
     };
   }
 }

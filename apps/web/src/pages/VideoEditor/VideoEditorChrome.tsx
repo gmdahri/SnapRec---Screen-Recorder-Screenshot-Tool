@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useVideoEditor } from './VideoEditorContext';
 import type { EditorTool } from './types';
+import UserMenu from '../../components/UserMenu';
+import LoginModal from '../../components/LoginModal';
 
 const tools: { id: EditorTool; name: string; disabled?: boolean }[] = [
   { id: 'media', name: 'Media' },
   { id: 'trim', name: 'Trim' },
-  { id: 'speed', name: 'Speed', disabled: true },
+  { id: 'speed', name: 'Speed' },
   { id: 'text', name: 'Text', disabled: true },
   { id: 'effects', name: 'Effects', disabled: true },
 ];
@@ -62,6 +64,7 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
     setActiveTool,
     setWorkspace,
     setMediaLibraryOpen,
+    setRightDockTab,
     setExportModal,
     setShareModal,
     currentProjectId,
@@ -71,14 +74,19 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
     stagedExportFile,
   } = useVideoEditor();
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const onTool = (t: EditorTool) => {
     setActiveTool(t);
     if (t === 'media') {
-      setMediaLibraryOpen(true);
+      setRightDockTab('mediaGallery');
       setWorkspace('media');
     } else if (t === 'trim') {
-      setMediaLibraryOpen(false);
+      setRightDockTab('properties');
       setWorkspace('trim');
+    } else if (t === 'speed') {
+      setRightDockTab('properties');
+      setWorkspace('speed');
     } else {
       setWorkspace('timeline');
     }
@@ -90,13 +98,14 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3 min-w-0 flex-wrap">
           <Link
             to="/dashboard"
-            className="flex items-center gap-2 shrink-0 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="flex items-center shrink-0 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary py-0.5"
             title="Dashboard"
           >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-sm font-bold">
-              S
-            </div>
-            <span className="font-bold text-lg hidden sm:inline text-slate-900">SnapRec</span>
+            <img
+              src="/logo.png"
+              alt="SnapRec"
+              className="h-8 w-auto object-contain object-left max-w-[9rem] sm:max-w-none"
+            />
           </Link>
           <Link
             to="/video-editor"
@@ -134,8 +143,8 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
               title={
                 hasUnsavedChanges
                   ? stagedExportFile
-                    ? 'Save uploads staged file, title & trim'
-                    : 'Save title & trim to server'
+                    ? 'Save uploads staged file, title, trim & playback speed'
+                    : 'Save title, trim & playback speed to server'
                   : 'No changes to save'
               }
             >
@@ -156,14 +165,10 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
           >
             Export
           </button>
-          <div
-            className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-600"
-            aria-hidden
-          >
-            U
-          </div>
+          <UserMenu onSignIn={() => setShowLoginModal(true)} />
         </div>
       </header>
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <div className="flex flex-1 min-h-0">
         <nav
           className="w-[4.5rem] sm:w-[5rem] shrink-0 bg-slate-50/80 border-r border-slate-200 flex flex-col items-center py-4 px-2 gap-3"

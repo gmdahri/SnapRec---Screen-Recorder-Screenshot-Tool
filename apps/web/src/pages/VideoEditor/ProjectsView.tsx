@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useVideoEditor } from './VideoEditorContext';
+import UserMenu from '../../components/UserMenu';
+import LoginModal from '../../components/LoginModal';
 
 export function ProjectsView() {
   const { newProject, openProject, projects, projectsLoading, refreshProjects } = useVideoEditor();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     refreshProjects();
@@ -16,13 +19,14 @@ export function ProjectsView() {
           <div className="flex items-center gap-4 flex-wrap">
             <Link
               to="/dashboard"
-              className="flex items-center gap-2 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="flex items-center rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary py-0.5"
               title="Dashboard"
             >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                S
-              </div>
-              <span className="text-xl font-bold text-slate-900">SnapRec</span>
+              <img
+                src="/logo.png"
+                alt="SnapRec"
+                className="h-9 w-auto object-contain object-left"
+              />
             </Link>
             <span className="text-sm text-slate-500 hidden sm:inline border-l border-slate-200 pl-4">
               Video projects
@@ -36,12 +40,11 @@ export function ProjectsView() {
             >
               + New project
             </button>
-            <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-xs font-bold">
-              U
-            </div>
+            <UserMenu onSignIn={() => setShowLoginModal(true)} />
           </div>
         </div>
       </header>
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <main className="max-w-7xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold mb-8">Projects</h1>
         {projectsLoading && (

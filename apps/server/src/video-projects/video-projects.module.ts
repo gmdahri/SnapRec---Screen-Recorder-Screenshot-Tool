@@ -6,12 +6,14 @@ import { VideoProjectsController } from './video-projects.controller';
 import { VideoProjectsService } from './video-projects.service';
 import { UsersModule } from '../users/users.module';
 import { RecordingsModule } from '../recordings/recordings.module';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([VideoProject, Recording]),
     UsersModule,
     RecordingsModule,
+    StorageModule,
   ],
   controllers: [VideoProjectsController],
   providers: [VideoProjectsService],

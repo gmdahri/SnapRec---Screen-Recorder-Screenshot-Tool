@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useVideoEditor } from './VideoEditorContext';
+import { EDITOR_LEFT_PANEL_WIDTH } from './editorLayout';
 
 function fmt(s: number) {
   if (!isFinite(s) || s < 0) return '0:00';
@@ -61,7 +62,9 @@ export function TrimSidebar() {
   };
 
   return (
-    <aside className="w-80 shrink-0 bg-white border-r border-slate-200 flex flex-col min-h-0 z-20">
+    <aside
+      className={`${EDITOR_LEFT_PANEL_WIDTH} bg-white border-r border-slate-200 flex flex-col min-h-0 z-20`}
+    >
       <div className="p-4 border-b border-slate-200 bg-gradient-to-b from-violet-50/70 to-white">
         <h2 className="text-xl font-extrabold text-primary tracking-tight">Trim</h2>
         <p className="text-sm font-medium text-slate-800 truncate mt-1">{projectTitle}</p>
