@@ -83,6 +83,21 @@ export class StorageService implements OnModuleInit {
         }
     }
 
+    /** Object size in bytes (HeadObject); null if missing or error. */
+    async getContentLength(fileName: string): Promise<number | null> {
+        try {
+            const command = new HeadObjectCommand({
+                Bucket: this.bucketName,
+                Key: fileName,
+            });
+            const out = await this.s3Client.send(command);
+            const n = out.ContentLength;
+            return typeof n === 'number' && n >= 0 ? n : null;
+        } catch {
+            return null;
+        }
+    }
+
     /** Delete a file from R2 by key (fileName). Used for cleanup and wipe scripts. */
     async deleteObject(key: string): Promise<void> {
         const command = new DeleteObjectCommand({

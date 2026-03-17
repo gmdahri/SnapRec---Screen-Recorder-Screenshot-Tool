@@ -9,30 +9,24 @@ interface LogoProps {
     clickable?: boolean;
 }
 
-const sizeClasses = {
-    sm: 'size-6',
-    md: 'size-8',
-    lg: 'size-12',
-};
-
-const textSizes = {
-    sm: 'text-sm',
-    md: 'text-lg',
-    lg: 'text-2xl',
+/** Wordmark (purple mark + SnapRec) — single asset, no duplicate title text. */
+const heightClasses = {
+    sm: 'h-6',
+    md: 'h-8',
+    lg: 'h-10',
 };
 
 const LogoContent: React.FC<Pick<LogoProps, 'size' | 'showText'>> = ({
     size = 'md',
-    showText = true,
+    showText: _showText = true,
 }) => (
-    <>
-        <div className={`${sizeClasses[size]} flex items-center justify-center flex-shrink-0`}>
-            <img src="/logo.png" alt="SnapRec Logo" className="w-full h-full object-contain" />
-        </div>
-        {showText && (
-            <h1 className={`${textSizes[size]} font-bold tracking-tight text-slate-900 dark:text-white`}>SnapRec</h1>
-        )}
-    </>
+    <img
+        src="/logo.png"
+        alt="SnapRec"
+        className={`${heightClasses[size]} w-auto max-w-[min(100%,11rem)] object-contain object-left`}
+        width={120}
+        height={32}
+    />
 );
 
 export const Logo: React.FC<LogoProps> = ({

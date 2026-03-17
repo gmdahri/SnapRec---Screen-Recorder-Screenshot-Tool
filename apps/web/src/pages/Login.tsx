@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components';
@@ -7,12 +7,25 @@ import { Logo } from '../components';
 const Login: React.FC = () => {
     const { user, loading, signInWithGoogle } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = (location.state as { from?: { pathname?: string; search?: string } })?.from;
+
+    useEffect(() => {
+        if (from?.pathname && from.pathname !== '/login') {
+            const path = `${from.pathname}${from.search ?? ''}`;
+            localStorage.setItem('auth_return_path', path);
+        }
+    }, [from?.pathname, from?.search]);
 
     useEffect(() => {
         if (user && !loading) {
-            navigate('/dashboard');
+            const to =
+                from?.pathname && from.pathname !== '/login'
+                    ? `${from.pathname}${from.search ?? ''}`
+                    : '/dashboard';
+            navigate(to, { replace: true });
         }
-    }, [user, loading, navigate]);
+    }, [user, loading, navigate, from?.pathname, from?.search]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-background-dark">
@@ -34,7 +47,11 @@ const Login: React.FC = () => {
                     {/* Heading */}
                     <div className="text-center mb-10">
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h2>
-                        <p className="text-slate-500 dark:text-slate-400">Sign in to access your recordings and screenshots</p>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            {from?.pathname?.includes('video-editor')
+                                ? 'Sign in to open the Video Editor and trim or export your recording.'
+                                : 'Sign in to access your recordings and screenshots'}
+                        </p>
                     </div>
 
                     {/* Sign In Button */}

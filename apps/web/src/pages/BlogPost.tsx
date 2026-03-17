@@ -117,7 +117,12 @@ const BlogPost: React.FC = () => {
                         </h1>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-slate-500">
                             <div className="flex items-center gap-2">
-                                <img src="/logo.png" alt="SnapRec Team" className="size-8 rounded-full bg-slate-100" />
+                                <span
+                                    className="size-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shrink-0"
+                                    aria-hidden
+                                >
+                                    S
+                                </span>
                                 <span className="font-bold text-slate-700">SnapRec Team</span>
                             </div>
                             <span className="hidden sm:inline text-slate-300">•</span>
@@ -153,8 +158,8 @@ const BlogPost: React.FC = () => {
 
                     {/* Article Footer CTA */}
                     <div className="mt-16 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-3xl p-8 md:p-12 text-center">
-                        <div className="size-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-6">
-                            <img src="/logo.png" alt="SnapRec" className="size-8" />
+                        <div className="bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-6 px-4 py-3">
+                            <img src="/logo.png" alt="SnapRec" className="h-9 w-auto object-contain" />
                         </div>
                         <h3 className="text-2xl font-black mb-4">Start Recording for Free</h3>
                         <p className="text-slate-600 mb-8 max-w-xl mx-auto">

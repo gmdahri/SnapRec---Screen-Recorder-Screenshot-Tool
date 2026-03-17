@@ -22,7 +22,9 @@
     "migration:generate": "npm run typeorm migration:generate -- -d src/data-source.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/data-source.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d src/data-source.ts",
-    "script:wipe-recordings": "ts-node -r dotenv/config scripts/wipe-recordings.ts"
+    "script:wipe-recordings": "ts-node -r dotenv/config scripts/wipe-recordings.ts",
+    "script:email-video-editor-launch": "ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts",
+    "script:email-video-editor-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
