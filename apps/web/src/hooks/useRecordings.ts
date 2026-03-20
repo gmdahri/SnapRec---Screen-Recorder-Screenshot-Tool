@@ -19,6 +19,8 @@ export interface Recording {
         fullName?: string;
         avatarUrl?: string;
     };
+    /** Saved editor zoom segments (owner project); drives share preview. */
+    shareZoomSegments?: unknown[];
     reactions: Array<{
         id: string;
         type: string;

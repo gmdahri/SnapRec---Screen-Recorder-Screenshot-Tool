@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nest
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Recording } from './entities/recording.entity';
+import { VideoProject } from '../video-projects/entities/video-project.entity';
 import { Reaction } from './entities/reaction.entity';
 import { Comment } from './entities/comment.entity';
 import { UsersService } from '../users/users.service';
@@ -19,6 +20,8 @@ export class RecordingsService {
         private readonly reactionsRepository: Repository<Reaction>,
         @InjectRepository(Comment)
         private readonly commentsRepository: Repository<Comment>,
+        @InjectRepository(VideoProject)
+        private readonly videoProjectRepo: Repository<VideoProject>,
         private readonly usersService: UsersService,
     ) { }
 
@@ -63,6 +66,21 @@ export class RecordingsService {
         }
 
         return recording;
+    }
+
+    /** Owner's saved editor zoom segments for share/preview (from linked video project). */
+    async findShareZoomSegmentsForRecording(
+        recordingId: string,
+        ownerUserId: string | undefined,
+    ): Promise<unknown[] | null> {
+        if (ownerUserId == null) return null;
+        const project = await this.videoProjectRepo.findOne({
+            where: { user: { id: ownerUserId }, sourceRecording: { id: recordingId } },
+            order: { updatedAt: 'DESC' },
+        });
+        if (!project?.timelineJson || typeof project.timelineJson !== 'object') return null;
+        const z = (project.timelineJson as { zoomSegments?: unknown }).zoomSegments;
+        return Array.isArray(z) && z.length > 0 ? z : null;
     }
 
     async addReaction(recordingId: string, type: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Reaction> {

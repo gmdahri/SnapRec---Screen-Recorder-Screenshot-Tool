@@ -5,12 +5,13 @@ import { RecordingsService } from './recordings.service';
 import { Recording } from './entities/recording.entity';
 import { Reaction } from './entities/reaction.entity';
 import { Comment } from './entities/comment.entity';
+import { VideoProject } from '../video-projects/entities/video-project.entity';
 import { UsersModule } from '../users/users.module';
 import { StorageModule } from '../storage/storage.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Recording, Reaction, Comment]),
+        TypeOrmModule.forFeature([Recording, Reaction, Comment, VideoProject]),
         UsersModule,
         StorageModule,
     ],

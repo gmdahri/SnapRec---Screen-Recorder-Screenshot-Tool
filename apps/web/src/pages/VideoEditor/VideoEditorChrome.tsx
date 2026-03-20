@@ -72,6 +72,10 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
     saveProject,
     saveStatus,
     stagedExportFile,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useVideoEditor();
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -130,6 +134,30 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
           />
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {currentProjectId ? (
+            <>
+              <button
+                type="button"
+                disabled={!canUndo}
+                onClick={() => undo()}
+                className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                title="Undo (⌘Z)"
+                aria-label="Undo"
+              >
+                <span className="material-symbols-outlined text-xl">undo</span>
+              </button>
+              <button
+                type="button"
+                disabled={!canRedo}
+                onClick={() => redo()}
+                className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                title="Redo (⌘⇧Z)"
+                aria-label="Redo"
+              >
+                <span className="material-symbols-outlined text-xl">redo</span>
+              </button>
+            </>
+          ) : null}
           {currentProjectId && (
             <button
               type="button"

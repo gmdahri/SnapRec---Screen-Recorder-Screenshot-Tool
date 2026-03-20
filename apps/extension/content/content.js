@@ -18,6 +18,29 @@
     let startX, startY;
     let recordingOverlay = null;
     let isPaused = false;
+    /** @type {number|null} */
+    let metaRecordingStartMs = null;
+    /** Total ms spent paused — subtract from elapsed so meta time matches video. */
+    let metaTotalPausedMs = 0;
+    /** @type {number|null} */
+    let metaPauseStartMs = null;
+    let metaPointerSamples = [];
+    let metaClicks = [];
+    let metaKeys = [];
+    /** @type {{ startSec: number, endSec: number, x: number, y: number }[]} */
+    let metaFocusSessions = [];
+    /** @type {{ startSec: number, endSec: number, x: number, y: number }[]} */
+    let metaTypingSessions = [];
+    /** @type {{ startSec: number, x: number, y: number }[]} */
+    let metaFocusStack = [];
+    let metaTypingDebounceTimer = null;
+    /** @type {{ startSec: number, x: number, y: number }|null} */
+    let metaTypingOpen = null;
+    const META_TYPING_IDLE_MS = 420;
+    let metaMoveTimer = null;
+    let metaListenersBound = false;
+    const META_MOVE_MS = 80;
+    const META_MAX_POINTS = 4000;
     let timerInterval = null;
     let recordingSeconds = 0;
     let webcamStream = null;
@@ -485,10 +508,29 @@
         // Calculate initial seconds from start time
         recordingSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
         isPaused = false;
+        metaRecordingStartMs = startTime || Date.now();
+        metaTotalPausedMs = 0;
+        metaPauseStartMs = null;
+        metaPointerSamples = [];
+        metaClicks = [];
+        metaKeys = [];
+        metaFocusSessions = [];
+        metaTypingSessions = [];
+        metaFocusStack = [];
+        metaTypingOpen = null;
+        if (metaTypingDebounceTimer) {
+            clearTimeout(metaTypingDebounceTimer);
+            metaTypingDebounceTimer = null;
+        }
+        metaFlushSent = false;
+        bindRecordingMetaCapture();
 
         recordingOverlay = document.createElement('div');
         recordingOverlay.className = 'snaprec-recording-bar';
         recordingOverlay.innerHTML = `
+      <div class="snaprec-rec-hint" style="font-size:10px;opacity:0.85;max-width:280px;line-height:1.25;margin-bottom:6px;text-align:center;">
+        Stay on this tab for focus/typing zoom. Other windows are not tracked.
+      </div>
       <div class="snaprec-rec-indicator">
         <span class="snaprec-rec-dot"></span>
         <span class="snaprec-timer">${formatTime(recordingSeconds)}</span>
@@ -570,9 +612,14 @@
         isPaused = !isPaused;
 
         if (isPaused) {
+            metaPauseStartMs = Date.now();
             chrome.runtime.sendMessage({ action: 'pauseRecording' });
             if (recordingOverlay) recordingOverlay.classList.add('paused');
         } else {
+            if (metaPauseStartMs != null) {
+                metaTotalPausedMs += Date.now() - metaPauseStartMs;
+                metaPauseStartMs = null;
+            }
             chrome.runtime.sendMessage({ action: 'resumeRecording' });
             if (recordingOverlay) recordingOverlay.classList.remove('paused');
         }
@@ -584,7 +631,221 @@
         hideRecordingOverlay();
     }
 
+    function metaElapsedMs() {
+        if (metaRecordingStartMs == null) return 0;
+        let elapsed = Date.now() - metaRecordingStartMs;
+        if (metaPauseStartMs != null) elapsed -= Date.now() - metaPauseStartMs;
+        return elapsed - metaTotalPausedMs;
+    }
+
+    function pushPointerSample(clientX, clientY) {
+        if (metaRecordingStartMs == null) return;
+        const w = Math.max(1, window.innerWidth);
+        const h = Math.max(1, window.innerHeight);
+        const tSec = metaElapsedMs() / 1000;
+        if (metaPointerSamples.length >= META_MAX_POINTS) return;
+        metaPointerSamples.push({
+            t: Math.round(tSec * 1000) / 1000,
+            x: Math.round((clientX / w) * 1000) / 1000,
+            y: Math.round((clientY / h) * 1000) / 1000,
+        });
+    }
+
+    function normFromClient(clientX, clientY) {
+        const w = Math.max(1, window.innerWidth);
+        const h = Math.max(1, window.innerHeight);
+        return {
+            x: Math.round((clientX / w) * 1000) / 1000,
+            y: Math.round((clientY / h) * 1000) / 1000,
+        };
+    }
+
+    function centerOfTarget(el) {
+        try {
+            const r = el.getBoundingClientRect();
+            return normFromClient(r.left + r.width / 2, r.top + r.height / 2);
+        } catch {
+            return { x: 0.5, y: 0.5 };
+        }
+    }
+
+    function tNowSec() {
+        return metaRecordingStartMs == null
+            ? 0
+            : Math.round((metaElapsedMs() / 1000) * 1000) / 1000;
+    }
+
+    function finalizeTypingSession() {
+        if (!metaTypingOpen) return;
+        const endSec = tNowSec();
+        if (endSec > metaTypingOpen.startSec + 0.04) {
+            metaTypingSessions.push({
+                startSec: metaTypingOpen.startSec,
+                endSec,
+                x: metaTypingOpen.x,
+                y: metaTypingOpen.y,
+            });
+        }
+        metaTypingOpen = null;
+    }
+
+    function bindRecordingMetaCapture() {
+        if (metaListenersBound) return;
+        metaListenersBound = true;
+        const onMove = (e) => {
+            if (metaMoveTimer) return;
+            metaMoveTimer = setTimeout(() => {
+                metaMoveTimer = null;
+                pushPointerSample(e.clientX, e.clientY);
+            }, META_MOVE_MS);
+        };
+        const onClick = (e) => {
+            if (metaRecordingStartMs == null) return;
+            const tSec = tNowSec();
+            const o = normFromClient(e.clientX, e.clientY);
+            metaClicks.push({ t: tSec, x: o.x, y: o.y });
+        };
+        const onFocusIn = (e) => {
+            if (metaRecordingStartMs == null) return;
+            const t = e.target;
+            if (!t || t.closest && t.closest('.snaprec-recording-bar')) return;
+            const xy = centerOfTarget(t);
+            pushPointerSample(xy.x * window.innerWidth, xy.y * window.innerHeight);
+            metaFocusStack.push({ startSec: tNowSec(), x: xy.x, y: xy.y });
+        };
+        const onFocusOut = () => {
+            if (metaRecordingStartMs == null || metaFocusStack.length === 0) return;
+            const open = metaFocusStack.pop();
+            const endSec = tNowSec();
+            if (endSec > open.startSec + 0.02) {
+                metaFocusSessions.push({
+                    startSec: open.startSec,
+                    endSec,
+                    x: open.x,
+                    y: open.y,
+                });
+            }
+        };
+        const onKey = (e) => {
+            if (metaRecordingStartMs == null) return;
+            const onlyMod =
+                e.key === 'Shift' ||
+                e.key === 'Control' ||
+                e.key === 'Alt' ||
+                e.key === 'Meta';
+            if (!onlyMod && !e.repeat) {
+                const tSec = tNowSec();
+                if (metaKeys.length < 500) {
+                    metaKeys.push({
+                        t: tSec,
+                        key: e.key && e.key.length <= 20 ? e.key : '?',
+                    });
+                }
+                let cx = 0.5;
+                let cy = 0.5;
+                if (metaFocusStack.length) {
+                    const top = metaFocusStack[metaFocusStack.length - 1];
+                    cx = top.x;
+                    cy = top.y;
+                } else if (document.activeElement && document.activeElement !== document.body) {
+                    const xy = centerOfTarget(document.activeElement);
+                    cx = xy.x;
+                    cy = xy.y;
+                }
+                if (!metaTypingOpen) {
+                    metaTypingOpen = { startSec: tSec, x: cx, y: cy };
+                }
+                if (metaTypingDebounceTimer) clearTimeout(metaTypingDebounceTimer);
+                metaTypingDebounceTimer = setTimeout(() => {
+                    metaTypingDebounceTimer = null;
+                    finalizeTypingSession();
+                }, META_TYPING_IDLE_MS);
+            }
+        };
+        window.addEventListener('pointermove', onMove, true);
+        window.addEventListener('click', onClick, true);
+        window.addEventListener('keydown', onKey, true);
+        document.addEventListener('focusin', onFocusIn, true);
+        document.addEventListener('focusout', onFocusOut, true);
+        window._snaprecMetaUnbind = () => {
+            window.removeEventListener('pointermove', onMove, true);
+            window.removeEventListener('click', onClick, true);
+            window.removeEventListener('keydown', onKey, true);
+            document.removeEventListener('focusin', onFocusIn, true);
+            document.removeEventListener('focusout', onFocusOut, true);
+            if (metaTypingDebounceTimer) {
+                clearTimeout(metaTypingDebounceTimer);
+                metaTypingDebounceTimer = null;
+            }
+            metaListenersBound = false;
+        };
+    }
+
+    let metaFlushSent = false;
+    function flushRecordingMeta() {
+        if (metaMoveTimer) {
+            clearTimeout(metaMoveTimer);
+            metaMoveTimer = null;
+        }
+        if (metaTypingDebounceTimer) {
+            clearTimeout(metaTypingDebounceTimer);
+            metaTypingDebounceTimer = null;
+        }
+        finalizeTypingSession();
+        const endSec = tNowSec();
+        while (metaFocusStack.length) {
+            const open = metaFocusStack.pop();
+            if (endSec > open.startSec + 0.02) {
+                metaFocusSessions.push({
+                    startSec: open.startSec,
+                    endSec,
+                    x: open.x,
+                    y: open.y,
+                });
+            }
+        }
+        if (typeof window._snaprecMetaUnbind === 'function') {
+            window._snaprecMetaUnbind();
+            window._snaprecMetaUnbind = null;
+        }
+        const meta = {
+            pointerSamples: metaPointerSamples.slice(),
+            clicks: metaClicks.slice(),
+            keyEvents: metaKeys.slice(),
+            focusSessions: metaFocusSessions.slice(),
+            typingSessions: metaTypingSessions.slice(),
+            vw: window.innerWidth,
+            vh: window.innerHeight,
+            devicePixelRatio: typeof window.devicePixelRatio === 'number' ? window.devicePixelRatio : 1,
+            scrollX: typeof window.scrollX === 'number' ? window.scrollX : 0,
+            scrollY: typeof window.scrollY === 'number' ? window.scrollY : 0,
+        };
+        metaRecordingStartMs = null;
+        metaPointerSamples = [];
+        metaClicks = [];
+        metaKeys = [];
+        metaFocusSessions = [];
+        metaTypingSessions = [];
+        metaFocusStack = [];
+        metaTypingOpen = null;
+        const hasData =
+            meta.pointerSamples.length +
+                meta.clicks.length +
+                meta.keyEvents.length +
+                meta.focusSessions.length +
+                meta.typingSessions.length >
+            0;
+        if (!hasData && metaFlushSent) return;
+        metaFlushSent = true;
+        try {
+            chrome.runtime.sendMessage({ action: 'snaprec_recordingMeta', meta });
+        } catch (err) {
+            console.warn('[SnapRec] recordingMeta send failed', err);
+        }
+    }
+
     function hideRecordingOverlay() {
+        flushRecordingMeta();
         if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;

@@ -14,6 +14,7 @@ SnapRec is a Chrome screen recorder and screenshot tool that lets you record you
 Whether you're filing a bug report, recording a lesson, or explaining a workflow — SnapRec makes capture in 4K effortless and instant.
 
 **Recording**  
+- Editor auto-zoom follows focus and typing in the tab you record (stay on that tab for best results; full-screen picks cannot see other windows)  
 - Full display, browser tab, or a specific window in 4K  
 - System audio + microphone at the same time  
 - Webcam Picture-in-Picture (PiP) overlay  

@@ -4,14 +4,16 @@ const ContentScriptManager = {
         const {
             waitTime = 250,
             jsFiles = ['content/content.js'],
-            cssFiles = ['content/content.css']
+            cssFiles = ['content/content.css'],
+            allFrames = false
         } = options;
 
         try {
+            const target = allFrames ? { tabId, allFrames: true } : { tabId };
             // Inject JS files sequentially to ensure order if multiple
             for (const file of jsFiles) {
                 await chrome.scripting.executeScript({
-                    target: { tabId },
+                    target,
                     files: [file]
                 });
             }
@@ -19,7 +21,7 @@ const ContentScriptManager = {
             // Inject CSS files
             if (cssFiles && cssFiles.length > 0) {
                 await chrome.scripting.insertCSS({
-                    target: { tabId },
+                    target,
                     files: cssFiles
                 });
             }

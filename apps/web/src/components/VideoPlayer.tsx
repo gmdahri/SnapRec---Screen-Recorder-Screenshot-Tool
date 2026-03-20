@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
+import { viewportFocusToContainerPercent } from '../pages/VideoEditor/zoomMath';
 
 export type VideoPlayerPlayback = {
   currentTime: number;
@@ -15,6 +16,8 @@ export type VideoPlayerHandle = {
   readPlaybackFromMedia: () => { currentTime: number; duration: number } | null;
 };
 
+export type VideoZoomMetaViewport = { w: number; h: number } | null;
+
 interface VideoPlayerProps {
   src?: string;
   isProcessing?: boolean;
@@ -26,13 +29,34 @@ interface VideoPlayerProps {
   /** Controlled preview speed; when set, syncs HTMLVideoElement and speed menu. */
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
+  /**
+   * Zoom applies only to the &lt;video&gt; layer (controls stay unscaled).
+   * focus x/y are viewport-normalized [0,1] from recording meta.
+   */
+  videoZoomScale?: number;
+  videoZoomFocus?: { x: number; y: number };
+  /** Extension viewport size when pointer was sampled; improves origin if capture size differs. */
+  metaViewport?: VideoZoomMetaViewport;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer(
-  { src, isProcessing, onPlaybackUpdate, playbackRange, playbackRate, onPlaybackRateChange },
+  {
+    src,
+    isProcessing,
+    onPlaybackUpdate,
+    playbackRange,
+    playbackRate,
+    onPlaybackRateChange,
+    videoZoomScale = 1,
+    videoZoomFocus = { x: 0.5, y: 0.5 },
+    metaViewport,
+  },
   ref,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoLayerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const [videoIntrinsic, setVideoIntrinsic] = useState({ w: 0, h: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -130,6 +154,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       const el = videoRef.current;
       const d = el.duration;
       el.playbackRate = controlledRate ? playbackRate! : playbackSpeed;
+      if (el.videoWidth > 0 && el.videoHeight > 0) {
+        setVideoIntrinsic({ w: el.videoWidth, h: el.videoHeight });
+      }
       if (isFinite(d)) {
         setDuration(d);
       } else if (d === Infinity) {
@@ -138,6 +165,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       emitPlayback();
     }
   };
+
+  useEffect(() => {
+    const el = videoLayerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const cr = entries[0]?.contentRect;
+      if (cr) setContainerSize({ w: cr.width, h: cr.height });
+    });
+    ro.observe(el);
+    setContainerSize({ w: el.clientWidth, h: el.clientHeight });
+    return () => ro.disconnect();
+  }, [src]);
 
   const handleDurationChange = () => {
     if (videoRef.current) {
@@ -250,34 +289,66 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     el.playbackRate = controlledRate ? playbackRate! : playbackSpeed;
   }, [playbackRate, playbackSpeed, controlledRate, isProcessing]);
 
+  const zoom = videoZoomScale > 1.001 ? videoZoomScale : 1;
+  const vw = videoIntrinsic.w || 1920;
+  const vh = videoIntrinsic.h || 1080;
+  const cw = containerSize.w || 1;
+  const ch = containerSize.h || 1;
+  const originPct = useMemo(
+    () =>
+      viewportFocusToContainerPercent(
+        videoZoomFocus.x,
+        videoZoomFocus.y,
+        cw,
+        ch,
+        vw,
+        vh,
+        metaViewport?.w ?? undefined,
+        metaViewport?.h ?? undefined,
+      ),
+    [videoZoomFocus.x, videoZoomFocus.y, cw, ch, vw, vh, metaViewport?.w, metaViewport?.h],
+  );
+
   return (
     <div
       className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group select-none"
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && !showSpeedMenu && setShowControls(false)}
     >
-      <video
-        ref={videoRef}
-        src={src}
-        className={`w-full h-full object-contain transition-opacity duration-500 ${isProcessing ? 'opacity-30' : 'opacity-100'}`}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onDurationChange={handleDurationChange}
-        onCanPlay={handleDurationChange}
-        onSeeked={emitPlayback}
-        onClick={togglePlay}
-        playsInline
-        preload="auto"
-        muted={isMuted}
-        onPlay={() => {
-          setIsPlaying(true);
-          emitPlayback(true);
-        }}
-        onPause={() => {
-          setIsPlaying(false);
-          emitPlayback(false);
-        }}
-      />
+      <div ref={videoLayerRef} className="absolute inset-0 z-0 overflow-hidden">
+        <div
+          className="w-full h-full will-change-transform"
+          style={{
+            transformOrigin: `${originPct.xPct}% ${originPct.yPct}%`,
+            transform: zoom > 1.001 ? `scale(${zoom})` : undefined,
+            transition:
+              'transform 0.2s cubic-bezier(0.25,0.1,0.25,1), transform-origin 0.2s cubic-bezier(0.25,0.1,0.25,1)',
+          }}
+        >
+          <video
+            ref={videoRef}
+            src={src}
+            className={`block w-full h-full object-contain transition-opacity duration-500 ${isProcessing ? 'opacity-30' : 'opacity-100'}`}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onDurationChange={handleDurationChange}
+            onCanPlay={handleDurationChange}
+            onSeeked={emitPlayback}
+            onClick={togglePlay}
+            playsInline
+            preload="auto"
+            muted={isMuted}
+            onPlay={() => {
+              setIsPlaying(true);
+              emitPlayback(true);
+            }}
+            onPause={() => {
+              setIsPlaying(false);
+              emitPlayback(false);
+            }}
+          />
+        </div>
+      </div>
 
       {!isPlaying && !isProcessing && src && (
         <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">

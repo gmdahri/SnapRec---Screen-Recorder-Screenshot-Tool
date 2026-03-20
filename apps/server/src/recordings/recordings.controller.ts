@@ -126,11 +126,17 @@ export class RecordingsController {
         }
 
         const isReady = await this.storageService.checkFileExists(recording.fileUrl);
+        const shareZoomSegments =
+            await this.recordingsService.findShareZoomSegmentsForRecording(
+                id,
+                recording.user?.id,
+            );
 
         return {
             ...recording,
             isReady,
             fileUrl: `/recordings/stream/${recording.fileUrl}`,
+            ...(shareZoomSegments ? { shareZoomSegments } : {}),
         };
     }
 

@@ -121,6 +121,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'offscreen_uploadError':
             console.error('[SnapRec] Offscreen encountered upload error:', message.error);
             return false;
+        case 'snaprec_recordingMeta': {
+            const meta = message.meta;
+            if (!meta || typeof meta !== 'object') return false;
+            const count = (m) =>
+                (m.pointerSamples && m.pointerSamples.length) +
+                (m.clicks && m.clicks.length) +
+                (m.keyEvents && m.keyEvents.length) +
+                (m.focusSessions && m.focusSessions.length) +
+                (m.typingSessions && m.typingSessions.length);
+            if (count(meta) === 0) return false;
+            function merge(a, b) {
+                const out = {
+                    pointerSamples: [
+                        ...(a.pointerSamples || []),
+                        ...(b.pointerSamples || []),
+                    ],
+                    clicks: [...(a.clicks || []), ...(b.clicks || [])],
+                    keyEvents: [...(a.keyEvents || []), ...(b.keyEvents || [])],
+                    focusSessions: [
+                        ...(a.focusSessions || []),
+                        ...(b.focusSessions || []),
+                    ],
+                    typingSessions: [
+                        ...(a.typingSessions || []),
+                        ...(b.typingSessions || []),
+                    ],
+                    vw: b.vw || a.vw,
+                    vh: b.vh || a.vh,
+                    devicePixelRatio: b.devicePixelRatio ?? a.devicePixelRatio,
+                    scrollX: b.scrollX ?? a.scrollX,
+                    scrollY: b.scrollY ?? a.scrollY,
+                };
+                return out;
+            }
+            chrome.storage.local.get('pendingRecordingMeta', (r) => {
+                const cur = r.pendingRecordingMeta;
+                if (!cur || count(cur) === 0) {
+                    chrome.storage.local.set({ pendingRecordingMeta: meta });
+                    return;
+                }
+                const merged = merge(cur, meta);
+                if (count(merged) >= count(cur)) {
+                    chrome.storage.local.set({ pendingRecordingMeta: merged });
+                }
+            });
+            return false;
+        }
         default:
             // Unknown action - don't keep channel open
             return false;
@@ -687,23 +734,46 @@ async function startRecording(options) {
 // Inject recording overlay into a tab
 async function injectRecordingOverlay(tabId, options) {
     try {
-        // Inject content script
         await ContentScriptManager.inject(tabId);
         console.log('[SnapRec] Content script injected');
 
-        // Get recording start time from storage
         const { recordingStartTime } = await chrome.storage.local.get('recordingStartTime');
 
-        // Tell content script to show the recording overlay
-        chrome.tabs.sendMessage(tabId, {
-            action: 'showRecordingOverlay',
-            startTime: recordingStartTime,
-            webcam: options?.webcam
-        }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.warn('[SnapRec] Could not show overlay:', chrome.runtime.lastError.message);
-            }
-        });
+        chrome.tabs.sendMessage(
+            tabId,
+            {
+                action: 'showRecordingOverlay',
+                startTime: recordingStartTime,
+                webcam: options?.webcam,
+            },
+            (response) => {
+                if (chrome.runtime.lastError) {
+                    console.warn('[SnapRec] Could not show overlay:', chrome.runtime.lastError.message);
+                }
+            },
+        );
+
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId, allFrames: true },
+                files: ['content/recording-meta-subframe.js'],
+            });
+            await chrome.scripting.executeScript({
+                target: { tabId, allFrames: true },
+                func: (startTime) => {
+                    try {
+                        if (typeof window.__snaprecSubMetaStart === 'function') {
+                            window.__snaprecSubMetaStart(startTime);
+                        }
+                    } catch (e) {
+                        console.warn('[SnapRec] subframe meta start', e);
+                    }
+                },
+                args: [recordingStartTime || Date.now()],
+            });
+        } catch (e) {
+            console.warn('[SnapRec] Subframe meta inject optional failed', e);
+        }
     } catch (error) {
         console.warn('[SnapRec] Failed to inject overlay:', error);
     }
@@ -748,9 +818,29 @@ async function stopRecording() {
 async function broadcastHideOverlay() {
     console.log('[SnapRec] Broadcasting hide overlay to all tabs');
     recordingTabId = null;
+    const tabs = await chrome.tabs.query({});
+    await Promise.allSettled(
+        tabs
+            .filter((tab) => tab.id && !TabUtils.isRestrictedUrl(tab.url))
+            .map((tab) =>
+                chrome.scripting
+                    .executeScript({
+                        target: { tabId: tab.id, allFrames: true },
+                        func: () => {
+                            try {
+                                if (typeof window.__snaprecSubMetaFlush === 'function') {
+                                    window.__snaprecSubMetaFlush();
+                                }
+                            } catch (e) {
+                                /* ignore */
+                            }
+                        },
+                    })
+                    .catch(() => {}),
+            ),
+    );
     await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
 
-    const tabs = await chrome.tabs.query({});
     // Fire all messages in parallel - don't wait for individual responses
     await Promise.allSettled(
         tabs
@@ -790,6 +880,7 @@ async function handleRecordingComplete() {
         // Cache blob data so it survives retries if the page shows an error page initially
         let cachedBlobArray = null;
         let cachedMimeType = null;
+        let cachedMetaJson = '';
         let injectionSucceeded = false;
         let retryCount = 0;
         const MAX_RETRIES = 5;
@@ -811,10 +902,10 @@ async function handleRecordingComplete() {
         };
 
         // Core injection function (uses cached data if available)
-        const attemptInjection = (blobArray, mimeType) => {
+        const attemptInjection = (blobArray, mimeType, recordingMetaJson) => {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                func: (blobArray, mimeType, id) => {
+                func: (blobArray, mimeType, id, recordingMetaJson) => {
                     console.log('Injected script: reconstructing blob in web page context, size:', blobArray.length);
 
                     // Reconstruct the Blob from the byte array
@@ -841,6 +932,9 @@ async function handleRecordingComplete() {
                             store.put(blob, 'latest_video_blob');
                             store.put(id, 'latest_id');
                             store.put(Date.now(), 'latest_video_timestamp');
+                            if (recordingMetaJson && typeof recordingMetaJson === 'string') {
+                                store.put(recordingMetaJson, 'latest_recording_meta');
+                            }
 
                             transaction.oncomplete = () => {
                                 console.log('Injected script: blob stored in web page IDB, signaling React app');
@@ -878,7 +972,7 @@ async function handleRecordingComplete() {
                         }, '*');
                     }
                 },
-                args: [blobArray, mimeType, recordingId]
+                args: [blobArray, mimeType, recordingId, recordingMetaJson || '']
             }).then(() => {
                 console.log('[SnapRec] Blob injection into web page context successful');
                 cleanupAfterSuccess();
@@ -901,7 +995,7 @@ async function handleRecordingComplete() {
                 // If we already have cached blob data from a previous attempt, reuse it
                 if (cachedBlobArray) {
                     console.log('[SnapRec] Using cached blob data for retry');
-                    attemptInjection(cachedBlobArray, cachedMimeType);
+                    attemptInjection(cachedBlobArray, cachedMimeType, cachedMetaJson);
                     return;
                 }
 
@@ -912,7 +1006,11 @@ async function handleRecordingComplete() {
                         // Cache for retries
                         cachedBlobArray = blobResponse.blobArray;
                         cachedMimeType = blobResponse.mimeType;
-                        attemptInjection(cachedBlobArray, cachedMimeType);
+                        chrome.storage.local.get('pendingRecordingMeta', (r) => {
+                            const meta = r.pendingRecordingMeta;
+                            cachedMetaJson = meta ? JSON.stringify(meta) : '';
+                            attemptInjection(cachedBlobArray, cachedMimeType, cachedMetaJson);
+                        });
                     } else {
                         console.warn('[SnapRec] ArrayBuffer retrieval failed:', blobResponse?.error);
                         // Don't cleanup yet — the offscreen might still be initializing

@@ -4,10 +4,138 @@ import { VideoPlayer, type VideoPlayerHandle, type VideoPlayerPlayback } from '.
 import { EditorTimeline } from './EditorTimeline';
 import type { EditorWorkspace as EditorWorkspaceType } from './types';
 import { MediaGalleryTabContent } from './MediaLibraryPanel';
+import { ZoomPanel } from './ZoomPanel';
+import { FramePanel } from './FramePanel';
+import { focusAtTime, scaleAtTime } from './zoomMath';
+import type { FrameStyle } from './types';
+import type { RecordingMeta } from './autoZoomFromMeta';
 
 const defaultPlayback: VideoPlayerPlayback = { currentTime: 0, duration: 0, playing: false };
 
 const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+function frameBackgroundClass(fs: FrameStyle): string {
+  if (fs.backgroundPresetId === 'custom' && fs.customBackgroundUrl) return '';
+  switch (fs.backgroundPresetId) {
+    case 'violet-wash':
+      return 'bg-gradient-to-br from-violet-100 to-slate-100';
+    case 'neutral':
+      return 'bg-stone-100';
+    case 'mist':
+      return 'bg-gradient-to-b from-slate-50 to-slate-200';
+    default:
+      return 'bg-slate-200';
+  }
+}
+
+function aspectBoxClass(aspect: FrameStyle['aspect']): string {
+  switch (aspect) {
+    case '9:16':
+      return 'aspect-[9/16]';
+    case '1:1':
+      return 'aspect-square';
+    case '4:3':
+      return 'aspect-[4/3]';
+    default:
+      return 'aspect-video';
+  }
+}
+
+function PreviewCompositor({
+  t,
+  segments,
+  frameStyle,
+  recordingMeta,
+  showClicks,
+  showKeys,
+  children,
+}: {
+  t: number;
+  segments: import('./types').ZoomSegment[];
+  frameStyle: FrameStyle;
+  recordingMeta: RecordingMeta | null;
+  showClicks: boolean;
+  showKeys: boolean;
+  children: React.ReactNode;
+}) {
+  const pad = frameStyle.paddingPct;
+  const shadowPx = 8 + frameStyle.shadow * 32;
+  const bgStyle: React.CSSProperties =
+    frameStyle.backgroundPresetId === 'custom' && frameStyle.customBackgroundUrl
+      ? {
+          backgroundImage: `url(${frameStyle.customBackgroundUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }
+      : {};
+  const recentKey = (recordingMeta?.keyEvents || []).filter((e) => e.t <= t && e.t > t - 1.2).slice(-1)[0];
+  const recentClicks = (recordingMeta?.clicks || []).filter((c) => Math.abs(c.t - t) < 0.08);
+
+  return (
+    <div className="w-full h-full min-h-0 flex items-center justify-center overflow-hidden relative bg-slate-200">
+      <div
+        className={`absolute inset-0 ${frameBackgroundClass(frameStyle)}`}
+        style={{
+          ...bgStyle,
+          filter: frameStyle.blurBg > 0 ? `blur(${frameStyle.blurBg}px)` : undefined,
+          transform: frameStyle.blurBg > 0 ? 'scale(1.06)' : undefined,
+        }}
+        aria-hidden
+      />
+      <div className="relative z-[1] w-full h-full flex items-center justify-center min-h-0">
+      <div
+        className="relative flex items-center justify-center w-full h-full min-h-0 p-[var(--pad)] box-border"
+        style={
+          {
+            '--pad': `${pad}%`,
+            padding: `${pad}%`,
+            boxShadow: frameStyle.shadow > 0.02 ? `inset 0 0 60px rgba(0,0,0,${frameStyle.shadow * 0.06})` : undefined,
+          } as React.CSSProperties
+        }
+      >
+        <div
+          className={`relative max-w-full max-h-full w-full overflow-hidden ${aspectBoxClass(frameStyle.aspect)} bg-black/5`}
+          style={{
+            borderRadius: frameStyle.radiusPx,
+            boxShadow:
+              frameStyle.shadow > 0.02
+                ? `0 ${shadowPx / 4}px ${shadowPx}px rgba(15,23,42,${0.15 + frameStyle.shadow * 0.25})`
+                : undefined,
+          }}
+        >
+          <div className="absolute inset-0 w-full h-full [&_.aspect-video]:min-h-0 [&_.aspect-video]:h-full">
+            {children}
+          </div>
+          {showClicks &&
+            recentClicks.map((c, i) => (
+              <div
+                key={`${c.t}-${i}`}
+                className="absolute pointer-events-none rounded-full border-2 border-primary/90 bg-primary/20 animate-ping"
+                style={{
+                  left: `${c.x * 100}%`,
+                  top: `${c.y * 100}%`,
+                  width: '12%',
+                  height: '12%',
+                  maxWidth: 48,
+                  maxHeight: 48,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            ))}
+          {showKeys && recentKey ? (
+            <div
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-slate-900/85 text-white text-sm font-mono shadow-lg border border-white/10 pointer-events-none"
+              style={{ zIndex: 5 }}
+            >
+              {recentKey.key}
+            </div>
+          ) : null}
+        </div>
+      </div>
+      </div>
+    </div>
+  );
+}
 
 function CanvasSlot({
   children,
@@ -18,7 +146,7 @@ function CanvasSlot({
 }) {
   return (
     <div
-      className={`w-full max-w-4xl mx-auto aspect-video rounded-xl overflow-hidden bg-black shadow-2xl ${className}`}
+      className={`w-full max-w-4xl mx-auto min-h-[200px] rounded-xl overflow-hidden shadow-2xl ${className}`}
     >
       {children}
     </div>
@@ -81,6 +209,8 @@ function PropertiesPanel({
   playbackRate: number;
   onPlaybackRateChange: (r: number) => void;
 }) {
+  const { showOverlayClicks, setShowOverlayClicks, showOverlayKeys, setShowOverlayKeys } =
+    useVideoEditor();
   return (
     <div className="p-4 overflow-y-auto min-h-0 flex-1">
       <div className="space-y-4 text-sm">
@@ -93,6 +223,26 @@ function PropertiesPanel({
           <input type="range" className="w-full accent-primary mt-1" defaultValue={100} />
         </div>
         <PropertiesPanelCore playbackRate={playbackRate} onPlaybackRateChange={onPlaybackRateChange} />
+        <ZoomPanel />
+        <FramePanel />
+        <div className="flex flex-wrap gap-2 items-center">
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showOverlayClicks}
+              onChange={(e) => setShowOverlayClicks(e.target.checked)}
+            />
+            Show clicks
+          </label>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showOverlayKeys}
+              onChange={(e) => setShowOverlayKeys(e.target.checked)}
+            />
+            Show keyboard
+          </label>
+        </div>
         <hr className="border-slate-100" />
         <div className="flex justify-between items-center">
           <span className="text-sm font-semibold">Auto-captions</span>
@@ -201,7 +351,41 @@ export function EditorWorkspace() {
     setEditorPlaybackTime,
     playbackRate,
     setPlaybackRate,
+    zoomSegments,
+    editorPlaybackTime,
+    splitZoomAtPlayhead,
+    frameStyle,
+    recordingMeta,
+    showOverlayClicks,
+    showOverlayKeys,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useVideoEditor();
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+      // Avoid full-page submit (reload) when Enter is pressed inside a form wrapper
+      if (
+        e.key === 'Enter' &&
+        (e.target as HTMLElement)?.closest?.('form') &&
+        !(e.target as HTMLInputElement)?.matches?.('textarea')
+      ) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
 
   const onPlaybackUpdate = useCallback(
     (p: VideoPlayerPlayback) => {
@@ -254,16 +438,32 @@ export function EditorWorkspace() {
       <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-slate-100">
         <div className="flex-1 flex items-center justify-center p-6 min-h-[200px] min-w-0">
           {editorVideoSrc ? (
-            <CanvasSlot className="shadow-xl">
-              <VideoPlayer
-                key={editorVideoSrc}
-                ref={playerRef}
-                src={editorVideoSrc}
-                onPlaybackUpdate={onPlaybackUpdate}
-                playbackRange={trimRange}
-                playbackRate={playbackRate}
-                onPlaybackRateChange={setPlaybackRate}
-              />
+            <CanvasSlot className="shadow-xl min-h-[280px]">
+              <PreviewCompositor
+                t={editorPlaybackTime}
+                segments={zoomSegments}
+                frameStyle={frameStyle}
+                recordingMeta={recordingMeta}
+                showClicks={showOverlayClicks}
+                showKeys={showOverlayKeys}
+              >
+                <VideoPlayer
+                  key={editorVideoSrc}
+                  ref={playerRef}
+                  src={editorVideoSrc}
+                  onPlaybackUpdate={onPlaybackUpdate}
+                  playbackRange={trimRange}
+                  playbackRate={playbackRate}
+                  onPlaybackRateChange={setPlaybackRate}
+                  videoZoomScale={scaleAtTime(editorPlaybackTime, zoomSegments)}
+                  videoZoomFocus={focusAtTime(editorPlaybackTime, zoomSegments)}
+                  metaViewport={
+                    recordingMeta?.vw && recordingMeta?.vh
+                      ? { w: recordingMeta.vw, h: recordingMeta.vh }
+                      : null
+                  }
+                />
+              </PreviewCompositor>
             </CanvasSlot>
           ) : (
             <EmptyCanvasPlaceholder
@@ -289,7 +489,13 @@ export function EditorWorkspace() {
               trimEnd={trimRange?.end}
             />
           ) : (
-            <EditorTimeline playerRef={playerRef} playback={playback} clipName={clip?.name ?? 'Clip'} />
+            <EditorTimeline
+              playerRef={playerRef}
+              playback={playback}
+              clipName={clip?.name ?? 'Clip'}
+              zoomSegments={zoomSegments}
+              onSplitZoom={splitZoomAtPlayhead}
+            />
           )
         ) : (
           <TimelineFooter empty={emptyOnboarding} />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { VideoPlayerHandle, VideoPlayerPlayback } from '../../components/VideoPlayer';
+import type { ZoomSegment } from './types';
 
 /** m:ss — total duration always plain (no tenths) so it never reads like extra “:04”) */
 function fmt(t: number, withTenths?: boolean) {
@@ -39,9 +40,20 @@ type Props = {
   compact?: boolean;
   trimStart?: number;
   trimEnd?: number;
+  zoomSegments?: ZoomSegment[];
+  onSplitZoom?: () => void;
 };
 
-export function EditorTimeline({ playerRef, playback, clipName, compact, trimStart, trimEnd }: Props) {
+export function EditorTimeline({
+  playerRef,
+  playback,
+  clipName,
+  compact,
+  trimStart,
+  trimEnd,
+  zoomSegments = [],
+  onSplitZoom,
+}: Props) {
   const { currentTime, duration, playing } = playback;
   const d = duration > 0 ? duration : 1;
 
@@ -121,6 +133,16 @@ export function EditorTimeline({ playerRef, playback, clipName, compact, trimSta
   };
 
   const tickList = ticks(dClock);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [pxPerSec, setPxPerSec] = useState(48);
+  const trackWidth = Math.max(320, dClock * pxPerSec);
+
+  const fitTimeline = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || dClock <= 0) return;
+    const w = el.clientWidth - 16;
+    setPxPerSec(Math.max(20, Math.min(120, w / dClock)));
+  }, [dClock]);
 
   return (
     <footer
@@ -163,56 +185,84 @@ export function EditorTimeline({ playerRef, playback, clipName, compact, trimSta
             aria-label="Seek"
           />
         </div>
-      </div>
-
-      {/* Ruler: 0% and 100% labels flush inset so they are never clipped; middle ticks centered */}
-      <div className="h-9 border-b bg-white shrink-0 overflow-visible">
-        <div className="relative h-full w-full min-w-[120px]">
-          {tickList.map((sec, i) => {
-            const n = tickList.length;
-            const pct = dClock > 0 ? (sec / dClock) * 100 : 0;
-            const isFirst = i === 0;
-            const isLast = i === n - 1;
-            const base = 'absolute bottom-0.5 text-[10px] font-mono tabular-nums whitespace-nowrap leading-none';
-            if (n === 1) {
-              return (
-                <span key={sec} className={`${base} left-1.5 text-slate-500`}>
-                  {fmt(sec)}
-                </span>
-              );
-            }
-            if (isFirst) {
-              return (
-                <span key={sec} className={`${base} left-1.5 text-slate-500`}>
-                  {fmt(sec)}
-                </span>
-              );
-            }
-            if (isLast) {
-              return (
-                <span
-                  key={sec}
-                  className={`${base} right-1.5 z-[2] rounded px-1.5 py-0.5 text-slate-600 text-right bg-white shadow-sm ring-1 ring-slate-200/90`}
-                >
-                  {fmtDuration(sec)}
-                </span>
-              );
-            }
-            return (
-              <span
-                key={sec}
-                className={`${base} text-slate-400 -translate-x-1/2`}
-                style={{ left: `${pct}%` }}
-              >
-                {fmt(sec)}
-              </span>
-            );
-          })}
+        {onSplitZoom ? (
+          <button
+            type="button"
+            onClick={onSplitZoom}
+            className="text-[10px] font-bold uppercase text-primary border border-violet-200 rounded-lg px-2 py-1 hover:bg-violet-50 shrink-0"
+          >
+            Split zoom
+          </button>
+        ) : null}
+        <div className="flex items-center gap-1 shrink-0 border-l border-slate-200 pl-2">
+          <span className="text-[10px] text-slate-400 hidden sm:inline">Zoom</span>
+          <input
+            type="range"
+            min={20}
+            max={120}
+            value={pxPerSec}
+            onChange={(e) => setPxPerSec(Number(e.target.value))}
+            className="w-16 sm:w-24 h-1.5 accent-primary"
+            aria-label="Timeline zoom"
+          />
+          <button
+            type="button"
+            onClick={fitTimeline}
+            className="text-[10px] font-semibold text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100"
+          >
+            Fit
+          </button>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto relative bg-slate-50/80 p-2">
-        <div className="relative rounded-lg border border-slate-200 bg-slate-100 min-h-[48px] mb-2 overflow-hidden touch-none select-none">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-x-auto overflow-y-auto relative bg-slate-50/80 flex flex-col">
+        <div className="h-9 border-b bg-white shrink-0 sticky top-0 z-[1]">
+          <div className="relative h-full min-w-[120px]" style={{ width: trackWidth, minWidth: '100%' }}>
+            {tickList.map((sec, i) => {
+              const n = tickList.length;
+              const pct = dClock > 0 ? (sec / dClock) * 100 : 0;
+              const isFirst = i === 0;
+              const isLast = i === n - 1;
+              const base =
+                'absolute bottom-0.5 text-[10px] font-mono tabular-nums whitespace-nowrap leading-none';
+              if (n === 1) {
+                return (
+                  <span key={sec} className={`${base} left-1.5 text-slate-500`}>
+                    {fmt(sec)}
+                  </span>
+                );
+              }
+              if (isFirst) {
+                return (
+                  <span key={sec} className={`${base} left-1.5 text-slate-500`}>
+                    {fmt(sec)}
+                  </span>
+                );
+              }
+              if (isLast) {
+                return (
+                  <span
+                    key={sec}
+                    className={`${base} right-1.5 z-[2] rounded px-1.5 py-0.5 text-slate-600 text-right bg-white shadow-sm ring-1 ring-slate-200/90`}
+                  >
+                    {fmtDuration(sec)}
+                  </span>
+                );
+              }
+              return (
+                <span
+                  key={sec}
+                  className={`${base} text-slate-400 -translate-x-1/2`}
+                  style={{ left: `${pct}%` }}
+                >
+                  {fmt(sec)}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+        <div className="p-2 space-y-1" style={{ width: trackWidth, minWidth: '100%' }}>
+        <div className="relative rounded-lg border border-slate-200 bg-slate-100 min-h-[48px] overflow-hidden touch-none select-none">
           {trimStart != null && trimEnd != null && trimEnd > trimStart && dClock > 0 && (
             <div
               className="absolute top-0 bottom-0 bg-emerald-400/25 border-x-2 border-emerald-600 z-0 pointer-events-none"
@@ -256,7 +306,30 @@ export function EditorTimeline({ playerRef, playback, clipName, compact, trimSta
             <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-red-500 rotate-45 rounded-sm" />
           </div>
         </div>
-        <p className="text-[10px] text-slate-400 px-1">
+        {zoomSegments.length > 0 && dClock > 0 ? (
+          <div className="relative h-7 rounded-lg border border-violet-200 bg-violet-50/50 overflow-hidden">
+            <span className="absolute left-1 top-0.5 text-[9px] font-bold text-violet-700 z-[2]">Zoom</span>
+            {zoomSegments.map((s) => (
+              <div
+                key={s.id}
+                className="absolute top-1 bottom-0.5 bg-primary/80 rounded text-[8px] text-white flex items-center justify-center font-bold truncate px-0.5"
+                style={{
+                  left: `${(s.startSec / dClock) * 100}%`,
+                  width: `${Math.max(0.5, ((s.endSec - s.startSec) / dClock) * 100)}%`,
+                }}
+                title={`${s.startSec.toFixed(1)}s–${s.endSec.toFixed(1)}s ${s.peakScale.toFixed(1)}×`}
+              >
+                {s.peakScale.toFixed(1)}×
+              </div>
+            ))}
+            <div
+              className="absolute top-0 bottom-0 w-px bg-red-500 z-[3] pointer-events-none"
+              style={{ left: `${pct}%` }}
+            />
+          </div>
+        ) : null}
+        </div>
+        <p className="text-[10px] text-slate-400 px-3 pb-2">
           Ruler and playhead use the same scale (0 → end). Click or drag the bar to seek.
         </p>
       </div>

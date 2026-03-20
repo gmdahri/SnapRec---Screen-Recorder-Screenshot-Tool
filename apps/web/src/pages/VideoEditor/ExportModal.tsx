@@ -25,6 +25,8 @@ export function ExportModal() {
     trimStartSec,
     trimEndSec,
     videoDurationSec,
+    zoomSegments,
+    recordingMeta,
   } = useVideoEditor();
 
   const [err, setErr] = useState<string | null>(null);
@@ -44,6 +46,12 @@ export function ExportModal() {
     videoDurationSec > 0 && trimEndSec > trimStartSec
       ? `Trim in the editor: ${trimStartSec.toFixed(1)}s–${trimEndSec.toFixed(1)}s. Use Trim → Modify if you need that range as the file, then download.`
       : null;
+  const zoomHint =
+    'Zoom segments are preview-only in the editor; downloaded file does not include zoom yet.';
+  const noAutoZoomGuard =
+    zoomSegments.length === 0 &&
+    recordingMeta &&
+    (recordingMeta.pointerSamples?.length ?? 0) + (recordingMeta.clicks?.length ?? 0) > 0;
 
   if (exportModal === 'closed') return null;
 
@@ -153,6 +161,12 @@ export function ExportModal() {
               </div>
             </div>
             {trimHint && <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">{trimHint}</p>}
+            {noAutoZoomGuard && (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                No auto-zoom detected for this recording — export will be flat. Add zoom in the Zoom panel if needed.
+              </p>
+            )}
+            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">{zoomHint}</p>
             <button
               type="button"
               disabled={!editorVideoSrc || downloading}

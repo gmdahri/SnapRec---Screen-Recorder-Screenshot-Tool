@@ -12,11 +12,19 @@ import type {
   EditorTool,
   EditorWorkspace,
   ExportModalState,
+  FrameStyle,
   MediaClip,
   MediaLibraryTab,
   ProjectSummary,
   RightDockTab,
+  ZoomSegment,
 } from './types';
+import {
+  DEFAULT_FRAME_STYLE,
+  normalizeFrameStyle,
+} from './types';
+import { overlapsSegment, sanitizeSegments, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from './zoomMath';
+import { autoZoomSegmentsFromMeta, type RecordingMeta } from './autoZoomFromMeta';
 import { fetchWithAuth, uploadFile } from '../../hooks/useRecordings';
 import { recordVideoSegmentToWebm } from './localVideoTrim';
 
@@ -103,6 +111,45 @@ interface VideoEditorContextValue {
   requestUnsavedLeave: (absoluteHref: string) => void;
   cancelUnsavedLeave: () => void;
   confirmUnsavedLeave: () => void;
+  zoomSegments: ZoomSegment[];
+  setZoomSegments: React.Dispatch<React.SetStateAction<ZoomSegment[]>>;
+  addZoomSegment: (partial: Omit<ZoomSegment, 'id'>) => boolean;
+  updateZoomSegment: (id: string, partial: Partial<ZoomSegment>) => void;
+  removeZoomSegment: (id: string) => void;
+  recordingMeta: RecordingMeta | null;
+  applyAutoZoomFromMeta: () => void;
+  /** True when auto-zoom pipeline produced zero segments (Option A+C fallback). */
+  autoZoomProducedZero: boolean;
+  splitZoomAtPlayhead: () => void;
+  frameStyle: FrameStyle;
+  setFrameStyle: React.Dispatch<React.SetStateAction<FrameStyle>>;
+  pushUndoSnapshot: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  showOverlayClicks: boolean;
+  setShowOverlayClicks: (v: boolean) => void;
+  showOverlayKeys: boolean;
+  setShowOverlayKeys: (v: boolean) => void;
+}
+
+const HISTORY_MAX = 50;
+
+type EditorSnapshot = {
+  zoomSegments: ZoomSegment[];
+  frameStyle: FrameStyle;
+  trimStartSec: number;
+  trimEndSec: number;
+};
+
+function cloneSnap(z: ZoomSegment[], f: FrameStyle, ts: number, te: number): EditorSnapshot {
+  return {
+    zoomSegments: JSON.parse(JSON.stringify(z)) as ZoomSegment[],
+    frameStyle: JSON.parse(JSON.stringify(f)) as FrameStyle,
+    trimStartSec: ts,
+    trimEndSec: te,
+  };
 }
 
 const Ctx = createContext<VideoEditorContextValue | null>(null);
@@ -206,6 +253,17 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [savedTrimEnd, setSavedTrimEnd] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [savedPlaybackRate, setSavedPlaybackRate] = useState(1);
+  const [zoomSegments, setZoomSegments] = useState<ZoomSegment[]>([]);
+  const [savedZoomSegments, setSavedZoomSegments] = useState<ZoomSegment[]>([]);
+  const [recordingMeta, setRecordingMeta] = useState<RecordingMeta | null>(null);
+  const autoZoomAppliedRef = useRef(false);
+  const [autoZoomProducedZero, setAutoZoomProducedZero] = useState(false);
+  const [frameStyle, setFrameStyle] = useState<FrameStyle>({ ...DEFAULT_FRAME_STYLE });
+  const [savedFrameStyle, setSavedFrameStyle] = useState<FrameStyle>({ ...DEFAULT_FRAME_STYLE });
+  const [showOverlayClicks, setShowOverlayClicks] = useState(true);
+  const [showOverlayKeys, setShowOverlayKeys] = useState(true);
+  const [undoStack, setUndoStack] = useState<EditorSnapshot[]>([]);
+  const [redoStack, setRedoStack] = useState<EditorSnapshot[]>([]);
   const [stagedExportFile, setStagedExportFile] = useState<File | null>(null);
   const [stagedExportLabel, setStagedExportLabel] = useState<string | null>(null);
   const stagedBlobUrlRef = useRef<string | null>(null);
@@ -313,7 +371,13 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
           trimStart?: number;
           trimEnd?: number;
           playbackRate?: number;
+          zoomSegments?: ZoomSegment[];
+          recordingMeta?: RecordingMeta;
+          frameStyle?: unknown;
         } | null;
+        autoZoomAppliedRef.current = false;
+        const rm = tj?.recordingMeta;
+        setRecordingMeta(rm && typeof rm === 'object' ? rm : null);
         let ts = 0;
         let te = 0;
         if (
@@ -333,6 +397,30 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         setSavedTitle(p.title);
         setSavedTrimStart(ts);
         setSavedTrimEnd(te);
+        const rawZoom = tj?.zoomSegments;
+        let z = sanitizeSegments(rawZoom, 1e6);
+        const draftKey = `snaprec_zoom_draft_${id}`;
+        try {
+          const draftRaw = sessionStorage.getItem(draftKey);
+          if (draftRaw) {
+            const draft = sanitizeSegments(JSON.parse(draftRaw), 1e6);
+            if (draft.length > 0) {
+              z = draft;
+              autoZoomAppliedRef.current = true;
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+        if (z.length > 0) autoZoomAppliedRef.current = true;
+        setZoomSegments(z);
+        setSavedZoomSegments(JSON.parse(JSON.stringify(z)) as ZoomSegment[]);
+        setAutoZoomProducedZero(z.length === 0 && !!(rm && typeof rm === 'object'));
+        const fs = normalizeFrameStyle(tj?.frameStyle);
+        setFrameStyle(fs);
+        setSavedFrameStyle(JSON.parse(JSON.stringify(fs)) as FrameStyle);
+        setUndoStack([]);
+        setRedoStack([]);
         setSaveStatus('idle');
         setLocalEffectsApplied([]);
       } catch (e: unknown) {
@@ -355,6 +443,9 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       setScreen('projects');
       setPlaybackRate(1);
       setSavedPlaybackRate(1);
+      setZoomSegments([]);
+      setSavedZoomSegments([]);
+      setAutoZoomProducedZero(false);
       clearStagingRef(stagedBlobUrlRef, setStagedExportFile, setStagedExportLabel);
       revokeWorkingVideoBlob();
       refreshProjects();
@@ -395,9 +486,184 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setVideoDurationSec(0);
     setPlaybackRate(1);
     setSavedPlaybackRate(1);
+    setZoomSegments([]);
+    setSavedZoomSegments([]);
+    setFrameStyle({ ...DEFAULT_FRAME_STYLE });
+    setSavedFrameStyle({ ...DEFAULT_FRAME_STYLE });
+    setUndoStack([]);
+    setRedoStack([]);
     clearStagingRef(stagedBlobUrlRef, setStagedExportFile, setStagedExportLabel);
     revokeWorkingVideoBlob();
   }, [navigate, revokeWorkingVideoBlob]);
+
+  const pushUndoSnapshot = useCallback(() => {
+    setUndoStack((past) => {
+      const snap = cloneSnap(zoomSegments, frameStyle, trimStartSec, trimEndSec);
+      return [...past, snap].slice(-HISTORY_MAX);
+    });
+    setRedoStack([]);
+  }, [zoomSegments, frameStyle, trimStartSec, trimEndSec]);
+
+  const undo = useCallback(() => {
+    setUndoStack((past) => {
+      if (past.length === 0) return past;
+      const prev = past[past.length - 1]!;
+      const now = cloneSnap(zoomSegments, frameStyle, trimStartSec, trimEndSec);
+      setRedoStack((r) => [now, ...r].slice(0, HISTORY_MAX));
+      setZoomSegments(prev.zoomSegments);
+      setFrameStyle(prev.frameStyle);
+      setTrimStartSec(prev.trimStartSec);
+      setTrimEndSec(prev.trimEndSec);
+      return past.slice(0, -1);
+    });
+  }, [zoomSegments, frameStyle, trimStartSec, trimEndSec]);
+
+  const redo = useCallback(() => {
+    setRedoStack((fut) => {
+      if (fut.length === 0) return fut;
+      const next = fut[0]!;
+      const now = cloneSnap(zoomSegments, frameStyle, trimStartSec, trimEndSec);
+      setUndoStack((p) => [...p, now].slice(-HISTORY_MAX));
+      setZoomSegments(next.zoomSegments);
+      setFrameStyle(next.frameStyle);
+      setTrimStartSec(next.trimStartSec);
+      setTrimEndSec(next.trimEndSec);
+      return fut.slice(1);
+    });
+  }, [zoomSegments, frameStyle, trimStartSec, trimEndSec]);
+
+  const canUndo = undoStack.length > 0;
+  const canRedo = redoStack.length > 0;
+
+  const addZoomSegment = useCallback(
+    (partial: Omit<ZoomSegment, 'id'>): boolean => {
+      pushUndoSnapshot();
+      const d = videoDurationSec > 0 ? videoDurationSec : 120;
+      const start = Math.max(0, partial.startSec);
+      const end = Math.min(d, Math.max(start + 0.1, partial.endSec));
+      if (overlapsSegment(start, end, zoomSegments)) return false;
+      const id =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `z-${Date.now()}`;
+      const seg: ZoomSegment = {
+        id,
+        startSec: start,
+        endSec: end,
+        peakScale: Math.min(ZOOM_SCALE_MAX, Math.max(ZOOM_SCALE_MIN + 0.05, partial.peakScale)),
+        focusX: partial.focusX ?? 0.5,
+        focusY: partial.focusY ?? 0.5,
+        easeInSec: partial.easeInSec,
+        easeOutSec: partial.easeOutSec,
+      };
+      const ok = sanitizeSegments([seg], d)[0];
+      if (!ok) return false;
+      setZoomSegments((prev) => [...prev, ok].sort((a, b) => a.startSec - b.startSec));
+      return true;
+    },
+    [videoDurationSec, zoomSegments, pushUndoSnapshot],
+  );
+
+  const updateZoomSegment = useCallback(
+    (id: string, partial: Partial<ZoomSegment>) => {
+      const d = videoDurationSec > 0 ? videoDurationSec : 120;
+      setZoomSegments((prev) => {
+        const next = prev.map((s) => {
+          if (s.id !== id) return s;
+          const merged = { ...s, ...partial };
+          const start = Math.max(0, merged.startSec);
+          const end = Math.min(d, Math.max(start + 0.1, merged.endSec));
+          if (overlapsSegment(start, end, prev, id)) return s;
+          const seg: ZoomSegment = {
+            ...merged,
+            startSec: start,
+            endSec: end,
+            peakScale: Math.min(ZOOM_SCALE_MAX, Math.max(ZOOM_SCALE_MIN + 0.05, merged.peakScale)),
+          };
+          return sanitizeSegments([seg], d)[0] ?? s;
+        });
+        return next.sort((a, b) => a.startSec - b.startSec);
+      });
+    },
+    [videoDurationSec],
+  );
+
+  const removeZoomSegment = useCallback(
+    (id: string) => {
+      pushUndoSnapshot();
+      setZoomSegments((prev) => prev.filter((s) => s.id !== id));
+    },
+    [pushUndoSnapshot],
+  );
+
+  useEffect(() => {
+    if (videoDurationSec <= 0) return;
+    setZoomSegments((prev) => sanitizeSegments(prev, videoDurationSec));
+  }, [videoDurationSec]);
+
+  useEffect(() => {
+    if (videoDurationSec <= 0 || autoZoomAppliedRef.current) return;
+    if (!recordingMeta?.pointerSamples?.length) return;
+    const segs = autoZoomSegmentsFromMeta(recordingMeta, videoDurationSec);
+    if (segs.length === 0) return;
+    setZoomSegments((prev) => {
+      if (prev.length > 0) return prev;
+      autoZoomAppliedRef.current = true;
+      return sanitizeSegments(segs, videoDurationSec);
+    });
+  }, [videoDurationSec, recordingMeta]);
+
+  useEffect(() => {
+    if (zoomSegments.length > 0) setAutoZoomProducedZero(false);
+  }, [zoomSegments.length]);
+
+  useEffect(() => {
+    if (!currentProjectId) return;
+    const id = currentProjectId;
+    const t = window.setTimeout(() => {
+      try {
+        sessionStorage.setItem(`snaprec_zoom_draft_${id}`, JSON.stringify(zoomSegments));
+      } catch {
+        /* ignore */
+      }
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, [zoomSegments, currentProjectId]);
+
+  const applyAutoZoomFromMeta = useCallback(() => {
+    if (!recordingMeta || videoDurationSec <= 0) return;
+    pushUndoSnapshot();
+    const segs = autoZoomSegmentsFromMeta(recordingMeta, videoDurationSec);
+    if (segs.length === 0) {
+      setAutoZoomProducedZero(true);
+      setZoomSegments([]);
+    } else {
+      setAutoZoomProducedZero(false);
+      setZoomSegments(sanitizeSegments(segs, videoDurationSec));
+    }
+  }, [recordingMeta, videoDurationSec, pushUndoSnapshot]);
+
+  const splitZoomAtPlayhead = useCallback(() => {
+    pushUndoSnapshot();
+    const t = editorPlaybackTime;
+    setZoomSegments((prev) => {
+      const idx = prev.findIndex((s) => t > s.startSec && t < s.endSec);
+      if (idx < 0) return prev;
+      const s = prev[idx];
+      if (t - s.startSec < 0.15 || s.endSec - t < 0.15) return prev;
+      const id =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `z-${Date.now()}`;
+      const a: ZoomSegment = { ...s, endSec: t };
+      const b: ZoomSegment = {
+        ...s,
+        id,
+        startSec: t,
+      };
+      return [...prev.slice(0, idx), a, b, ...prev.slice(idx + 1)];
+    });
+  }, [editorPlaybackTime, pushUndoSnapshot]);
 
   const resetTrim = useCallback(() => {
     setTrimStartSec(0);
@@ -430,6 +696,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         type: blob.type || 'video/webm',
       });
       setStagedExport(file);
+      setZoomSegments([]);
+      setSavedZoomSegments([]);
+      setRecordingMeta(null);
+      autoZoomAppliedRef.current = true;
       setLocalModifyStatus('idle');
     } catch (e) {
       setLocalModifyError(e instanceof Error ? e.message : 'Modify failed');
@@ -449,11 +719,16 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     if (!currentProjectId) return false;
     const end = trimEndSec > trimStartSec ? trimEndSec : trimStartSec;
     const savedEnd = savedTrimEnd > savedTrimStart ? savedTrimEnd : savedTrimStart;
+    const dirtyZoom =
+      JSON.stringify(zoomSegments) !== JSON.stringify(savedZoomSegments);
+    const dirtyFrame = JSON.stringify(frameStyle) !== JSON.stringify(savedFrameStyle);
     const dirtyEdit =
       projectTitle.trim() !== savedTitle.trim() ||
       trimStartSec !== savedTrimStart ||
       end !== savedEnd ||
-      playbackRate !== savedPlaybackRate;
+      playbackRate !== savedPlaybackRate ||
+      dirtyZoom ||
+      dirtyFrame;
     return dirtyEdit || !!stagedExportFile || localEffectsApplied.length > 0;
   }, [
     currentProjectId,
@@ -467,18 +742,25 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     savedPlaybackRate,
     stagedExportFile,
     localEffectsApplied.length,
+    zoomSegments,
+    savedZoomSegments,
+    frameStyle,
+    savedFrameStyle,
   ]);
 
   const saveProject = useCallback(async () => {
     if (!currentProjectId) return;
     const end = trimEndSec > trimStartSec ? trimEndSec : trimStartSec + 0.01;
     const title = projectTitle.trim() || 'Untitled';
-    const timelineJson = {
+    const timelineJson: Record<string, unknown> = {
       trimStart: trimStartSec,
       trimEnd: end,
       version: 1,
       playbackRate,
+      zoomSegments: sanitizeSegments(zoomSegments, videoDurationSec > 0 ? videoDurationSec : end),
     };
+    if (recordingMeta) timelineJson.recordingMeta = recordingMeta;
+    timelineJson.frameStyle = frameStyle;
     setSaveStatus('saving');
     try {
       let newFileUrl: string | undefined;
@@ -516,8 +798,16 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       setSavedTrimStart(trimStartSec);
       setSavedTrimEnd(end);
       setSavedPlaybackRate(playbackRate);
+      const z = sanitizeSegments(zoomSegments, videoDurationSec > 0 ? videoDurationSec : end);
+      setSavedZoomSegments(JSON.parse(JSON.stringify(z)) as ZoomSegment[]);
+      setSavedFrameStyle(JSON.parse(JSON.stringify(frameStyle)) as FrameStyle);
       setSaveStatus('saved');
       setLocalEffectsApplied([]);
+      try {
+        sessionStorage.removeItem(`snaprec_zoom_draft_${currentProjectId}`);
+      } catch {
+        /* ignore */
+      }
       setTimeout(() => setSaveStatus('idle'), 2000);
       refreshProjects();
     } catch {
@@ -529,9 +819,13 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     trimStartSec,
     trimEndSec,
     playbackRate,
+    zoomSegments,
+    videoDurationSec,
     stagedExportFile,
     refreshProjects,
     revokeWorkingVideoBlob,
+    recordingMeta,
+    frameStyle,
   ]);
 
   const value = useMemo(
@@ -599,6 +893,26 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       requestUnsavedLeave,
       cancelUnsavedLeave,
       confirmUnsavedLeave,
+      zoomSegments,
+      setZoomSegments,
+      addZoomSegment,
+      updateZoomSegment,
+      removeZoomSegment,
+      recordingMeta,
+      applyAutoZoomFromMeta,
+      autoZoomProducedZero,
+      splitZoomAtPlayhead,
+      frameStyle,
+      setFrameStyle,
+      pushUndoSnapshot,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+      showOverlayClicks,
+      setShowOverlayClicks,
+      showOverlayKeys,
+      setShowOverlayKeys,
     }),
     [
       screen,
@@ -648,6 +962,25 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       requestUnsavedLeave,
       cancelUnsavedLeave,
       confirmUnsavedLeave,
+      zoomSegments,
+      addZoomSegment,
+      updateZoomSegment,
+      removeZoomSegment,
+      recordingMeta,
+      applyAutoZoomFromMeta,
+      autoZoomProducedZero,
+      splitZoomAtPlayhead,
+      frameStyle,
+      setFrameStyle,
+      pushUndoSnapshot,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+      showOverlayClicks,
+      setShowOverlayClicks,
+      showOverlayKeys,
+      setShowOverlayKeys,
     ],
   );
 

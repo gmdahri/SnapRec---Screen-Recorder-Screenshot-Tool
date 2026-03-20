@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
+import type { VideoPlayerHandle, VideoPlayerPlayback } from '../components/VideoPlayer';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
+import { autoZoomSegmentsFromMeta, type RecordingMeta } from './VideoEditor/autoZoomFromMeta';
+import { scaleAtTime, focusAtTime, sanitizeSegments } from './VideoEditor/zoomMath';
+import type { ZoomSegment } from './VideoEditor/types';
 
 const convertBase64ToBlobUrl = async (dataUrl: string): Promise<string> => {
     try {
@@ -62,6 +66,27 @@ const ShareView: React.FC = () => {
     // don't let the initial useEffect's async callback overwrite it with stale data
     const videoBlobSetByMessage = React.useRef(false);
 
+    // --- Share-page zoom preview ---
+    const [shareZoomSegs, setShareZoomSegs] = useState<ZoomSegment[]>([]);
+    const [shareZoomT, setShareZoomT] = useState(0);
+    const sharePlayerRef = useRef<VideoPlayerHandle | null>(null);
+
+    // Generate zoom segments from meta stored in sessionStorage
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem('snaprec_recording_meta');
+            if (!raw) return;
+            const meta: RecordingMeta = JSON.parse(raw);
+            if (!meta.pointerSamples?.length) return;
+            // We don't know exact duration yet; use a wide ceiling. Segments will
+            // be clamped once the real duration arrives via onPlaybackUpdate.
+            const segs = autoZoomSegmentsFromMeta(meta, 86400);
+            if (segs.length > 0) setShareZoomSegs(segs);
+        } catch { /* ignore */ }
+    }, []);
+
+    const shareScale = shareZoomSegs.length > 0 ? scaleAtTime(shareZoomT, shareZoomSegs) : 1;
+    const shareFocus = shareZoomSegs.length > 0 ? focusAtTime(shareZoomT, shareZoomSegs) : { x: 0.5, y: 0.5 };
     // Helper: Initialize from fallback DB if memory is wiped (e.g., refresh)
     const loadFromIndexedDB = async () => {
         return new Promise<{ blob: string | null, rawBlob: Blob | null, id: string | null }>((resolve) => {
@@ -190,6 +215,37 @@ const ShareView: React.FC = () => {
         enabled: (!!isValidId && !isFreshParam) || isUploaded || isUploading
     });
 
+    const shareZoomFromServer = Boolean(
+        recording?.shareZoomSegments &&
+            Array.isArray(recording.shareZoomSegments) &&
+            recording.shareZoomSegments.length > 0,
+    );
+
+    useEffect(() => {
+        if (!recording?.shareZoomSegments?.length) return;
+        const segs = sanitizeSegments(recording.shareZoomSegments, 86400);
+        if (segs.length > 0) setShareZoomSegs(segs);
+    }, [recording?.id, recording?.shareZoomSegments]);
+
+    const onSharePlaybackUpdate = useCallback((pb: VideoPlayerPlayback) => {
+        setShareZoomT(pb.currentTime);
+        if (shareZoomFromServer) return;
+        setShareZoomSegs((prev) => {
+            if (pb.duration <= 0 || prev.length === 0) return prev;
+            const last = prev[prev.length - 1]!;
+            if (last.endSec <= pb.duration + 1) return prev;
+            try {
+                const raw = sessionStorage.getItem('snaprec_recording_meta');
+                if (!raw) return prev;
+                const meta: RecordingMeta = JSON.parse(raw);
+                const segs = autoZoomSegmentsFromMeta(meta, pb.duration);
+                return segs.length > 0 ? segs : prev;
+            } catch {
+                return prev;
+            }
+        });
+    }, [shareZoomFromServer]);
+
     const addReaction = useAddReaction();
     const addComment = useAddComment();
     const claimMutation = useClaimRecordings();
@@ -262,6 +318,31 @@ const ShareView: React.FC = () => {
             });
         };
 
+        /** Await so sessionStorage has meta before user can open editor (same tick as blob). */
+        const loadRecordingMetaFromIDB = (): Promise<string | null> =>
+            new Promise((resolve) => {
+                try {
+                    const r = indexedDB.open('SnapRecDB', 2);
+                    r.onerror = () => resolve(null);
+                    r.onsuccess = () => {
+                        const db = r.result;
+                        if (!db.objectStoreNames.contains('recordings')) {
+                            resolve(null);
+                            return;
+                        }
+                        const t = db.transaction(['recordings'], 'readonly');
+                        const mr = t.objectStore('recordings').get('latest_recording_meta');
+                        mr.onsuccess = () => {
+                            const m = mr.result;
+                            resolve(typeof m === 'string' && m.length > 2 ? m : null);
+                        };
+                        mr.onerror = () => resolve(null);
+                    };
+                } catch {
+                    resolve(null);
+                }
+            });
+
         const handleMessage = async (event: MessageEvent) => {
             if (event.data?.type === 'SNAPREC_VIDEO_DATA') {
                 console.log('Received video data from extension with id:', event.data.id);
@@ -275,6 +356,23 @@ const ShareView: React.FC = () => {
                         console.log('Video blob loaded from IDB, size:', blob.size, 'type:', blob.type);
                         videoBlobSetByMessage.current = true;
                         setLocalVideoBlob(blobUrl);
+                        const metaJson = await loadRecordingMetaFromIDB();
+                        if (metaJson) {
+                            try {
+                                sessionStorage.setItem('snaprec_recording_meta', metaJson);
+                                const parsed = JSON.parse(metaJson) as { pointerSamples?: unknown[] };
+                                console.log(
+                                    '[SnapRec] recordingMeta samples:',
+                                    parsed.pointerSamples?.length ?? 0,
+                                );
+                            } catch {
+                                /* empty */
+                            }
+                        } else {
+                            console.warn(
+                                '[SnapRec] No recordingMeta in IDB — auto zoom needs pointer trail (move mouse while recording).',
+                            );
+                        }
                     } else {
                         console.warn('No blob found in IndexedDB, falling back to loadFromIndexedDB (legacy)');
                         // Try the legacy 'latest_video' key (base64 data URL stored as string)
@@ -515,6 +613,26 @@ const ShareView: React.FC = () => {
                 method: 'POST',
                 body: JSON.stringify({ recordingId }),
             });
+            try {
+                const metaStr = sessionStorage.getItem('snaprec_recording_meta');
+                if (metaStr) {
+                    const recordingMeta = JSON.parse(metaStr);
+                    await fetchWithAuth(`/video-projects/${project.id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({
+                            timelineJson: {
+                                version: 1,
+                                trimStart: 0,
+                                trimEnd: 86400,
+                                playbackRate: 1,
+                                recordingMeta,
+                            },
+                        }),
+                    });
+                }
+            } catch {
+                /* meta optional */
+            }
             navigate(`/video-editor/project/${project.id}`);
         } catch (e: unknown) {
             showNotification(e instanceof Error ? e.message : 'Could not open editor', 'error');
@@ -698,8 +816,22 @@ const ShareView: React.FC = () => {
                                 ) : (
                                     <>
                                         <VideoPlayer
+                                            ref={sharePlayerRef}
                                             src={downloadUrl || localVideoBlob || undefined}
                                             isProcessing={isProcessing && !localVideoBlob}
+                                            onPlaybackUpdate={onSharePlaybackUpdate}
+                                            videoZoomScale={shareScale}
+                                            videoZoomFocus={shareFocus}
+                                            metaViewport={(() => {
+                                                try {
+                                                    const raw = sessionStorage.getItem('snaprec_recording_meta');
+                                                    if (!raw) return null;
+                                                    const m = JSON.parse(raw) as { vw?: number; vh?: number };
+                                                    return m.vw && m.vh ? { w: m.vw, h: m.vh } : null;
+                                                } catch {
+                                                    return null;
+                                                }
+                                            })()}
                                         />
                                         {recordingData.type === 'video' && !downloadUrl && !localVideoBlob && (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm z-40 rounded-xl">
