@@ -24,7 +24,9 @@
     "migration:revert": "npm run typeorm migration:revert -- -d src/data-source.ts",
     "script:wipe-recordings": "ts-node -r dotenv/config scripts/wipe-recordings.ts",
     "script:email-video-editor-launch": "ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts",
-    "script:email-video-editor-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts"
+    "script:email-video-editor-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts",
+    "script:email-auto-zoom-launch": "ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts",
+    "script:email-auto-zoom-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
