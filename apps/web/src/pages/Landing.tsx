@@ -104,7 +104,7 @@ const jsonLd = {
             name: 'How to use SnapRec - Screen recorder & screenshot tool',
             description: 'Learn how to record your screen in 4K, capture full-page screenshots, annotate, and share — all free with SnapRec.',
             thumbnailUrl: 'https://img.youtube.com/vi/tEY5kA97Zq8/maxresdefault.jpg',
-            uploadDate: '2026-02-01',
+            uploadDate: '2026-02-01T08:00:00+08:00',
             contentUrl: 'https://www.youtube.com/watch?v=tEY5kA97Zq8',
             embedUrl: 'https://www.youtube.com/embed/tEY5kA97Zq8',
             duration: 'PT1M30S',
