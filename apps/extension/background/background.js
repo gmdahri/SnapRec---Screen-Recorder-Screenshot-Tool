@@ -8,6 +8,8 @@ importScripts('utils/storage.js');
 importScripts('auth.js');
 
 // Single consolidated message listener
+let recordingMetadata = []; // Store metadata chunks during recording
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const version = chrome.runtime.getManifest().version;
     console.log(`[SnapRec v${version}] Background received message:`, message.action);
@@ -120,6 +122,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false;
         case 'offscreen_uploadError':
             console.error('[SnapRec] Offscreen encountered upload error:', message.error);
+            return false;
+        case 'recordMetadataChunks':
+            if (message.chunks && Array.isArray(message.chunks)) {
+                recordingMetadata.push(...message.chunks);
+            }
             return false;
         default:
             // Unknown action - don't keep channel open
@@ -615,6 +622,7 @@ async function startRecording(options) {
 
         // Store the recording tab ID for navigation tracking
         recordingTabId = tab.id;
+        recordingMetadata = []; // Reset metadata for new recording
 
         try {
             // Step 1: Create offscreen document and show screen picker
@@ -811,10 +819,10 @@ async function handleRecordingComplete() {
         };
 
         // Core injection function (uses cached data if available)
-        const attemptInjection = (blobArray, mimeType) => {
+        const attemptInjection = (blobArray, mimeType, metadataArray) => {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                func: (blobArray, mimeType, id) => {
+                func: (blobArray, mimeType, id, metadataStr) => {
                     console.log('Injected script: reconstructing blob in web page context, size:', blobArray.length);
 
                     // Reconstruct the Blob from the byte array
@@ -841,6 +849,7 @@ async function handleRecordingComplete() {
                             store.put(blob, 'latest_video_blob');
                             store.put(id, 'latest_id');
                             store.put(Date.now(), 'latest_video_timestamp');
+                            store.put(metadataStr, 'latest_metadata'); // Store metadata
 
                             transaction.oncomplete = () => {
                                 console.log('Injected script: blob stored in web page IDB, signaling React app');
@@ -878,7 +887,7 @@ async function handleRecordingComplete() {
                         }, '*');
                     }
                 },
-                args: [blobArray, mimeType, recordingId]
+                args: [blobArray, mimeType, recordingId, JSON.stringify(metadataArray)]
             }).then(() => {
                 console.log('[SnapRec] Blob injection into web page context successful');
                 cleanupAfterSuccess();
@@ -901,7 +910,7 @@ async function handleRecordingComplete() {
                 // If we already have cached blob data from a previous attempt, reuse it
                 if (cachedBlobArray) {
                     console.log('[SnapRec] Using cached blob data for retry');
-                    attemptInjection(cachedBlobArray, cachedMimeType);
+                    attemptInjection(cachedBlobArray, cachedMimeType, recordingMetadata);
                     return;
                 }
 
@@ -912,7 +921,7 @@ async function handleRecordingComplete() {
                         // Cache for retries
                         cachedBlobArray = blobResponse.blobArray;
                         cachedMimeType = blobResponse.mimeType;
-                        attemptInjection(cachedBlobArray, cachedMimeType);
+                        attemptInjection(cachedBlobArray, cachedMimeType, recordingMetadata);
                     } else {
                         console.warn('[SnapRec] ArrayBuffer retrieval failed:', blobResponse?.error);
                         // Don't cleanup yet — the offscreen might still be initializing

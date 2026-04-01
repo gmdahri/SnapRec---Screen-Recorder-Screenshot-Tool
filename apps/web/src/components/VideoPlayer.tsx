@@ -26,10 +26,11 @@ interface VideoPlayerProps {
   /** Controlled preview speed; when set, syncs HTMLVideoElement and speed menu. */
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
+  zoomStyle?: React.CSSProperties;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer(
-  { src, isProcessing, onPlaybackUpdate, playbackRange, playbackRate, onPlaybackRateChange },
+  { src, isProcessing, onPlaybackUpdate, playbackRange, playbackRate, onPlaybackRateChange, zoomStyle },
   ref,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -260,11 +261,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         ref={videoRef}
         src={src}
         className={`w-full h-full object-contain transition-opacity duration-500 ${isProcessing ? 'opacity-30' : 'opacity-100'}`}
+        style={zoomStyle}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onDurationChange={handleDurationChange}
         onCanPlay={handleDurationChange}
-        onSeeked={emitPlayback}
+        onSeeked={() => emitPlayback()}
         onClick={togglePlay}
         playsInline
         preload="auto"

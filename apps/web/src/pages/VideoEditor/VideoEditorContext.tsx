@@ -103,6 +103,9 @@ interface VideoEditorContextValue {
   requestUnsavedLeave: (absoluteHref: string) => void;
   cancelUnsavedLeave: () => void;
   confirmUnsavedLeave: () => void;
+  autoZoom: boolean;
+  setAutoZoom: (v: boolean) => void;
+  metadata: any[];
 }
 
 const Ctx = createContext<VideoEditorContextValue | null>(null);
@@ -213,6 +216,18 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [localModifyStatus, setLocalModifyStatus] = useState<'idle' | 'working' | 'error'>('idle');
   const [localModifyError, setLocalModifyError] = useState<string | null>(null);
   const [localEffectsApplied, setLocalEffectsApplied] = useState<string[]>([]);
+  const [autoZoom, setAutoZoom] = useState(true);
+  const [metadata, setMetadata] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('snaprec_local_metadata');
+      if (stored) {
+        setMetadata(JSON.parse(stored));
+      }
+    } catch(e) {}
+  }, [currentProjectId]);
+
   const applyLocalEffect = useCallback((name: string) => {
     setLocalEffectsApplied((prev) => (prev.includes(name) ? prev : [...prev, name]));
   }, []);
@@ -417,7 +432,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setLocalModifyError(null);
     setLocalModifyStatus('working');
     try {
-      const blob = await recordVideoSegmentToWebm(src, start, end);
+      const blob = await recordVideoSegmentToWebm(src, start, end, {
+        autoZoom,
+        metadata,
+      });
       revokeWorkingVideoBlob();
       const url = URL.createObjectURL(blob);
       workingVideoBlobUrlRef.current = url;
@@ -443,6 +461,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     trimEndSec,
     revokeWorkingVideoBlob,
     setStagedExport,
+    autoZoom,
+    metadata,
   ]);
 
   const hasUnsavedChanges = useMemo(() => {
@@ -599,6 +619,9 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       requestUnsavedLeave,
       cancelUnsavedLeave,
       confirmUnsavedLeave,
+      autoZoom,
+      setAutoZoom,
+      metadata,
     }),
     [
       screen,
@@ -648,6 +671,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       requestUnsavedLeave,
       cancelUnsavedLeave,
       confirmUnsavedLeave,
+      autoZoom,
+      metadata,
     ],
   );
 
