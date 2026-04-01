@@ -58,7 +58,7 @@ const ShareView: React.FC = () => {
 
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
-    const [localMetadata, setLocalMetadata] = useState<any[] | null>(null);
+    const [, setLocalMetadata] = useState<any[] | null>(null);
     // Guard against race condition: if the message handler has already set the blob,
     // don't let the initial useEffect's async callback overwrite it with stale data
     const videoBlobSetByMessage = React.useRef(false);

@@ -63,7 +63,6 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
     activeTool,
     setActiveTool,
     setWorkspace,
-    setMediaLibraryOpen,
     setRightDockTab,
     setExportModal,
     setShareModal,
