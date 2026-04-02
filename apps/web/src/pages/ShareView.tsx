@@ -58,13 +58,14 @@ const ShareView: React.FC = () => {
 
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
+    const [, setLocalMetadata] = useState<any[] | null>(null);
     // Guard against race condition: if the message handler has already set the blob,
     // don't let the initial useEffect's async callback overwrite it with stale data
     const videoBlobSetByMessage = React.useRef(false);
 
     // Helper: Initialize from fallback DB if memory is wiped (e.g., refresh)
     const loadFromIndexedDB = async () => {
-        return new Promise<{ blob: string | null, rawBlob: Blob | null, id: string | null }>((resolve) => {
+        return new Promise<{ blob: string | null, rawBlob: Blob | null, id: string | null, metadata: any[] | null }>((resolve) => {
             try {
                 // Ensure version 2 is used to match background injection version
                 const request = indexedDB.open('SnapRecDB', 2);
@@ -79,7 +80,7 @@ const ShareView: React.FC = () => {
                 request.onsuccess = (e: any) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('recordings')) {
-                        resolve({ blob: null, rawBlob: null, id: null });
+                        resolve({ blob: null, rawBlob: null, id: null, metadata: null });
                         return;
                     }
                     const transaction = db.transaction(['recordings'], 'readwrite');
@@ -92,13 +93,14 @@ const ShareView: React.FC = () => {
                         if (timestamp && (Date.now() - timestamp) > VIDEO_TTL_MS) {
                             console.log('IDB video data expired (older than 1 hour), clearing');
                             store.clear();
-                            resolve({ blob: null, rawBlob: null, id: null });
+                            resolve({ blob: null, rawBlob: null, id: null, metadata: null });
                             return;
                         }
 
                         let dbBlob: string | null = null;
                         let dbRawBlob: Blob | null = null;
                         let dbId: string | null = null;
+                        let dbMetadata: any[] | null = null;
 
                         // First try the new raw Blob key
                         store.get('latest_video_blob').onsuccess = (blobEv: any) => {
@@ -111,17 +113,27 @@ const ShareView: React.FC = () => {
                                 dbBlob = ev.target.result;
                                 store.get('latest_id').onsuccess = (idEv: any) => {
                                     dbId = idEv.target.result;
-                                    resolve({ blob: dbBlob, rawBlob: dbRawBlob, id: dbId });
+                                    
+                                    store.get('latest_metadata').onsuccess = (metaEv: any) => {
+                                        if (metaEv.target.result) {
+                                            try {
+                                                dbMetadata = JSON.parse(metaEv.target.result);
+                                            } catch (e) {
+                                                console.warn('Failed to parse legacy metadata', e);
+                                            }
+                                        }
+                                        resolve({ blob: dbBlob, rawBlob: dbRawBlob, id: dbId, metadata: dbMetadata });
+                                    };
                                 };
                             };
                         };
                     };
-                    transaction.onerror = () => resolve({ blob: null, rawBlob: null, id: null });
+                    transaction.onerror = () => resolve({ blob: null, rawBlob: null, id: null, metadata: null });
                 };
-                request.onerror = () => resolve({ blob: null, rawBlob: null, id: null });
+                request.onerror = () => resolve({ blob: null, rawBlob: null, id: null, metadata: null });
             } catch (err) {
                 console.warn('IDB fallback load failed', err);
-                resolve({ blob: null, rawBlob: null, id: null });
+                resolve({ blob: null, rawBlob: null, id: null, metadata: null });
             }
         });
     };
@@ -149,9 +161,16 @@ const ShareView: React.FC = () => {
             applyBlob(storedBlobUrl);
         } else {
             // Attempt resilient fallback if session storage is wiped on refresh
-            loadFromIndexedDB().then(({ blob, rawBlob, id }) => {
+            loadFromIndexedDB().then(({ blob, rawBlob, id, metadata }) => {
                 // Don't overwrite if the message handler has already set a fresh blob
                 if (videoBlobSetByMessage.current) return;
+
+                if (metadata) {
+                    setLocalMetadata(metadata);
+                    try {
+                        sessionStorage.setItem('snaprec_local_metadata', JSON.stringify(metadata));
+                    } catch (e) {}
+                }
 
                 // Prefer raw Blob (new path) over base64 string (legacy path)
                 if (rawBlob) {
@@ -222,7 +241,7 @@ const ShareView: React.FC = () => {
 
     // Extension Message Listener for local video data
     useEffect(() => {
-        const loadBlobFromIDB = (): Promise<Blob | null> => {
+        const loadBlobAndMetadataFromIDB = (): Promise<{ blob: Blob | null, metadata: any[] | null }> => {
             return new Promise((resolve) => {
                 try {
                     const request = indexedDB.open('SnapRecDB', 2);
@@ -237,7 +256,7 @@ const ShareView: React.FC = () => {
                     request.onsuccess = (e: any) => {
                         const db = e.target.result;
                         if (!db.objectStoreNames.contains('recordings')) {
-                            resolve(null);
+                            resolve({ blob: null, metadata: null });
                             return;
                         }
                         const transaction = db.transaction(['recordings'], 'readonly');
@@ -246,18 +265,29 @@ const ShareView: React.FC = () => {
 
                         getReq.onsuccess = () => {
                             const result = getReq.result;
+                            let finalBlob: Blob | null = null;
                             if (result instanceof Blob) {
-                                resolve(result);
-                            } else {
-                                resolve(null);
+                                finalBlob = result;
                             }
+                            
+                            const getMeta = store.get('latest_metadata');
+                            getMeta.onsuccess = () => {
+                                let metadata = null;
+                                if (getMeta.result) {
+                                    try {
+                                        metadata = JSON.parse(getMeta.result);
+                                    } catch (e) {}
+                                }
+                                resolve({ blob: finalBlob, metadata });
+                            };
+                            getMeta.onerror = () => resolve({ blob: finalBlob, metadata: null });
                         };
-                        getReq.onerror = () => resolve(null);
+                        getReq.onerror = () => resolve({ blob: null, metadata: null });
                     };
-                    request.onerror = () => resolve(null);
+                    request.onerror = () => resolve({ blob: null, metadata: null });
                 } catch (err) {
                     console.warn('Failed to load blob from IDB', err);
-                    resolve(null);
+                    resolve({ blob: null, metadata: null });
                 }
             });
         };
@@ -269,7 +299,15 @@ const ShareView: React.FC = () => {
                 // New IDB path: blob was stored directly in IndexedDB by the injected script
                 if (event.data.fromIDB) {
                     console.log('Loading video blob from IndexedDB (no base64 conversion)...');
-                    const blob = await loadBlobFromIDB();
+                    const { blob, metadata } = await loadBlobAndMetadataFromIDB();
+                    
+                    if (metadata) {
+                        setLocalMetadata(metadata);
+                        try {
+                            sessionStorage.setItem('snaprec_local_metadata', JSON.stringify(metadata));
+                        } catch (e) {}
+                    }
+                    
                     if (blob) {
                         const blobUrl = URL.createObjectURL(blob);
                         console.log('Video blob loaded from IDB, size:', blob.size, 'type:', blob.type);

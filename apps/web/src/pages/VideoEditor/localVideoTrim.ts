@@ -6,6 +6,10 @@ export async function recordVideoSegmentToWebm(
   src: string,
   startSec: number,
   endSec: number,
+  options?: {
+    metadata?: any[];
+    autoZoom?: boolean;
+  }
 ): Promise<Blob> {
   const lo = Math.max(0, startSec);
   const hi = Math.max(lo + 0.15, endSec);
@@ -38,7 +42,24 @@ export async function recordVideoSegmentToWebm(
     video.onerror = () => reject(new Error('Seek failed'));
   });
 
-  const stream = video.captureStream();
+  const width = video.videoWidth || 1920;
+  const height = video.videoHeight || 1080;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) throw new Error('Canvas 2D context failed');
+
+  let stream: MediaStream;
+  const useZoom = options?.autoZoom && options.metadata && options.metadata.length > 0;
+  
+  if (useZoom) {
+    stream = canvas.captureStream(30); // 30 FPS fallback, though drawing loop drives it
+  } else {
+    stream = (video as any).captureStream();
+  }
+
   if (!stream.getVideoTracks().length) {
     throw new Error('Cannot capture this video (try Export → stage a file, then Save).');
   }
@@ -64,6 +85,81 @@ export async function recordVideoSegmentToWebm(
         }
         return;
       }
+
+      const currentMs = video.currentTime * 1000;
+      
+      if (useZoom) {
+        let currentWidth = width;
+        let currentHeight = height;
+        const meta = options.metadata!;
+        
+        for (const m of meta) {
+          if (m.timestamp > currentMs) break;
+          if (m.viewportWidth && m.viewportHeight) {
+            currentWidth = m.viewportWidth;
+            currentHeight = m.viewportHeight;
+          }
+        }
+
+        let latestClick = null;
+        for (let i = meta.length - 1; i >= 0; i--) {
+          if (meta[i].timestamp <= currentMs && meta[i].type === 'mousedown') {
+            latestClick = meta[i];
+            break;
+          }
+        }
+
+        const ZOOM_DURATION_MS = 3000;
+        const TRANSITION_MS = 500;
+        let scale = 1.0;
+        let px = 0.5;
+        let py = 0.5;
+
+        if (latestClick) {
+            const timeSince = currentMs - latestClick.timestamp;
+            if (timeSince < ZOOM_DURATION_MS) {
+                px = latestClick.x / currentWidth;
+                py = latestClick.y / currentHeight;
+
+                if (timeSince < TRANSITION_MS) {
+                    // Zooming in (ease out)
+                    const p = timeSince / TRANSITION_MS;
+                    const ease = 1 - Math.pow(1 - p, 3);
+                    scale = 1.0 + (0.3 * ease);
+                } else if (timeSince > ZOOM_DURATION_MS - TRANSITION_MS) {
+                    // Zooming out (ease in)
+                    const timeOut = timeSince - (ZOOM_DURATION_MS - TRANSITION_MS);
+                    const p = Math.max(0, Math.min(1, timeOut / TRANSITION_MS));
+                    const ease = Math.pow(p, 3);
+                    scale = 1.3 - (0.3 * ease);
+                } else {
+                    // Fully zoomed
+                    scale = 1.3;
+                }
+            }
+        }
+
+        ctx.save();
+        ctx.clearRect(0, 0, width, height);
+
+        if (scale > 1.0) {
+           const clampedX = Math.max(0.15, Math.min(0.85, px));
+           const clampedY = Math.max(0.15, Math.min(0.85, py));
+           
+           const originX = clampedX * width;
+           const originY = clampedY * height;
+
+           ctx.translate(originX, originY);
+           ctx.scale(scale, scale);
+           ctx.translate(-originX, -originY);
+        }
+
+        ctx.drawImage(video, 0, 0, width, height);
+        ctx.restore();
+      }
+
+      // If !useZoom we don't need to manually draw; raw video captureStream is already pushing data.
+      
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);

@@ -104,7 +104,7 @@ const jsonLd = {
             name: 'How to use SnapRec - Screen recorder & screenshot tool',
             description: 'Learn how to record your screen in 4K, capture full-page screenshots, annotate, and share — all free with SnapRec.',
             thumbnailUrl: 'https://img.youtube.com/vi/tEY5kA97Zq8/maxresdefault.jpg',
-            uploadDate: '2026-02-01',
+            uploadDate: '2026-02-01T08:00:00+08:00',
             contentUrl: 'https://www.youtube.com/watch?v=tEY5kA97Zq8',
             embedUrl: 'https://www.youtube.com/embed/tEY5kA97Zq8',
             duration: 'PT1M30S',
@@ -150,7 +150,7 @@ const Landing: React.FC = () => {
                 url="/"
                 title="Free Screen Recorder for Chrome — No Watermarks, 4K"
                 description="Record your screen in 4K with one click. Free Chrome extension — no watermarks, no time limits. Full-page screenshots, webcam overlay, instant share. Try SnapRec free."
-                keywords="free screen recorder, screen recorder chrome, chrome screen recorder, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, screen recorder extension, screenshot tool chrome, full page screenshot, screen capture chrome"
+                keywords="free screen recorder, screen recorder chrome, chrome screen recorder, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, screen recorder extension, screenshot tool chrome, full page screenshot, screen capture chrome, auto zoom screen recorder, cinematic screen recording, screen recorder for youtube, how to record gameplay on pc, screen recorder for gaming, record zoom meeting free, tutorial video maker free, screen recorder for teachers, software demo recorder, loom alternative free, free alternative to loom, best screen recorder without watermark, top free screen recorders for pc, best screenshot annotation tool"
                 jsonLd={jsonLd}
             />
             <LandingNavbar />
@@ -325,6 +325,26 @@ const Landing: React.FC = () => {
                                 <p className="font-medium leading-relaxed max-w-lg">
                                     Tag, categorize, and search through your entire video knowledge base. Never lose a valuable screen capture again.
                                 </p>
+                            </div>
+
+                            {/* Feature 5: New Auto-Zoom */}
+                            <div className="md:col-span-12 bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-2xl hover:shadow-3xl transition-all duration-500 flex flex-col md:flex-row justify-between items-center gap-12 group overflow-hidden relative">
+                                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/30 transition-colors duration-700"></div>
+                                <div className="w-full md:w-1/2 relative z-10">
+                                    <div className="inline-block px-4 py-1.5 bg-primary/20 text-primary-light font-bold text-xs rounded-full uppercase tracking-widest mb-6 border border-primary/30">Just Released</div>
+                                    <h3 className="text-3xl md:text-4xl font-black mb-5 tracking-tight">AI-Powered Auto-Zoom</h3>
+                                    <p className="text-slate-300 font-medium leading-relaxed text-lg mb-6">
+                                        Stop wasting hours editing your tutorials. SnapRec intelligently tracks your mouse interactions while recording and automatically scales and pans the camera directly to your clicks. 
+                                    </p>
+                                    <p className="text-slate-400 font-medium text-sm">
+                                        Get cinematic, highly-produced videos instantly in your browser — zero editing skills required.
+                                    </p>
+                                </div>
+                                <div className="w-full md:w-1/2 flex justify-center relative z-10">
+                                    <div className="size-48 rounded-full border border-primary/20 bg-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-700 shadow-[0_0_80px_rgba(124,58,237,0.3)] backdrop-blur-xl">
+                                        <span className="material-symbols-outlined text-[80px] text-primary group-hover:animate-pulse">center_focus_strong</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

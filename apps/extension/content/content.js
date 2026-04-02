@@ -46,10 +46,12 @@
                 return true; // Keep channel open for async response
             case 'showRecordingOverlay':
                 showRecordingOverlay(message.startTime, message.webcam);
+                startMetadataTracking();
                 sendResponse({ success: true });
                 return false; // Response already sent synchronously
             case 'hideRecordingOverlay':
                 hideRecordingOverlay();
+                stopMetadataTracking();
                 sendResponse({ success: true });
                 return false; // Response already sent synchronously
             case 'showMiniPreview':
@@ -69,6 +71,9 @@
             if (changes.isRecording.newValue === false && recordingOverlay) {
                 console.log('[SnapRec Content] Recording stopped (via storage), hiding overlay');
                 hideRecordingOverlay();
+                stopMetadataTracking();
+            } else if (changes.isRecording.newValue === true) {
+                startMetadataTracking();
             }
         }
     });
@@ -598,6 +603,112 @@
         isPaused = false;
         recordingSeconds = 0;
         stopWebcam();
+    }
+
+    // --- Metadata Tracking (Auto-Zoom) ---
+    let trackingInterval = null;
+    let eventBuffer = [];
+    let isTracking = false;
+    let trackingStartTime = 0;
+
+    function startMetadataTracking() {
+        if (isTracking) return;
+        isTracking = true;
+        trackingStartTime = Date.now();
+        eventBuffer = [];
+        console.log('[SnapRec Content] Started metadata tracking');
+
+        document.addEventListener('mousemove', onTrackingMouseMove, { passive: true });
+        document.addEventListener('mousedown', onTrackingMouseDown, { passive: true });
+        document.addEventListener('scroll', onTrackingScroll, { passive: true });
+        window.addEventListener('resize', onTrackingResize, { passive: true });
+
+        // Flush buffer every 500ms
+        trackingInterval = setInterval(flushMetadataBuffer, 500);
+    }
+
+    function stopMetadataTracking() {
+        if (!isTracking) return;
+        isTracking = false;
+        console.log('[SnapRec Content] Stopped metadata tracking');
+        
+        document.removeEventListener('mousemove', onTrackingMouseMove);
+        document.removeEventListener('mousedown', onTrackingMouseDown);
+        document.removeEventListener('scroll', onTrackingScroll);
+        window.removeEventListener('resize', onTrackingResize);
+
+        if (trackingInterval) {
+            clearInterval(trackingInterval);
+            trackingInterval = null;
+        }
+
+        flushMetadataBuffer(); // Final flush
+    }
+
+    function createEventPayload(type, e) {
+        return {
+            type,
+            timestamp: Date.now() - trackingStartTime,
+            x: e.clientX,
+            y: e.clientY,
+            scrollY: window.scrollY,
+            scrollX: window.scrollX,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+        };
+    }
+
+    let lastMouseMove = 0;
+    function onTrackingMouseMove(e) {
+        const now = Date.now();
+        if (now - lastMouseMove > 50) { // ~20fps
+            eventBuffer.push(createEventPayload('mousemove', e));
+            lastMouseMove = now;
+        }
+    }
+
+    function onTrackingMouseDown(e) {
+        eventBuffer.push(createEventPayload('mousedown', e));
+    }
+
+    let lastScroll = 0;
+    function onTrackingScroll(e) {
+        const now = Date.now();
+        if (now - lastScroll > 100) { // ~10fps
+            eventBuffer.push({
+                type: 'scroll',
+                timestamp: now - trackingStartTime,
+                scrollY: window.scrollY,
+                scrollX: window.scrollX,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+            });
+            lastScroll = now;
+        }
+    }
+
+    function onTrackingResize(e) {
+        eventBuffer.push({
+            type: 'resize',
+            timestamp: Date.now() - trackingStartTime,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+        });
+    }
+
+    function flushMetadataBuffer() {
+        if (eventBuffer.length === 0) return;
+
+        try {
+            chrome.runtime.sendMessage({
+                action: 'recordMetadataChunks',
+                chunks: eventBuffer
+            });
+        } catch (e) {
+            console.warn('[SnapRec] Could not send metadata (context invalidated?):', e);
+        }
+
+        eventBuffer = [];
     }
 
     // Countdown Timer

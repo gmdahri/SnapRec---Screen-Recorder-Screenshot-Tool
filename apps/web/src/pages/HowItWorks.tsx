@@ -124,7 +124,7 @@ const HowItWorks: React.FC = () => {
                 url="/how-it-works"
                 title="How to Record Your Screen & Take Screenshots in Chrome"
                 description="Learn how to use SnapRec to record your screen in 4K, capture full-page screenshots, annotate images, and share via link — all free, no watermarks, in Chrome, Edge, or Brave."
-                keywords="how to record screen chrome, how to take full page screenshot, screen recording tutorial, chrome screenshot extension, how to capture screen, free screen recorder chrome, 4k screen recorder free, screen capture tool, chrome screen recorder extension, best screenshot extension, screen recorder extension free"
+                keywords="how to record screen chrome, how to take full page screenshot, screen recording tutorial, chrome screenshot extension, how to capture screen, free screen recorder chrome, 4k screen recorder free, screen capture tool, chrome screen recorder extension, best screenshot extension, screen recorder extension free, how to make a tutorial video, record bug report video, record presentation with face, easiest way to record screen, highest quality screen recorder, screen recorder that follows mouse, auto zooming screen recorder, dynamic screen recording software, best way to record screen for tutorials"
                 jsonLd={howToJsonLd}
             />
             <LandingNavbar />

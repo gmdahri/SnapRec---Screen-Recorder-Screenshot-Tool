@@ -77,9 +77,13 @@ function PropertiesPanelCore({
 function PropertiesPanel({
   playbackRate,
   onPlaybackRateChange,
+  autoZoom,
+  setAutoZoom,
 }: {
   playbackRate: number;
   onPlaybackRateChange: (r: number) => void;
+  autoZoom: boolean;
+  setAutoZoom: (v: boolean) => void;
 }) {
   return (
     <div className="p-4 overflow-y-auto min-h-0 flex-1">
@@ -102,6 +106,18 @@ function PropertiesPanel({
           <span className="text-sm font-semibold">Noise reduction</span>
           <span className="text-xs text-primary">On</span>
         </div>
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
+          <span className="text-sm font-semibold">Auto-Zoom (Beta)</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="sr-only peer" 
+              checked={autoZoom}
+              onChange={(e) => setAutoZoom(e.target.checked)}
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-primary"></div>
+          </label>
+        </div>
       </div>
     </div>
   );
@@ -111,9 +127,13 @@ function PropertiesPanel({
 function LeftDockTabs({
   playbackRate,
   setPlaybackRate,
+  autoZoom,
+  setAutoZoom,
 }: {
   playbackRate: number;
   setPlaybackRate: (r: number) => void;
+  autoZoom: boolean;
+  setAutoZoom: (v: boolean) => void;
 }) {
   const { rightDockTab, setRightDockTab } = useVideoEditor();
   return (
@@ -149,7 +169,7 @@ function LeftDockTabs({
       {rightDockTab === 'mediaGallery' ? (
         <MediaGalleryTabContent />
       ) : (
-        <PropertiesPanel playbackRate={playbackRate} onPlaybackRateChange={setPlaybackRate} />
+        <PropertiesPanel playbackRate={playbackRate} onPlaybackRateChange={setPlaybackRate} autoZoom={autoZoom} setAutoZoom={setAutoZoom} />
       )}
     </aside>
   );
@@ -157,16 +177,8 @@ function LeftDockTabs({
 
 function ToolRail({
   workspace,
-  playbackRate,
-  setPlaybackRate,
-  setMediaLibraryOpen,
-  addMediaToTimeline,
 }: {
   workspace: EditorWorkspaceType;
-  playbackRate: number;
-  setPlaybackRate: (r: number) => void;
-  setMediaLibraryOpen: (o: boolean) => void;
-  addMediaToTimeline: () => void;
 }) {
   if (workspace === 'effects') {
     return (
@@ -191,7 +203,6 @@ export function EditorWorkspace() {
     workspace,
     hasTimelineContent,
     addMediaToTimeline,
-    setMediaLibraryOpen,
     selectedClipId,
     clips,
     editorVideoSrc,
@@ -201,6 +212,9 @@ export function EditorWorkspace() {
     setEditorPlaybackTime,
     playbackRate,
     setPlaybackRate,
+    autoZoom,
+    setAutoZoom,
+    metadata,
   } = useVideoEditor();
 
   const onPlaybackUpdate = useCallback(
@@ -246,19 +260,73 @@ export function EditorWorkspace() {
     </div>
   );
 
+  // Calculate dynamic auto-zoom styling
+  const zoomStyle = React.useMemo(() => {
+    if (!autoZoom || metadata.length === 0) {
+      return { transition: 'transform 0.4s ease-in-out, transform-origin 0.4s ease-in-out', transform: 'scale(1)' };
+    }
+
+    const currentMs = playback.currentTime * 1000;
+    const ZOOM_DURATION_MS = 3000;
+    
+    // Find the current window size
+    let currentWidth = 1920;
+    let currentHeight = 1080;
+    for (const m of metadata) {
+      if (m.timestamp > currentMs) break;
+      if (m.viewportWidth && m.viewportHeight) {
+        currentWidth = m.viewportWidth;
+        currentHeight = m.viewportHeight;
+      }
+    }
+
+    // Find the *latest* click event
+    let latestClick = null;
+    for (let i = metadata.length - 1; i >= 0; i--) {
+      // The content script tracks clicks as 'mousedown'
+      if (metadata[i].timestamp <= currentMs && metadata[i].type === 'mousedown') {
+        latestClick = metadata[i];
+        break;
+      }
+    }
+
+    // Determine if we should be zoomed in right now
+    const isZoomedIn = latestClick && (currentMs - latestClick.timestamp) < ZOOM_DURATION_MS;
+
+    if (!isZoomedIn) {
+      return { transition: 'transform 0.5s ease-in-out, transform-origin 0.5s ease-in-out', transform: 'scale(1)' };
+    }
+
+    // Convert click pixels to percentage origin
+    const originX = Math.max(0, Math.min(100, (latestClick.x / currentWidth) * 100));
+    const originY = Math.max(0, Math.min(100, (latestClick.y / currentHeight) * 100));
+
+    // Clamp the transform origin to avoid pushing the video edge past the canvas edge
+    // A scale of 1.3 means we can shift the origin roughly to 15% - 85% to keep edges covered.
+    const clampedX = Math.max(15, Math.min(85, originX));
+    const clampedY = Math.max(15, Math.min(85, originY));
+
+    return {
+      transition: 'transform 0.5s ease-in-out, transform-origin 0.5s ease-in-out',
+      transform: 'scale(1.3)',
+      transformOrigin: `${clampedX}% ${clampedY}%`,
+    };
+  }, [autoZoom, metadata, playback.currentTime]);
+
   return (
     <main className="flex-1 flex min-w-0 min-h-0">
       {showLeftDock ? (
-        <LeftDockTabs playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} />
+        <LeftDockTabs playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} autoZoom={autoZoom} setAutoZoom={setAutoZoom} />
       ) : null}
       <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-slate-100">
-        <div className="flex-1 flex items-center justify-center p-6 min-h-[200px] min-w-0">
+        <div className="flex-1 flex items-center justify-center p-6 min-h-[200px] min-w-0 overflow-hidden">
           {editorVideoSrc ? (
-            <CanvasSlot className="shadow-xl">
+            <CanvasSlot className="shadow-xl relative overflow-hidden">
               <VideoPlayer
                 key={editorVideoSrc}
                 ref={playerRef}
                 src={editorVideoSrc}
+                zoomStyle={zoomStyle}
                 onPlaybackUpdate={onPlaybackUpdate}
                 playbackRange={trimRange}
                 playbackRate={playbackRate}
@@ -299,10 +367,6 @@ export function EditorWorkspace() {
       {toolRailOnly ? (
         <ToolRail
           workspace={workspace}
-          playbackRate={playbackRate}
-          setPlaybackRate={setPlaybackRate}
-          setMediaLibraryOpen={setMediaLibraryOpen}
-          addMediaToTimeline={addMediaToTimeline}
         />
       ) : null}
     </main>
