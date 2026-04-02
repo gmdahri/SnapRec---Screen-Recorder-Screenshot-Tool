@@ -150,7 +150,7 @@ const Landing: React.FC = () => {
                 url="/"
                 title="Free Screen Recorder for Chrome — No Watermarks, 4K"
                 description="Record your screen in 4K with one click. Free Chrome extension — no watermarks, no time limits. Full-page screenshots, webcam overlay, instant share. Try SnapRec free."
-                keywords="free screen recorder, screen recorder chrome, chrome screen recorder, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, screen recorder extension, screenshot tool chrome, full page screenshot, screen capture chrome"
+                keywords="free screen recorder, screen recorder chrome, chrome screen recorder, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, screen recorder extension, screenshot tool chrome, full page screenshot, screen capture chrome, auto zoom screen recorder, cinematic screen recording, screen recorder for youtube, how to record gameplay on pc, screen recorder for gaming, record zoom meeting free, tutorial video maker free, screen recorder for teachers, software demo recorder, loom alternative free, free alternative to loom, best screen recorder without watermark, top free screen recorders for pc, best screenshot annotation tool"
                 jsonLd={jsonLd}
             />
             <LandingNavbar />
