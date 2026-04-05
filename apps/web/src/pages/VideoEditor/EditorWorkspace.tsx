@@ -3,7 +3,7 @@ import { getActiveZoom } from './zoomUtils';
 import { useVideoEditor } from './VideoEditorContext';
 import { VideoPlayer, type VideoPlayerHandle, type VideoPlayerPlayback } from '../../components/VideoPlayer';
 import { EditorTimeline } from './EditorTimeline';
-import type { EditorWorkspace as EditorWorkspaceType, ZoomKeyframe } from './types';
+import type { EditorWorkspace as EditorWorkspaceType } from './types';
 import { MediaGalleryTabContent } from './MediaLibraryPanel';
 import { ZoomSidebar } from './ZoomSidebar';
 

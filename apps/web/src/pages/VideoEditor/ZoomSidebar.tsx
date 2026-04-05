@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useVideoEditor } from './VideoEditorContext';
 import type { ZoomKeyframe } from './types';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer';
