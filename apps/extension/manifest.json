@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Screen Recorder & Screenshot - SnapRec",
-  "version": "1.2.7",
-  "description": "Record your screen, capture full webpages, annotate screenshots, and share instantly with this Chrome recording tool.",
+  "version": "1.2.8",
+  "description": "Screen recorder & full page screenshot tool. Record in 4K, annotate with blur/arrows/text, add webcam overlay, and share instantly.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -25,28 +25,28 @@
         "default": "Ctrl+Shift+1",
         "mac": "Command+Shift+1"
       },
-      "description": "Capture full page screenshot"
+      "description": "SnapRec: Capture full page screenshot"
     },
     "capture-region": {
       "suggested_key": {
         "default": "Ctrl+Shift+2",
         "mac": "Command+Shift+2"
       },
-      "description": "Capture area/region screenshot"
+      "description": "SnapRec: Capture selected region screenshot"
     },
     "capture-visible": {
       "suggested_key": {
         "default": "Ctrl+Shift+3",
         "mac": "Command+Shift+3"
       },
-      "description": "Capture visible area screenshot"
+      "description": "SnapRec: Capture visible area screenshot"
     },
     "start-recording": {
       "suggested_key": {
         "default": "Ctrl+Shift+4",
         "mac": "Command+Shift+4"
       },
-      "description": "Start screen recording"
+      "description": "SnapRec: Start screen recording"
     }
   },
   "permissions": [

@@ -64,7 +64,7 @@ async function initUpdateBanner() {
     updateBtn.textContent = 'Checking...';
     updateBtn.disabled = true;
 
-    const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/bbddmnmffamnnidcdhnflpbdkckhhacj';
+    const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg';
 
     try {
       // Request Chrome to check for and download the update from the Web Store
@@ -271,8 +271,11 @@ async function loadRecentCaptures() {
 // Review Banner
 async function initReviewBanner() {
   try {
-    const { captureCount = 0, reviewDismissed = false } = await chrome.storage.local.get(['captureCount', 'reviewDismissed']);
-    if (captureCount < 3 || reviewDismissed) return;
+    const { captureCount = 0, reviewDismissed = false, reviewDeferredAt = 0 } =
+      await chrome.storage.local.get(['captureCount', 'reviewDismissed', 'reviewDeferredAt']);
+
+    const deferred = captureCount < reviewDeferredAt + 10;
+    if (captureCount < 3 || reviewDismissed || deferred) return;
 
     const banner = document.getElementById('reviewBanner');
     banner.classList.remove('hidden');
@@ -283,7 +286,7 @@ async function initReviewBanner() {
     });
 
     document.getElementById('reviewDismissBtn').addEventListener('click', async () => {
-      await chrome.storage.local.set({ reviewDismissed: true });
+      await chrome.storage.local.set({ reviewDeferredAt: captureCount });
       banner.classList.add('hidden');
     });
   } catch (e) {

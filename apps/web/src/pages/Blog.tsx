@@ -173,7 +173,7 @@ const Blog: React.FC = () => {
                                 Ready to start recording?
                             </h2>
                             <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-                                Join thousands of users capturing their screens with SnapRec — 100% free, no watermarks, no limits.
+                                Capture your screen with SnapRec — 100% free, no watermarks, no limits.
                             </p>
                             <div className="flex justify-center">
                                 <AddToChromeButton variant="white" size="lg" />
