@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, AddToChromeButton, SEO } from '../components';
-import { useStats } from '../hooks/useRecordings';
 
 const faqs = [
     {
@@ -142,8 +141,6 @@ const FAQItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 };
 
 const Landing: React.FC = () => {
-    const { data: stats } = useStats();
-
     return (
         <div className="min-h-screen bg-white text-slate-900 font-display">
             <SEO
@@ -198,35 +195,25 @@ const Landing: React.FC = () => {
                     </div>
                 </section>
 
-                {/* Social Proof Stats */}
-                <section className="py-12 border-y border-slate-100">
+                {/* Trust Strip */}
+                <section className="py-10 border-y border-slate-100">
                     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                            <div>
-                                <p className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
-                                    {stats ? stats.users.toLocaleString() : '—'}
-                                </p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Users</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="material-symbols-outlined text-primary text-3xl">lock_open</span>
+                                <p className="text-slate-700 font-semibold text-sm">No account required</p>
                             </div>
-                            <div>
-                                <p className="text-3xl md:text-4xl font-black text-slate-900">
-                                    {stats ? stats.recordings.toLocaleString() : '—'}
-                                </p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Captures Created</p>
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="material-symbols-outlined text-primary text-3xl">money_off</span>
+                                <p className="text-slate-700 font-semibold text-sm">100% free, no watermarks</p>
                             </div>
-                            <div>
-                                <p className="text-3xl md:text-4xl font-black text-slate-900">
-                                    {stats ? stats.screenshots.toLocaleString() : '—'}
-                                </p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Screenshots</p>
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="material-symbols-outlined text-primary text-3xl">all_inclusive</span>
+                                <p className="text-slate-700 font-semibold text-sm">Unlimited recordings</p>
                             </div>
-                            <div>
-                                <p className="text-3xl md:text-4xl font-black text-slate-900">
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">
-                                        {stats ? stats.videos.toLocaleString() : '—'}
-                                    </span>
-                                </p>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Videos Recorded</p>
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="material-symbols-outlined text-primary text-3xl">link</span>
+                                <p className="text-slate-700 font-semibold text-sm">Share with one link</p>
                             </div>
                         </div>
                     </div>
