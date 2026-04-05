@@ -13,6 +13,8 @@ export type VideoPlayerHandle = {
   pause: () => void;
   /** Read clock from &lt;video&gt; so timeline playhead matches the element (avoids React/state desync). */
   readPlaybackFromMedia: () => { currentTime: number; duration: number } | null;
+  /** Direct access to the underlying HTMLVideoElement for imperative style updates (e.g. rAF zoom). */
+  getVideoElement: () => HTMLVideoElement | null;
 };
 
 interface VideoPlayerProps {
@@ -85,6 +87,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     },
     pause() {
       videoRef.current?.pause();
+    },
+    getVideoElement() {
+      return videoRef.current;
     },
   }));
 

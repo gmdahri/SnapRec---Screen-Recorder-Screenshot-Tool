@@ -16,6 +16,7 @@ import type {
   MediaLibraryTab,
   ProjectSummary,
   RightDockTab,
+  ZoomKeyframe,
 } from './types';
 import { fetchWithAuth, uploadFile } from '../../hooks/useRecordings';
 import { recordVideoSegmentToWebm } from './localVideoTrim';
@@ -106,6 +107,10 @@ interface VideoEditorContextValue {
   autoZoom: boolean;
   setAutoZoom: (v: boolean) => void;
   metadata: any[];
+  zoomKeyframes: ZoomKeyframe[];
+  addZoomKeyframe: (kf: ZoomKeyframe) => void;
+  updateZoomKeyframe: (id: string, patch: Partial<ZoomKeyframe>) => void;
+  deleteZoomKeyframe: (id: string) => void;
 }
 
 const Ctx = createContext<VideoEditorContextValue | null>(null);
@@ -218,6 +223,22 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [localEffectsApplied, setLocalEffectsApplied] = useState<string[]>([]);
   const [autoZoom, setAutoZoom] = useState(true);
   const [metadata, setMetadata] = useState<any[]>([]);
+  const [zoomKeyframes, setZoomKeyframes] = useState<ZoomKeyframe[]>([]);
+
+  const addZoomKeyframe = useCallback((kf: ZoomKeyframe) => {
+    setZoomKeyframes((prev) => [...prev, kf].sort((a, b) => a.timestamp - b.timestamp));
+  }, []);
+
+  const updateZoomKeyframe = useCallback((id: string, patch: Partial<ZoomKeyframe>) => {
+    setZoomKeyframes((prev) =>
+      prev.map((kf) => (kf.id === id ? { ...kf, ...patch } : kf))
+          .sort((a, b) => a.timestamp - b.timestamp),
+    );
+  }, []);
+
+  const deleteZoomKeyframe = useCallback((id: string) => {
+    setZoomKeyframes((prev) => prev.filter((kf) => kf.id !== id));
+  }, []);
 
   useEffect(() => {
     try {
@@ -227,6 +248,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       }
     } catch(e) {}
   }, [currentProjectId]);
+
+  useEffect(() => {
+    if (metadata.length === 0) setAutoZoom(false);
+  }, [metadata]);
 
   const applyLocalEffect = useCallback((name: string) => {
     setLocalEffectsApplied((prev) => (prev.includes(name) ? prev : [...prev, name]));
@@ -435,6 +460,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       const blob = await recordVideoSegmentToWebm(src, start, end, {
         autoZoom,
         metadata,
+        zoomKeyframes,
       });
       revokeWorkingVideoBlob();
       const url = URL.createObjectURL(blob);
@@ -622,6 +648,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       autoZoom,
       setAutoZoom,
       metadata,
+      zoomKeyframes,
+      addZoomKeyframe,
+      updateZoomKeyframe,
+      deleteZoomKeyframe,
     }),
     [
       screen,
@@ -673,6 +703,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       confirmUnsavedLeave,
       autoZoom,
       metadata,
+      zoomKeyframes,
+      addZoomKeyframe,
+      updateZoomKeyframe,
+      deleteZoomKeyframe,
     ],
   );
 

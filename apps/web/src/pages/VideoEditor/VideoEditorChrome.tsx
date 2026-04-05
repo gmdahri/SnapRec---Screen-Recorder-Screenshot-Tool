@@ -9,6 +9,7 @@ const tools: { id: EditorTool; name: string; disabled?: boolean }[] = [
   { id: 'media', name: 'Media' },
   { id: 'trim', name: 'Trim' },
   { id: 'speed', name: 'Speed' },
+  { id: 'zoom', name: 'Zoom' },
   { id: 'text', name: 'Text', disabled: true },
   { id: 'effects', name: 'Effects', disabled: true },
 ];
@@ -39,6 +40,13 @@ function ToolIcon({ id }: { id: EditorTool }) {
       return (
         <svg {...common} aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+        </svg>
+      );
+    case 'zoom':
+      return (
+        <svg {...common} aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 8v6M8 11h6" />
         </svg>
       );
     case 'effects':
@@ -86,6 +94,8 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
     } else if (t === 'speed') {
       setRightDockTab('properties');
       setWorkspace('speed');
+    } else if (t === 'zoom') {
+      setWorkspace('zoom');
     } else {
       setWorkspace('timeline');
     }
