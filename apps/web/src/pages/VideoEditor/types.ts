@@ -1,4 +1,4 @@
-export type EditorTool = 'media' | 'trim' | 'speed' | 'text' | 'effects';
+export type EditorTool = 'media' | 'trim' | 'speed' | 'zoom' | 'text' | 'effects';
 
 export type EditorWorkspace =
   | 'empty'
@@ -6,8 +6,18 @@ export type EditorWorkspace =
   | 'timeline'
   | 'trim'
   | 'speed'
+  | 'zoom'
   | 'clip'
   | 'effects';
+
+export interface ZoomKeyframe {
+  id: string;
+  timestamp: number;  // ms from video start
+  x: number;          // pivot X as % of video width (0–100)
+  y: number;          // pivot Y as % of video height (0–100)
+  scale: number;      // zoom level 1.1–3.0
+  duration: number;   // total zoom window in ms
+}
 
 export type ExportModalState = 'closed' | 'settings' | 'progress';
 

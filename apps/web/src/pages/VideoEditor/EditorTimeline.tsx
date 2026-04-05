@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { VideoPlayerHandle, VideoPlayerPlayback } from '../../components/VideoPlayer';
+import type { ZoomKeyframe } from './types';
 
 /** m:ss — total duration always plain (no tenths) so it never reads like extra “:04”) */
 function fmt(t: number, withTenths?: boolean) {
@@ -39,9 +40,12 @@ type Props = {
   compact?: boolean;
   trimStart?: number;
   trimEnd?: number;
+  zoomKeyframes?: ZoomKeyframe[];
+  autoZoomMarkers?: { timestamp: number }[];
+  onZoomMarkerClick?: (timestampSec: number) => void;
 };
 
-export function EditorTimeline({ playerRef, playback, clipName, compact, trimStart, trimEnd }: Props) {
+export function EditorTimeline({ playerRef, playback, clipName, compact, trimStart, trimEnd, zoomKeyframes, autoZoomMarkers, onZoomMarkerClick }: Props) {
   const { currentTime, duration, playing } = playback;
   const d = duration > 0 ? duration : 1;
 
@@ -210,6 +214,38 @@ export function EditorTimeline({ playerRef, playback, clipName, compact, trimSta
           })}
         </div>
       </div>
+
+      {/* Zoom marker layer — auto-zoom events (grey) + custom keyframes (violet) */}
+      {((autoZoomMarkers && autoZoomMarkers.length > 0) || (zoomKeyframes && zoomKeyframes.length > 0)) && (
+        <div className="h-5 border-b border-slate-100 relative bg-white shrink-0 overflow-hidden px-0">
+          {autoZoomMarkers?.map((m, i) => {
+            const p = dClock > 0 ? (m.timestamp / dClock) * 100 : 0;
+            return (
+              <button
+                key={i}
+                type="button"
+                title={`Auto-zoom at ${fmt(m.timestamp)}`}
+                onClick={() => onZoomMarkerClick?.(m.timestamp)}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-300 hover:bg-slate-400 transition-colors"
+                style={{ left: `${p}%` }}
+              />
+            );
+          })}
+          {zoomKeyframes?.map((kf) => {
+            const p = dClock > 0 ? (kf.timestamp / 1000 / dClock) * 100 : 0;
+            return (
+              <button
+                key={kf.id}
+                type="button"
+                title={`Zoom ×${kf.scale.toFixed(1)} at ${fmt(kf.timestamp / 1000)}`}
+                onClick={() => onZoomMarkerClick?.(kf.timestamp / 1000)}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary hover:opacity-80 transition-opacity ring-2 ring-white"
+                style={{ left: `${p}%` }}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 overflow-y-auto relative bg-slate-50/80 p-2">
         <div className="relative rounded-lg border border-slate-200 bg-slate-100 min-h-[48px] mb-2 overflow-hidden touch-none select-none">

@@ -611,11 +611,15 @@
     let isTracking = false;
     let trackingStartTime = 0;
 
+    let lastMouseDownTime = 0;
+    let scrollStopTimer = null;
+
     function startMetadataTracking() {
         if (isTracking) return;
         isTracking = true;
         trackingStartTime = Date.now();
         eventBuffer = [];
+        lastMouseDownTime = 0;
         console.log('[SnapRec Content] Started metadata tracking');
 
         document.addEventListener('mousemove', onTrackingMouseMove, { passive: true });
@@ -640,6 +644,11 @@
         if (trackingInterval) {
             clearInterval(trackingInterval);
             trackingInterval = null;
+        }
+
+        if (scrollStopTimer) {
+            clearTimeout(scrollStopTimer);
+            scrollStopTimer = null;
         }
 
         flushMetadataBuffer(); // Final flush
@@ -667,7 +676,28 @@
         }
     }
 
+    function isTextInputElement(el) {
+        if (!el) return false;
+        // Walk up the DOM — the click target may be a wrapper, label, or child of the input
+        const node = el.closest('input, textarea, select, [contenteditable]');
+        if (node) return true;
+        // Also catch custom components that relay focus to an input
+        const tag = el.tagName?.toLowerCase();
+        return tag === 'input' || tag === 'textarea' || tag === 'select';
+    }
+
     function onTrackingMouseDown(e) {
+        // Ignore right-click / middle-click
+        if (e.button !== 0) return;
+
+        // Ignore clicks inside text input elements — typing should not trigger zoom
+        if (isTextInputElement(e.target)) return;
+
+        // Debounce rapid successive clicks (double-click, triple-click) within 300ms
+        const now = Date.now();
+        if (now - lastMouseDownTime < 300) return;
+        lastMouseDownTime = now;
+
         eventBuffer.push(createEventPayload('mousedown', e));
     }
 
@@ -685,6 +715,24 @@
             });
             lastScroll = now;
         }
+
+        // Scroll-stop zoom: when the user stops scrolling for 400ms, zoom to center of viewport.
+        // Skip if a text input is focused — typing can cause auto-scroll which should not trigger zoom.
+        clearTimeout(scrollStopTimer);
+        scrollStopTimer = setTimeout(() => {
+            scrollStopTimer = null;
+            if (isTextInputElement(document.activeElement)) return;
+            eventBuffer.push({
+                type: 'scrollstop',
+                timestamp: Date.now() - trackingStartTime,
+                x: window.innerWidth / 2,
+                y: window.innerHeight / 2,
+                scrollY: window.scrollY,
+                scrollX: window.scrollX,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+            });
+        }, 400);
     }
 
     function onTrackingResize(e) {
