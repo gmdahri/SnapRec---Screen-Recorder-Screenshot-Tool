@@ -29,10 +29,12 @@ interface VideoPlayerProps {
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
   zoomStyle?: React.CSSProperties;
+  /** Show SnapRec branding watermark in the top-right corner */
+  showBranding?: boolean;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer(
-  { src, isProcessing, onPlaybackUpdate, playbackRange, playbackRate, onPlaybackRateChange, zoomStyle },
+  { src, isProcessing, onPlaybackUpdate, playbackRange, playbackRate, onPlaybackRateChange, zoomStyle, showBranding },
   ref,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -296,6 +298,22 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
             <span className="material-symbols-outlined text-white text-5xl">play_arrow</span>
           </button>
         </div>
+      )}
+
+      {showBranding && (
+        <a
+          href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-3 right-3 z-40 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/15 hover:border-primary/60 transition-all duration-300 group overflow-hidden"
+          onClick={e => e.stopPropagation()}
+        >
+          <img src="/logo.png" alt="SnapRec" className="size-5 rounded shrink-0" />
+          <span className="text-white/90 text-sm font-bold group-hover:text-white transition-colors shrink-0">SnapRec</span>
+          <span className="max-w-0 group-hover:max-w-[200px] overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out text-xs text-white/80 font-semibold">
+            — Record your screen free →
+          </span>
+        </a>
       )}
 
       <div

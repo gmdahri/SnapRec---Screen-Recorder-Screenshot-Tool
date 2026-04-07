@@ -738,6 +738,7 @@ const ShareView: React.FC = () => {
                                         <VideoPlayer
                                             src={downloadUrl || localVideoBlob || undefined}
                                             isProcessing={isProcessing && !localVideoBlob}
+                                            showBranding={true}
                                         />
                                         {recordingData.type === 'video' && !downloadUrl && !localVideoBlob && (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm z-40 rounded-xl">
@@ -749,26 +750,6 @@ const ShareView: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Growth Engine: "Made with SnapRec" branding strip */}
-                            <a
-                                href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-center gap-2.5 py-2.5 px-4 mt-3 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/60 dark:to-slate-900/60 border border-slate-200/60 dark:border-slate-700/40 hover:border-primary/30 dark:hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5"
-                            >
-                                <img
-                                    src="/logo.png"
-                                    alt="SnapRec"
-                                    className="size-5 rounded group-hover:scale-110 transition-transform duration-300"
-                                />
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
-                                    Made with <span className="font-bold text-slate-700 dark:text-slate-200">SnapRec</span>
-                                    <span className="hidden sm:inline"> — Free screen recorder for Chrome</span>
-                                </span>
-                                <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-1">
-                                    Try it free →
-                                </span>
-                            </a>
                             {/* Reaction Bar */}
                             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                                 <div className="flex flex-wrap gap-2">
@@ -846,6 +827,23 @@ const ShareView: React.FC = () => {
                         </div>
                         {/* Sidebar (Right) */}
                         <aside className="w-full lg:w-[380px] flex flex-col gap-6">
+                            {/* Sidebar CTA */}
+                            <a
+                                href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-3 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/30 hover:shadow-md transition-all group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <img src="/logo.png" alt="SnapRec" className="size-8 rounded-lg shrink-0" />
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Try SnapRec for free</span>
+                                        <span className="text-xs text-slate-400">Record & share your screen instantly</span>
+                                    </div>
+                                </div>
+                                <span className="text-xs font-bold text-primary group-hover:translate-x-0.5 transition-transform shrink-0">Add to Chrome →</span>
+                            </a>
+
                             {/* Comments Section */}
                             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col h-full max-h-[600px]">
                                 <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -951,7 +949,7 @@ const ShareView: React.FC = () => {
                 </main>
             </div >
 
-            <LoginModal
+<LoginModal
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
                 actionDescription={loginAction}
