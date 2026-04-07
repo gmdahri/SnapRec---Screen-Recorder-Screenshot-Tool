@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Screen Recorder & Screenshot - SnapRec",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Screen recorder & full page screenshot tool. Record in 4K, annotate with blur/arrows/text, add webcam overlay, and share instantly.",
   "icons": {
     "16": "icons/icon16.png",

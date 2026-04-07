@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MainLayout, GatedButton, LoginModal, SEO } from '../components';
+import { MainLayout, GatedButton, LoginModal, SEO, AddToChromeButton } from '../components';
 import { Toolbar, PropertySidebar, CanvasArea } from './Editor/components';
 import { EditorProvider, useEditor } from './Editor/context/EditorContext';
 
