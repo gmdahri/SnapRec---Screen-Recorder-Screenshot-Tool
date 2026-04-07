@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEditor } from '../context/EditorContext';
-import { GoogleAd, AddToChromeButton } from '../../../components';
+import { GoogleAd } from '../../../components';
 
 export const PropertySidebar: React.FC = () => {
     const {
