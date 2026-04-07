@@ -5,8 +5,9 @@ const Privacy = () => {
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
             <SEO
                 url="/privacy"
-                title="Privacy Policy"
+                title="SnapRec Privacy Policy — Screen Recorder & Screenshot Tool"
                 description="SnapRec's Privacy Policy. We do not collect or store personal data. All screen recordings and screenshots remain on your device unless you choose to upload them."
+                keywords="snaprec privacy policy, screen recorder privacy, screenshot tool privacy, snaprec data policy, chrome extension privacy"
                 noIndex={false}
             />
             <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">

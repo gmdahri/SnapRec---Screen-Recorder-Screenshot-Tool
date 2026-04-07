@@ -24,7 +24,7 @@ const Blog: React.FC = () => {
                 url="/blog"
                 title="Blog — Screen Recording Tips, Tutorials & Comparisons"
                 description="Learn how to record your screen, take full-page screenshots, and boost productivity. Free tutorials, tool comparisons, and expert tips from the SnapRec team."
-                keywords="screen recorder blog, screen recording tips, screenshot tutorial, how to record screen, free screen recorder guide, chrome extension tips"
+                keywords="screen recorder blog, screen recording tips, screenshot tutorial, how to record screen, free screen recorder guide, chrome extension tips, screen capture tutorial, how to take full page screenshot, loom alternative guide, screen recorder comparison, best screen recorder chrome, screen recording for bug reports, screen recording for tutorials, async video updates, record screen without watermark"
                 jsonLd={{
                     '@context': 'https://schema.org',
                     '@graph': [
