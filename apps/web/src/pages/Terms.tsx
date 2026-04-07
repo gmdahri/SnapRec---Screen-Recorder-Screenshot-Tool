@@ -5,7 +5,7 @@ const Terms = () => {
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
             <SEO
                 url="/terms"
-                title="Terms of Service"
+                title="SnapRec Terms of Service — Screen Recorder & Screenshot Tool"
                 description="SnapRec Terms of Service. Read the terms and conditions for using the SnapRec screen recorder and screenshot Chrome extension."
                 keywords="snaprec terms of service, snaprec terms, screen recorder terms"
                 jsonLd={{

@@ -7,7 +7,7 @@ const About = () => {
                 url="/about"
                 title="About SnapRec — Free Screen Recorder & Screenshot Tool"
                 description="SnapRec is a free, open-source screen recorder and screenshot tool for Chrome, Edge, and Brave. Learn about our mission, what we do, and why we built SnapRec."
-                keywords="about snaprec, snaprec screen recorder, free screen recorder, chrome screenshot tool, who made snaprec"
+                keywords="about snaprec, snaprec screen recorder, free screen recorder, chrome screenshot tool, who made snaprec, screen recorder chrome extension, free screenshot tool, loom alternative, screen capture tool chrome, no watermark screen recorder, built by indie developer, open source screen recorder"
                 jsonLd={{
                     '@context': 'https://schema.org',
                     '@graph': [

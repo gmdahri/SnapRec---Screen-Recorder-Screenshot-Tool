@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, useUpdateRecording, useDeleteRecording, type Recording } from '../hooks/useRecordings';
-import { MainLayout } from '../components';
+import { MainLayout, SEO } from '../components';
 import { formatRelativeTime } from '../lib/dateUtils';
 
 type TabFilter = 'all' | 'video' | 'screenshot';
@@ -210,6 +210,11 @@ const Dashboard: React.FC = () => {
 
     return (
         <MainLayout sidebar={Sidebar} headerCenter={HeaderActions}>
+            <SEO
+                title="My Recordings — SnapRec Dashboard"
+                description="Manage your screen recordings and screenshots in SnapRec. View, edit, share, and download your captures from one place."
+                noIndex={true}
+            />
             <div className="bg-slate-50/50 dark:bg-background-dark/50 min-h-full">
                 {/* Header */}
                 <div className="px-8 pt-8 pb-4">

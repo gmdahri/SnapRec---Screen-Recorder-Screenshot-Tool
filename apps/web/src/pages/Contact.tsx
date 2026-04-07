@@ -7,7 +7,7 @@ const Contact = () => {
                 url="/contact"
                 title="Contact Us — SnapRec Support & Feedback"
                 description="Get in touch with the SnapRec team. Report bugs, suggest features, ask questions, or just say hello. We'd love to hear from you."
-                keywords="contact snaprec, snaprec support, snaprec help, snaprec feedback, screen recorder support"
+                keywords="contact snaprec, snaprec support, snaprec help, snaprec feedback, screen recorder support, chrome extension support, report bug screen recorder, screen recorder feature request, snaprec customer support, screenshot tool help"
                 jsonLd={{
                     '@context': 'https://schema.org',
                     '@graph': [

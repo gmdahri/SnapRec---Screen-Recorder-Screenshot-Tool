@@ -77,7 +77,25 @@ const Changelog: React.FC = () => {
                 url="/changelog"
                 title="Changelog — What's New in SnapRec"
                 description="See the latest updates, new features, and bug fixes in SnapRec — the free screen recorder & screenshot Chrome extension. 4K recording, annotation tools, and more."
-                keywords="snaprec changelog, snaprec updates, screen recorder updates, new features, free screen recorder updates, screenshot tool changelog"
+                keywords="snaprec changelog, snaprec updates, screen recorder updates, new features, free screen recorder updates, screenshot tool changelog, snaprec version history, chrome extension updates, screen recorder release notes"
+                jsonLd={{
+                    '@context': 'https://schema.org',
+                    '@graph': [
+                        {
+                            '@type': 'WebPage',
+                            name: 'SnapRec Changelog',
+                            url: 'https://www.snaprecorder.org/changelog',
+                            description: 'Latest updates, features, and bug fixes for SnapRec screen recorder.',
+                        },
+                        {
+                            '@type': 'BreadcrumbList',
+                            itemListElement: [
+                                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org' },
+                                { '@type': 'ListItem', position: 2, name: 'Changelog', item: 'https://www.snaprecorder.org/changelog' },
+                            ],
+                        },
+                    ],
+                }}
             />
             <LandingNavbar />
 
