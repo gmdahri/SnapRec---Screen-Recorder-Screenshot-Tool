@@ -781,6 +781,105 @@ async function finalizeCleanup() {
 
 // ... existing code ...
 
+const BLOB_CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB per chunk — stays within Chrome IPC limits
+
+/**
+ * Transfers the recorded blob from the offscreen document to the web page's IndexedDB
+ * in chunks, avoiding the Chrome IPC size limit that breaks large recordings.
+ */
+async function attemptChunkedInjection(tabId, recordingId, metadataArray) {
+    // Step 1: get size + mimeType without transferring any data
+    const infoResp = await new Promise(resolve =>
+        chrome.runtime.sendMessage({ action: 'offscreen_getBlobInfo' }, resolve)
+    );
+    if (!infoResp?.success) throw new Error('Failed to get blob info: ' + (infoResp?.error || 'unknown'));
+
+    const { size, mimeType } = infoResp;
+    if (size === 0) throw new Error('Recording blob is empty (0 bytes)');
+
+    const chunkCount = Math.ceil(size / BLOB_CHUNK_SIZE);
+    console.log(`[SnapRec] Chunked injection: ${(size / 1024 / 1024).toFixed(1)} MB across ${chunkCount} chunk(s)`);
+
+    // Step 2: initialise chunk accumulator in the page's global scope
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        func: (count, id, mime, metaStr) => {
+            window.__srChunks = new Array(count);
+            window.__srId = id;
+            window.__srMime = mime;
+            window.__srMeta = metaStr;
+            console.log('[SnapRec] Ready for', count, 'chunk(s)');
+        },
+        args: [chunkCount, recordingId, mimeType, JSON.stringify(metadataArray)]
+    });
+
+    // Step 3: transfer each chunk sequentially
+    for (let i = 0; i < chunkCount; i++) {
+        const offset = i * BLOB_CHUNK_SIZE;
+        const length = Math.min(BLOB_CHUNK_SIZE, size - offset);
+
+        const chunkResp = await new Promise(resolve =>
+            chrome.runtime.sendMessage({ action: 'offscreen_getBlobChunk', offset, length }, resolve)
+        );
+        if (!chunkResp?.success) throw new Error(`Chunk ${i} failed: ${chunkResp?.error}`);
+
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: (chunk, index) => {
+                window.__srChunks[index] = new Uint8Array(chunk);
+                console.log('[SnapRec] Chunk', index, 'received, size:', chunk.length);
+            },
+            args: [chunkResp.chunk, i]
+        });
+    }
+
+    // Step 4: assemble blob, store in IDB, signal React
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        func: () => {
+            const chunks = window.__srChunks;
+            const id = window.__srId;
+            const mimeType = window.__srMime;
+            const metadataStr = window.__srMeta;
+
+            delete window.__srChunks;
+            delete window.__srId;
+            delete window.__srMime;
+            delete window.__srMeta;
+
+            const blob = new Blob(chunks, { type: mimeType });
+            console.log('[SnapRec] Assembled blob, size:', blob.size, 'type:', blob.type);
+
+            const signal = (id) => window.postMessage({ type: 'SNAPREC_VIDEO_DATA', fromIDB: true, id }, '*');
+
+            try {
+                const request = indexedDB.open('SnapRecDB', 2);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) db.createObjectStore('recordings');
+                };
+                request.onsuccess = (e) => {
+                    const db = e.target.result;
+                    const tx = db.transaction(['recordings'], 'readwrite');
+                    const store = tx.objectStore('recordings');
+                    store.clear();
+                    store.put(blob, 'latest_video_blob');
+                    store.put(id, 'latest_id');
+                    store.put(Date.now(), 'latest_video_timestamp');
+                    store.put(metadataStr, 'latest_metadata');
+                    tx.oncomplete = () => signal(id);
+                    tx.onerror = () => signal(id);
+                };
+                request.onerror = () => signal(id);
+            } catch (err) {
+                console.error('[SnapRec] IDB store error:', err);
+                signal(id);
+            }
+        },
+        args: []
+    });
+}
+
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
     try {
@@ -795,21 +894,18 @@ async function handleRecordingComplete() {
         const shareUrl = `${CONFIG.WEB_BASE_URL}/v`;
         const tab = await chrome.tabs.create({ url: shareUrl });
 
-        // Cache blob data so it survives retries if the page shows an error page initially
-        let cachedBlobArray = null;
-        let cachedMimeType = null;
         let injectionSucceeded = false;
         let retryCount = 0;
         const MAX_RETRIES = 5;
 
-        // Safety timeout: give up after 30 seconds
+        // Safety timeout: allow up to 15 minutes for very large recordings (10+ min = 200+ MB)
         const safetyTimeout = setTimeout(() => {
             if (!injectionSucceeded) {
                 console.warn('[SnapRec] Safety timeout reached, cleaning up');
                 chrome.tabs.onUpdated.removeListener(listener);
                 finalizeCleanup();
             }
-        }, 30000);
+        }, 900000);
 
         const cleanupAfterSuccess = () => {
             injectionSucceeded = true;
@@ -818,120 +914,31 @@ async function handleRecordingComplete() {
             finalizeCleanup();
         };
 
-        // Core injection function (uses cached data if available)
-        const attemptInjection = (blobArray, mimeType, metadataArray) => {
-            chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                func: (blobArray, mimeType, id, metadataStr) => {
-                    console.log('Injected script: reconstructing blob in web page context, size:', blobArray.length);
-
-                    // Reconstruct the Blob from the byte array
-                    const uint8Array = new Uint8Array(blobArray);
-                    const blob = new Blob([uint8Array], { type: mimeType });
-                    console.log('Injected script: blob reconstructed, size:', blob.size, 'type:', blob.type);
-
-                    // Store in IndexedDB under the WEB PAGE's origin
-                    try {
-                        const request = indexedDB.open('SnapRecDB', 2);
-
-                        request.onupgradeneeded = (e) => {
-                            const db = e.target.result;
-                            if (!db.objectStoreNames.contains('recordings')) {
-                                db.createObjectStore('recordings');
-                            }
-                        };
-
-                        request.onsuccess = (e) => {
-                            const db = e.target.result;
-                            const transaction = db.transaction(['recordings'], 'readwrite');
-                            const store = transaction.objectStore('recordings');
-                            store.clear(); // Wipe all stale data before writing fresh recording
-                            store.put(blob, 'latest_video_blob');
-                            store.put(id, 'latest_id');
-                            store.put(Date.now(), 'latest_video_timestamp');
-                            store.put(metadataStr, 'latest_metadata'); // Store metadata
-
-                            transaction.oncomplete = () => {
-                                console.log('Injected script: blob stored in web page IDB, signaling React app');
-                                window.postMessage({
-                                    type: 'SNAPREC_VIDEO_DATA',
-                                    fromIDB: true,
-                                    id: id
-                                }, '*');
-                            };
-
-                            transaction.onerror = () => {
-                                console.error('Injected script: IDB transaction failed, sending postMessage anyway');
-                                window.postMessage({
-                                    type: 'SNAPREC_VIDEO_DATA',
-                                    fromIDB: true,
-                                    id: id
-                                }, '*');
-                            };
-                        };
-
-                        request.onerror = () => {
-                            console.error('Injected script: IDB open failed');
-                            window.postMessage({
-                                type: 'SNAPREC_VIDEO_DATA',
-                                fromIDB: true,
-                                id: id
-                            }, '*');
-                        };
-                    } catch (err) {
-                        console.warn('IndexedDB store failed', err);
-                        window.postMessage({
-                            type: 'SNAPREC_VIDEO_DATA',
-                            fromIDB: true,
-                            id: id
-                        }, '*');
-                    }
-                },
-                args: [blobArray, mimeType, recordingId, JSON.stringify(metadataArray)]
-            }).then(() => {
-                console.log('[SnapRec] Blob injection into web page context successful');
-                cleanupAfterSuccess();
-            }).catch((err) => {
-                retryCount++;
-                console.warn(`[SnapRec] Injection attempt ${retryCount} failed (page may still be loading):`, err.message);
-                // DON'T remove listener or cleanup — wait for the next 'complete' event to retry
-                if (retryCount >= MAX_RETRIES) {
-                    console.error('[SnapRec] Max retries reached, giving up');
-                    cleanupAfterSuccess(); // cleanup even on failure
-                }
-            });
-        };
-
-        // Wait for tab to load and inject video blob bridge
+        // Wait for tab to load, then transfer blob in chunks to avoid Chrome IPC size limits
         const listener = (tabId, info) => {
             if (tabId === tab.id && info.status === 'complete' && !injectionSucceeded) {
-                console.log(`[SnapRec] Tab load complete (attempt ${retryCount + 1}), attempting injection...`);
+                retryCount++;
+                console.log(`[SnapRec] Tab loaded (attempt ${retryCount}), starting chunked injection...`);
 
-                // If we already have cached blob data from a previous attempt, reuse it
-                if (cachedBlobArray) {
-                    console.log('[SnapRec] Using cached blob data for retry');
-                    attemptInjection(cachedBlobArray, cachedMimeType, recordingMetadata);
-                    return;
-                }
-
-                // First attempt: get blob data from offscreen
-                chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlobAsArrayBuffer' }, (blobResponse) => {
-                    if (blobResponse?.success && blobResponse.blobArray) {
-                        console.log('[SnapRec] Got blob data from offscreen, size:', blobResponse.size, 'type:', blobResponse.mimeType);
-                        // Cache for retries
-                        cachedBlobArray = blobResponse.blobArray;
-                        cachedMimeType = blobResponse.mimeType;
-                        attemptInjection(cachedBlobArray, cachedMimeType, recordingMetadata);
-                    } else {
-                        console.warn('[SnapRec] ArrayBuffer retrieval failed:', blobResponse?.error);
-                        // Don't cleanup yet — the offscreen might still be initializing
-                        retryCount++;
+                attemptChunkedInjection(tab.id, recordingId, recordingMetadata)
+                    .then(() => {
+                        console.log('[SnapRec] Chunked injection complete');
+                        cleanupAfterSuccess();
+                    })
+                    .catch(err => {
+                        console.warn(`[SnapRec] Chunked injection attempt ${retryCount} failed:`, err.message);
                         if (retryCount >= MAX_RETRIES) {
-                            console.error('[SnapRec] Max retries reached on blob retrieval');
+                            console.error('[SnapRec] Max retries reached, giving up');
                             cleanupAfterSuccess();
+                            return;
                         }
-                    }
-                });
+                        // Tab landed on a Chrome error page (network blip on first load).
+                        // Reload it so the listener fires again on the next 'complete' event.
+                        if (err.message && err.message.includes('error page')) {
+                            console.log('[SnapRec] Tab on error page, reloading in 1.5 s...');
+                            setTimeout(() => chrome.tabs.reload(tab.id).catch(() => {}), 1500);
+                        }
+                    });
             }
         };
         chrome.tabs.onUpdated.addListener(listener);

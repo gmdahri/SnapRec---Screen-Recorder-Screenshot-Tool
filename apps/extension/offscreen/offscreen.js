@@ -81,6 +81,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .then(result => sendResponse({ success: true, blobArray: result.blobArray, mimeType: result.mimeType, size: result.size }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
+
+        case 'offscreen_getBlobInfo':
+            if (currentRecordingBlob) {
+                sendResponse({ success: true, size: currentRecordingBlob.size, mimeType: currentRecordingBlob.type || 'video/webm' });
+            } else {
+                sendResponse({ success: false, error: 'No recording blob available' });
+            }
+            return false;
+
+        case 'offscreen_getBlobChunk':
+            getBlobChunk(message.offset, message.length)
+                .then(result => sendResponse({ success: true, chunk: result.chunk }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
     }
 });
 
@@ -361,6 +375,14 @@ async function getRecordingBlobAsArray() {
         mimeType: currentRecordingBlob.type || 'video/webm',
         size: currentRecordingBlob.size
     };
+}
+
+async function getBlobChunk(offset, length) {
+    if (!currentRecordingBlob) throw new Error('No recording blob available');
+    const end = Math.min(offset + length, currentRecordingBlob.size);
+    const slice = currentRecordingBlob.slice(offset, end);
+    const arrayBuffer = await slice.arrayBuffer();
+    return { chunk: Array.from(new Uint8Array(arrayBuffer)) };
 }
 
 async function cropImage(dataUrl, rect) {

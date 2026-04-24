@@ -59,6 +59,7 @@ const ShareView: React.FC = () => {
     const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
     const [, setLocalMetadata] = useState<any[] | null>(null);
+    const [loadingTimedOut, setLoadingTimedOut] = useState(false);
     // Guard against race condition: if the message handler has already set the blob,
     // don't let the initial useEffect's async callback overwrite it with stale data
     const videoBlobSetByMessage = React.useRef(false);
@@ -362,7 +363,13 @@ const ShareView: React.FC = () => {
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 
-
+    // If blob never arrives after 15 min on a fresh redirect, stop spinning and show an error
+    // Large recordings (10+ min) can take several minutes to transfer from the extension
+    useEffect(() => {
+        if (!isFresh || localVideoBlob) return;
+        const timer = setTimeout(() => setLoadingTimedOut(true), 900000);
+        return () => clearTimeout(timer);
+    }, [isFresh, localVideoBlob]);
 
     // Use a unified recording object with fallbacks for "fresh" local-only state
     const recordingData = useMemo(() => {
@@ -597,6 +604,15 @@ const ShareView: React.FC = () => {
     // Show loader if we are fetching data, OR if this is a "fresh" redirect and we have nothing yet
     // Improved condition: Only show loader if we have NO data to show at all
     const hasNothingToShow = isFresh && !recording && !localVideoBlob;
+    if (loadingTimedOut && hasNothingToShow && !isUploaded) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark p-6">
+                <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">error</span>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recording not received</h2>
+                <p className="text-slate-500 mt-2 text-center max-w-sm">The extension did not deliver the recording data. Please try recording again, or reload the page if the recording is still processing.</p>
+            </div>
+        );
+    }
     if (loading || (hasNothingToShow && !isUploaded)) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark">
