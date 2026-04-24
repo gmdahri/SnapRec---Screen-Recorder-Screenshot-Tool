@@ -38,6 +38,9 @@ const ROUTES = [
   '/blog/how-to-record-zoom-meeting-free',
   '/blog/screen-recording-for-online-classes',
   '/blog/how-to-create-video-bug-report',
+  '/blog/how-to-record-microsoft-teams-meeting-free',
+  '/blog/screenshot-vs-screen-recording-when-to-use',
+  '/blog/how-to-record-product-demo-sales',
 ];
 
 function startServer(port) {
