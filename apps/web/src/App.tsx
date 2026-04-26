@@ -26,6 +26,8 @@ import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 import LoomAlternative from './pages/LoomAlternative';
 import ScreencastifyAlternative from './pages/ScreencastifyAlternative';
+import WebcamOverlayPresentation from './pages/WebcamOverlayPresentation';
+import ScreenRecorderForTeachers from './pages/ScreenRecorderForTeachers';
 
 import { HelmetProvider } from 'react-helmet-async';
 import { CookieConsent } from './components';
@@ -124,6 +126,8 @@ function App() {
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/loom-alternative" element={<LoomAlternative />} />
                 <Route path="/screencastify-alternative" element={<ScreencastifyAlternative />} />
+                <Route path="/webcam-overlay-presentation" element={<WebcamOverlayPresentation />} />
+                <Route path="/screen-recorder-for-teachers" element={<ScreenRecorderForTeachers />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
               <CookieConsent />

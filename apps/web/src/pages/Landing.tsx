@@ -461,16 +461,16 @@ const Landing: React.FC = () => {
                                             </div>
                                         </th>
                                         <th className="px-4 py-4 text-center">
-                                            <div className="flex flex-col items-center gap-1">
+                                            <NavLink to="/loom-alternative" className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity">
                                                 <span className="font-semibold text-slate-600">Loom</span>
                                                 <span className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full">Freemium</span>
-                                            </div>
+                                            </NavLink>
                                         </th>
                                         <th className="px-4 py-4 text-center">
-                                            <div className="flex flex-col items-center gap-1">
+                                            <NavLink to="/screencastify-alternative" className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity">
                                                 <span className="font-semibold text-slate-600">Screencastify</span>
                                                 <span className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full">Freemium</span>
-                                            </div>
+                                            </NavLink>
                                         </th>
                                     </tr>
                                 </thead>
@@ -488,7 +488,13 @@ const Landing: React.FC = () => {
                         </div>
                         <p className="text-center text-xs text-slate-400 mt-4">
                             Based on free plan features as of 2026.{' '}
-                            <NavLink to="/blog" className="text-primary hover:underline">Read our comparisons →</NavLink>
+                            <NavLink to="/loom-alternative" className="text-primary hover:underline">Loom</NavLink>
+                            {' · '}
+                            <NavLink to="/screencastify-alternative" className="text-primary hover:underline">Screencastify</NavLink>
+                            {' · '}
+                            <NavLink to="/screen-recorder-for-teachers" className="text-primary hover:underline">For Teachers</NavLink>
+                            {' · '}
+                            <NavLink to="/webcam-overlay-presentation" className="text-primary hover:underline">Webcam Overlay</NavLink>
                         </p>
                     </div>
                 </section>
