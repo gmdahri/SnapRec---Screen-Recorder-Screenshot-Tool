@@ -658,12 +658,12 @@ const ShareView: React.FC = () => {
         >
             <SEO
                 title={recordingData.title}
-                description={recordingData.description || `Watch this ${recordingData.type} shared via SnapRec — free screen recorder & screenshot tool for Chrome.`}
+                description={recordingData.description || `Watch "${recordingData.title}" — a ${recordingData.type} captured and shared with SnapRec, the free Chrome screen recorder. No watermarks, no limits.`}
                 keywords="screen recording, shared screen recording, snaprec, free screen recorder, screenshot share, screen capture"
                 url={`/v/${id}`}
                 type="video.other"
-                image={recordingData.thumbnailUrl}
-                noIndex={true}
+                image={recordingData.thumbnailUrl || undefined}
+                noIndex={isFresh}
             />
             <div className="bg-background-light dark:bg-background-dark transition-colors duration-300 pb-20">
                 {isFresh && !isUploaded && (
