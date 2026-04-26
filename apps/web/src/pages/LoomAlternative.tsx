@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, AddToChromeButton, SEO } from '../components';
 
 const jsonLd = {
@@ -228,6 +229,18 @@ const LoomAlternative: React.FC = () => (
                                 <p className="text-slate-500 text-sm leading-relaxed">{f.a}</p>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Related Pages */}
+            <section className="py-16">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <p className="text-sm text-slate-500 mb-4">Also comparing other tools?</p>
+                    <div className="flex flex-wrap justify-center gap-4 text-sm">
+                        <NavLink to="/screencastify-alternative" className="text-primary font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
+                        <NavLink to="/screen-recorder-for-teachers" className="text-primary font-semibold hover:underline">Screen Recorder for Teachers →</NavLink>
+                        <NavLink to="/webcam-overlay-presentation" className="text-primary font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
                     </div>
                 </div>
             </section>
