@@ -523,8 +523,8 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2 id="bottom-line">The Bottom Line</h2>
-<p>Loom is a great product, but its free plan is too restrictive for most users. If you're hitting the 5-minute wall or the 25-video limit, SnapRec gives you everything you need — completely free.</p>
-<p><strong>SnapRec is what Loom's free plan should be:</strong> unlimited recordings, 4K quality, cloud sharing, and screenshots — all at $0.</p>
+<p>Loom is a great product, but its free plan is too restrictive for most users. If you're hitting the 5-minute wall or the 25-video limit, <a href="https://www.snaprecorder.org/loom-alternative">SnapRec is the best free Loom alternative</a> — giving you everything you need without restrictions.</p>
+<p><strong>SnapRec is what Loom's free plan should be:</strong> unlimited recordings, 4K quality, cloud sharing, and screenshots — all at $0. Try the <a href="https://www.snaprecorder.org">free Chrome screen recorder</a> that has no limits.</p>
         `,
     },
     {
@@ -1059,7 +1059,8 @@ export const blogPosts: BlogPost[] = [
 </ul>
 
 <h2 id="bottom-line">The Bottom Line</h2>
-<p>Screencastify's free plan is too restrictive for serious use. The watermark alone makes it unsuitable for professional or public content. SnapRec gives you everything Screencastify charges for — for free, forever.</p>
+<p>Screencastify's free plan is too restrictive for serious use. The watermark alone makes it unsuitable for professional or public content. <a href="https://www.snaprecorder.org/screencastify-alternative">SnapRec is the best free Screencastify alternative</a> — giving you everything Screencastify charges for, completely free.</p>
+<p>Switch to the <a href="https://www.snaprecorder.org">free Chrome screen recorder</a> that never adds watermarks, never limits your recording time, and never asks for a credit card.</p>
         `,
     },
     {
@@ -2009,6 +2010,284 @@ export const blogPosts: BlogPost[] = [
             { q: 'How long should a product demo video be?', a: 'Aim for 3–5 minutes for a general demo. For a single feature or use case, 1–2 minutes is often enough.' },
             { q: 'Can I add my face to the demo video?', a: "Yes. SnapRec supports a webcam overlay so your face appears in a small circle on screen. Enable the webcam before you start recording." },
             { q: 'Do I need to pay for a tool to record sales demos?', a: "No. SnapRec is free with no watermarks or time limits. You can record, get a shareable link, and send it to prospects without a subscription." },
+        ],
+    },
+    {
+        slug: 'how-to-record-screen-mac-free',
+        title: 'How to Record Your Screen on a Mac for Free (2026)',
+        description: 'Three ways to record your screen on Mac for free — built-in Screenshot app, QuickTime, and SnapRec Chrome extension. No software to buy, no watermarks.',
+        keywords: 'how to record screen on mac, mac screen recorder free, screen record mac, record screen mac free, mac screen recording, how to screen record on macbook, free screen recorder mac, screen capture mac, record screen macbook air, record screen macbook pro',
+        date: '2026-04-20',
+        readTime: '7 min read',
+        category: 'tutorial',
+        heroIcon: 'laptop_mac',
+        content: `
+<h2 id="intro">Recording Your Screen on Mac — What Are Your Options?</h2>
+<p>Mac users have several ways to record their screen for free. The method you choose depends on what you're recording, whether you need audio, and whether you want a shareable link immediately after. Here are the three best options — ranked by ease of use.</p>
+
+<h2 id="method-1">Method 1: macOS Screenshot App (Built-In, Fastest)</h2>
+<p>Since macOS Mojave (10.14), Macs have a built-in screen recorder accessible from the Screenshot toolbar. No downloads required.</p>
+<h3>How to Use It</h3>
+<ol>
+<li><strong>Open the Screenshot toolbar:</strong> Press <code>Cmd + Shift + 5</code>. A small toolbar appears at the bottom of your screen with recording options.</li>
+<li><strong>Choose your recording mode:</strong> Click "Record Entire Screen" or "Record Selected Portion" — the latter lets you drag to select a specific area.</li>
+<li><strong>Enable microphone (optional):</strong> Click "Options" in the toolbar and select your microphone under "Microphone." System audio is not captured by the built-in recorder without third-party help.</li>
+<li><strong>Click Record:</strong> A 3-second countdown begins. Perform your recording.</li>
+<li><strong>Stop recording:</strong> Click the stop button in the menu bar, or press <code>Cmd + Ctrl + Esc</code>. The recording saves automatically to your Desktop (or chosen folder).</li>
+</ol>
+<h3>Limitations</h3>
+<ul>
+<li><strong>No system audio:</strong> The built-in recorder captures your mic but not audio playing from apps (music, video, etc.).</li>
+<li><strong>No webcam overlay:</strong> You can't add a picture-in-picture webcam feed.</li>
+<li><strong>Local file only:</strong> No shareable link — you get a .mov file on your Desktop.</li>
+</ul>
+
+<h2 id="method-2">Method 2: QuickTime Player (Free, System Audio Workaround)</h2>
+<p>QuickTime is pre-installed on every Mac and also records your screen for free.</p>
+<ol>
+<li><strong>Open QuickTime Player</strong> from Applications or Spotlight.</li>
+<li><strong>Go to File → New Screen Recording.</strong></li>
+<li><strong>Click the dropdown arrow</strong> next to the record button to select your microphone and enable the mouse click indicator.</li>
+<li><strong>Click the Record button</strong> and choose to record the full screen or a portion.</li>
+<li><strong>Stop with the menu bar button</strong> or <code>Cmd + Ctrl + Esc</code>. Save as .mov.</li>
+</ol>
+<p>QuickTime has the same limitation: no built-in system audio capture. To capture both mic and system audio, you need a virtual audio driver like BlackHole (free but requires setup).</p>
+
+<h2 id="method-3">Method 3: SnapRec Chrome Extension (Recommended for Sharing)</h2>
+<p>If you use Chrome on your Mac and need to record a browser tab, a web demo, or any on-screen workflow with instant sharing, <a href="https://www.snaprecorder.org">SnapRec is the free Chrome screen recorder</a> that does everything the built-in tools can't.</p>
+<h3>What SnapRec adds over macOS tools</h3>
+<ul>
+<li><strong>System audio + mic simultaneously</strong> — no virtual audio drivers needed</li>
+<li><strong>Webcam overlay</strong> — picture-in-picture face cam built in</li>
+<li><strong>Instant shareable link</strong> — no file management, just paste a URL</li>
+<li><strong>Full-page screenshots</strong> with annotation (blur, arrows, text)</li>
+<li><strong>Works on any Mac</strong> (Intel or Apple Silicon) with Chrome, Edge, or Brave</li>
+</ul>
+<h3>How to Record with SnapRec on Mac</h3>
+<ol>
+<li><strong>Install SnapRec</strong> from the Chrome Web Store — takes under 10 seconds.</li>
+<li><strong>Click the SnapRec icon</strong> in your Chrome toolbar and switch to Record mode.</li>
+<li><strong>Choose your source:</strong> Tab, Window, or Entire Screen. Enable mic and webcam if needed.</li>
+<li><strong>Hit Record.</strong> Chrome will ask which tab or screen to share — select it and recording begins.</li>
+<li><strong>Stop when done.</strong> Your recording opens immediately. Download it or get a shareable link with one click.</li>
+</ol>
+
+<h2 id="comparison">Quick Comparison</h2>
+<table>
+<thead><tr><th>Feature</th><th>macOS Screenshot App</th><th>QuickTime</th><th>SnapRec</th></tr></thead>
+<tbody>
+<tr><td>System audio</td><td>❌</td><td>❌ (needs BlackHole)</td><td>✅</td></tr>
+<tr><td>Microphone</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Webcam overlay</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Shareable link</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Full-page screenshot</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>4K recording</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Watermarks</td><td>None</td><td>None</td><td>None</td></tr>
+<tr><td>Price</td><td>Free</td><td>Free</td><td>Free</td></tr>
+</tbody>
+</table>
+
+<h2 id="which-to-use">Which Should You Use?</h2>
+<ul>
+<li><strong>Recording a non-browser workflow</strong> (desktop app, game, Finder): use macOS Screenshot App or QuickTime.</li>
+<li><strong>Recording a browser tab with audio + sharing</strong>: use SnapRec.</li>
+<li><strong>Teaching or demos with webcam overlay</strong>: use SnapRec.</li>
+<li><strong>Quick one-off screenshot or short clip to keep locally</strong>: use macOS Screenshot App (<code>Cmd+Shift+5</code>).</li>
+</ul>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>How do I record my screen on Mac with sound?</h3>
+<p>The macOS Screenshot App and QuickTime can capture microphone audio but not system audio (music, app sounds, video audio) without installing BlackHole or a similar virtual audio driver. SnapRec captures both mic and system audio in Chrome without any additional setup.</p>
+<h3>Can I record my screen on a MacBook Air or MacBook Pro?</h3>
+<p>Yes — all three methods work on any Mac, including MacBook Air (M1, M2, M3) and MacBook Pro. The <code>Cmd+Shift+5</code> shortcut is available on any Mac running macOS Mojave or later.</p>
+<h3>Is there a time limit on Mac screen recording?</h3>
+<p>The built-in macOS recorder and QuickTime have no time limit. SnapRec also has no time limit on recordings — record for as long as you need, completely free.</p>
+        `,
+        faqs: [
+            { q: 'How do I record my screen on Mac with sound?', a: 'The macOS Screenshot App and QuickTime capture microphone audio but not system audio without extra tools. SnapRec captures both mic and system audio in Chrome without any additional setup.' },
+            { q: 'Can I record my screen on a MacBook Air or MacBook Pro?', a: 'Yes — all three methods work on any Mac. The Cmd+Shift+5 shortcut is available on any Mac running macOS Mojave or later.' },
+            { q: 'Is there a time limit on Mac screen recording?', a: 'The built-in macOS recorder, QuickTime, and SnapRec all have no time limit. Record for as long as you need.' },
+        ],
+    },
+    {
+        slug: 'how-to-record-screen-windows-10-free',
+        title: 'How to Record Your Screen on Windows 10 & 11 for Free (2026)',
+        description: 'Four free ways to record your screen on Windows 10 and Windows 11 — Xbox Game Bar, Snipping Tool, PowerPoint, and SnapRec. No software to buy, no watermarks.',
+        keywords: 'how to record screen on windows 10, screen recorder windows 10 free, record screen windows 11, free screen recorder windows, screen record windows 10, how to screen record on pc, windows 10 screen recording, record screen windows free, screen capture windows 10, free screen recorder no watermark windows',
+        date: '2026-04-21',
+        readTime: '7 min read',
+        category: 'tutorial',
+        heroIcon: 'desktop_windows',
+        content: `
+<h2 id="intro">Free Screen Recording on Windows — Your Options</h2>
+<p>Windows 10 and Windows 11 both include built-in screen recording tools — no downloads required. But each has limitations that drive users to look for alternatives. Here's every free option, honestly explained.</p>
+
+<h2 id="method-1">Method 1: Xbox Game Bar (Windows 10 & 11, Built-In)</h2>
+<p>Xbox Game Bar is Microsoft's built-in screen recorder, originally designed for gaming but usable for any app.</p>
+<h3>How to Use It</h3>
+<ol>
+<li><strong>Open the app you want to record</strong> — Game Bar only records apps, not the Desktop or File Explorer.</li>
+<li><strong>Press <code>Win + G</code></strong> to open Game Bar.</li>
+<li><strong>Click the Record button</strong> (circle icon) in the Capture widget, or press <code>Win + Alt + R</code>.</li>
+<li><strong>Stop recording</strong> with <code>Win + Alt + R</code> again. The file saves to <code>Videos\Captures</code> as an MP4.</li>
+</ol>
+<h3>Limitations</h3>
+<ul>
+<li>Cannot record the Desktop, File Explorer, or most system windows.</li>
+<li>No webcam overlay.</li>
+<li>No shareable link — local file only.</li>
+<li>On some PCs, it's disabled by default or unavailable (older hardware).</li>
+</ul>
+
+<h2 id="method-2">Method 2: Snipping Tool (Windows 11)</h2>
+<p>Windows 11 added video recording to the Snipping Tool in a 2023 update.</p>
+<ol>
+<li><strong>Open Snipping Tool</strong> from the Start menu.</li>
+<li><strong>Switch to video mode</strong> by clicking the camera icon toggle to the video icon.</li>
+<li><strong>Click + New</strong> and drag to select the area you want to record.</li>
+<li><strong>Click Start</strong> to begin. A 3-second countdown runs.</li>
+<li><strong>Click Stop</strong> when done. Save the MP4 file.</li>
+</ol>
+<p>Snipping Tool video recording is simple but limited — no audio capture, no webcam, and no sharing. It works only on Windows 11 (22H2 and later).</p>
+
+<h2 id="method-3">Method 3: PowerPoint Screen Recording</h2>
+<p>If you have Microsoft 365 or Office 2016+, PowerPoint includes a screen recorder that most users don't know about.</p>
+<ol>
+<li><strong>Open PowerPoint</strong> and go to <strong>Insert → Screen Recording</strong>.</li>
+<li><strong>Select the area</strong> of your screen to record using the crosshair tool.</li>
+<li><strong>Click Record</strong> — the countdown starts.</li>
+<li><strong>Stop</strong> from the control bar. PowerPoint embeds the recording in a slide, which you can then save as video (File → Export → Create a Video).</li>
+</ol>
+<p>This is surprisingly capable — it captures audio and can record any area of the screen. The downside is the two-step export process and the requirement for a Microsoft 365 subscription.</p>
+
+<h2 id="method-4">Method 4: SnapRec (Recommended — Free, No Restrictions)</h2>
+<p>For recording browser-based workflows, demos, or anything in Chrome with instant sharing, <a href="https://www.snaprecorder.org">SnapRec is the free Chrome screen recorder</a> that beats all the built-in options.</p>
+<h3>Why Choose SnapRec on Windows</h3>
+<ul>
+<li><strong>No app restrictions</strong> — records any browser tab, window, or full screen including Desktop and File Explorer</li>
+<li><strong>System audio + microphone</strong> — no workarounds needed</li>
+<li><strong>Webcam overlay</strong> — picture-in-picture face cam for tutorials and demos</li>
+<li><strong>Instant shareable link</strong> — share with anyone in seconds without file uploads</li>
+<li><strong>No watermarks, no time limits, no account required to start</strong></li>
+<li><strong>Works on Windows 10 and Windows 11</strong> in Chrome, Edge, or Brave</li>
+</ul>
+
+<h2 id="comparison">Side-by-Side Comparison</h2>
+<table>
+<thead><tr><th>Feature</th><th>Xbox Game Bar</th><th>Snipping Tool</th><th>PowerPoint</th><th>SnapRec</th></tr></thead>
+<tbody>
+<tr><td>Record Desktop</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>System audio</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>Microphone</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>Webcam overlay</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Shareable link</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>No watermarks</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Cost</td><td>Free</td><td>Free (Win 11)</td><td>Microsoft 365</td><td>Free</td></tr>
+</tbody>
+</table>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>How do I screen record on Windows 10 without the Game Bar?</h3>
+<p>If Xbox Game Bar is disabled or unavailable on your PC, use SnapRec in Chrome. It records any browser window or screen without any Windows restrictions, and works on all versions of Windows 10 and 11.</p>
+<h3>How do I record my screen with audio on Windows 10?</h3>
+<p>Xbox Game Bar captures system audio and mic audio. SnapRec also captures both in Chrome without any extra setup. The Snipping Tool (Windows 11) doesn't capture audio at all.</p>
+<h3>Is there a free screen recorder for Windows with no watermark?</h3>
+<p>Yes — Xbox Game Bar, Snipping Tool, and SnapRec all add zero watermarks. Avoid many third-party recorders that add branding on free plans. If you need browser recording with sharing, <a href="https://www.snaprecorder.org">SnapRec is the best free option with no watermarks</a>.</p>
+        `,
+        faqs: [
+            { q: 'How do I screen record on Windows 10 without the Game Bar?', a: 'If Xbox Game Bar is unavailable, use SnapRec in Chrome. It records any browser window or screen without Windows restrictions, and works on all versions of Windows 10 and 11.' },
+            { q: 'How do I record my screen with audio on Windows 10?', a: 'Xbox Game Bar captures system audio and mic. SnapRec also captures both in Chrome without extra setup. The Snipping Tool (Windows 11) does not capture audio.' },
+            { q: 'Is there a free screen recorder for Windows with no watermark?', a: 'Yes — Xbox Game Bar, Snipping Tool, and SnapRec all add zero watermarks. SnapRec is the best free option if you need browser recording with instant link sharing.' },
+        ],
+    },
+    {
+        slug: 'how-to-make-tutorial-video-free',
+        title: 'How to Make a Tutorial Video for Free — Step-by-Step Guide (2026)',
+        description: 'Learn how to make professional tutorial videos for free — screen recording, webcam overlay, annotations, and sharing. No expensive software needed.',
+        keywords: 'how to make a tutorial video, how to make tutorial video free, create tutorial video, screen recording tutorial, how to make a how-to video, free tutorial video maker, how to record tutorial video, make video tutorial chrome, tutorial video software free, best free tutorial video maker',
+        date: '2026-04-22',
+        readTime: '8 min read',
+        category: 'tutorial',
+        heroIcon: 'play_lesson',
+        content: `
+<h2 id="intro">Making Tutorial Videos Without Expensive Software</h2>
+<p>Tutorial videos are one of the most effective ways to teach, onboard, support customers, or grow an audience online. The good news: you don't need a studio, a subscription to Camtasia, or a professional camera. This guide shows you how to make a polished tutorial video completely free, using only a browser extension and your existing setup.</p>
+
+<h2 id="what-you-need">What You Need</h2>
+<ul>
+<li><strong>A computer</strong> — Mac, Windows, or Chromebook</li>
+<li><strong>Google Chrome</strong> (or Edge / Brave)</li>
+<li><strong>SnapRec</strong> — a <a href="https://www.snaprecorder.org">free Chrome screen recorder</a> with webcam overlay and annotations</li>
+<li><strong>A microphone</strong> — your laptop's built-in mic works fine to start; a headset is better</li>
+<li><strong>Optional:</strong> A webcam for a picture-in-picture presenter view</li>
+</ul>
+<p>That's genuinely it. No video editing experience required. The whole workflow takes under 15 minutes for your first tutorial.</p>
+
+<h2 id="step-1">Step 1 — Plan Your Tutorial</h2>
+<p>The most common mistake beginners make is hitting record with no plan. Even a loose outline saves time and produces a much tighter video.</p>
+<ul>
+<li><strong>Define one outcome:</strong> What will the viewer be able to do after watching? One video, one skill. "How to export a report as PDF in our app" beats "How to use the reporting section."</li>
+<li><strong>Write a 5-point outline:</strong> Introduction (what this teaches), step 1, step 2, step 3, recap/CTA. That's your script.</li>
+<li><strong>Set up your screen:</strong> Close unnecessary tabs, clear your Desktop, set your browser zoom to 100% or 125% for readability. Viewers judge messy screens.</li>
+</ul>
+
+<h2 id="step-2">Step 2 — Set Up SnapRec for Recording</h2>
+<ol>
+<li><strong>Install SnapRec</strong> from the Chrome Web Store — free, no account required, installs in seconds.</li>
+<li><strong>Click the SnapRec icon</strong> in your toolbar and switch to <strong>Record</strong> mode.</li>
+<li><strong>Choose your recording source:</strong>
+  <ul>
+    <li><em>Tab</em> — records only the current browser tab. Best for web-based tutorials with clean audio.</li>
+    <li><em>Window</em> — records one application window. Good for desktop software tutorials.</li>
+    <li><em>Entire Screen</em> — records everything. Use for multi-app walkthroughs.</li>
+  </ul>
+</li>
+<li><strong>Enable your microphone</strong> — toggle it on in the SnapRec panel.</li>
+<li><strong>Enable webcam overlay (optional)</strong> — your camera appears as a small circle in the corner. Recommended for courses and teacher-style content; skip it for quick how-tos.</li>
+</ol>
+
+<h2 id="step-3">Step 3 — Record Your Tutorial</h2>
+<p>Once SnapRec starts recording, Chrome shows a red dot on your tab. Here's how to deliver a clean recording:</p>
+<ul>
+<li><strong>Start with a 2-second pause</strong> — don't start talking the moment you hit record. Let the recording stabilize, take a breath, then begin.</li>
+<li><strong>Narrate what you're about to do, then do it</strong> — "I'm going to click Settings in the top right" followed by the click. This keeps viewers oriented.</li>
+<li><strong>Move deliberately.</strong> Slow, steady mouse movements are much easier to follow than fast ones. Pause after each step to let viewers catch up.</li>
+<li><strong>Don't restart for mistakes.</strong> Minor fumbles are fine — you can trim them later. For major errors, pause, breathe, re-do the step, and trim in editing.</li>
+<li><strong>End with a clear call to action:</strong> "That's how you do X. If you found this helpful, share it with a teammate" or "Try it yourself at [URL]."</li>
+</ul>
+
+<h2 id="step-4">Step 4 — Annotate and Share</h2>
+<p>After stopping the recording, SnapRec opens your video in a viewer.</p>
+<ul>
+<li><strong>For screenshots within your tutorial:</strong> Use SnapRec's annotation editor to draw arrows, add labels, highlight UI elements, or blur sensitive information before including them in a doc or email.</li>
+<li><strong>Share via link:</strong> Click "Generate Shareable Link" to get a URL you can paste anywhere — Slack, email, Notion, Google Docs, LMS platforms. No file upload needed.</li>
+<li><strong>Download as MP4:</strong> If you need to upload to YouTube, embed in a course, or edit in video software, download the MP4 file locally.</li>
+</ul>
+
+<h2 id="tips">Tips for Better Tutorial Videos</h2>
+<ol>
+<li><strong>Keep it under 5 minutes.</strong> 80% of viewers drop off before the 5-minute mark. If your tutorial is longer, split it into a series.</li>
+<li><strong>Zoom your browser to 125%.</strong> Text and UI elements are larger and easier to read in the recording, especially on small screens.</li>
+<li><strong>Use SnapRec's auto-zoom feature.</strong> It automatically zooms in on your mouse clicks during playback, making your recording look professionally edited with zero effort.</li>
+<li><strong>Record audio in a quiet room.</strong> Background noise is the #1 quality killer. Turn off fans, close windows, and tell people around you that you're recording.</li>
+<li><strong>Do a 30-second test first.</strong> Record a short test clip, play it back, and check audio levels and screen visibility before doing the full take.</li>
+</ol>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>What's the best free software to make tutorial videos?</h3>
+<p>For browser-based tutorials, SnapRec is the best free option — no watermarks, no time limits, instant sharing, webcam overlay, and built-in annotations. For full desktop recording, combine SnapRec with your OS's built-in tools (Xbox Game Bar on Windows, Screenshot App on Mac).</p>
+<h3>Do I need to edit my tutorial video?</h3>
+<p>Not necessarily. A well-planned recording with a clear outline rarely needs editing. For most how-to videos, a single clean take is enough. If you do want to trim the beginning or end, basic video editors like iMovie (Mac), Clipchamp (Windows), or online tools like Kapwing let you trim for free.</p>
+<h3>How long should a tutorial video be?</h3>
+<p>Aim for 2–5 minutes per topic. For a single task or feature, 1–2 minutes is ideal. Longer tutorials see significantly higher drop-off rates. If your content runs longer, break it into a series of short focused videos — this also helps with YouTube SEO.</p>
+<h3>Can I make tutorial videos without showing my face?</h3>
+<p>Yes. The webcam overlay in SnapRec is optional. Many highly popular tutorial channels are voiceover-only. Disable the webcam in SnapRec and record just your screen with narration. It's faster, less intimidating, and perfectly effective.</p>
+        `,
+        faqs: [
+            { q: "What's the best free software to make tutorial videos?", a: "For browser-based tutorials, SnapRec is the best free option — no watermarks, no time limits, instant sharing, webcam overlay, and built-in annotations." },
+            { q: 'Do I need to edit my tutorial video?', a: 'Not necessarily. A well-planned recording with a clear outline rarely needs editing. Basic trimming can be done in iMovie (Mac), Clipchamp (Windows), or Kapwing online.' },
+            { q: 'How long should a tutorial video be?', a: 'Aim for 2–5 minutes per topic. For a single task, 1–2 minutes is ideal. Longer tutorials see significantly higher drop-off rates.' },
+            { q: 'Can I make tutorial videos without showing my face?', a: 'Yes. The webcam overlay in SnapRec is optional. Disable it and record just your screen with voiceover narration — perfectly effective.' },
         ],
     },
 ];

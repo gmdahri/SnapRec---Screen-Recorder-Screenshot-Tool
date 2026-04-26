@@ -24,6 +24,8 @@ import BlogPost from './pages/BlogPost';
 import About from './pages/About';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
+import LoomAlternative from './pages/LoomAlternative';
+import ScreencastifyAlternative from './pages/ScreencastifyAlternative';
 
 import { HelmetProvider } from 'react-helmet-async';
 import { CookieConsent } from './components';
@@ -120,6 +122,8 @@ function App() {
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/loom-alternative" element={<LoomAlternative />} />
+                <Route path="/screencastify-alternative" element={<ScreencastifyAlternative />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
               <CookieConsent />

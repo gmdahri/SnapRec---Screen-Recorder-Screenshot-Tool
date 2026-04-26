@@ -25,7 +25,7 @@ export const SEO: React.FC<SEOProps> = ({
     jsonLd,
 }) => {
     const siteTitle = 'SnapRec';
-    const fullTitle = title ? `${title} | ${siteTitle}` : `Free Screen Recorder for Chrome — No Watermarks, 4K | SnapRec`;
+    const fullTitle = title ? `${title} | ${siteTitle}` : `Free Chrome Screen Recorder — No Watermarks, 4K | SnapRec`;
     const defaultDescription = 'Record your screen in 4K with one click. Free Chrome extension — no watermarks, no time limits. Full-page screenshots, webcam overlay, instant share. Try SnapRec free.';
     const metaDescription = description || defaultDescription;
     const siteUrl = 'https://www.snaprecorder.org';

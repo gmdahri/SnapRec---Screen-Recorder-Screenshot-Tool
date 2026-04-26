@@ -4,15 +4,29 @@
   <!-- Home / Landing -->
   <url>
     <loc>https://www.snaprecorder.org/</loc>
-    <lastmod>2026-03-02</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+
+  <!-- Comparison Landing Pages -->
+  <url>
+    <loc>https://www.snaprecorder.org/loom-alternative</loc>
+    <lastmod>2026-04-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/screencastify-alternative</loc>
+    <lastmod>2026-04-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
   </url>
 
   <!-- How It Works -->
   <url>
     <loc>https://www.snaprecorder.org/how-it-works</loc>
-    <lastmod>2026-03-02</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -20,7 +34,7 @@
   <!-- About -->
   <url>
     <loc>https://www.snaprecorder.org/about</loc>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -28,7 +42,7 @@
   <!-- Contact -->
   <url>
     <loc>https://www.snaprecorder.org/contact</loc>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -36,7 +50,7 @@
   <!-- Terms of Service -->
   <url>
     <loc>https://www.snaprecorder.org/terms</loc>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -44,7 +58,7 @@
   <!-- Changelog -->
   <url>
     <loc>https://www.snaprecorder.org/changelog</loc>
-    <lastmod>2026-03-02</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -52,7 +66,7 @@
   <!-- Privacy Policy -->
   <url>
     <loc>https://www.snaprecorder.org/privacy</loc>
-    <lastmod>2026-01-01</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
@@ -60,7 +74,7 @@
   <!-- Blog Index -->
   <url>
     <loc>https://www.snaprecorder.org/blog</loc>
-    <lastmod>2026-03-02</lastmod>
+    <lastmod>2026-04-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -220,6 +234,24 @@
     <lastmod>2026-03-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/how-to-record-screen-mac-free</loc>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/how-to-record-screen-windows-10-free</loc>
+    <lastmod>2026-04-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.snaprecorder.org/blog/how-to-make-tutorial-video-free</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
 </urlset>

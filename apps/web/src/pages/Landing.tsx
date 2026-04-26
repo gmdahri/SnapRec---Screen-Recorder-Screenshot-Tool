@@ -261,9 +261,9 @@ const Landing: React.FC = () => {
         <div className="min-h-screen bg-white text-slate-900 font-display antialiased">
             <SEO
                 url="/"
-                title="Free Screen Recorder for Chrome — No Watermarks, 4K"
-                description="Record your screen in 4K with one click. Free Chrome extension — no watermarks, no time limits. Full-page screenshots, webcam overlay, instant share. Try SnapRec free."
-                keywords="free screen recorder, screen recorder chrome, chrome screen recorder, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, screen recorder extension, screenshot tool chrome, full page screenshot, screen capture chrome, auto zoom screen recorder, loom alternative free"
+                title="Free Chrome Screen Recorder — No Watermarks, 4K"
+                description="The free Loom alternative for Chrome. Record your screen in 4K, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits. No account needed."
+                keywords="free screen recorder, chrome screen recorder, screen recorder chrome extension, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, loom alternative free, loom alternative, screencastify alternative, screen recorder without watermark, record screen and audio chrome, tab recorder chrome, webcam screen recorder, screen recorder for teachers, tutorial screen recorder, how to record screen chrome, screen recorder microsoft edge, brave browser screen recorder, bug recording tool, full page screenshot, screenshot tool chrome, screen capture chrome, auto zoom screen recorder, free screen capture tool"
                 jsonLd={jsonLd}
             />
             <LandingNavbar />
@@ -285,7 +285,7 @@ const Landing: React.FC = () => {
 
                         {/* Headline */}
                         <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
-                            Record your screen.
+                            Free Chrome Screen Recorder.
                             <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">
                                 Share a link.
