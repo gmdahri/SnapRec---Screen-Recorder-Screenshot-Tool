@@ -144,13 +144,28 @@ function initRecordOptions() {
   });
 
   // Start Recording
-  document.getElementById('startRecordBtn').addEventListener('click', () => {
+  document.getElementById('startRecordBtn').addEventListener('click', async () => {
     const activeSource = document.querySelector('.source-btn.active');
+    const micEnabled = document.getElementById('micToggle').checked;
+
+    // On macOS, getUserMedia from an offscreen document can fail silently because
+    // the OS requires the permission prompt to originate from a visible window.
+    // Requesting mic here (in the visible popup) warms up the OS permission so
+    // the offscreen document can access the mic immediately after.
+    if (micEnabled) {
+      try {
+        const warmupStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        warmupStream.getTracks().forEach(t => t.stop());
+      } catch (e) {
+        // Permission denied — continue anyway; offscreen will handle the error
+      }
+    }
+
     sendMessage({
       action: 'startRecording',
       options: {
         source: activeSource?.dataset.source || 'screen',
-        microphone: document.getElementById('micToggle').checked,
+        microphone: micEnabled,
         systemAudio: document.getElementById('systemAudioToggle').checked,
         webcam: document.getElementById('webcamToggle').checked
       }
