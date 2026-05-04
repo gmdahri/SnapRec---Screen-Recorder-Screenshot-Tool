@@ -41,6 +41,13 @@ const ROUTES = [
   '/blog/how-to-record-microsoft-teams-meeting-free',
   '/blog/screenshot-vs-screen-recording-when-to-use',
   '/blog/how-to-record-product-demo-sales',
+  '/blog/how-to-record-screen-mac-free',
+  '/blog/how-to-record-screen-windows-10-free',
+  '/blog/how-to-make-tutorial-video-free',
+  '/loom-alternative',
+  '/screencastify-alternative',
+  '/webcam-overlay-presentation',
+  '/screen-recorder-for-teachers',
 ];
 
 function startServer(port) {
