@@ -48,6 +48,8 @@ export const blogPosts: BlogPost[] = [
 <h3>Step 3: Configure Recording</h3>
 <p>Click the SnapRec icon in your browser toolbar. Switch to <strong>Record</strong> mode (not Screenshot). Select <strong>Tab</strong> as your recording source — this captures only your presentation tab and ensures perfect audio sync. Enable your <strong>microphone</strong> for narration. If you want to appear on camera, optionally enable the <strong>webcam overlay</strong> so your face appears in a small circle in the corner.</p>
 
+<img src="/blog/snaprec-record-popup.png" alt="SnapRec extension popup to start recording a Google Slides presentation" />
+
 <h3>Step 4: Start Recording</h3>
 <p>Hit the record button. Chrome will ask you to confirm which tab to share — select the tab with your Google Slides presentation. Recording begins immediately. Present your slides naturally, advancing with the arrow keys or by clicking. Your voice and any audio from the slides will be captured.</p>
 
@@ -206,6 +208,8 @@ export const blogPosts: BlogPost[] = [
 <p>Screen recording has become essential for remote teams, educators, and content creators. Whether you're creating a product walkthrough, recording a bug report, or making a tutorial video, having a reliable screen recorder built right into your browser saves time and eliminates the need for bulky desktop software.</p>
 <p>In this guide, we'll show you how to record your screen on Chrome in just 3 clicks — completely free, with no watermarks, and in up to 4K quality.</p>
 
+<img src="/blog/snaprec-record-popup.png" alt="SnapRec Chrome extension popup showing screen recording controls" />
+
 <h2 id="what-you-need">What You Need</h2>
 <ul>
 <li><strong>Google Chrome</strong>, Microsoft Edge, or Brave browser</li>
@@ -326,6 +330,8 @@ export const blogPosts: BlogPost[] = [
 </ul>
 <p><strong>Verdict:</strong> Best for anyone who wants a fast, no-nonsense screen recorder directly in their browser. If you don't need OBS-level complexity, SnapRec is the easiest option.</p>
 
+<img src="/blog/snaprec-dashboard.png" alt="SnapRec dashboard showing captured recordings with no watermarks" />
+
 <h2 id="obs">2. OBS Studio — Best for Advanced Users</h2>
 <p><strong>Price:</strong> Free & Open Source | <strong>Platform:</strong> Windows, Mac, Linux</p>
 <p>OBS (Open Broadcaster Software) is the gold standard for screen recording and live streaming. It's incredibly powerful but has a steep learning curve.</p>
@@ -419,6 +425,8 @@ export const blogPosts: BlogPost[] = [
 <p>Sometimes you need to capture an entire webpage — not just what's visible on your screen. Whether it's a design review, bug documentation, or saving a receipt, a full-page screenshot captures everything from top to bottom in one image.</p>
 <p>Here are 3 ways to do it in Chrome, from quickest to most powerful.</p>
 
+<img src="/blog/snaprec-screenshot-popup.png" alt="SnapRec screenshot popup showing Visible Area, Full Page, and Select Region options" />
+
 <h2 id="method-1">Method 1: Chrome DevTools (Built-in, No Extension)</h2>
 <p>Chrome has a hidden full-page screenshot feature in DevTools:</p>
 <ol>
@@ -488,6 +496,8 @@ export const blogPosts: BlogPost[] = [
 <h2 id="intro">Looking for a Free Loom Alternative?</h2>
 <p>Loom is one of the most popular screen recording tools for async video communication. But with its free plan limited to <strong>5-minute recordings</strong> and <strong>25 total videos</strong>, many users are looking for alternatives that don't restrict their usage.</p>
 <p>Enter <strong>SnapRec</strong> — a free Chrome extension that offers unlimited recording with no watermarks, up to 4K quality. Let's see how they compare.</p>
+
+<img src="/blog/snaprec-dashboard.png" alt="SnapRec dashboard showing recorded videos and screenshots library" />
 
 <h2 id="comparison">Feature-by-Feature Comparison</h2>
 <table>
@@ -622,6 +632,8 @@ export const blogPosts: BlogPost[] = [
 <h2 id="intro">Taking Screenshots on a Chromebook</h2>
 <p>Chromebooks have several built-in screenshot options, but they're limited when you need full-page captures, annotation, or sharing. Here are all 5 methods — from the simplest keyboard shortcut to the most powerful extension approach.</p>
 
+<img src="/blog/snaprec-screenshot-popup.png" alt="SnapRec screenshot options: Visible Area, Full Page, and Select Region" />
+
 <h2 id="method-1">Method 1: Keyboard Shortcut (Entire Screen)</h2>
 <p>Press <code>Ctrl + Show Windows</code> (the rectangle key with two lines, top row). This captures your entire screen and saves it to the Downloads folder.</p>
 <p><strong>Quick and simple</strong>, but no editing, no full-page capture, and no sharing options.</p>
@@ -700,6 +712,8 @@ export const blogPosts: BlogPost[] = [
 <li>Creating training material from live sessions</li>
 <li>Documenting client calls for reference</li>
 </ul>
+
+<img src="/blog/snaprec-record-popup.png" alt="SnapRec extension popup for recording a screen or tab in Chrome" />
 
 <h2 id="step-by-step">How to Record Google Meet with SnapRec</h2>
 
@@ -1276,6 +1290,8 @@ export const blogPosts: BlogPost[] = [
 <h2 id="intro">Why Teachers Need a Good Screen Recorder</h2>
 <p>Screen recording has become an essential teaching tool. Whether you're creating flipped classroom videos, recording feedback on student work, or building a library of reusable lesson content, you need a recorder that's free, easy, and reliable.</p>
 <p>The problem? Most "free" screen recorders add watermarks, limit recording time, or require paid subscriptions for basic features. Here's what to use instead.</p>
+
+<img src="/blog/snaprec-record-popup.png" alt="SnapRec recording controls showing screen capture with webcam overlay option" />
 
 <h2 id="requirements">What Teachers Need in a Screen Recorder</h2>
 <ul>
