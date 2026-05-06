@@ -30,7 +30,7 @@ export const SEO: React.FC<SEOProps> = ({
     const metaDescription = description || defaultDescription;
     const siteUrl = 'https://www.snaprecorder.org';
     const cleanPath = url ? url.replace(/\/+$/, '') : '';
-    const currentUrl = cleanPath ? `${siteUrl}${cleanPath}` : siteUrl;
+    const currentUrl = cleanPath ? `${siteUrl}${cleanPath}/` : `${siteUrl}/`;
     const defaultImage = `${siteUrl}/og-image.png`;
     const metaImage = image || defaultImage;
 
