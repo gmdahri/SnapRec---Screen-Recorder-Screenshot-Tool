@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams, Navigate, NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../components';
 import { getPostBySlug, getRelatedPosts } from '../data/blogData';
+import authorPhoto from '../assets/author.jpeg';
 
 function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
     if (!post) return undefined;
@@ -13,7 +14,7 @@ function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
             image: [`${siteUrl}/og-image.png`],
             datePublished: new Date(post.date).toISOString(),
             dateModified: new Date(post.date).toISOString(),
-            author: [{ '@type': 'Organization', name: 'SnapRec Team', url: siteUrl }],
+            author: [{ '@type': 'Person', name: 'Ghulam Muhammad', url: `${siteUrl}/about` }],
             speakable: {
                 '@type': 'SpeakableSpecification',
                 cssSelector: ['article h1', '.prose h2', '.prose p:first-of-type'],
@@ -117,13 +118,12 @@ const BlogPost: React.FC = () => {
                         </h1>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-slate-500">
                             <div className="flex items-center gap-2">
-                                <span
-                                    className="size-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold shrink-0"
-                                    aria-hidden
-                                >
-                                    S
-                                </span>
-                                <span className="font-bold text-slate-700">SnapRec Team</span>
+                                <img
+                                    src={authorPhoto}
+                                    alt="Ghulam Muhammad"
+                                    className="size-8 rounded-full object-cover shrink-0"
+                                />
+                                <span className="font-bold text-slate-700">Ghulam Muhammad</span>
                             </div>
                             <span className="hidden sm:inline text-slate-300">•</span>
                             <time dateTime={post.date}>{new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
@@ -156,8 +156,25 @@ const BlogPost: React.FC = () => {
                         dangerouslySetInnerHTML={{ __html: post.content }}
                     />
 
+                    {/* Author Bio */}
+                    <div className="mt-16 flex items-start gap-6 border border-slate-200 rounded-3xl p-6 md:p-8 bg-slate-50">
+                        <img
+                            src={authorPhoto}
+                            alt="Ghulam Muhammad"
+                            className="size-16 md:size-20 rounded-2xl object-cover shrink-0"
+                        />
+                        <div>
+                            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Written by</p>
+                            <h4 className="text-lg font-black text-slate-900 mb-0.5">Ghulam Muhammad</h4>
+                            <p className="text-sm text-primary font-semibold mb-3">Software Engineer &amp; Founder, SnapRec</p>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Ghulam built SnapRec after getting frustrated with watermarks on free screen recorders. He's been building Chrome extensions since 2024.
+                            </p>
+                        </div>
+                    </div>
+
                     {/* Article Footer CTA */}
-                    <div className="mt-16 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-3xl p-8 md:p-12 text-center">
+                    <div className="mt-8 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-3xl p-8 md:p-12 text-center">
                         <div className="bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-6 px-4 py-3">
                             <img src="/logo.png" alt="SnapRec" className="h-9 w-auto object-contain" />
                         </div>
