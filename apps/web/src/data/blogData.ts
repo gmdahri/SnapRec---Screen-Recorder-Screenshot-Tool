@@ -1083,66 +1083,106 @@ export const blogPosts: BlogPost[] = [
         description: 'Record yourself presenting slides with a webcam overlay using SnapRec. Free, no watermarks, no time limits — perfect for teachers and professionals.',
         keywords: 'record presentation with webcam, record slides with face, presentation video recorder, record google slides with webcam, record powerpoint with webcam free, webcam overlay presentation, how to record a presentation',
         date: '2026-03-02',
-        readTime: '5 min read',
+        readTime: '7 min read',
         category: 'tutorial',
         heroIcon: 'slideshow',
         content: `
 <h2 id="intro">Why Record Presentations with Your Webcam?</h2>
-<p>A presentation with your face visible is significantly more engaging than slides alone. Research shows that viewers retain more information and stay engaged longer when they can see the presenter. This is essential for:</p>
+<p>Slides alone rarely hold attention. When viewers can see your face while you present, they follow along more closely, trust the content more, and remember more of what you said. This is why every major video platform — from YouTube to Coursera — defaults to a talking-head format rather than slides-only.</p>
+<p>But setting up a proper webcam overlay recording used to require expensive software, OBS scene configuration, or a Loom subscription. SnapRec makes it a three-click process directly from your browser — free, no watermark, no time limit.</p>
+<p>Here's exactly when you'd want this:</p>
 <ul>
-<li>Online course lectures and tutorials</li>
-<li>Sales pitches and product demos</li>
-<li>Conference talk recordings</li>
-<li>Internal team presentations shared async</li>
+<li><strong>Online course lectures</strong> — students stay engaged when they can see the instructor, not just bullet points</li>
+<li><strong>Async sales demos</strong> — a recorded demo with your face feels personal, unlike a generic screen recording</li>
+<li><strong>Conference talk recordings</strong> — capture your talk for people who couldn't attend live</li>
+<li><strong>Internal team updates</strong> — replace a 30-minute meeting with a 5-minute recorded walkthrough</li>
+<li><strong>University assignments</strong> — many professors now require presentation videos, not live presentations</li>
 </ul>
 
-<h2 id="step-by-step">How to Record with SnapRec</h2>
+<img src="/blog/snaprec-record-popup.png" alt="SnapRec extension popup to start recording a presentation with webcam overlay" />
 
-<h3>Step 1: Prepare Your Presentation</h3>
-<p>Open your slides in Google Slides, PowerPoint Online, or any web-based presentation tool. If using desktop PowerPoint or Keynote, run the slideshow in a window (not full screen) so Chrome can capture it.</p>
+<h2 id="what-you-need">What You Need</h2>
+<ul>
+<li><strong>Google Chrome, Edge, or Brave</strong> — SnapRec is a Chrome extension</li>
+<li><strong>SnapRec extension</strong> — free, install from the Chrome Web Store in under a minute</li>
+<li><strong>A webcam</strong> — built-in laptop camera works fine; external webcam gives better quality</li>
+<li><strong>Your slides</strong> — Google Slides, PowerPoint Online, Canva, or any browser-based tool</li>
+</ul>
+<p>If you're using desktop PowerPoint or Keynote, run the slideshow in a window rather than full screen — this lets Chrome capture it properly. On Mac, press <code>Shift+Enter</code> to start a windowed presentation in PowerPoint.</p>
+
+<h2 id="step-by-step">How to Record Your Presentation with SnapRec</h2>
+
+<h3>Step 1: Open Your Slides in Chrome</h3>
+<p>Navigate to your presentation in your browser. If you're using Google Slides, open it in presentation mode (<strong>View → Present</strong>). For PowerPoint Online, use the same approach. Make sure the slide content is clearly visible — zoom out if any text appears cut off.</p>
+<p><em>Pro tip: close any extra tabs you don't need. Tab names show in the browser tab bar during recording, and a messy tab bar looks unprofessional on screen.</em></p>
 
 <h3>Step 2: Configure SnapRec</h3>
-<p>Click the SnapRec icon and enable:</p>
+<p>Click the SnapRec icon in your extensions bar. In the recording panel, enable these options:</p>
 <ul>
-<li><strong>Microphone</strong> — for your narration</li>
-<li><strong>Webcam</strong> — for the picture-in-picture overlay</li>
-<li><strong>System Audio</strong> — if your slides contain embedded audio/video</li>
+<li><strong>Microphone</strong> — required for narration. Make sure your mic isn't muted at the OS level.</li>
+<li><strong>Show Webcam Overlay</strong> — toggle this on. Your webcam feed will appear as a small picture-in-picture in the corner of your recording.</li>
+<li><strong>System Audio</strong> — only needed if your slides have embedded videos or sound effects.</li>
 </ul>
 
-<h3>Step 3: Choose Recording Mode</h3>
-<p>For the cleanest recording:</p>
+<h3>Step 3: Choose Your Recording Mode</h3>
+<p>SnapRec lets you record a specific <strong>Tab</strong> or your full <strong>Screen</strong>. For presentations:</p>
 <ul>
-<li><strong>Browser Tab</strong> — best for Google Slides or web-based tools (captures tab audio perfectly)</li>
-<li><strong>Full Screen</strong> — best for desktop PowerPoint in slideshow mode</li>
+<li><strong>Tab mode</strong> — recommended for Google Slides, PowerPoint Online, or Canva. It captures only the presentation tab with perfect audio sync.</li>
+<li><strong>Screen mode</strong> — use this if you need to switch between your slides and another app during the recording (e.g. showing a live demo in the middle of a presentation).</li>
 </ul>
 
-<h3>Step 4: Record and Present</h3>
-<p>Click record, start your slideshow, and present naturally. Your webcam appears as a small overlay in the corner — visible but not distracting.</p>
+<h3>Step 4: Do a 30-Second Test Run</h3>
+<p>Before committing to a full recording, hit record, speak for 30 seconds, then stop and review the clip. Check: Is your face well-lit and in frame? Is the audio clear without echo? Are the slides sharp and readable? Fix any issues before the real take — this saves you from re-recording a 20-minute lecture.</p>
 
-<h3>Step 5: Share</h3>
-<p>Stop the recording when done. Download the video or generate a shareable link. Your viewers can watch the presentation with your face and narration, as if they were in the room.</p>
+<h3>Step 5: Record Your Presentation</h3>
+<p>Start recording, then switch to your presentation and begin. Present at a slightly slower pace than you would in person — viewers need time to read each slide before you start explaining it. When you reach the end, summarize your key points, then stop the recording.</p>
 
-<h2 id="tips">Tips for Professional Presentation Recordings</h2>
+<h3>Step 6: Share the Recording</h3>
+<p>SnapRec immediately gives you a shareable link. Paste it into Google Classroom, an email, a Slack message, or your LMS. Viewers click and watch directly in the browser — no account, no download, no friction. You can also download the MP4 file if you need to upload it elsewhere.</p>
+
+<h2 id="tips">Tips for Professional-Looking Presentation Videos</h2>
 <ol>
-<li><strong>Look at the camera</strong> when speaking to slides, not at your screen — this creates eye contact with viewers</li>
-<li><strong>Use good lighting</strong> — face a window or desk lamp so your face is clearly visible</li>
-<li><strong>Position the webcam overlay</strong> in a corner that doesn't cover important slide content</li>
-<li><strong>Do a test run</strong> — record 30 seconds, check audio and video quality, then start the real recording</li>
-<li><strong>Pause between slides</strong> — give viewers a moment to read each slide before you start explaining</li>
+<li><strong>Face a light source, don't sit in front of one.</strong> If a window is behind you, your face will appear dark. Sit facing the window instead, or use a desk lamp positioned slightly above and in front of your face.</li>
+<li><strong>Look at the camera, not the screen.</strong> This is the single biggest difference between amateur and professional presenter videos. Glancing up at the webcam (even briefly) creates the impression of eye contact.</li>
+<li><strong>Position the webcam overlay carefully.</strong> In SnapRec, you can drag the webcam bubble to any corner. Place it where it covers the least important part of your slide — usually the bottom-right for most slide layouts.</li>
+<li><strong>Pause between slides.</strong> Don't advance to the next slide while still mid-sentence. Finish your thought, pause for two seconds, then advance. This gives viewers time to read the new slide before you speak.</li>
+<li><strong>Use a headset mic for longer recordings.</strong> Built-in laptop mics pick up keyboard sounds, fan noise, and room echo. A $20 headset dramatically improves perceived audio quality.</li>
+<li><strong>Keep it shorter than you think.</strong> A 10-minute recorded presentation often communicates more than a 30-minute live one, because you cut filler. Aim for the minimum time needed to cover your points clearly.</li>
 </ol>
 
 <h2 id="comparison">Presentation Recording Tools Compared</h2>
 <table>
-<thead><tr><th>Tool</th><th>Webcam Overlay</th><th>Free</th><th>Cloud Sharing</th><th>Quality</th></tr></thead>
+<thead><tr><th>Tool</th><th>Webcam Overlay</th><th>Free Tier</th><th>Cloud Sharing</th><th>Max Quality</th><th>Time Limit</th></tr></thead>
 <tbody>
-<tr><td><strong>SnapRec</strong></td><td>Yes</td><td>Yes</td><td>Yes (free)</td><td>Up to 4K</td></tr>
-<tr><td>Loom</td><td>Yes</td><td>5 min limit</td><td>Yes (paid)</td><td>720p free</td></tr>
-<tr><td>Google Slides (built-in)</td><td>No</td><td>Yes</td><td>N/A</td><td>N/A</td></tr>
-<tr><td>PowerPoint Recording</td><td>Yes</td><td>With Office</td><td>No</td><td>Varies</td></tr>
-<tr><td>OBS</td><td>Yes</td><td>Yes</td><td>No</td><td>Up to 4K</td></tr>
+<tr><td><strong>SnapRec</strong></td><td>Yes</td><td>Fully free</td><td>Yes (free)</td><td>4K</td><td>None</td></tr>
+<tr><td>Loom</td><td>Yes</td><td>5 min limit</td><td>Yes</td><td>720p (free)</td><td>5 min free</td></tr>
+<tr><td>Google Slides (built-in)</td><td>No</td><td>Yes</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+<tr><td>PowerPoint Recording</td><td>Yes</td><td>Requires Office</td><td>No (local only)</td><td>Varies</td><td>None</td></tr>
+<tr><td>OBS Studio</td><td>Yes</td><td>Yes</td><td>No (manual upload)</td><td>4K</td><td>None</td></tr>
+<tr><td>Screencastify</td><td>Yes</td><td>30 min limit</td><td>Yes</td><td>1080p</td><td>30 min free</td></tr>
 </tbody>
 </table>
+<p>For most people recording presentations, SnapRec is the simplest option: one-click setup, webcam overlay built in, and immediate shareable link after recording — at no cost.</p>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>Can I record Google Slides with my face showing for free?</h3>
+<p>Yes. SnapRec supports a webcam overlay at no cost. Open Google Slides in Chrome, enable the webcam toggle in SnapRec, choose Tab recording mode, and start. Your face appears as a picture-in-picture throughout the recording.</p>
+
+<h3>What if my webcam overlay covers slide content?</h3>
+<p>In SnapRec, you can drag the webcam bubble to any corner of the screen before or during recording. Position it over a plain background area of your slide, or a less important section like the slide number.</p>
+
+<h3>Can I record PowerPoint presentations with a webcam in Chrome?</h3>
+<p>Yes, if you use PowerPoint Online (the browser version). For desktop PowerPoint, run the slideshow in a window rather than full screen, then use SnapRec's Screen recording mode to capture it. The webcam overlay will still appear in the recording.</p>
+
+<h3>How do I share the recorded presentation with students?</h3>
+<p>After stopping the recording, SnapRec gives you a link immediately. Paste it into Google Classroom, your LMS, or an email. Students click the link and watch directly in the browser — no account or download required.</p>
         `,
+        faqs: [
+            { q: 'Can I record Google Slides with my face showing for free?', a: 'Yes. SnapRec supports a webcam overlay at no cost. Open Google Slides in Chrome, enable the webcam toggle in SnapRec, choose Tab recording mode, and start.' },
+            { q: 'What if my webcam overlay covers slide content?', a: 'In SnapRec you can drag the webcam bubble to any corner of the screen. Position it over a plain background area of your slide.' },
+            { q: 'Can I record PowerPoint presentations with a webcam in Chrome?', a: 'Yes, if you use PowerPoint Online. For desktop PowerPoint, run the slideshow in a window and use SnapRec\'s Screen recording mode.' },
+            { q: 'How do I share the recorded presentation with students?', a: 'After stopping, SnapRec gives you a shareable link immediately. Paste it into Google Classroom, your LMS, or an email — students click and watch with no account required.' },
+        ],
     },
     {
         slug: 'how-to-capture-scrolling-screenshot',
@@ -1977,15 +2017,19 @@ export const blogPosts: BlogPost[] = [
         heroIcon: 'storefront',
         content: `
 <h2 id="intro">Why Record Product Demos?</h2>
-<p>Live demos are great when you can get everyone on a call — but prospects are busy, time zones clash, and scheduling often drags deals out. <strong>Recorded product demos</strong> let you create one polished walkthrough and send it to multiple leads. They can watch when it fits their schedule, rewatch key parts, and share it with stakeholders. No back-and-forth to book a second call.</p>
-<p>With the right approach, a 3–5 minute recorded demo can feel personal and clear. Here's how to do it for free, with no watermarks or time limits.</p>
+<p>Live demos work well — when you can actually get the prospect on a call. The problem is that scheduling a 30-minute demo call often takes a week of back-and-forth, and half the time the decision-makers aren't on the call anyway. By the time you get everyone together, the lead has gone cold or moved on to a competitor.</p>
+<p><strong>Recorded product demos solve this.</strong> You create one polished 3–5 minute walkthrough and send it to multiple leads. They watch when it's convenient, rewatch the parts they care about, and forward it to their team. No scheduling, no coordination, no wasted time.</p>
+<p>The best part: a recorded demo doesn't have to feel impersonal. With a webcam overlay showing your face and a focused script, it can feel more personal than a rushed screen share on a call.</p>
+<p>Here's how to record a product demo that actually moves deals forward — for free, with no watermarks or time limits.</p>
 
 <h2 id="prepare">Before You Record: Prep and Script</h2>
+<p>The difference between a demo that converts and one that gets ignored is almost always preparation. Spend 10 minutes on this before you hit record.</p>
 <ol>
-<li><strong>Define the outcome.</strong> What should the viewer understand or feel after watching? One main message (e.g. "This is how you solve X") works better than trying to show every feature.</li>
-<li><strong>Use a clean environment.</strong> Close extra tabs, turn off notifications, and use a dedicated demo account or sanitized data. Nothing breaks trust like a stray Slack message or dummy data that looks fake.</li>
-<li><strong>Write a short script or outline.</strong> You don't need to read word-for-word, but bullet points keep you on track: intro (10 sec), problem (20 sec), key flow (2–3 min), CTA (20 sec).</li>
-<li><strong>Rehearse once.</strong> Run through the flow and check that the product behaves as expected. Fix any bugs or slow loading before you hit record.</li>
+<li><strong>Define one clear outcome.</strong> What should the viewer understand or feel after watching? "This is exactly how you solve X" is a complete message. Trying to show every feature in one video is the most common mistake — it overwhelms rather than convinces.</li>
+<li><strong>Set up a clean demo environment.</strong> Use a dedicated demo account with realistic but sanitized data. Close extra browser tabs. Turn off notifications (on Mac: Do Not Disturb; on Windows: Focus Assist). Nothing kills credibility faster than a notification popup mid-demo or a browser tab named "real customer data - Q1".</li>
+<li><strong>Write a short script or bullet-point outline.</strong> You don't need to read word-for-word — that sounds robotic. But an outline keeps you on track: intro (10–15 sec), the problem you're solving (20–30 sec), the key product flow (2–3 min), and a specific call-to-action at the end (15–20 sec).</li>
+<li><strong>Rehearse the flow once.</strong> Run through the exact steps you'll show on screen. Check that everything loads quickly, no bugs appear, and the UI looks good at your recording resolution. There's nothing worse than discovering a loading spinner or error mid-recording.</li>
+<li><strong>Decide your audience.</strong> A demo for a technical buyer should go deeper into architecture or API; a demo for a business buyer should focus on outcomes and time saved. The same product may need two different demos.</li>
 </ol>
 
 <h2 id="record">How to Record the Demo with SnapRec</h2>
