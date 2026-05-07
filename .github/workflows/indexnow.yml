@@ -1,0 +1,31 @@
+name: IndexNow
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit URLs to IndexNow
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" -X POST "https://api.indexnow.org/indexnow" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d '{
+              "host": "www.snaprecorder.org",
+              "key": "4f1ea6214a4a428c95723d779b73b3c4",
+              "keyLocation": "https://www.snaprecorder.org/4f1ea6214a4a428c95723d779b73b3c4.txt",
+              "urlList": [
+                "https://www.snaprecorder.org/",
+                "https://www.snaprecorder.org/blog/",
+                "https://www.snaprecorder.org/how-it-works/",
+                "https://www.snaprecorder.org/loom-alternative/",
+                "https://www.snaprecorder.org/screencastify-alternative/",
+                "https://www.snaprecorder.org/screen-recorder-for-teachers/",
+                "https://www.snaprecorder.org/webcam-overlay-presentation/",
+                "https://www.snaprecorder.org/changelog/",
+                "https://www.snaprecorder.org/about/",
+                "https://www.snaprecorder.org/contact/"
+              ]
+            }'
