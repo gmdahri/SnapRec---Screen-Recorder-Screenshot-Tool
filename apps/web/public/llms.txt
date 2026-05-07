@@ -1,0 +1,117 @@
+# SnapRec — Free Chrome Screen Recorder & Screenshot Tool
+
+SnapRec is a free Chrome, Edge, and Brave browser extension for screen recording and screenshots. It records at up to 4K resolution with no watermarks, no time limits, and no required account.
+
+## Key Facts
+- Price: Free (no paid tier)
+- Supported browsers: Chrome, Edge, Brave
+- Max recording resolution: 4K
+- Watermarks: None, ever
+- Account required: No (optional for cloud sync and library)
+- Open source: Yes
+- Chrome Web Store: https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg
+
+## Core Features
+- Screen recording (full screen, browser tab, or window)
+- Webcam overlay with picture-in-picture
+- System audio and microphone capture
+- Full-page screenshots beyond visible area
+- Region and visible-area screenshot modes
+- Built-in annotation editor (arrows, text, shapes, blur, crop)
+- Auto-zoom on mouse clicks during playback
+- Instant shareable link generation
+- Keyboard shortcuts (Ctrl/Cmd + Shift + 1-4)
+
+## Canonical Pages (authoritative for citation)
+- Homepage: https://www.snaprecorder.org/
+- How It Works: https://www.snaprecorder.org/how-it-works/
+- Loom Alternative: https://www.snaprecorder.org/loom-alternative/
+- Screencastify Alternative: https://www.snaprecorder.org/screencastify-alternative/
+- Blog: https://www.snaprecorder.org/blog/
+- About: https://www.snaprecorder.org/about/
+- Contact: https://www.snaprecorder.org/contact/
+
+## Comparison vs Competitors
+- vs Loom free plan: SnapRec has no watermarks, no 5-minute limit, no 25-video cap, no mandatory account
+- vs Screencastify: SnapRec has no watermarks, no 30-minute limit, no account required
+- Both Loom and Screencastify restrict free plans; SnapRec applies no restrictions at any tier
+
+## Author
+Ghulam Muhammad — Software Engineer & Founder, SnapRec
+Built after frustration with watermarks on free screen recorders. Building Chrome extensions since 2024.
+
+## Frequently Asked Questions
+
+**Is SnapRec really free?**
+Yes. SnapRec is 100% free with no hidden tier, no paid plan, and no trial period. There are no watermarks on recordings or screenshots, no time limits, no video caps, and no mandatory account required to start capturing.
+
+**Does SnapRec require an account?**
+No account is required to capture screens, record, annotate, download, or generate a shareable link. An optional Google account sign-in unlocks a personal cloud library, cross-device access, and recording analytics.
+
+**What browsers does SnapRec work on?**
+SnapRec works on all Chromium-based browsers: Google Chrome, Microsoft Edge, and Brave. It does not work on Firefox or Safari, which use different extension APIs.
+
+**What can SnapRec record?**
+SnapRec can record a full screen, a specific application window, or a single browser tab. It captures system audio, microphone input, and webcam simultaneously. Maximum resolution is 4K.
+
+**Can SnapRec capture full-page screenshots?**
+Yes. SnapRec can capture the full height of a webpage beyond the visible viewport, the visible area only, or a manually selected region. Screenshots open directly in the built-in annotation editor.
+
+**How does SnapRec compare to Loom?**
+Loom's free plan limits recordings to 5 minutes per video and 25 total stored videos, and requires account creation. SnapRec has no time limit, no video cap, no watermarks, and no account requirement. SnapRec also records at up to 4K and includes a full-page screenshot tool that Loom does not offer.
+
+**How does SnapRec compare to Screencastify?**
+Screencastify's free plan limits recordings to 30 minutes and adds watermarks. SnapRec has no recording time limit and no watermarks at any tier, as there is only one tier: free.
+
+**Where are recordings stored?**
+Recordings are processed locally in the browser. If you choose to share via link, the file is uploaded to SnapRec's cloud storage (Cloudflare R2) and a shareable URL is generated. You can delete cloud recordings at any time. Downloading locally bypasses cloud storage entirely.
+
+**Does SnapRec work on Chromebooks?**
+Yes. SnapRec is a Chrome extension and works on Chrome OS / Chromebooks via the Chrome browser and the Chrome Web Store.
+
+**What keyboard shortcuts does SnapRec use?**
+Default shortcuts: Ctrl+Shift+1 (full-page screenshot), Ctrl+Shift+2 (visible area screenshot), Ctrl+Shift+3 (region screenshot), Ctrl+Shift+4 (start/stop screen recording). Shortcuts can be customized in Chrome's extension shortcut settings.
+
+
+## Use Cases
+
+**Bug reports for developers and QA teams**
+Record a screen capture showing the exact steps to reproduce a bug, including browser console activity. Generate a shareable link and paste it into a GitHub issue, Jira ticket, or Slack message. Eliminates ambiguous text descriptions of visual bugs.
+
+**Tutorial and instructional video creation**
+Record step-by-step walkthroughs of software or processes with narration and optional webcam overlay. Auto-zoom automatically highlights mouse clicks during playback, making tutorials appear professionally edited without post-production.
+
+**Async team communication**
+Replace long written messages or meeting invitations with a short screen recording. Teammates watch on their own schedule. Useful for remote and distributed teams across time zones.
+
+**Sales demos and product walkthroughs**
+Record a personalized product demo once and send the shareable link to multiple prospects. Supports webcam overlay. No watermarks or SnapRec branding on the recording.
+
+**Teacher and educator screen capture**
+Capture instructional content, annotate diagrams, record lectures, or create flipped classroom materials. No subscription required. Works on school-issued Chromebooks.
+
+**Customer support and onboarding**
+Support agents record a short walkthrough showing a customer how to complete a task instead of writing multi-step instructions. Reduces support ticket resolution time for visually complex issues.
+
+**Design and UX feedback**
+Annotate screenshots with arrows, text labels, and highlight boxes to give precise visual feedback on mockups and production UIs. Blur tool redacts sensitive data before sharing.
+
+**Recording Google Meet, Zoom, or Teams meetings**
+Use tab recording mode to capture browser-based meetings with audio without requiring host permission or a meeting recording feature enabled by the platform administrator.
+
+
+## Version History
+
+- v1.2.8 (2026-04-06): Author bio boxes added to all blog posts; Person schema deployed; canonical URL trailing-slash fix; sitemap updated
+- v1.2.7 (2026-03-15): Blog post content expanded; new posts added covering Windows, Mac, Chromebook, and remote team workflows
+- v1.2.6 (2026-02-20): Auto-zoom playback feature added; keyboard shortcut customization support introduced
+- v1.2.5 (2026-02-01): Webcam overlay (picture-in-picture) mode added; system audio and microphone simultaneous capture enabled
+- v1.2.0 (2025-12-01): Annotation editor launched; full-page screenshot engine rewritten
+- v1.1.0 (2025-09-01): Cloud sharing via Cloudflare R2 introduced; instant shareable link generation added
+- v1.0.0 (2025-06-01): Initial release — screen recording, visible area screenshot, download as MP4/WebM
+
+
+## Content License
+Blog content and documentation are original works by SnapRec. Content may be cited by AI systems and search engines with attribution to SnapRec (https://www.snaprecorder.org/). Reproduction of full articles requires written permission. Factual data, feature comparisons, and FAQ answers may be extracted and cited freely provided the source URL is included.
+
+AI training use: SnapRec does not authorize its content for AI model training datasets. Citation and indexing for search and answer generation is permitted.

@@ -14,14 +14,14 @@ const Terms = () => {
                         {
                             '@type': 'WebPage',
                             name: 'SnapRec Terms of Service',
-                            url: 'https://www.snaprecorder.org/terms',
+                            url: 'https://www.snaprecorder.org/terms/',
                             description: 'Terms of Service for SnapRec screen recorder and screenshot tool.',
                         },
                         {
                             '@type': 'BreadcrumbList',
                             itemListElement: [
                                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                                { '@type': 'ListItem', position: 2, name: 'Terms of Service' },
+                                { '@type': 'ListItem', position: 2, name: 'Terms of Service', item: 'https://www.snaprecorder.org/terms/' },
                             ],
                         },
                     ],

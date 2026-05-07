@@ -10,6 +10,55 @@ interface Release {
 
 const releases: Release[] = [
     {
+        version: '1.2.8',
+        date: 'April 6, 2026',
+        tag: 'improved',
+        highlights: [
+            'Author bio boxes added to all blog posts with real author photo',
+            'Person schema (JSON-LD) deployed across all blog posts for E-E-A-T signals',
+            'Canonical URL trailing-slash fix — all pages now consistently output trailing-slash canonicals',
+            'Sitemap updated to reflect current page structure',
+        ],
+    },
+    {
+        version: '1.2.7',
+        date: 'March 15, 2026',
+        tag: 'improved',
+        highlights: [
+            'Blog post content expanded — posts now average 1,500+ words with troubleshooting sections',
+            'New posts added covering Windows, Mac, Chromebook, and remote team workflows',
+            'Internal linking improved across blog cluster for better crawlability',
+        ],
+    },
+    {
+        version: '1.2.6',
+        date: 'February 20, 2026',
+        tag: 'new',
+        highlights: [
+            'Auto-zoom playback — recordings automatically zoom on mouse clicks during playback',
+            'Keyboard shortcut customization support introduced via Chrome extension settings',
+        ],
+    },
+    {
+        version: '1.2.5',
+        date: 'February 1, 2026',
+        tag: 'new',
+        highlights: [
+            'Webcam overlay (picture-in-picture) mode added',
+            'System audio and microphone simultaneous capture enabled',
+            'Improved recording quality at 4K resolution',
+        ],
+    },
+    {
+        version: '1.2.0',
+        date: 'December 1, 2025',
+        tag: 'new',
+        highlights: [
+            'Annotation editor launched — arrows, text, shapes, blur, crop',
+            'Full-page screenshot engine rewritten for faster and more reliable capture',
+        ],
+    },
+    {
         version: '1.1.8',
         date: 'February 19, 2026',
         tag: 'improved',
@@ -84,14 +133,23 @@ const Changelog: React.FC = () => {
                         {
                             '@type': 'WebPage',
                             name: 'SnapRec Changelog',
-                            url: 'https://www.snaprecorder.org/changelog',
+                            url: 'https://www.snaprecorder.org/changelog/',
                             description: 'Latest updates, features, and bug fixes for SnapRec screen recorder.',
+                        },
+                        {
+                            '@type': 'SoftwareApplication',
+                            name: 'SnapRec',
+                            url: 'https://www.snaprecorder.org/',
+                            softwareVersion: '1.2.8',
+                            releaseNotes: 'https://www.snaprecorder.org/changelog/',
+                            applicationCategory: 'BrowserApplication',
+                            offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
                         },
                         {
                             '@type': 'BreadcrumbList',
                             itemListElement: [
-                                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org' },
-                                { '@type': 'ListItem', position: 2, name: 'Changelog', item: 'https://www.snaprecorder.org/changelog' },
+                                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
+                                { '@type': 'ListItem', position: 2, name: 'Changelog', item: 'https://www.snaprecorder.org/changelog/' },
                             ],
                         },
                     ],

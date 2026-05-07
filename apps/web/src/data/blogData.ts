@@ -4,12 +4,14 @@ export interface BlogPost {
     description: string;
     keywords: string;
     date: string;
+    updatedDate?: string;
     readTime: string;
     category: 'tutorial' | 'comparison' | 'tips';
     heroIcon: string;
     content: string;
     faqs?: { q: string; a: string }[];
     listItems?: { name: string; url?: string; position: number }[];
+    steps?: { name: string; text: string }[];
 }
 
 export const blogPosts: BlogPost[] = [
@@ -104,6 +106,13 @@ export const blogPosts: BlogPost[] = [
             { q: 'Does Google Slides have a built-in recorder?', a: "No. Unlike PowerPoint, which includes a native 'Record Slide Show' feature, Google Slides has no built-in recording capability. You need a screen recorder like SnapRec to capture your presentation with audio." },
             { q: 'Can I record with speaker notes visible?', a: "Yes — use SnapRec's tab recording mode and present in Slideshow mode. Your speaker notes appear in a separate presenter window that isn't shared with the audience. The recording captures only the slides themselves, so your notes stay private." },
             { q: 'How do I add my face to a Google Slides recording?', a: "Enable SnapRec's webcam overlay before you start recording. Your camera feed appears as a small circle in the corner of the video. You can typically choose which corner to place it in. This works great for lectures, sales demos, and any presentation where seeing the presenter adds value." },
+        ],
+        steps: [
+            { name: 'Install SnapRec', text: 'Visit the Chrome Web Store and click "Add to Chrome". The extension installs in under 10 seconds with no sign-up required.' },
+            { name: 'Open your Google Slides presentation', text: 'Open your deck in Chrome. When ready to record, enter Slideshow mode by clicking the Present button or pressing Ctrl+F5.' },
+            { name: 'Configure SnapRec for recording', text: 'Click the SnapRec icon in your toolbar. Switch to Record mode, select Tab as your recording source, and enable your microphone. Optionally enable webcam overlay.' },
+            { name: 'Start recording and present', text: 'Hit the record button and select the tab with your presentation. Present naturally — advance slides with arrow keys while SnapRec captures everything.' },
+            { name: 'Stop and share your recording', text: 'Click stop when done. Your recording opens in SnapRec\'s viewer. Get an instant shareable link or download as MP4/WebM. No watermarks.' },
         ],
     },
     {
@@ -200,91 +209,145 @@ export const blogPosts: BlogPost[] = [
         description: 'Learn how to record your screen on Chrome for free with no watermarks, no time limits, and 4K quality. Step-by-step guide using SnapRec.',
         keywords: 'how to record screen on chrome, free screen recorder chrome, screen recording chrome, record screen free, chrome screen recorder, how to screen record, record screen on chromebook, screen recorder chrome extension free',
         date: '2026-01-15',
-        readTime: '5 min read',
+        readTime: '8 min read',
         category: 'tutorial',
         heroIcon: 'videocam',
         content: `
 <h2 id="why-record-screen">Why Record Your Screen on Chrome?</h2>
 <p>Screen recording has become essential for remote teams, educators, and content creators. Whether you're creating a product walkthrough, recording a bug report, or making a tutorial video, having a reliable screen recorder built right into your browser saves time and eliminates the need for bulky desktop software.</p>
-<p>In this guide, we'll show you how to record your screen on Chrome in just 3 clicks — completely free, with no watermarks, and in up to 4K quality.</p>
+<p>The challenge: most free screen recorders add watermarks, cap your recording at 5–10 minutes, or require you to create an account before you record a single frame. In this guide, we'll show you how to record your screen on Chrome in just a few clicks — completely free, with no watermarks, and in up to 4K quality. No account required.</p>
 
 <img src="/blog/snaprec-record-popup.png" alt="SnapRec Chrome extension popup showing screen recording controls" />
 
 <h2 id="what-you-need">What You Need</h2>
 <ul>
-<li><strong>Google Chrome</strong>, Microsoft Edge, or Brave browser</li>
-<li><strong>SnapRec extension</strong> — a free, lightweight Chrome extension</li>
-<li>That's it. No account required to start recording.</li>
+<li><strong>Google Chrome</strong>, Microsoft Edge, or Brave browser (any Chromium-based browser works)</li>
+<li><strong>SnapRec extension</strong> — a free, lightweight Chrome extension under 1MB</li>
+<li>That's it. No account, no credit card, no software to install beyond the extension itself.</li>
 </ul>
 
 <h2 id="step-by-step">Step-by-Step: Record Your Screen on Chrome</h2>
 
 <h3>Step 1: Install SnapRec</h3>
-<p>Head to the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Chrome Web Store</a> and click <strong>"Add to Chrome"</strong>. The extension installs in seconds and requires minimal permissions.</p>
+<p>Head to the <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Chrome Web Store</a> and click <strong>"Add to Chrome"</strong>. The extension installs in under 10 seconds. Pin it to your toolbar for quick access: click the puzzle piece icon in Chrome's top-right corner and click the pin icon next to SnapRec.</p>
 
-<h3>Step 2: Click the SnapRec Icon</h3>
-<p>Click the SnapRec icon in your browser toolbar. You'll see options to:</p>
+<h3>Step 2: Open the SnapRec Popup</h3>
+<p>Click the SnapRec icon in your browser toolbar. The popup shows two modes — <strong>Record</strong> and <strong>Screenshot</strong>. Select <strong>Record</strong> to access the recording controls.</p>
+
+<h3>Step 3: Choose Your Recording Source</h3>
+<p>This is the most important step. SnapRec gives you three recording sources — choosing the right one determines what appears in your video:</p>
 <ul>
-<li><strong>Record Screen</strong> — capture your entire screen, a specific window, or a browser tab</li>
-<li><strong>Take Screenshot</strong> — capture the visible area, full page, or a selected region</li>
+<li><strong>Browser Tab</strong> — records only the currently active tab. Best for web app demos, SaaS walkthroughs, and Google Slides presentations. Captures the tab's audio (embedded videos, notifications) without background system noise.</li>
+<li><strong>Window</strong> — records a specific application window, including desktop apps. Useful when your workflow spans multiple windows or you're demonstrating non-browser software.</li>
+<li><strong>Full Screen</strong> — records your entire display, including the taskbar and all open windows. Best for OS-level tutorials, showing multi-app workflows, or anything that requires switching between apps during recording.</li>
+</ul>
+<p>For most use cases — product demos, tutorials, bug reports — <strong>Browser Tab is the recommended choice</strong>. It gives you cleaner audio, a smaller file size, and keeps irrelevant desktop items out of frame.</p>
+
+<h3>Step 4: Configure Audio and Webcam</h3>
+<p>Before clicking record, set your audio inputs:</p>
+<ul>
+<li><strong>Microphone</strong> — toggle on to capture your voice narration. Chrome will prompt for microphone permission on first use.</li>
+<li><strong>System Audio</strong> — toggle on to capture sounds from the tab or application (embedded videos, notification sounds, music). When recording a tab, this is captured automatically with high fidelity.</li>
+<li><strong>Webcam Overlay</strong> — toggle on to add a small picture-in-picture video of your face. The webcam circle appears in the corner of your recording, making tutorials and demos feel more personal.</li>
+</ul>
+<p>You can enable any combination: audio-only narration, screen + system audio + mic, or the full setup with webcam. All combinations are free with no quality restrictions.</p>
+
+<h3>Step 5: Start Recording</h3>
+<p>Click the red record button. Chrome will display a permission dialog asking which screen, window, or tab to share — select your target and click <strong>Share</strong>. Recording begins immediately. A recording indicator appears in your browser tab, showing that capture is active.</p>
+
+<h3>Step 6: Stop and Save</h3>
+<p>When finished, click the SnapRec icon again and hit <strong>Stop</strong>, or click the stop button in Chrome's screen-sharing bar at the bottom of the screen. Your recording opens in SnapRec's viewer within a few seconds. From there you can:</p>
+<ul>
+<li><strong>Download as MP4</strong> — saves to your local Downloads folder, ready to attach to an email or upload anywhere</li>
+<li><strong>Generate a shareable link</strong> — one click creates a URL you can paste into Slack, email, or a project management tool. Anyone with the link can watch in their browser with no login required.</li>
+<li><strong>Save to your library</strong> — sign in with Google to keep recordings in your personal cloud library with an organised dashboard</li>
 </ul>
 
-<h3>Step 3: Choose Your Recording Mode</h3>
-<p>Select what you want to record:</p>
-<ul>
-<li><strong>Full Screen</strong> — records everything on your display</li>
-<li><strong>Browser Tab</strong> — records just the current tab (great for app demos)</li>
-<li><strong>Window</strong> — records a specific application window</li>
-</ul>
-<p>You can also enable your <strong>webcam overlay</strong> and <strong>microphone</strong> for narrated recordings.</p>
-
-<h3>Step 4: Hit Record</h3>
-<p>Click the record button. Chrome will ask you to confirm which screen or tab to share. Select your target and recording begins immediately.</p>
-
-<h3>Step 5: Stop and Save</h3>
-<p>Click the stop button when you're done. Your recording appears instantly in SnapRec's viewer where you can:</p>
-<ul>
-<li><strong>Download</strong> the video locally</li>
-<li><strong>Generate a shareable link</strong> to send to anyone</li>
-<li><strong>Save to your account</strong> for later access</li>
-</ul>
-
-<h2 id="features">Key Features of SnapRec Screen Recorder</h2>
+<h2 id="recording-sources">Choosing the Right Recording Source: A Deeper Look</h2>
+<p>Picking the correct recording source is the difference between a professional-looking recording and one cluttered with desktop distractions. Here's a practical guide for common scenarios:</p>
 <table>
-<thead><tr><th>Feature</th><th>SnapRec (Free)</th><th>Others (Paid)</th></tr></thead>
+<thead><tr><th>Scenario</th><th>Recommended Source</th><th>Reason</th></tr></thead>
 <tbody>
-<tr><td>4K Recording</td><td>✅ Yes</td><td>Usually paid tier</td></tr>
-<tr><td>Watermarks</td><td>❌ None</td><td>Often added on free plans</td></tr>
-<tr><td>Time Limit</td><td>∞ Unlimited</td><td>5-10 min on free plans</td></tr>
-<tr><td>Webcam Overlay</td><td>✅ Yes</td><td>Varies</td></tr>
-<tr><td>System Audio</td><td>✅ Yes</td><td>Varies</td></tr>
-<tr><td>Cloud Sharing</td><td>✅ Free</td><td>Usually paid</td></tr>
+<tr><td>SaaS product demo</td><td>Browser Tab</td><td>Clean, focused on the app</td></tr>
+<tr><td>Google Slides presentation</td><td>Browser Tab</td><td>Tab audio captures slide transitions</td></tr>
+<tr><td>Bug report for web app</td><td>Browser Tab</td><td>Focused, smaller file, easy to share</td></tr>
+<tr><td>Desktop app tutorial</td><td>Window or Full Screen</td><td>App is outside the browser</td></tr>
+<tr><td>Multi-app workflow demo</td><td>Full Screen</td><td>Need to show app-switching</td></tr>
+<tr><td>Online course lesson</td><td>Browser Tab or Full Screen</td><td>Depends on whether content is browser-only</td></tr>
+<tr><td>Code walkthrough (IDE)</td><td>Window or Full Screen</td><td>IDE is a desktop application</td></tr>
 </tbody>
 </table>
 
-<h2 id="tips">Pro Tips for Better Screen Recordings</h2>
-<ol>
-<li><strong>Close unnecessary tabs</strong> — reduces distractions and improves performance</li>
-<li><strong>Use a good microphone</strong> — even a basic headset dramatically improves audio clarity</li>
-<li><strong>Plan your recording</strong> — know what you'll show before hitting record</li>
-<li><strong>Use the tab recording mode</strong> — captures system audio perfectly for demos</li>
-<li><strong>Share via link</strong> — faster than uploading to YouTube for quick team shares</li>
-</ol>
+<h2 id="troubleshooting">Troubleshooting Common Chrome Recording Issues</h2>
+
+<h3>No audio in my recording</h3>
+<p>The most common cause is that the microphone toggle was off when you started recording. SnapRec requires audio permissions before recording begins — if you declined Chrome's microphone permission prompt, the mic won't be active. To fix: click the lock icon in Chrome's address bar, find Microphone, set it to Allow, then start a new recording. For system audio issues when recording a tab, make sure the tab is actually producing sound (play a video clip briefly before recording to test).</p>
+
+<h3>Recording is laggy or dropping frames</h3>
+<p>Tab recording at 4K requires meaningful CPU headroom. Before recording, close unused tabs, especially those running video or JavaScript-heavy content. If you're recording a browser tab, avoid having multiple video streams playing on other tabs. On lower-spec machines, dropping the recording resolution from 4K to 1080p will eliminate lag entirely — 1080p is more than sufficient for most screen recordings and results in smaller file sizes.</p>
+
+<h3>Chrome says "Can't share this tab"</h3>
+<p>Some browser tabs — specifically Chrome's New Tab page, the Chrome Web Store, and any chrome:// URL — cannot be captured due to browser security restrictions. This is a Chrome policy, not a SnapRec limitation. Switch to a regular web page tab before attempting tab recording. If you need to record chrome:// pages, use Window or Full Screen mode instead.</p>
+
+<h3>The recording window doesn't appear after stopping</h3>
+<p>If you stopped recording by closing the tab rather than using the stop button, the recording file may not have saved correctly. Always use the SnapRec popup's stop button or Chrome's built-in "Stop sharing" button to end recordings cleanly. Check your Downloads folder — the file may have auto-saved there.</p>
+
+<h2 id="features">How SnapRec Compares to Other Free Options</h2>
+<table>
+<thead><tr><th>Feature</th><th>SnapRec</th><th>Loom (free)</th><th>Screencastify (free)</th></tr></thead>
+<tbody>
+<tr><td>4K Recording</td><td>✅ Yes</td><td>❌ Capped</td><td>❌ Capped</td></tr>
+<tr><td>Watermarks</td><td>❌ None</td><td>✅ Added</td><td>✅ Added</td></tr>
+<tr><td>Time Limit</td><td>∞ Unlimited</td><td>5 min per recording</td><td>30 min per recording</td></tr>
+<tr><td>Recording Cap</td><td>∞ Unlimited</td><td>25 total recordings</td><td>Unlimited</td></tr>
+<tr><td>Account Required</td><td>❌ No</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Webcam Overlay</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Auto-Zoom on Clicks</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td></tr>
+<tr><td>Cloud Sharing</td><td>✅ Free</td><td>✅ Free (limited)</td><td>✅ Free (limited)</td></tr>
+</tbody>
+</table>
+
+<h2 id="use-cases">Tips for Specific Use Cases</h2>
+
+<h3>For Bug Reports</h3>
+<p>When recording a bug, start the recording before you navigate to the page where the bug occurs. Narrate what you're about to demonstrate: "I'm going to click the Save button and show you the error." This gives developers watching the recording immediate context. Use Tab mode so the file is small enough to attach to a JIRA ticket or GitHub issue. After recording, download as MP4 rather than sharing via link for permanent artifact storage.</p>
+
+<h3>For Tutorial Videos</h3>
+<p>Enable the webcam overlay so your audience can see your face — it dramatically increases engagement and makes the tutorial feel coached rather than automated. Use keyboard shortcut <code>Ctrl+Shift+4</code> (or <code>Cmd+Shift+4</code> on Mac) to start recording without opening the popup, keeping your screen clean. Record at 4K even if your output platform is 1080p — the extra resolution gives you flexibility to crop and zoom in post-production without quality loss.</p>
+
+<h3>For Async Team Updates</h3>
+<p>Keep recordings under 2 minutes for status updates and under 5 minutes for technical walkthroughs. State your main point in the first 10 seconds — many viewers scan forward if they don't immediately understand why they're watching. Generate a shareable link rather than downloading the file; links are trackable, playable directly in Slack and email clients, and don't fill up anyone's Downloads folder.</p>
 
 <h2 id="faq">Frequently Asked Questions</h2>
 <h3>Can I record my screen on Chrome without an extension?</h3>
-<p>Chrome doesn't have a built-in screen recorder. You need either a browser extension like SnapRec or a desktop application. SnapRec is the lightest option — it's under 1MB and works instantly.</p>
+<p>Chrome doesn't have a built-in screen recorder. The closest native option is Chrome's DevTools "Capture full-size screenshot" for static pages, but there's no built-in video recording. You need a browser extension like SnapRec or a desktop application. SnapRec is the lightest-weight option — it's under 1MB and starts recording immediately after a one-time install with no configuration required.</p>
 
-<h3>Is SnapRec really free?</h3>
-<p>Yes, 100% free. No hidden limits, no watermarks, no time caps, and no mandatory sign-up.</p>
+<h3>Is SnapRec really free forever?</h3>
+<p>Yes, 100% free with no hidden tier. No watermarks, no time caps on recordings, no limit on the number of recordings you can make, and no mandatory account creation. The free plan isn't a time-limited trial — it's the full product. Signing in with Google unlocks optional cloud storage and library features, but everything else works without any account.</p>
 
 <h3>Does it work on Chromebook?</h3>
-<p>Yes! SnapRec works on any device that runs Chrome, including Chromebooks.</p>
+<p>Yes. SnapRec runs in any Chromium-based browser, including Chrome on ChromeOS. Chromebooks use Chrome as their primary browser, so the extension installs and runs exactly the same way. The one difference is that Full Screen mode on a Chromebook captures the entire ChromeOS desktop including the shelf.</p>
+
+<h3>What file format does SnapRec export?</h3>
+<p>Recordings are saved as MP4 files, which are compatible with every major video platform, messaging app, and project management tool. MP4 is the standard for screen recordings because it balances quality and file size efficiently — a 5-minute 1080p recording is typically 50–150MB depending on screen content and motion.</p>
+
+<h3>Can I record two screens at once?</h3>
+<p>SnapRec captures one source at a time (tab, window, or screen). To record two monitors simultaneously, select Full Screen mode and use "Share entire screen" — then choose the display you want. If your goal is to show two applications side by side, arrange them on one screen and use Full Screen or Window mode to capture both at once.</p>
         `,
         faqs: [
-            { q: 'Can I record my screen on Chrome without an extension?', a: "Chrome doesn't have a built-in screen recorder. You need either a browser extension like SnapRec or a desktop application. SnapRec is the lightest option — it's under 1MB and works instantly." },
-            { q: 'Is SnapRec really free?', a: 'Yes, 100% free. No hidden limits, no watermarks, no time caps, and no mandatory sign-up.' },
-            { q: 'Does it work on Chromebook?', a: 'Yes! SnapRec works on any device that runs Chrome, including Chromebooks.' },
+            { q: 'Can I record my screen on Chrome without an extension?', a: "Chrome doesn't have a built-in screen recorder. The closest native option is DevTools screenshots, but there's no built-in video capture. You need a browser extension like SnapRec or a desktop application. SnapRec is under 1MB and starts recording immediately after a one-time install with no configuration required." },
+            { q: 'Is SnapRec really free forever?', a: 'Yes — no watermarks, no time caps, no recording count limits, and no mandatory account. Signing in with Google unlocks optional cloud storage, but all recording features work without any account.' },
+            { q: 'Does it work on Chromebook?', a: 'Yes. SnapRec runs in any Chromium-based browser including Chrome on ChromeOS. It installs and works exactly the same way as on a standard computer.' },
+            { q: 'What file format does SnapRec export?', a: 'Recordings export as MP4 files — compatible with every major platform, messaging app, and project management tool.' },
+            { q: 'Can I record two screens at once?', a: 'SnapRec captures one source at a time. To record two monitors, arrange them so both are visible in one Full Screen capture and select the display showing both.' },
+        ],
+        steps: [
+            { name: 'Install SnapRec from the Chrome Web Store', text: 'Go to the Chrome Web Store, search for SnapRec, and click "Add to Chrome". Installation takes under 10 seconds and requires no account.' },
+            { name: 'Click the SnapRec extension icon', text: 'Click the SnapRec icon in your browser toolbar (or press the keyboard shortcut Ctrl+Shift+4). The extension popup opens.' },
+            { name: 'Choose your recording source', text: 'Select Tab, Window, or Full Screen as your recording source. Tab recording is recommended for browser content — it captures audio cleanly without system noise.' },
+            { name: 'Enable audio and webcam (optional)', text: 'Toggle microphone on to capture your voice. Enable webcam to add a picture-in-picture overlay showing your face.' },
+            { name: 'Start recording', text: 'Click the Record button. Chrome asks which tab, window, or screen to share — select your target and recording begins immediately.' },
+            { name: 'Stop and export', text: 'Click the stop button when finished. Download as MP4 or get an instant shareable link. No watermarks, no account required.' },
         ],
     },
     {
@@ -417,70 +480,107 @@ export const blogPosts: BlogPost[] = [
         description: 'Learn 3 easy ways to capture a full-page screenshot in Chrome — using DevTools, Chrome\'s built-in tool, and the SnapRec extension.',
         keywords: 'full page screenshot chrome, screenshot entire page chrome, how to take full page screenshot, chrome screenshot extension, full page capture, screenshot whole page, scrolling screenshot chrome',
         date: '2026-02-03',
-        readTime: '4 min read',
+        readTime: '7 min read',
         category: 'tutorial',
         heroIcon: 'screenshot_monitor',
         content: `
-<h2 id="intro">Why Full-Page Screenshots?</h2>
-<p>Sometimes you need to capture an entire webpage — not just what's visible on your screen. Whether it's a design review, bug documentation, or saving a receipt, a full-page screenshot captures everything from top to bottom in one image.</p>
-<p>Here are 3 ways to do it in Chrome, from quickest to most powerful.</p>
+<h2 id="intro">Why You Need Full-Page Screenshots</h2>
+<p>A standard screenshot only captures what's visible in your browser viewport — typically 800–1,200 pixels of vertical content. For long webpages, that means most of the content is cut off. Full-page screenshots solve this by automatically scrolling the page and stitching everything into one image, from the top header to the bottom footer.</p>
+<p>Here are the situations where full-page screenshots matter most: <strong>design reviews</strong> where a designer or client needs to see an entire layout in context; <strong>bug documentation</strong> where the issue is below the fold; <strong>saving receipts and confirmations</strong> before they expire; <strong>competitive research</strong> archiving a competitor's pricing or landing page; and <strong>compliance records</strong> capturing a full terms-of-service page with a timestamp.</p>
+<p>This guide covers 3 methods for capturing full-page screenshots in Chrome, with honest pros and cons for each.</p>
 
 <img src="/blog/snaprec-screenshot-popup.png" alt="SnapRec screenshot popup showing Visible Area, Full Page, and Select Region options" />
 
-<h2 id="method-1">Method 1: Chrome DevTools (Built-in, No Extension)</h2>
-<p>Chrome has a hidden full-page screenshot feature in DevTools:</p>
+<h2 id="method-1">Method 1: Chrome DevTools (No Extension Required)</h2>
+<p>Chrome has a hidden full-page screenshot feature buried inside its developer tools. It works without installing anything — useful for a one-off capture when you don't have an extension.</p>
 <ol>
-<li>Press <code>Ctrl+Shift+I</code> (Windows) or <code>Cmd+Option+I</code> (Mac) to open DevTools</li>
-<li>Press <code>Ctrl+Shift+P</code> (Windows) or <code>Cmd+Shift+P</code> (Mac) to open the Command Menu</li>
-<li>Type <strong>"screenshot"</strong> and select <strong>"Capture full-size screenshot"</strong></li>
-<li>The screenshot saves automatically to your Downloads folder</li>
+<li>Open the page you want to capture</li>
+<li>Press <code>Ctrl+Shift+I</code> (Windows/Linux) or <code>Cmd+Option+I</code> (Mac) to open DevTools</li>
+<li>Press <code>Ctrl+Shift+P</code> (Windows/Linux) or <code>Cmd+Shift+P</code> (Mac) to open the Command Menu</li>
+<li>Type <strong>"screenshot"</strong> — you'll see four options. Select <strong>"Capture full size screenshot"</strong></li>
+<li>Chrome downloads the PNG automatically to your Downloads folder</li>
 </ol>
-<p><strong>Pros:</strong> No extension needed, works immediately<br/>
-<strong>Cons:</strong> Multiple steps, no annotation tools, can miss dynamic content</p>
+<p><strong>When to use DevTools:</strong> One-time captures on a machine where you can't install extensions (e.g., a work-managed computer with restricted installs), or when you need a screenshot of a page at a custom viewport width for responsive design testing.</p>
+<p><strong>Limitations:</strong> DevTools screenshots miss dynamically loaded content if you haven't scrolled to trigger it. They also skip sticky headers and fixed-position navigation, which may appear incorrectly stacked in the output. There's no annotation or sharing — you get a raw PNG in your Downloads folder.</p>
 
 <h2 id="method-2">Method 2: SnapRec Extension (Recommended)</h2>
-<p>The fastest and most feature-rich method:</p>
+<p>For regular screenshot workflows, SnapRec's Full Page mode is the fastest option. It handles automatic scrolling, stitches the image correctly, and feeds the result directly into an annotation editor — all in one flow.</p>
 <ol>
-<li>Install <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec from the Chrome Web Store</a></li>
-<li>Click the SnapRec icon → <strong>Full Page Screenshot</strong></li>
-<li>SnapRec automatically scrolls and captures the entire page</li>
-<li>The screenshot opens in SnapRec's <strong>built-in editor</strong> where you can annotate, blur, highlight, or crop</li>
-<li>Download or share via link</li>
+<li>Install <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec from the Chrome Web Store</a> (free, no account required)</li>
+<li>Navigate to the page you want to capture</li>
+<li>Click the SnapRec icon in your toolbar → switch to <strong>Screenshot</strong> mode</li>
+<li>Select <strong>Full Page</strong></li>
+<li>SnapRec scrolls the page automatically and captures everything</li>
+<li>The screenshot opens immediately in the built-in editor — annotate, blur sensitive content, crop, or add text labels</li>
+<li>Click <strong>Download</strong> to save the PNG locally, or click <strong>Share</strong> to get an instant link</li>
 </ol>
-<p><strong>Pros:</strong> One-click, built-in editor, share via link, supports annotation<br/>
-<strong>Cons:</strong> Requires extension installation</p>
+<p><strong>When to use SnapRec:</strong> Any time you need to do something with the screenshot after capturing it — annotate for a design review, blur personal data before sharing with a team, or generate a shareable link for Slack. The capture-to-share workflow takes under 30 seconds.</p>
+<p>SnapRec also handles dynamic content better than DevTools. It adds a short scroll delay to let lazy-loaded images render before stitching, which prevents the blank image blocks that frequently appear in DevTools screenshots of image-heavy pages.</p>
 
-<h2 id="method-3">Method 3: Print to PDF (Workaround)</h2>
-<p>If you just need a quick save of a full page:</p>
+<h2 id="method-3">Method 3: Print to PDF (No Tools Needed)</h2>
+<p>If you need to capture a full page and have no extension installed, Chrome's Print to PDF option provides a complete page snapshot as a document:</p>
 <ol>
-<li>Press <code>Ctrl+P</code> (Windows) or <code>Cmd+P</code> (Mac)</li>
-<li>Change destination to <strong>"Save as PDF"</strong></li>
+<li>Press <code>Ctrl+P</code> (Windows/Linux) or <code>Cmd+P</code> (Mac) to open the print dialog</li>
+<li>In the <strong>Destination</strong> dropdown, select <strong>"Save as PDF"</strong></li>
+<li>Optionally set "More settings" → "Background graphics" to On to include page colors and images</li>
 <li>Click <strong>Save</strong></li>
 </ol>
-<p><strong>Pros:</strong> No tools needed, preserves text as selectable<br/>
-<strong>Cons:</strong> Not an image, formatting may break, no annotation</p>
+<p><strong>When to use Print to PDF:</strong> Archiving a receipt, invoice, or legal document where preserving selectable text is important. PDFs are preferable to images for documents you may need to search or print.</p>
+<p><strong>Limitations:</strong> The output is a PDF, not an image — you can't annotate it directly in most tools. Page formatting often breaks since print stylesheets differ from screen stylesheets. Sticky navigation elements, cookie banners, and popups may appear in unexpected positions. This method is best for text-heavy documents, not pixel-accurate page captures.</p>
 
 <h2 id="comparison">Which Method Should You Use?</h2>
 <table>
-<thead><tr><th>Method</th><th>Speed</th><th>Quality</th><th>Annotation</th><th>Sharing</th></tr></thead>
+<thead><tr><th>Method</th><th>Speed</th><th>Accuracy</th><th>Annotation</th><th>Sharing</th><th>Best For</th></tr></thead>
 <tbody>
-<tr><td>DevTools</td><td>⭐⭐</td><td>⭐⭐⭐</td><td>❌</td><td>❌</td></tr>
-<tr><td><strong>SnapRec</strong></td><td>⭐⭐⭐</td><td>⭐⭐⭐</td><td>✅</td><td>✅</td></tr>
-<tr><td>Print to PDF</td><td>⭐⭐⭐</td><td>⭐⭐</td><td>❌</td><td>❌</td></tr>
+<tr><td>DevTools</td><td>⭐⭐</td><td>⭐⭐</td><td>❌</td><td>❌</td><td>Developers, viewport testing</td></tr>
+<tr><td><strong>SnapRec</strong></td><td>⭐⭐⭐</td><td>⭐⭐⭐</td><td>✅</td><td>✅</td><td>Most workflows</td></tr>
+<tr><td>Print to PDF</td><td>⭐⭐⭐</td><td>⭐</td><td>❌</td><td>❌</td><td>Documents and receipts</td></tr>
 </tbody>
 </table>
-<p><strong>Our recommendation:</strong> Use SnapRec for regular screenshot workflows. The built-in annotation editor and cloud sharing make it the most productive option.</p>
+
+<h2 id="troubleshooting">Troubleshooting Full-Page Screenshot Problems</h2>
+
+<h3>Images appear blank or grey in my screenshot</h3>
+<p>This happens with lazy-loading — the page only loads images as you scroll to them. For DevTools: scroll the page all the way to the bottom before opening the Command Menu, then capture. For SnapRec: the built-in scroll delay handles this automatically; if you still see blank images, try scrolling the page manually before using Full Page mode.</p>
+
+<h3>Sticky header or navigation bar repeats throughout the screenshot</h3>
+<p>Fixed-position elements (sticky headers, cookie banners, chat widgets) can appear multiple times in a stitched screenshot because they remain in the same screen position during each scroll increment. In SnapRec, you can crop these repeated elements in the editor after capture. In DevTools, there's no built-in fix — you'd need to use browser DevTools to temporarily hide the element (<code>display: none</code>) before capturing.</p>
+
+<h3>The screenshot is cut off partway down the page</h3>
+<p>Very long pages (over 15,000 pixels tall) can hit memory limits during stitching. Try capturing sections using SnapRec's Region selection tool instead of Full Page mode, then combine the images. Alternatively, use Print to PDF for very long pages — it handles virtually unlimited page lengths without memory issues.</p>
+
+<h3>Login-required pages show a login screen instead of content</h3>
+<p>Full-page screenshot tools capture what the browser renders. If a page requires login and you're not logged in (or your session expired), you'll capture the login prompt. Make sure you're authenticated before starting the capture. For sensitive authenticated pages (banking, admin dashboards), be mindful of what you're capturing and who you're sharing it with.</p>
+
+<h2 id="workflows">Full-Page Screenshot Workflows by Role</h2>
+
+<h3>For Designers</h3>
+<p>Use SnapRec's Full Page mode to capture entire landing pages, then open the annotation editor to mark up design changes. Use the text label tool to add specific feedback like "Increase line-height to 1.6 here" or "Replace this stock photo." Export and share the annotated image directly in Figma's comment thread or via a Slack link — no need to screenshare or schedule a review call.</p>
+
+<h3>For QA and Developers</h3>
+<p>When documenting visual bugs, capture the full page with DevTools at the exact viewport width where the issue occurs (use Chrome's responsive design mode to set a precise width before capturing). This gives you a pixel-perfect reference that matches a specific breakpoint. For bug tickets, attach both a full-page screenshot showing context and a cropped image highlighting the specific element — two images tell a cleaner story than one.</p>
+
+<h3>For Customer Support</h3>
+<p>When helping a customer with a UI question, full-page screenshots let you capture exactly what they're seeing and annotate it with numbered steps. Use SnapRec to capture, add numbered arrow annotations for each step, blur any personal account information visible on the page, and share via link — the customer gets a personally annotated guide in seconds.</p>
 
 <h2 id="faq">FAQ</h2>
 <h3>Can I take a scrolling screenshot on Chrome mobile?</h3>
-<p>Chrome on Android supports scrolling screenshots natively (Android 12+). On iOS, you can take a full-page screenshot in Safari but not Chrome.</p>
+<p>Chrome on Android supports scrolling screenshots natively on Android 12+. After taking a standard screenshot, a small "Capture more" option appears at the bottom — tap it to extend the capture downward. On iOS, Chrome does not support full-page screenshots, but Safari does: take a screenshot on iPhone, tap the preview, then select "Full Page" in the top tab bar of the preview editor.</p>
 
 <h3>Why is my full-page screenshot cut off?</h3>
-<p>Some pages use lazy-loading for images. Try scrolling to the bottom of the page first before capturing, or use SnapRec which handles this automatically.</p>
+<p>The most common causes are lazy-loading (images haven't rendered yet) and page length exceeding the tool's memory limit. For lazy-loading: scroll the page to the bottom first, then capture. For very long pages: use region screenshots to capture in sections. SnapRec's Full Page mode adds a scroll delay to handle most lazy-loading automatically.</p>
+
+<h3>Does full-page screenshot work on pages behind a login?</h3>
+<p>Yes — the screenshot captures whatever Chrome is rendering in your active session. If you're logged in, the screenshot shows your authenticated view. If your session has expired or you haven't logged in, you'll capture the login page. Always check your login status before capturing authenticated pages.</p>
+
+<h3>What's the difference between full-page screenshot and screen recording?</h3>
+<p>A full-page screenshot is a static image of the entire page at a moment in time — ideal for design reviews, documentation, and archiving. A screen recording captures real-time interaction with the page — ideal for demonstrating bugs, walkthroughs, and tutorials where the sequence of actions matters as much as the final state. Use SnapRec for both from the same extension popup.</p>
         `,
         faqs: [
-            { q: 'Can I take a scrolling screenshot on Chrome mobile?', a: 'Chrome on Android supports scrolling screenshots natively (Android 12+). On iOS, you can take a full-page screenshot in Safari but not Chrome.' },
-            { q: 'Why is my full-page screenshot cut off?', a: 'Some pages use lazy-loading for images. Try scrolling to the bottom of the page first before capturing, or use SnapRec which handles this automatically.' },
+            { q: 'Can I take a scrolling screenshot on Chrome mobile?', a: 'Chrome on Android supports scrolling screenshots on Android 12+. On iOS, Chrome does not support full-page captures but Safari does — take a screenshot, tap the preview, then select "Full Page."' },
+            { q: 'Why is my full-page screenshot cut off?', a: 'Usually caused by lazy-loading (images not yet rendered) or very long page length. Scroll to the bottom of the page first, then capture. SnapRec adds a scroll delay to handle lazy-loading automatically.' },
+            { q: 'Does full-page screenshot work on pages behind a login?', a: 'Yes — it captures whatever Chrome is rendering in your active session. Make sure you are logged in before capturing.' },
+            { q: 'What is the difference between full-page screenshot and screen recording?', a: 'A full-page screenshot is a static image ideal for design review and documentation. A screen recording captures real-time interaction, ideal for bug reports and tutorials. SnapRec handles both from the same extension popup.' },
         ],
     },
     {
@@ -494,47 +594,112 @@ export const blogPosts: BlogPost[] = [
         heroIcon: 'balance',
         content: `
 <h2 id="intro">Looking for a Free Loom Alternative?</h2>
-<p>Loom is one of the most popular screen recording tools for async video communication. But with its free plan limited to <strong>5-minute recordings</strong> and <strong>25 total videos</strong>, many users are looking for alternatives that don't restrict their usage.</p>
-<p>Enter <strong>SnapRec</strong> — a free Chrome extension that offers unlimited recording with no watermarks, up to 4K quality. Let's see how they compare.</p>
+<p>Loom is one of the most popular screen recording tools for async video communication — and for good reason. Its clean interface and instant sharing make it genuinely useful for remote teams. But there's a problem: Loom's free plan is heavily restricted. You're capped at <strong>5 minutes per recording</strong> and <strong>25 total stored videos</strong>. For anyone who records regularly, those limits appear fast.</p>
+<p>In 2023, Atlassian acquired Loom for $975 million, and since then the free plan has only gotten tighter. In 2024, Loom's standalone free accounts were migrated into Atlassian accounts — adding friction for users who just want to record something quickly.</p>
+<p>If you're hitting those limits or simply want a tool without the restrictions, <strong>SnapRec</strong> is the best free Loom alternative. It's a Chrome extension with unlimited recording, up to 4K quality, no watermarks, and no account required to start recording.</p>
 
 <img src="/blog/snaprec-dashboard.png" alt="SnapRec dashboard showing recorded videos and screenshots library" />
 
-<h2 id="comparison">Feature-by-Feature Comparison</h2>
+<h2 id="comparison">Feature-by-Feature Comparison: SnapRec vs Loom</h2>
 <table>
 <thead><tr><th>Feature</th><th>SnapRec (Free)</th><th>Loom Free</th><th>Loom Business ($12.50/mo)</th></tr></thead>
 <tbody>
 <tr><td>Recording Length</td><td>∞ Unlimited</td><td>5 minutes</td><td>∞ Unlimited</td></tr>
 <tr><td>Number of Videos</td><td>∞ Unlimited</td><td>25 videos</td><td>∞ Unlimited</td></tr>
-<tr><td>Watermarks</td><td>❌ None</td><td>❌ None</td><td>❌ None</td></tr>
+<tr><td>Watermarks</td><td>None</td><td>None</td><td>None</td></tr>
 <tr><td>Resolution</td><td>Up to 4K</td><td>720p</td><td>4K</td></tr>
 <tr><td>Webcam Overlay</td><td>✅</td><td>✅</td><td>✅</td></tr>
 <tr><td>System Audio</td><td>✅</td><td>✅</td><td>✅</td></tr>
 <tr><td>Cloud Sharing</td><td>✅ Free</td><td>✅</td><td>✅</td></tr>
-<tr><td>Screenshots</td><td>✅ Full-page + annotation</td><td>❌</td><td>❌</td></tr>
-<tr><td>Price</td><td><strong>$0</strong></td><td>$0 (limited)</td><td>$12.50/mo/user</td></tr>
+<tr><td>Full-page Screenshots</td><td>✅ + annotation</td><td>❌</td><td>❌</td></tr>
+<tr><td>Auto-zoom on clicks</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td>Account required</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Price</td><td><strong>$0 — no limits</strong></td><td>$0 (5 min / 25 videos)</td><td>$12.50/mo/user</td></tr>
 </tbody>
 </table>
 
-<h2 id="when-snaprec">When to Choose SnapRec</h2>
+<h2 id="loom-limits">Why Loom's Free Limits Matter in Practice</h2>
+<p>The 5-minute recording limit sounds manageable until you're mid-walkthrough and the recording just stops. The 25-video cap means anyone who records regularly runs out within weeks.</p>
+<p>Common scenarios where Loom's free tier breaks down:</p>
 <ul>
-<li>You want <strong>truly unlimited</strong> recordings with no per-video or per-minute caps</li>
-<li>You need <strong>4K quality</strong> without paying for a premium plan</li>
-<li>You also need a <strong>screenshot tool</strong> with annotation capabilities</li>
-<li>You prefer a <strong>lightweight browser extension</strong> over installing a desktop app</li>
-<li>You're a solo creator, freelancer, or small team that doesn't need enterprise features</li>
+<li><strong>Customer onboarding walkthroughs</strong> — a thorough product walkthrough easily runs 8–15 minutes</li>
+<li><strong>Code reviews</strong> — explaining a complex pull request takes time</li>
+<li><strong>Tutorial creation</strong> — instructional content is often longer than 5 minutes by definition</li>
+<li><strong>Weekly team updates</strong> — 25 videos disappears quickly when recording weekly updates for a team</li>
+</ul>
+<p>When you hit these limits, Loom prompts you to upgrade to Business at $12.50 per user per month. For a team of 5, that's $750/year for something that should be free.</p>
+
+<h2 id="what-snaprec-does-better">What SnapRec Does Better</h2>
+
+<h3>No time limits — ever</h3>
+<p>SnapRec has no per-recording time limit. Record for 2 minutes or 2 hours. There's no cap, no prompt to upgrade, no recording that stops mid-sentence.</p>
+
+<h3>No video storage caps</h3>
+<p>Record as many videos as you need. There's no 25-video limit. Your recordings stay accessible in your library without expiring or being auto-deleted.</p>
+
+<h3>4K recording, free</h3>
+<p>Loom's free plan caps recording quality at 720p. SnapRec records at up to 4K resolution on the free plan — no upgrade required. For screen recordings where text readability matters (code, documents, spreadsheets), the quality difference is significant.</p>
+
+<h3>Full-page screenshots + annotation editor</h3>
+<p>This is the biggest functional difference. Loom is a video-only tool — there's no screenshot mode, no full-page capture, no annotation editor. SnapRec includes:</p>
+<ul>
+<li>Full-page scrolling screenshots</li>
+<li>Visible area and region capture</li>
+<li>Built-in annotation editor with arrows, text, shapes, and blur</li>
+<li>Instant shareable links for screenshots, not just videos</li>
+</ul>
+<p>If you regularly screenshot and annotate — designs, bugs, documents — Loom simply doesn't do this. SnapRec replaces two separate tools.</p>
+
+<h3>Auto-zoom on clicks</h3>
+<p>SnapRec automatically zooms in on your mouse clicks during playback. This makes recordings look professionally edited without touching a timeline. Loom doesn't have this feature at any price tier.</p>
+
+<h3>No account required</h3>
+<p>Loom requires you to create an account before recording anything. SnapRec lets you record and download immediately with zero sign-up. You only need an account if you want cloud sharing — and even then it's optional.</p>
+
+<h2 id="when-loom">When Loom Is Still Worth Using</h2>
+<p>Loom isn't a bad product — it's a restricted one. If the following apply to you, Loom Business might justify the cost:</p>
+<ul>
+<li><strong>Large enterprise teams</strong> that need workspace management, SSO, and admin controls</li>
+<li><strong>CRM integrations</strong> (Salesforce, HubSpot, LinkedIn) built into Loom Business</li>
+<li><strong>Viewer engagement analytics</strong> — Loom Business shows exactly who watched, how much, and where they stopped</li>
+<li><strong>Custom branding</strong> on your recording viewer page</li>
+</ul>
+<p>If none of those enterprise features matter to you, you're paying for restrictions to be lifted — not for capabilities you actually need.</p>
+
+<h2 id="migration">Migrating from Loom to SnapRec</h2>
+<p>Switching is straightforward:</p>
+<ol>
+<li><strong>Install SnapRec</strong> — visit the Chrome Web Store and add the extension. Takes 10 seconds.</li>
+<li><strong>Export Loom videos you want to keep</strong> — Loom allows video downloads. Save important recordings before canceling.</li>
+<li><strong>Start recording with SnapRec</strong> — the workflow is similar: click the icon, choose your recording source, hit record, share the link.</li>
+<li><strong>Share your SnapRec library link</strong> with colleagues — they can access recordings without creating an account</li>
+</ol>
+
+<h2 id="advanced-tips">Advanced Tips for SnapRec Users Coming from Loom</h2>
+<ul>
+<li><strong>Keyboard shortcuts</strong> — use <code>Ctrl+Shift+4</code> to start/stop recording without opening the popup. Much faster than Loom's workflow.</li>
+<li><strong>Tab recording for meeting calls</strong> — record Google Meet, Zoom, or Teams calls by selecting the browser tab. Clean audio without system noise.</li>
+<li><strong>Annotation before sharing</strong> — open any recording in the viewer, annotate key moments, then share. Useful for async design reviews where you'd otherwise write long descriptions.</li>
+<li><strong>Screenshot + recording combo</strong> — for bug reports, take a full-page screenshot to document the state, then record a video showing the steps to reproduce. Both shareable from one tool.</li>
 </ul>
 
-<h2 id="when-loom">When to Choose Loom</h2>
-<ul>
-<li>You're in a <strong>large organization</strong> that needs workspace management and admin controls</li>
-<li>You need <strong>viewer analytics</strong> (who watched, how much they watched)</li>
-<li>You need <strong>CRM integrations</strong> (Salesforce, HubSpot, etc.)</li>
-<li>You have the budget for $12.50/user/month</li>
-</ul>
+<h2 id="troubleshooting">Troubleshooting Common SnapRec Issues</h2>
+
+<h3>Recording doesn't start after clicking record</h3>
+<p>This usually happens when Chrome hasn't been granted screen capture permissions. Check your Chrome extension permissions: go to <code>chrome://extensions</code>, find SnapRec, and verify it has the "Screen capture" permission enabled.</p>
+
+<h3>Audio isn't being captured</h3>
+<p>Two common causes: (1) Your microphone permissions weren't granted when prompted — go to Chrome Settings → Privacy → Microphone and allow SnapRec. (2) For system audio, make sure you selected "Tab" recording and granted the tab audio permission when Chrome prompted you.</p>
+
+<h3>Recording quality is lower than expected</h3>
+<p>SnapRec matches your display resolution by default. If you're on a low-resolution display, the recording will reflect that. For the best quality, record at your display's native resolution and avoid scaling the browser window during recording.</p>
+
+<h3>Shareable link isn't working</h3>
+<p>Shareable links require the recording to be uploaded to the cloud. If you recorded without signing in, the video is local only. Sign in with Google to enable cloud sharing and generate a shareable link.</p>
 
 <h2 id="bottom-line">The Bottom Line</h2>
-<p>Loom is a great product, but its free plan is too restrictive for most users. If you're hitting the 5-minute wall or the 25-video limit, <a href="https://www.snaprecorder.org/loom-alternative">SnapRec is the best free Loom alternative</a> — giving you everything you need without restrictions.</p>
-<p><strong>SnapRec is what Loom's free plan should be:</strong> unlimited recordings, 4K quality, cloud sharing, and screenshots — all at $0. Try the <a href="https://www.snaprecorder.org">free Chrome screen recorder</a> that has no limits.</p>
+<p>Loom is a polished product with a genuinely restrictive free plan. The 5-minute cap and 25-video limit aren't accidents — they're designed to push you toward the paid tier. If you're a solo creator, freelancer, educator, developer, or small team that just wants to record without restrictions, <strong>SnapRec is the direct Loom replacement you need</strong>.</p>
+<p>Same core workflow. Unlimited recordings. 4K quality. Screenshots included. No account required to start. All at $0. <a href="https://www.snaprecorder.org/loom-alternative">See the full SnapRec vs Loom comparison</a> or <a href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">install SnapRec from the Chrome Web Store</a> and try it yourself.</p>
         `,
     },
     {
@@ -603,6 +768,83 @@ export const blogPosts: BlogPost[] = [
 </tbody>
 </table>
 
+<h2 id="advanced-audio">Advanced Audio Configuration</h2>
+<p>SnapRec supports three audio sources that can be combined:</p>
+<ul>
+<li><strong>Microphone</strong> — captures your voice. Works with any mic: built-in laptop mic, USB mic, or headset.</li>
+<li><strong>System audio</strong> — captures sounds playing on your computer: music, app notifications, video audio. Only available when recording a browser tab (Chrome passes tab audio directly).</li>
+<li><strong>Tab audio only</strong> — when you record a specific browser tab, all audio from that tab (video, audio playback, embedded calls) is captured cleanly without the microphone. Useful for capturing software demos where only the app's audio matters.</li>
+</ul>
+<p><strong>Pro tip:</strong> For the cleanest recordings, use tab recording mode when capturing browser-based content. Chrome routes the tab audio directly to the recording, bypassing your system's audio drivers entirely. The result is crisp, artifact-free audio even on noisy laptops.</p>
+
+<h2 id="webcam-setup">Setting Up Your Webcam for Professional Results</h2>
+<p>A webcam overlay makes recordings feel more personal and builds trust with viewers — especially in tutorial, sales, and support contexts. Here's how to get it right:</p>
+
+<h3>Lighting your shot</h3>
+<p>The biggest difference between an amateur and professional-looking webcam shot is lighting. You don't need expensive equipment:</p>
+<ul>
+<li><strong>Face a window</strong> — natural light from in front of you (not behind) creates even, flattering illumination for free</li>
+<li><strong>Use a desk lamp</strong> — position it at a 45-degree angle to your face, slightly above eye level</li>
+<li><strong>Avoid backlit setups</strong> — sitting with a window behind you makes you appear as a dark silhouette</li>
+</ul>
+
+<h3>Camera positioning</h3>
+<ul>
+<li><strong>Eye level or slightly above</strong> — cameras placed below eye level are unflattering and feel unprofessional</li>
+<li><strong>Keep the overlay small</strong> — for tutorial content, the screen is the star. Keep the webcam circle small enough not to obscure important content</li>
+<li><strong>Corner placement</strong> — bottom-right is the most common and least intrusive placement for most content types</li>
+</ul>
+
+<h3>Background considerations</h3>
+<p>A cluttered or distracting background undermines an otherwise good recording. Options:</p>
+<ul>
+<li>Keep your physical background clean and minimal</li>
+<li>Sit against a plain wall or bookshelf</li>
+<li>For software tutorials where the content matters more than the presenter, turn off the webcam overlay entirely</li>
+</ul>
+
+<h2 id="use-cases">Use Cases by Workflow Type</h2>
+<table>
+<thead><tr><th>Use Case</th><th>Audio Type</th><th>Webcam</th><th>Recording Mode</th></tr></thead>
+<tbody>
+<tr><td>Product demo for prospects</td><td>Microphone</td><td>Yes — builds rapport</td><td>Tab or Window</td></tr>
+<tr><td>Bug report for engineers</td><td>Microphone</td><td>No — screen is what matters</td><td>Tab or Full Screen</td></tr>
+<tr><td>Online tutorial / course video</td><td>Microphone + System</td><td>Yes — adds engagement</td><td>Tab (browser content) or Window</td></tr>
+<tr><td>Code review walkthrough</td><td>Microphone</td><td>Optional</td><td>Window (code editor)</td></tr>
+<tr><td>Meeting recording (Google Meet)</td><td>Tab audio only</td><td>No — captured in meeting</td><td>Tab</td></tr>
+<tr><td>Sales training video</td><td>Microphone</td><td>Yes</td><td>Full Screen</td></tr>
+<tr><td>Customer support walkthrough</td><td>Microphone</td><td>No</td><td>Tab or Window</td></tr>
+</tbody>
+</table>
+
+<h2 id="quality-tips">Tips for Consistently High-Quality Audio Recordings</h2>
+<ol>
+<li><strong>Use an external microphone when possible</strong> — built-in laptop mics are omnidirectional and pick up keyboard noise, fan hum, and room echo. A $30 USB cardioid mic makes a dramatic difference.</li>
+<li><strong>Record in the quietest space available</strong> — close doors, turn off fans, and silence notifications. Background noise is distracting and can't be easily removed after recording.</li>
+<li><strong>Do a 5-second test recording first</strong> — check your audio levels by recording briefly, playing it back, and adjusting mic positioning or volume before the full take.</li>
+<li><strong>Use a pop filter or speak across the mic</strong> — plosive sounds (p, b, t sounds) cause "popping" in recordings. Positioning the mic slightly to the side of your mouth reduces this.</li>
+<li><strong>Speak at a consistent distance from the mic</strong> — moving closer increases volume; moving away decreases it. Try to maintain the same distance throughout the recording.</li>
+</ol>
+
+<h2 id="troubleshooting">Troubleshooting Audio and Webcam Issues</h2>
+
+<h3>Microphone not working in SnapRec</h3>
+<p>If your mic doesn't appear or isn't capturing audio, check these in order:</p>
+<ol>
+<li>Verify your default microphone in OS settings (Windows: Sound Settings → Input device; macOS: System Settings → Sound → Input)</li>
+<li>In Chrome, go to <code>chrome://settings/content/microphone</code> and ensure SnapRec has permission</li>
+<li>Restart Chrome after changing permissions — Chrome sometimes caches permission denials</li>
+</ol>
+
+<h3>System audio not being captured</h3>
+<p>System audio only works when recording a browser tab, not full screen or window. When you select "Tab" and confirm which tab to share, Chrome passes that tab's audio directly to SnapRec. If you still don't hear it, ensure "Share tab audio" is checked in the Chrome sharing dialog that appears when you start recording.</p>
+
+<h3>Webcam appearing black or not showing</h3>
+<p>This is almost always a permissions issue. Go to <code>chrome://settings/content/camera</code> and verify SnapRec has camera access. On macOS, also check System Settings → Privacy & Security → Camera to ensure Chrome has permission.</p>
+
+<h3>Audio and video out of sync</h3>
+<p>Sync issues typically occur on lower-powered devices. Reduce the recording resolution (try 1080p instead of 4K) or close other resource-intensive tabs and applications before recording. Tab recording mode tends to have better sync than full-screen recording.</p>
+
 <h2 id="faq">FAQ</h2>
 <h3>Why can't I hear system audio in my recording?</h3>
 <p>System audio capture works best when recording a <strong>browser tab</strong>. If you're recording the full screen, some operating systems (especially macOS) require additional configuration. Recording a specific tab gives you perfect audio every time.</p>
@@ -612,11 +854,26 @@ export const blogPosts: BlogPost[] = [
 
 <h3>Does webcam recording affect video quality?</h3>
 <p>No. The webcam overlay is composited into the recording without affecting the screen capture resolution. You still get up to 4K quality for the screen portion.</p>
+
+<h3>Can I record audio from both my mic and the tab at the same time?</h3>
+<p>Yes. When recording a tab, you can enable both microphone and tab audio simultaneously. Your voice and the tab's audio (application sounds, video playback) are mixed together in the final recording.</p>
+
+<h3>Does SnapRec work for recording video calls like Zoom or Teams?</h3>
+<p>Yes. Use tab recording mode for browser-based calls (Google Meet, Teams web app). For desktop applications like Zoom, use Window recording mode — select the Zoom window as your recording source. Note that recording calls without participant consent may violate local laws and platform terms of service; always inform participants before recording.</p>
         `,
         faqs: [
             { q: "Why can't I hear system audio in my recording?", a: 'System audio capture works best when recording a browser tab. If you\'re recording the full screen, some operating systems (especially macOS) require additional configuration. Recording a specific tab gives you perfect audio every time.' },
             { q: 'Can I change the webcam position during recording?', a: 'The webcam overlay position is set before recording starts. Choose the corner that works best for your content before hitting record.' },
             { q: 'Does webcam recording affect video quality?', a: 'No. The webcam overlay is composited into the recording without affecting the screen capture resolution. You still get up to 4K quality for the screen portion.' },
+            { q: 'Can I record audio from both my mic and the tab at the same time?', a: 'Yes. When recording a tab, you can enable both microphone and tab audio simultaneously. Your voice and the tab audio are mixed together in the final recording.' },
+            { q: 'Does SnapRec work for recording Zoom or Teams calls?', a: 'Yes. Use tab recording for browser-based calls (Google Meet, Teams web). For desktop apps like Zoom, use Window recording mode. Always inform participants before recording.' },
+        ],
+        steps: [
+            { name: 'Install SnapRec', text: 'Add SnapRec from the Chrome Web Store in seconds. No sign-up required.' },
+            { name: 'Open SnapRec and enable audio/webcam', text: 'Click the SnapRec icon, switch to Record mode, then toggle on Microphone and optionally Webcam Overlay.' },
+            { name: 'Choose your recording source', text: 'Select Tab for browser content (cleanest audio), Window for a specific app, or Full Screen for multi-app workflows.' },
+            { name: 'Start recording', text: 'Click Record. Chrome will ask which tab or screen to share. Select it and recording begins immediately.' },
+            { name: 'Stop and share', text: 'Click stop when done. Download as MP4 or get an instant shareable link — no watermarks.' },
         ],
     },
     {
@@ -682,16 +939,116 @@ export const blogPosts: BlogPost[] = [
 </tbody>
 </table>
 
+<h2 id="annotation">Annotating Chromebook Screenshots</h2>
+<p>Chromebook's built-in screenshot tools save a raw image to your Downloads folder — no annotation, no markup, no way to blur sensitive data. If you need to annotate, your options are:</p>
+
+<h3>Chrome's built-in markup (limited)</h3>
+<p>Since ChromeOS 120, a basic markup tool appears when you take a screenshot via the Screen Capture toolbar. You can draw freehand lines. There's no text tool, no arrows, no blur.</p>
+
+<h3>SnapRec annotation editor (comprehensive)</h3>
+<p>SnapRec opens screenshots directly in a full annotation editor with:</p>
+<ul>
+<li><strong>Arrow tool</strong> — draw precise arrows pointing to specific elements</li>
+<li><strong>Text labels</strong> — add text boxes anywhere on the screenshot</li>
+<li><strong>Highlight tool</strong> — yellow highlights to draw attention to areas</li>
+<li><strong>Blur tool</strong> — redact passwords, personal information, or confidential content before sharing</li>
+<li><strong>Shape tools</strong> — rectangles and circles to frame or highlight regions</li>
+<li><strong>Crop</strong> — trim the screenshot to only the relevant area before sharing</li>
+</ul>
+
+<h2 id="full-page">Full-Page Screenshots on Chromebook</h2>
+<p>The built-in ChromeOS screenshot tools only capture the <em>visible area</em> — what's currently on screen. If you have a long webpage, document, or spreadsheet that requires scrolling, the built-in tools won't capture the full content.</p>
+<p>SnapRec's Full Page screenshot captures the entire scrollable height of any webpage automatically. It scrolls down the page and stitches the captures together into one seamless image — no multiple screenshots to manually stitch in an image editor.</p>
+<p>This is especially useful for:</p>
+<ul>
+<li>Capturing full email threads for documentation</li>
+<li>Documenting full-length web pages for design review</li>
+<li>Taking complete screenshots of Google Docs or Sheets</li>
+<li>Archiving long articles or receipts</li>
+</ul>
+
+<h2 id="use-cases">Chromebook Screenshot Use Cases by Profession</h2>
+
+<h3>Students</h3>
+<ul>
+<li>Screenshot lecture slides for notes</li>
+<li>Capture assignment instructions for offline reference</li>
+<li>Document research sources with full-page screenshots</li>
+<li>Screenshot error messages when getting tech support</li>
+</ul>
+
+<h3>Teachers and Educators</h3>
+<ul>
+<li>Screenshot and annotate student work for feedback</li>
+<li>Capture examples from the web to use in lesson presentations</li>
+<li>Document grading processes for accountability</li>
+<li>Create visual instructions for assignments by annotating screenshots</li>
+</ul>
+
+<h3>Remote Workers</h3>
+<ul>
+<li>Screenshot bugs and annotate them for engineering tickets</li>
+<li>Capture and blur sensitive data before sharing in Slack</li>
+<li>Document workflow steps for onboarding documentation</li>
+<li>Screenshot and annotate design mockups for feedback</li>
+</ul>
+
+<h3>Developers</h3>
+<ul>
+<li>Full-page screenshots of UI bugs at different scroll positions</li>
+<li>Capture API responses and console errors</li>
+<li>Document deployment steps with annotated screenshots</li>
+<li>Take region screenshots of specific UI components for spec documentation</li>
+</ul>
+
+<h2 id="keyboard-shortcuts">Complete ChromeOS Screenshot Keyboard Shortcuts</h2>
+<table>
+<thead><tr><th>Shortcut</th><th>Action</th><th>Saves To</th></tr></thead>
+<tbody>
+<tr><td><code>Ctrl + Show Windows</code></td><td>Full screen screenshot</td><td>Downloads folder</td></tr>
+<tr><td><code>Ctrl + Shift + Show Windows</code></td><td>Partial/region screenshot</td><td>Downloads folder</td></tr>
+<tr><td><code>Ctrl + Alt + Show Windows</code></td><td>Window screenshot (ChromeOS 107+)</td><td>Downloads folder</td></tr>
+<tr><td><code>Ctrl+Shift+1</code> (SnapRec)</td><td>Full-page scrolling screenshot</td><td>SnapRec editor</td></tr>
+<tr><td><code>Ctrl+Shift+2</code> (SnapRec)</td><td>Visible area screenshot</td><td>SnapRec editor</td></tr>
+<tr><td><code>Ctrl+Shift+3</code> (SnapRec)</td><td>Region select screenshot</td><td>SnapRec editor</td></tr>
+</tbody>
+</table>
+
+<h2 id="troubleshooting">Troubleshooting Chromebook Screenshot Issues</h2>
+
+<h3>Screenshots not saving</h3>
+<p>Check your Downloads folder — screenshots always save there by default. If Downloads is full or on a nearly-full drive, screenshots may silently fail. Open the Files app and check storage. You can also change where screenshots are saved via the Screen Capture toolbar (click the gear icon).</p>
+
+<h3>Keyboard shortcuts not working on school Chromebook</h3>
+<p>Some schools disable certain keyboard shortcuts through device management policies. If the standard shortcuts aren't working, try accessing the Screen Capture toolbar from the Quick Settings panel (click the clock or battery area in the bottom-right). This is usually not restricted.</p>
+
+<h3>SnapRec not appearing in Chrome Web Store on managed Chromebook</h3>
+<p>Your school or organization may have an allowlist of approved extensions. Check with your IT administrator — many schools approve SnapRec for educational use. If extensions are blocked, use the DevTools method for full-page screenshots (Method 4).</p>
+
+<h3>Full-page screenshot missing content</h3>
+<p>If SnapRec's full-page screenshot cuts off some content, it may be because the page uses infinite scroll or lazy-loaded images. Scroll to the bottom of the page manually first to trigger content loading, then take the full-page screenshot.</p>
+
+<h3>Screenshot blurry or low quality</h3>
+<p>ChromeOS screenshots match your display resolution. If your Chromebook has a low-resolution display (1366×768 is common on budget models), screenshots will reflect that. There's no way to increase screenshot resolution beyond your display resolution using built-in tools.</p>
+
 <h2 id="faq">FAQ</h2>
 <h3>Where do Chromebook screenshots go?</h3>
-<p>By default, screenshots save to the <strong>Downloads</strong> folder. You can access them via the Files app.</p>
+<p>By default, screenshots save to the <strong>Downloads</strong> folder. You can access them via the Files app. You can change the save location in Screen Capture settings.</p>
 
 <h3>Can I screenshot on a school Chromebook?</h3>
-<p>Keyboard shortcuts usually work even on managed Chromebooks. Extensions may be restricted by your school's admin policy — check with your IT department.</p>
+<p>Keyboard shortcuts usually work even on managed Chromebooks. Extensions like SnapRec may be restricted by your school's admin policy — check with your IT department. The DevTools method (Method 4) typically works even on managed devices for full-page screenshots.</p>
+
+<h3>How do I take a scrolling screenshot on Chromebook?</h3>
+<p>ChromeOS does not have built-in scrolling screenshot capability. Use SnapRec's Full Page mode (Ctrl+Shift+1) or the Chrome DevTools "Capture full-size screenshot" command from the DevTools Command Menu.</p>
+
+<h3>Can I annotate screenshots directly on Chromebook without installing anything?</h3>
+<p>ChromeOS 120+ includes basic markup (freehand drawing) in the Screen Capture preview. For text, arrows, blur, and more professional annotation tools, SnapRec's annotation editor is the best browser-based option.</p>
         `,
         faqs: [
-            { q: 'Where do Chromebook screenshots go?', a: 'By default, screenshots save to the Downloads folder. You can access them via the Files app.' },
-            { q: 'Can I screenshot on a school Chromebook?', a: "Keyboard shortcuts usually work even on managed Chromebooks. Extensions may be restricted by your school's admin policy — check with your IT department." },
+            { q: 'Where do Chromebook screenshots go?', a: 'By default, screenshots save to the Downloads folder. You can access them via the Files app. You can change the save location in Screen Capture settings.' },
+            { q: 'Can I screenshot on a school Chromebook?', a: "Keyboard shortcuts usually work even on managed Chromebooks. Extensions like SnapRec may be restricted by your school's admin policy — check with your IT department." },
+            { q: 'How do I take a scrolling screenshot on Chromebook?', a: "ChromeOS does not have built-in scrolling screenshot capability. Use SnapRec's Full Page mode (Ctrl+Shift+1) or Chrome DevTools 'Capture full-size screenshot'." },
+            { q: 'Can I annotate screenshots on Chromebook without installing anything?', a: 'ChromeOS 120+ has basic markup (freehand drawing). For text, arrows, blur, and professional annotation, SnapRec is the best browser-based option.' },
         ],
     },
     {
@@ -756,16 +1113,99 @@ export const blogPosts: BlogPost[] = [
 </tbody>
 </table>
 
+<h2 id="legal">Legal and Consent Considerations for Recording Meetings</h2>
+<p>Before recording any video call, understand the consent requirements that apply to you:</p>
+<ul>
+<li><strong>One-party consent jurisdictions</strong> — In many US states and countries, you can record a conversation if you are a party to it, without notifying others. However, this varies by state and country.</li>
+<li><strong>Two-party / all-party consent jurisdictions</strong> — Some US states (California, Illinois, Florida, etc.) and many other countries require all participants to consent before recording. Violating these laws can result in legal liability.</li>
+<li><strong>Company/organizational policies</strong> — Even if recording is legally permissible, your employer or the meeting host's organization may have policies prohibiting recording without permission.</li>
+<li><strong>Google Workspace policies</strong> — If a meeting host has disabled recording via Google Workspace admin settings, check your organization's policy before recording externally.</li>
+</ul>
+<p><strong>Best practice:</strong> Always inform participants at the start of the meeting that you're recording. Most people prefer transparency, and in many jurisdictions it's legally required. A simple "I'm recording this call for my notes" is sufficient and respectful.</p>
+
+<h2 id="advanced-use-cases">Advanced Use Cases for Meeting Recordings</h2>
+
+<h3>Creating training materials from live calls</h3>
+<p>Record customer calls, support sessions, or team training meetings and use them as onboarding material. Key moments from recorded calls can be extracted and used for training libraries. New team members learn from real examples rather than hypothetical scenarios.</p>
+
+<h3>Client call documentation</h3>
+<p>For freelancers and consultants, recording client calls provides an objective record of requirements, scope changes, and approvals. "I never said that" disputes are resolved with the recording. Share the recording link with the client afterward as a shared reference.</p>
+
+<h3>Asynchronous meeting summaries</h3>
+<p>Record a 10-minute summary video of what was discussed in a meeting and share it with team members who couldn't attend. More effective than written meeting notes because tone and context are preserved. This replaces the need to repeat the same information multiple times.</p>
+
+<h3>Interview recording</h3>
+<p>With proper consent, recording interviews (user research, job interviews, podcast conversations) via Google Meet provides a searchable reference. Combine the video recording with a separate audio transcription tool for full documentation.</p>
+
+<h2 id="recording-quality">Getting the Best Recording Quality</h2>
+
+<h3>Network considerations</h3>
+<p>Google Meet streams at variable quality depending on network conditions. For the cleanest recording:</p>
+<ul>
+<li>Use a wired ethernet connection rather than WiFi when possible</li>
+<li>Close other tabs and applications using network bandwidth during the recording</li>
+<li>If the meeting quality degrades (pixelation, freezing), the recording captures those artifacts too — nothing SnapRec can do about network-induced quality loss on the meeting side</li>
+</ul>
+
+<h3>Recording at high resolution</h3>
+<p>Tab recording captures Google Meet at whatever resolution your browser window displays it. To maximize recording quality:</p>
+<ul>
+<li>Maximize the Chrome window to full screen before recording</li>
+<li>Set your display resolution to 1080p or higher for the best results</li>
+<li>In Google Meet settings, set video quality to HD (720p or higher) before the meeting starts — this improves both what you see and what SnapRec captures</li>
+</ul>
+
+<h2 id="alternatives">Alternatives to SnapRec for Google Meet Recording</h2>
+<p>SnapRec is the easiest method, but there are others worth knowing:</p>
+<table>
+<thead><tr><th>Method</th><th>Cost</th><th>Setup</th><th>Audio quality</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>SnapRec (tab recording)</td><td>Free</td><td>Under 1 min</td><td>Excellent (direct tab capture)</td><td>Recommended for most users</td></tr>
+<tr><td>Google Meet built-in</td><td>$6+/mo Workspace</td><td>None</td><td>Excellent</td><td>Notifies all participants automatically</td></tr>
+<tr><td>OBS Studio</td><td>Free</td><td>15-30 min</td><td>Good</td><td>Desktop app, more complex setup</td></tr>
+<tr><td>Loom</td><td>$12.50/mo</td><td>2 min</td><td>Good</td><td>5-min limit on free plan</td></tr>
+</tbody>
+</table>
+
+<h2 id="troubleshooting">Troubleshooting Google Meet Recording Issues</h2>
+
+<h3>Meeting audio not being captured</h3>
+<p>The most common issue. Cause: you selected "Window" or "Entire Screen" instead of "Tab". For Google Meet, you must select <strong>Tab recording</strong> and pick the tab with the Meet call. Only tab recording passes the tab's audio (including remote participants' voices) to the recording.</p>
+
+<h3>Recording shows black screen</h3>
+<p>If Google Meet shows a black screen in the recording, the tab may have gone to background. Keep the Meet tab active (in the foreground) during recording. Don't switch to other tabs or minimize Chrome — this can cause the video feed to pause or go black.</p>
+
+<h3>Remote participant audio cut out</h3>
+<p>Tab audio capture requires that the tab sharing dialog includes "Share tab audio". When SnapRec prompts you to select a tab to share, look for the "Share tab audio" checkbox in the Chrome dialog — make sure it's checked.</p>
+
+<h3>Recording paused or choppy</h3>
+<p>Happens on lower-powered devices when both Google Meet and SnapRec are running simultaneously. Try: (1) Close other applications. (2) Reduce the recording quality to 1080p in SnapRec settings. (3) Disable the webcam overlay if it's enabled — this reduces processing load.</p>
+
 <h2 id="faq">FAQ</h2>
 <h3>Can I record Google Meet without others knowing?</h3>
-<p>SnapRec records your screen locally — there's no notification sent to other participants. However, always follow your organization's recording policies and local laws regarding consent.</p>
+<p>SnapRec records your screen locally — there's no notification sent to other participants. However, always follow your organization's recording policies and local laws regarding consent. In many US states and countries, two-party consent laws require you to inform participants.</p>
 
 <h3>Will the recording include both video and audio?</h3>
-<p>Yes, when you record the browser tab, SnapRec captures both the video and all audio from the meeting. Enable your microphone if you also want your side of the conversation recorded.</p>
+<p>Yes, when you record the browser tab, SnapRec captures both the video and all audio from the meeting. Enable your microphone if you also want your side of the conversation captured — without it, only the incoming meeting audio is recorded.</p>
+
+<h3>How long can I record a Google Meet with SnapRec?</h3>
+<p>There is no time limit. Record a 10-minute standup or a 3-hour all-hands — SnapRec has no cap. The only practical limit is your available disk space.</p>
+
+<h3>Does Google Meet notify other participants that I'm recording with SnapRec?</h3>
+<p>No. SnapRec is a screen recorder, not a built-in meeting feature. It captures what's on your screen without interacting with Google Meet's API or sending any notifications to participants. Only Google Meet's native recording function sends the "Recording has started" notification.</p>
         `,
         faqs: [
-            { q: 'Can I record Google Meet without others knowing?', a: "SnapRec records your screen locally — there's no notification sent to other participants. However, always follow your organization's recording policies and local laws regarding consent." },
-            { q: 'Will the recording include both video and audio?', a: 'Yes, when you record the browser tab, SnapRec captures both the video and all audio from the meeting. Enable your microphone if you also want your side of the conversation recorded.' },
+            { q: 'Can I record Google Meet without others knowing?', a: "SnapRec records your screen locally without notifying other participants. However, always follow your organization's recording policies and local consent laws — many jurisdictions require informing all parties." },
+            { q: 'Will the recording include both video and audio?', a: 'Yes. Tab recording captures all meeting video and audio. Enable your microphone to also capture your own voice.' },
+            { q: 'How long can I record a Google Meet with SnapRec?', a: 'No time limit. Record any length meeting — SnapRec has no cap. Only your disk space limits recording length.' },
+            { q: 'Does Google Meet notify participants that I am recording with SnapRec?', a: "No. SnapRec is a screen recorder that doesn't interact with Google Meet's API. Only Google Meet's built-in recording function triggers participant notifications." },
+        ],
+        steps: [
+            { name: 'Install SnapRec', text: 'Add SnapRec from the Chrome Web Store — free, no account required, installs in seconds.' },
+            { name: 'Join your Google Meet call', text: 'Open meet.google.com and join the meeting as you normally would.' },
+            { name: 'Start tab recording', text: 'Click the SnapRec icon, select Record Screen, choose Browser Tab, and select the Google Meet tab. Enable microphone if you want your voice captured.' },
+            { name: 'Confirm tab audio sharing', text: 'In the Chrome sharing dialog, ensure "Share tab audio" is checked — this is how remote participant voices are captured.' },
+            { name: 'Stop and share after the meeting', text: 'Click stop when done. Download as MP4 or share via instant link. No watermarks, no time limits.' },
         ],
     },
     {
@@ -842,60 +1282,106 @@ export const blogPosts: BlogPost[] = [
         description: 'Learn how to blur or hide sensitive data like emails, passwords, and personal info in your screenshots before sharing — using SnapRec\'s free editor.',
         keywords: 'blur screenshot, hide sensitive info screenshot, redact screenshot, blur part of image, censor screenshot, hide personal information screenshot, blur area in screenshot, privacy screenshot',
         date: '2026-02-28',
-        readTime: '4 min read',
+        readTime: '7 min read',
         category: 'tips',
         heroIcon: 'blur_on',
         content: `
-<h2 id="intro">Why You Should Blur Sensitive Information</h2>
-<p>Screenshots often contain sensitive data you don't want to share: email addresses, account numbers, API keys, personal messages, or customer information. Before sharing any screenshot — in bug reports, documentation, social media, or Slack — make sure to redact private details.</p>
+<h2 id="intro">Why Redacting Screenshots Actually Matters</h2>
+<p>Sharing an unredacted screenshot is one of the most common ways private information leaks inside and outside organisations. A developer posts a screenshot of an API response in Slack and doesn't notice the OAuth token in the URL. A customer support agent shares a bug screenshot that includes another customer's email address. A designer sends a UI review screenshot with a test user's real name and phone number visible. These aren't hypothetical — they happen daily in fast-moving teams.</p>
+<p>Beyond internal exposure, screenshots shared externally (on GitHub issues, Twitter, blog posts, Stack Overflow answers) can expose data to anyone who stumbles across them. Search engines index images, and people archive screenshots. Once a piece of private information appears in a screenshot that leaves your control, recovering it is difficult or impossible.</p>
+<p>Blurring is the right habit. This guide shows you how to do it quickly and correctly, so it never slows you down.</p>
 
 <h2 id="method">How to Blur Screenshots with SnapRec</h2>
+<p>SnapRec's blur tool is built directly into the screenshot capture workflow. You don't need to open a second app or upload your image to a third-party service — capture, blur, and share happen in a single continuous flow.</p>
 
 <h3>Step 1: Take Your Screenshot</h3>
-<p>Use SnapRec to capture a visible area, full page, or region screenshot. The screenshot opens automatically in SnapRec's built-in editor.</p>
+<p>Use SnapRec to capture a visible area, full page, or region screenshot. Click the SnapRec icon in your toolbar, switch to <strong>Screenshot</strong> mode, and select your capture type. The screenshot opens automatically in the built-in editor within a second or two.</p>
 
 <h3>Step 2: Select the Blur Tool</h3>
-<p>In the editor toolbar, click the <strong>Blur</strong> tool. Your cursor changes to a crosshair.</p>
+<p>In the editor toolbar, click the <strong>Blur</strong> tool (the icon looks like a water droplet or blur symbol). Your cursor changes to a crosshair, indicating that the tool is active.</p>
 
 <h3>Step 3: Draw Over Sensitive Areas</h3>
-<p>Click and drag over the areas you want to hide. The blur effect is applied instantly. You can blur multiple areas in the same screenshot.</p>
+<p>Click and drag a rectangle over each area you want to obscure. The blur effect is applied instantly and is clearly visible in the editor. You can blur multiple separate areas in the same screenshot — just draw additional rectangles over each sensitive region. If you make a mistake, use the undo button (<code>Ctrl+Z</code> or <code>Cmd+Z</code>) to remove the last blur region.</p>
 
-<h3>Step 4: Save or Share</h3>
-<p>Download the blurred screenshot or generate a shareable link. The blur is permanently baked into the exported image — viewers cannot reverse it.</p>
+<h3>Step 4: Export and Share</h3>
+<p>Click <strong>Download</strong> to save the blurred screenshot as a PNG to your local machine, or click <strong>Share</strong> to get an instant shareable link. The blur is permanently applied to the exported image. The original unblurred version is not stored in the shared link — what recipients see is exactly what you exported.</p>
 
-<h2 id="what-to-blur">What Should You Blur?</h2>
+<h2 id="what-to-blur">What to Blur: A Practical Checklist</h2>
+<p>Before sharing any screenshot, run through this checklist. The categories below cover the most common sensitive data types found in workplace screenshots:</p>
 <ul>
-<li><strong>Email addresses</strong> — prevents spam and phishing</li>
-<li><strong>Names and profile photos</strong> — especially in customer support tickets</li>
-<li><strong>API keys and tokens</strong> — these can be exploited if exposed</li>
-<li><strong>Financial information</strong> — account numbers, balances, transaction details</li>
-<li><strong>URLs with session tokens</strong> — could allow account hijacking</li>
-<li><strong>Personal messages</strong> — respect privacy when sharing conversation screenshots</li>
+<li><strong>Email addresses</strong> — both internal and customer email addresses. Exposed customer emails can enable phishing attacks targeted at your users.</li>
+<li><strong>Names and profile photos</strong> — especially in customer support dashboards, CRM records, and user analytics views. Sharing identifiable customer data in bug reports can violate your privacy policy.</li>
+<li><strong>API keys, tokens, and secrets</strong> — these are immediately exploitable. A leaked API key in a GitHub issue or Stack Overflow post can result in unauthorized usage charges or data breaches. Always blur these, even in internal screenshots.</li>
+<li><strong>Passwords and authentication codes</strong> — one-time codes, MFA backup codes, session tokens, and password reset links all expire quickly but should still be blurred in any screenshot.</li>
+<li><strong>Financial information</strong> — account numbers, balances, transaction amounts, billing addresses. This category is especially critical in screenshots shared externally.</li>
+<li><strong>URLs with session tokens or private parameters</strong> — a URL like <code>https://app.example.com/reset?token=abc123&user=456</code> can allow account hijacking if the token is still valid.</li>
+<li><strong>Private messages and conversation content</strong> — Slack DMs, email threads, and support ticket conversations visible in the background of a screenshot should be blurred if they're not relevant to the screenshot's purpose.</li>
+<li><strong>Internal company data</strong> — revenue figures, employee records, unreleased product names, and internal project names that shouldn't be shared outside the team.</li>
 </ul>
 
-<h2 id="alternatives">Other Methods (and Why SnapRec is Better)</h2>
+<h2 id="redaction-methods">Blur vs Pixelate vs Black Box: Which to Use</h2>
+<p>There are three common ways to hide content in a screenshot, and they're not all equally effective or appropriate:</p>
 <table>
-<thead><tr><th>Method</th><th>Blur Quality</th><th>Speed</th><th>Free</th></tr></thead>
+<thead><tr><th>Method</th><th>Appearance</th><th>Reversible?</th><th>Best Use Case</th></tr></thead>
 <tbody>
-<tr><td><strong>SnapRec</strong></td><td>High (built-in)</td><td>Instant</td><td>Yes</td></tr>
-<tr><td>Photoshop</td><td>High</td><td>Slow (heavy app)</td><td>No ($20/mo)</td></tr>
-<tr><td>macOS Preview</td><td>No blur (only shapes)</td><td>Fast</td><td>Yes</td></tr>
-<tr><td>Windows Paint</td><td>No blur (only cover)</td><td>Fast</td><td>Yes</td></tr>
-<tr><td>Online tools</td><td>Varies</td><td>Medium</td><td>Often limited</td></tr>
+<tr><td><strong>Blur</strong></td><td>Smooth, clearly intentional</td><td>No (when exported)</td><td>Professional sharing, most workplace use cases</td></tr>
+<tr><td>Pixelate</td><td>Blocky mosaic effect</td><td>Potentially (small blocks)</td><td>Alternative to blur when blur effect is unavailable</td></tr>
+<tr><td>Black box / rectangle</td><td>Solid opaque cover</td><td>No (when exported)</td><td>Legal redaction, formal compliance documents</td></tr>
 </tbody>
 </table>
-<p>SnapRec's advantage is that blurring happens right inside the capture workflow — no need to open a separate app or upload to a website.</p>
+<p><strong>A note on safety:</strong> Small pixelation (large block sizes) can sometimes be reversed using AI upscaling tools, particularly for structured data like credit card numbers or short text. Blur and solid covers are more resistant to reversal attempts. For highly sensitive data (API keys, legal documents, medical records), a solid black box is the most forensically secure option. For everyday workplace screenshots, blur is appropriate and looks professional.</p>
+<p>SnapRec's blur tool applies a strong Gaussian blur that destroys the underlying pixel pattern in the exported image. The original data is not retained in the exported file.</p>
+
+<h2 id="industry-contexts">Redaction for Specific Roles</h2>
+
+<h3>Customer Support Teams</h3>
+<p>Support agents capture screenshots constantly — to document bugs, create knowledge base articles, and share steps with customers. Before sharing any screenshot outside your team: blur the customer's name, email, account number, and any purchase history visible in the record. When sharing internally (e.g., escalating to a developer), blur data about customers who are not relevant to the issue being escalated. Set a team policy: every screenshot attached to a customer-facing communication must be reviewed for visible PII before sending.</p>
+
+<h3>Developers and Engineers</h3>
+<p>The most common mistake in developer screenshots is API responses containing authentication headers or bearer tokens. Before posting a screenshot to GitHub Issues, Stack Overflow, or a team Slack channel, check the URL bar (session tokens often appear there), response headers, and JSON response bodies. Console output and network inspector tabs often contain secrets that are easy to miss when you're focused on the bug itself. Make it a habit: before posting any DevTools screenshot, blur the Network tab's Authorization and Cookie headers.</p>
+
+<h3>Designers and Product Teams</h3>
+<p>Design review screenshots often contain real user data pulled from staging or production environments. Before sharing mockup screenshots or annotated UI reviews externally (with agencies, freelancers, or clients), replace real user data with dummy data if possible, or blur any personal information that appears in the UI. This is especially important for dashboards, user profile pages, and any views that display account-level data.</p>
+
+<h2 id="common-mistakes">Common Redaction Mistakes</h2>
+<ul>
+<li><strong>Blurring over a colored background doesn't guarantee obscuring</strong> — if the background color is solid and contrasting, the outline of blurred text may still be partially readable. Add a solid shape on top of the blur for critical data.</li>
+<li><strong>Missing data in adjacent areas</strong> — when you blur a field, check the rows and columns around it. In a table, the context of the blurred field (e.g., the column header "API Key", the row label "Production") may reveal what was redacted even if the value itself is hidden.</li>
+<li><strong>Screenshot metadata</strong> — PNG files can contain EXIF metadata including the creation timestamp and device information. For sensitive screenshots, the metadata is generally less of a concern than the visible content, but be aware that some metadata is embedded in screenshots from certain tools.</li>
+<li><strong>Forgetting to blur in video</strong> — if you're sharing a screen recording alongside a screenshot, apply the same redaction discipline to the video. SnapRec's recordings are shareable via link, so anyone with the link can see every frame. Consider whether to blur before recording begins, or use the annotation editor on individual screenshots instead of a recording when sensitive data is involved.</li>
+</ul>
+
+<h2 id="alternatives">Tool Comparison</h2>
+<table>
+<thead><tr><th>Tool</th><th>Blur Quality</th><th>Speed</th><th>In-capture workflow</th><th>Free</th></tr></thead>
+<tbody>
+<tr><td><strong>SnapRec</strong></td><td>High</td><td>Instant</td><td>Yes — blur in same window as capture</td><td>Yes</td></tr>
+<tr><td>Photoshop / Affinity Photo</td><td>High</td><td>Slow — open separate app, import file</td><td>No</td><td>No ($20+/mo)</td></tr>
+<tr><td>macOS Preview</td><td>No blur — rectangles and shapes only</td><td>Fast</td><td>No — save screenshot first, then open</td><td>Yes</td></tr>
+<tr><td>Windows Snipping Tool</td><td>No blur — pen/marker only</td><td>Fast</td><td>Partial</td><td>Yes</td></tr>
+<tr><td>Online blur tools</td><td>Varies</td><td>Medium — upload required</td><td>No — requires uploading sensitive file to third party</td><td>Often limited</td></tr>
+</tbody>
+</table>
+<p>The critical advantage of in-capture blurring (SnapRec) over post-capture editing (every other tool) is that your unblurred screenshot never needs to be saved to disk or uploaded anywhere. You capture, blur, and export the final redacted version without the sensitive original ever touching your file system.</p>
 
 <h2 id="faq">FAQ</h2>
 <h3>Can someone un-blur a screenshot?</h3>
-<p>When you export a blurred screenshot from SnapRec, the blur is permanently applied to the pixels. The original data beneath the blur is destroyed in the exported image and cannot be recovered.</p>
+<p>When you export a blurred screenshot from SnapRec, the blur is permanently applied to the pixel data. The original content beneath the blur is not stored in the exported file — only the blurred pixel values are saved. Unlike a transparent overlay layer in a PSD file (which can be removed), a flattened PNG export has no recoverable original layer. The data is destroyed in the export. This is true for any image editor that applies a destructive blur before export.</p>
 
 <h3>Is drawing a black box the same as blurring?</h3>
-<p>Both hide the information, but blurring looks more professional and clearly signals to viewers that content was intentionally redacted. A black box can sometimes look like a rendering error.</p>
+<p>Both are equally secure when applied as a destructive edit before export — neither can be reversed in the exported image. Black boxes are the standard for formal legal and compliance redaction because they visually signal an intentional omission. Blur looks more polished for everyday professional sharing — colleagues understand immediately that content was deliberately hidden, but it doesn't look like a formatting error the way a misaligned black box sometimes does.</p>
+
+<h3>Should I blur before or after annotating?</h3>
+<p>Blur first. Redacting sensitive data before adding annotations ensures that your annotations reference what you want to highlight, not the data you want to hide. It also prevents the edge case where an annotation arrow pointing at a sensitive area makes the hidden data more obvious by context.</p>
+
+<h3>What if I need to blur a video recording, not just a screenshot?</h3>
+<p>For video recordings, the most practical approach is to plan your recording so sensitive data isn't visible in the first place — navigate away from sensitive views before starting, or close private tabs and windows before recording your screen. If you've already recorded and need to redact, desktop video editors like DaVinci Resolve (free) support blur effects applied to specific regions for specific time ranges. For quick shares, consider whether a screenshot with annotation might communicate the point more effectively than a video.</p>
         `,
         faqs: [
-            { q: 'Can someone un-blur a screenshot?', a: 'When you export a blurred screenshot from SnapRec, the blur is permanently applied to the pixels. The original data beneath the blur is destroyed in the exported image and cannot be recovered.' },
-            { q: 'Is drawing a black box the same as blurring?', a: 'Both hide the information, but blurring looks more professional and clearly signals to viewers that content was intentionally redacted. A black box can sometimes look like a rendering error.' },
+            { q: 'Can someone un-blur a screenshot?', a: 'No. When exported from SnapRec, the blur is permanently applied to the pixels. The original data is not stored in the exported file — it is destroyed in the flattened export, unlike a PSD layer which can be removed.' },
+            { q: 'Is drawing a black box the same as blurring?', a: 'Both are equally secure when applied before export. Black boxes are standard for formal legal redaction. Blur looks more polished for everyday professional sharing and clearly signals intentional omission.' },
+            { q: 'Should I blur before or after annotating?', a: 'Blur first — redact sensitive data before adding arrows or labels so your annotations highlight what you want to show, not what you are hiding.' },
+            { q: 'What if I need to blur a video recording?', a: 'Plan recordings so sensitive data is not visible. If already recorded, DaVinci Resolve (free) supports region blur effects on video. For quick sharing, a screenshot often communicates the point more effectively than a video.' },
         ],
     },
     {
@@ -967,65 +1453,102 @@ export const blogPosts: BlogPost[] = [
         description: 'Add arrows, text, highlights, and blur effects to your screenshots directly in Chrome using SnapRec\'s free built-in editor. No Photoshop needed.',
         keywords: 'annotate screenshot, screenshot annotation tool, add arrows to screenshot, add text to screenshot, markup screenshot chrome, screenshot editor chrome, draw on screenshot, highlight screenshot',
         date: '2026-03-02',
-        readTime: '4 min read',
+        readTime: '8 min read',
         category: 'tutorial',
         heroIcon: 'draw',
         content: `
-<h2 id="intro">Why Annotate Your Screenshots?</h2>
-<p>A raw screenshot often needs context. Where should the viewer look? What's the bug? What needs to change? Annotations — arrows, text labels, highlights, and blur — turn a flat image into clear communication.</p>
+<h2 id="intro">Why Annotating Screenshots Saves Time</h2>
+<p>A plain screenshot forces the viewer to interpret the image themselves. They scan for what's important, guess at what you mean, and may miss the specific element you're referencing entirely. An annotated screenshot does the interpretation for them: an arrow points to the exact button, a text label says what's wrong, a highlight circle shows which element needs attention.</p>
+<p>The result is fewer follow-up questions, fewer misunderstandings, and faster resolution. A bug report with an annotated screenshot gets reproduced faster. A design comment with an arrow and specific text gets implemented correctly on the first pass. A customer support screenshot with numbered steps gets followed without a follow-up call.</p>
+<p>This guide covers every annotation tool in SnapRec's built-in editor, the correct order to apply them, and specific techniques for the most common use cases.</p>
 
-<h2 id="tools">SnapRec's Annotation Tools</h2>
-<p>After capturing a screenshot with SnapRec, it opens in the built-in editor with these tools:</p>
-
-<h3>Arrows</h3>
-<p>Point viewers to exactly what matters. Click the arrow tool, then click and drag from the start point to the end point. Great for bug reports and design feedback.</p>
-
-<h3>Text Labels</h3>
-<p>Add explanatory text anywhere on the screenshot. Click the text tool, click on the image, and type your label. Useful for numbered steps or callouts.</p>
-
-<h3>Brush / Freehand Drawing</h3>
-<p>Draw circles, underlines, or freeform highlights to emphasize areas. Choose your color and brush size from the toolbar.</p>
-
-<h3>Shapes (Rectangles, Circles)</h3>
-<p>Draw clean geometric shapes around UI elements. Better than freehand for professional-looking annotations.</p>
-
-<h3>Blur</h3>
-<p>Drag over sensitive information to blur it before sharing. The blur is permanent in the exported image — no risk of data exposure.</p>
+<h2 id="tools">SnapRec's Annotation Tools: A Complete Guide</h2>
+<p>After capturing any screenshot with SnapRec (visible area, full page, or region), the image opens automatically in the built-in editor. The toolbar runs along the top of the editor window. Here's what each tool does and when to use it.</p>
 
 <h3>Crop</h3>
-<p>Remove unnecessary parts of the screenshot to focus attention. Crop before annotating to keep the final image clean.</p>
+<p>The crop tool removes areas outside a selection rectangle. Use it first, before any other annotation. Cropping reduces the image to only the relevant portion of the screen — removing browser chrome, unrelated application windows, or large empty areas that dilute attention. A tighter crop forces viewers to focus. In bug reports, crop to just the component with the issue. In design feedback, crop to the section you're commenting on.</p>
+<p><strong>Technique:</strong> Drag a crop rectangle around the area you want to keep, then confirm. If you're documenting a specific form field, include a few elements above and below it for context — pure isolation without surrounding UI can make it hard for developers to find the element in the codebase.</p>
 
-<h2 id="workflow">Best Annotation Workflow</h2>
+<h3>Blur</h3>
+<p>The blur tool applies a Gaussian blur to any rectangular region you drag over. Use it immediately after cropping to redact sensitive information — email addresses, names, API keys, financial data, or any personal information visible in the screenshot. The blur is destructive in the export — the original data cannot be recovered from the exported image.</p>
+<p><strong>Technique:</strong> Blur before annotating arrows and text. Blurring after you've added annotations is fine but occasionally causes visual overlap between blur regions and annotation elements. Apply blur first to keep the workflow clean.</p>
+
+<h3>Arrows</h3>
+<p>Arrows are the highest-signal annotation tool. A single well-placed arrow communicates "look here" instantly, across any language and technical level. Click the arrow tool, then click and drag from a starting point to the tip — the arrowhead appears at your drag endpoint.</p>
+<p><strong>Technique for bug reports:</strong> Point the arrow from empty space to the specific UI element with the bug. Avoid pointing to large areas — point to a specific button, input field, or text string. If you need to reference two separate areas, use two arrows and label each with a matching numbered text label (1, 2).</p>
+<p><strong>Technique for design feedback:</strong> Point the arrow from your text comment to the element you're commenting on, rather than floating the text comment near the element without a visual connection. This eliminates ambiguity when elements are close together.</p>
+
+<h3>Text Labels</h3>
+<p>Text labels let you add explanatory copy anywhere on the screenshot. Click the text tool, click anywhere on the image, and type. You can drag the text box to reposition it after typing.</p>
+<p><strong>For bug reports:</strong> Keep text labels short and specific. "Login button unresponsive on Safari 16.4" is better than "the button here doesn't work." The more specific the label, the less back-and-forth is needed to reproduce the issue.</p>
+<p><strong>For tutorials:</strong> Use numbered text labels (1, 2, 3) paired with arrows to create visual step sequences. Number each step and describe the action in the label: "1 — Click Settings", "2 — Select Account", "3 — Toggle Dark Mode." Viewers can follow numbered steps faster than reading a paragraph description.</p>
+<p><strong>For design reviews:</strong> Use text labels to state the specific change requested rather than a vague observation. "Increase line-height to 1.6" is actionable. "This text feels tight" requires interpretation and a follow-up question.</p>
+
+<h3>Shapes (Rectangles and Circles)</h3>
+<p>Shapes draw clean geometric outlines around areas without filling them. A rectangle around a UI section says "this entire area needs attention." A circle or ellipse highlights a single element more precisely than a rectangle when the element is round or irregularly shaped.</p>
+<p><strong>Best use case:</strong> When an arrow feels too specific (pointing to one pixel) and you want to indicate a region of the interface. Common in design feedback — "this entire navigation section needs to match the updated design system" — where you draw a rectangle around the whole nav, not a single item.</p>
+
+<h3>Brush / Freehand Drawing</h3>
+<p>The brush tool lets you draw freeform marks — underlines, circles, squiggles, and freehand arrows. It's the most expressive tool but also the hardest to use consistently. Freehand circles around UI elements are a common pattern, but they often look imprecise compared to the ellipse shape tool.</p>
+<p><strong>Best use case:</strong> Quick internal communications where appearance matters less than speed. For external-facing screenshots (customer-facing documentation, public issue trackers), prefer the cleaner shape tools over freehand.</p>
+
+<h2 id="workflow">The Correct Annotation Order</h2>
+<p>Following this order consistently produces cleaner, more professional annotations in less time:</p>
 <ol>
-<li><strong>Capture</strong> — take the screenshot (full page, region, or visible area)</li>
-<li><strong>Crop</strong> — remove distractions first</li>
-<li><strong>Blur</strong> — hide any sensitive information</li>
-<li><strong>Annotate</strong> — add arrows, text, and highlights</li>
-<li><strong>Share</strong> — download or generate a link</li>
+<li><strong>Crop first</strong> — remove everything irrelevant. Less context = faster reading.</li>
+<li><strong>Blur second</strong> — redact sensitive data before it ends up in a shared link.</li>
+<li><strong>Add shapes third</strong> — draw rectangles or circles around the relevant regions.</li>
+<li><strong>Add arrows fourth</strong> — point from your comment to the specific element.</li>
+<li><strong>Add text labels last</strong> — write the explanation once the visual hierarchy is established.</li>
+<li><strong>Export or share</strong> — download as PNG or generate a shareable link.</li>
 </ol>
+<p>Working in this order prevents common annotation mistakes like placing a text label in a location that then needs to be blurred, or adding an arrow before you've decided which region to focus on.</p>
 
-<h2 id="use-cases">Annotation Use Cases</h2>
+<h2 id="use-cases">Annotation Techniques by Use Case</h2>
 <table>
-<thead><tr><th>Use Case</th><th>Best Tools</th><th>Example</th></tr></thead>
+<thead><tr><th>Use Case</th><th>Tools to Use</th><th>Key Principle</th></tr></thead>
 <tbody>
-<tr><td>Bug report</td><td>Arrow + Text</td><td>"This button doesn't respond on click"</td></tr>
-<tr><td>Design review</td><td>Shapes + Text</td><td>"Increase padding here by 8px"</td></tr>
-<tr><td>Tutorial step</td><td>Arrow + Numbered text</td><td>"Step 1: Click here"</td></tr>
-<tr><td>Sharing on social</td><td>Blur + Crop</td><td>Hide personal info before posting</td></tr>
-<tr><td>Documentation</td><td>Text + Shapes</td><td>Label UI components</td></tr>
+<tr><td>Bug report</td><td>Crop + Arrow + Short text label</td><td>Point to the exact element; include the expected vs actual behavior in the text</td></tr>
+<tr><td>Design feedback</td><td>Rectangle + Text with specific change request</td><td>State the requested change precisely, not the observation</td></tr>
+<tr><td>Step-by-step tutorial</td><td>Arrow + Numbered text labels</td><td>Number every step; one arrow per step</td></tr>
+<tr><td>Customer support</td><td>Numbered arrows + Blur for PII</td><td>Blur the customer's data; number the steps they should follow</td></tr>
+<tr><td>Documentation</td><td>Shapes + Text labels</td><td>Label UI components by their functional name, not their appearance</td></tr>
+<tr><td>Social sharing</td><td>Blur + Crop</td><td>Remove personal info; crop to the interesting content only</td></tr>
 </tbody>
 </table>
 
-<h2 id="faq">FAQ</h2>
-<h3>Can I annotate existing images, not just screenshots?</h3>
-<p>Yes. Open SnapRec's editor at <a href="https://www.snaprecorder.org/editor" target="_blank">snaprecorder.org/editor</a> and paste or upload any image to annotate it.</p>
+<h2 id="audience">Tailoring Annotations to Your Audience</h2>
 
-<h3>Are annotations added permanently?</h3>
-<p>When you export/download the annotated screenshot, the annotations are baked into the image permanently. In the editor, you can undo changes before exporting.</p>
+<h3>For Developers</h3>
+<p>Developers need precision. Use arrows that point to the specific pixel-level element, not a general area. Include the component name or CSS class in your text label if you know it — "This <code>.submit-btn</code> doesn't respond to <code>:hover</code> on Safari" is immediately actionable. For layout bugs, annotate the computed dimensions you're observing vs. the intended dimensions.</p>
+
+<h3>For Designers</h3>
+<p>Design feedback annotations should include specific values whenever possible. "Increase spacing here by 8px" gives the designer an exact fix. "Reduce font size to 14px in this section" eliminates a decision. Use shape outlines to indicate the scope of a change ("this entire sidebar needs updating") and arrows + text for specific element changes.</p>
+
+<h3>For Non-Technical Stakeholders</h3>
+<p>Numbered step guides work best for non-technical audiences. Use simple language in text labels, avoid jargon, and crop tightly so they're looking at exactly what you want them to see. Add a single arrow per step — multiple arrows in one screenshot create confusion about where to look first.</p>
+
+<h3>For External Customers</h3>
+<p>Customer-facing annotated screenshots should be clean and professional. Use the shape tool rather than freehand. Keep text labels concise. Always blur internal UI elements, debug information, and other customers' data before sharing. A well-annotated customer support screenshot saves 10 minutes of back-and-forth on a support ticket.</p>
+
+<h2 id="faq">FAQ</h2>
+<h3>Can I annotate existing images, not just screenshots I just captured?</h3>
+<p>Yes. Open SnapRec's editor at <a href="https://www.snaprecorder.org/editor" target="_blank" rel="noopener noreferrer">snaprecorder.org/editor</a> and paste an image directly (Ctrl+V / Cmd+V) or upload a PNG or JPG file. The full annotation toolkit is available for any image you open this way — you are not limited to screenshots captured in the same session.</p>
+
+<h3>Are annotations permanent in the exported image?</h3>
+<p>Yes, when you export or download the annotated screenshot, the annotations are baked into the pixel data as a flat PNG. They cannot be removed from the exported file. Inside the editor, you can undo any annotation with Ctrl+Z before exporting. Once you click Download or Share, the exported version is permanent.</p>
+
+<h3>What's the best annotation color to use?</h3>
+<p>Red is the most universally understood annotation color — it draws the eye and is conventionally associated with "pay attention here." Use red for bug reports and required changes. For tutorial step guides, a consistent single color (red or orange) throughout all steps looks more intentional than using multiple colors. Reserve blue or green for annotations that indicate positive elements or correct behavior, to distinguish them visually from "something is wrong" annotations.</p>
+
+<h3>How do I add annotations to a screenshot in Slack or email without downloading first?</h3>
+<p>The most efficient workflow: capture the screenshot with SnapRec, annotate in the editor, and click <strong>Share</strong> to generate a shareable link. Paste the link directly into Slack or email. Recipients see the annotated screenshot in their browser with no download required. This is faster than downloading and re-attaching a file, and the link is viewable on any device.</p>
         `,
         faqs: [
-            { q: 'Can I annotate existing images, not just screenshots?', a: "Yes. Open SnapRec's editor at snaprecorder.org/editor and paste or upload any image to annotate it." },
-            { q: 'Are annotations added permanently?', a: 'When you export/download the annotated screenshot, the annotations are baked into the image permanently. In the editor, you can undo changes before exporting.' },
+            { q: 'Can I annotate existing images, not just screenshots I just captured?', a: "Yes. Open SnapRec's editor at snaprecorder.org/editor and paste any image (Ctrl+V) or upload a PNG/JPG. The full annotation toolkit is available for any image." },
+            { q: 'Are annotations permanent in the exported image?', a: 'Yes — annotations are baked into the exported PNG. Inside the editor you can undo with Ctrl+Z before exporting. Once downloaded or shared, the exported version is permanent.' },
+            { q: 'What is the best annotation color to use?', a: 'Red is the most universally understood annotation color for "pay attention here." Use it consistently for bug reports and change requests. Reserve blue or green for annotations marking correct or positive elements.' },
+            { q: 'How do I share an annotated screenshot in Slack without downloading it?', a: 'After annotating in SnapRec, click Share to get an instant link. Paste the link into Slack — recipients see the annotated screenshot in their browser with no download required.' },
         ],
     },
     {
@@ -2348,6 +2871,13 @@ export const blogPosts: BlogPost[] = [
             { q: 'Do I need to edit my tutorial video?', a: 'Not necessarily. A well-planned recording with a clear outline rarely needs editing. Basic trimming can be done in iMovie (Mac), Clipchamp (Windows), or Kapwing online.' },
             { q: 'How long should a tutorial video be?', a: 'Aim for 2–5 minutes per topic. For a single task, 1–2 minutes is ideal. Longer tutorials see significantly higher drop-off rates.' },
             { q: 'Can I make tutorial videos without showing my face?', a: 'Yes. The webcam overlay in SnapRec is optional. Disable it and record just your screen with voiceover narration — perfectly effective.' },
+        ],
+        steps: [
+            { name: 'Plan your tutorial', text: 'Write a brief outline of each step before recording. Practice once without recording to get comfortable with the flow and identify any gaps.' },
+            { name: 'Install SnapRec', text: 'Add SnapRec from the Chrome Web Store in under 10 seconds. No account required. Click the extension icon in your toolbar to open the control panel.' },
+            { name: 'Set up your recording', text: 'Choose Tab or Screen recording mode. Enable your microphone for narration. Optionally enable webcam overlay if you want your face in the corner.' },
+            { name: 'Record your tutorial', text: 'Click Record and start presenting. Speak slowly and clearly. SnapRec\'s auto-zoom automatically highlights your mouse clicks during playback.' },
+            { name: 'Export and share', text: 'Click stop when finished. Download as MP4 or generate a shareable link instantly. No watermarks — share directly with your audience.' },
         ],
     },
 ];

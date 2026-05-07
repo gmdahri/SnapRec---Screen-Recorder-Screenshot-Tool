@@ -9,7 +9,7 @@ const jsonLd = {
             '@type': 'WebPage',
             name: 'Free Loom Alternative — SnapRec',
             description: 'SnapRec is the best free Loom alternative. No 5-minute limit, no 25-video cap, no watermarks. Record in 4K for free forever.',
-            url: 'https://www.snaprecorder.org/loom-alternative',
+            url: 'https://www.snaprecorder.org/loom-alternative/',
         },
         {
             '@type': 'FAQPage',
@@ -40,7 +40,7 @@ const jsonLd = {
             '@type': 'BreadcrumbList',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                { '@type': 'ListItem', position: 2, name: 'Loom Alternative' },
+                { '@type': 'ListItem', position: 2, name: 'Loom Alternative', item: 'https://www.snaprecorder.org/loom-alternative/' },
             ],
         },
     ],

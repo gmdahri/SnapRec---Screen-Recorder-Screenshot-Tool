@@ -2,6 +2,44 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, AddToChromeButton, SEO } from '../components';
 
+const YT_ID = 'tEY5kA97Zq8';
+
+function YoutubeFacade() {
+    const [active, setActive] = useState(false);
+    if (active) {
+        return (
+            <iframe
+                src={`https://www.youtube.com/embed/${YT_ID}?start=2&autoplay=1`}
+                title="How to use SnapRec - Screen recorder & screenshot tool"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+            />
+        );
+    }
+    return (
+        <button
+            onClick={() => setActive(true)}
+            className="absolute inset-0 w-full h-full group cursor-pointer"
+            aria-label="Play demo video"
+        >
+            <img
+                src={`https://img.youtube.com/vi/${YT_ID}/maxresdefault.jpg`}
+                alt="SnapRec demo video — screen recorder and screenshot tool"
+                className="w-full h-full object-cover"
+                loading="lazy"
+            />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                <span className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-white/95 rounded-full shadow-2xl group-hover:scale-110 transition-transform duration-200">
+                    <svg className="w-7 h-7 md:w-8 md:h-8 text-red-600 ml-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                </span>
+            </span>
+        </button>
+    );
+}
+
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const faqs = [
@@ -71,7 +109,7 @@ const steps = [
 
 const comparison = [
     { feature: 'Free forever', snaprec: true,  loom: false, screencastify: false },
-    { feature: 'No watermarks', snaprec: true, loom: false, screencastify: false },
+    { feature: 'No watermarks', snaprec: true, loom: true, screencastify: false },
     { feature: 'No time limit',  snaprec: true, loom: false, screencastify: false },
     { feature: 'No account needed', snaprec: true, loom: false, screencastify: false },
     { feature: '4K recording',   snaprec: true, loom: false, screencastify: false },
@@ -93,22 +131,55 @@ const jsonLd = {
             applicationSubCategory: 'Screen Recorder',
             operatingSystem: 'Chrome, Edge, Brave',
             browserRequirements: 'Requires a Chromium-based browser (Chrome, Edge, Brave)',
-            softwareVersion: '1.3.0',
-            url: 'https://www.snaprecorder.org',
+            softwareVersion: '1.2.8',
+            url: 'https://www.snaprecorder.org/',
+            image: 'https://www.snaprecorder.org/og-image.png',
             downloadUrl: 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg',
             description: 'Free screen recorder & screenshot tool for Chrome. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits.',
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
             featureList: ['Free screen recorder with 4K support', 'Screen recording with webcam overlay and audio', 'Full-page screenshot capture', 'Visible area and region screenshot capture', 'Built-in screenshot annotation editor', 'Cloud sharing via instant link', 'No watermarks or time limits', 'Auto-zoom on mouse clicks', 'Works on Chrome, Edge, and Brave browsers'],
         },
         { '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
-        { '@type': 'WebSite', name: 'SnapRec', url: 'https://www.snaprecorder.org', description: 'Free screen recorder & screenshot tool for Chrome, Edge & Brave.' },
+        {
+            '@type': 'WebSite',
+            name: 'SnapRec',
+            url: 'https://www.snaprecorder.org/',
+            description: 'Free screen recorder & screenshot tool for Chrome, Edge & Brave.',
+            potentialAction: {
+                '@type': 'SearchAction',
+                target: { '@type': 'EntryPoint', urlTemplate: 'https://www.snaprecorder.org/blog?q={search_term_string}' },
+                'query-input': 'required name=search_term_string',
+            },
+        },
         {
             '@type': 'Organization',
             name: 'SnapRec',
-            url: 'https://www.snaprecorder.org',
-            logo: 'https://www.snaprecorder.org/logo.png',
-            sameAs: ['https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool', 'https://www.producthunt.com/products/snap-recorder', 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg'],
-            contactPoint: { '@type': 'ContactPoint', email: 'support@snaprec.com', contactType: 'customer support' },
+            url: 'https://www.snaprecorder.org/',
+            foundingDate: '2025-12',
+            logo: { '@type': 'ImageObject', url: 'https://www.snaprecorder.org/logo.png', width: 1024, height: 1024 },
+            contactPoint: { '@type': 'ContactPoint', email: 'ghulammuhammadddahri@gmail.com', contactType: 'customer support' },
+            sameAs: [
+                'https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool',
+                'https://www.producthunt.com/products/snap-recorder',
+                'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg',
+            ],
+        },
+        {
+            '@type': 'Person',
+            '@id': 'https://www.snaprecorder.org/about/#founder',
+            name: 'Ghulam Muhammad',
+            url: 'https://www.snaprecorder.org/about/',
+            jobTitle: 'Software Engineer & Founder',
+            worksFor: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+            sameAs: ['https://github.com/gmdahri'],
+        },
+        {
+            '@type': 'WebPage',
+            url: 'https://www.snaprecorder.org/',
+            speakable: {
+                '@type': 'SpeakableSpecification',
+                cssSelector: ['.hero-description', 'h1'],
+            },
         },
         {
             '@type': 'VideoObject',
@@ -119,7 +190,7 @@ const jsonLd = {
             contentUrl: 'https://www.youtube.com/watch?v=tEY5kA97Zq8',
             embedUrl: 'https://www.youtube.com/embed/tEY5kA97Zq8',
             duration: 'PT1M30S',
-            publisher: { '@type': 'Organization', name: 'SnapRec' },
+            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/', logo: { '@type': 'ImageObject', url: 'https://www.snaprecorder.org/logo.png' } },
         },
     ],
 };
@@ -422,13 +493,7 @@ const Landing: React.FC = () => {
                             </h2>
                         </div>
                         <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-slate-200 aspect-video bg-slate-900">
-                            <iframe
-                                src="https://www.youtube.com/embed/tEY5kA97Zq8?start=2"
-                                title="How to use SnapRec - Screen recorder & screenshot tool"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full"
-                            />
+                            <YoutubeFacade />
                         </div>
                         <p className="text-center text-slate-400 text-sm mt-5">
                             <NavLink to="/how-it-works" className="text-primary font-semibold hover:underline">

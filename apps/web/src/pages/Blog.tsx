@@ -29,17 +29,26 @@ const Blog: React.FC = () => {
                     '@context': 'https://schema.org',
                     '@graph': [
                         {
-                            '@type': 'CollectionPage',
+                            '@type': 'Blog',
                             name: 'SnapRec Blog — Screen Recording Tips, Tutorials & Comparisons',
                             description: 'Learn how to record your screen, take full-page screenshots, and boost productivity. Free tutorials, tool comparisons, and expert tips from the SnapRec team.',
-                            url: 'https://www.snaprecorder.org/blog',
-                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org' },
+                            url: 'https://www.snaprecorder.org/blog/',
+                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+                        },
+                        {
+                            '@type': 'ItemList',
+                            itemListElement: blogPosts.map((post, idx) => ({
+                                '@type': 'ListItem',
+                                position: idx + 1,
+                                name: post.title,
+                                url: `https://www.snaprecorder.org/blog/${post.slug}/`,
+                            })),
                         },
                         {
                             '@type': 'BreadcrumbList',
                             itemListElement: [
                                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                                { '@type': 'ListItem', position: 2, name: 'Blog' },
+                                { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.snaprecorder.org/blog/' },
                             ],
                         },
                     ],

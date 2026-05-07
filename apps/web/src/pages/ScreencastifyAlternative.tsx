@@ -9,7 +9,7 @@ const jsonLd = {
             '@type': 'WebPage',
             name: 'Free Screencastify Alternative — SnapRec',
             description: 'SnapRec is the best free Screencastify alternative. No watermarks, no 30-minute limit, no $49/year plan needed. Record in 4K forever free.',
-            url: 'https://www.snaprecorder.org/screencastify-alternative',
+            url: 'https://www.snaprecorder.org/screencastify-alternative/',
         },
         {
             '@type': 'FAQPage',
@@ -40,7 +40,7 @@ const jsonLd = {
             '@type': 'BreadcrumbList',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                { '@type': 'ListItem', position: 2, name: 'Screencastify Alternative' },
+                { '@type': 'ListItem', position: 2, name: 'Screencastify Alternative', item: 'https://www.snaprecorder.org/screencastify-alternative/' },
             ],
         },
     ],
