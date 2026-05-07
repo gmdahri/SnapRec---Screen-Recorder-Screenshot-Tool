@@ -9,7 +9,7 @@ const jsonLd = {
             '@type': 'WebPage',
             name: 'Free Loom Alternative — SnapRec',
             description: 'SnapRec is the best free Loom alternative. No 5-minute limit, no 25-video cap, no watermarks. Record in 4K for free forever.',
-            url: 'https://www.snaprecorder.org/loom-alternative',
+            url: 'https://www.snaprecorder.org/loom-alternative/',
         },
         {
             '@type': 'FAQPage',
@@ -40,7 +40,7 @@ const jsonLd = {
             '@type': 'BreadcrumbList',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                { '@type': 'ListItem', position: 2, name: 'Loom Alternative' },
+                { '@type': 'ListItem', position: 2, name: 'Loom Alternative', item: 'https://www.snaprecorder.org/loom-alternative/' },
             ],
         },
     ],
@@ -230,6 +230,45 @@ const LoomAlternative: React.FC = () => (
                             </div>
                         ))}
                     </div>
+                </div>
+            </section>
+
+            {/* When Loom Is Still Worth It */}
+            <section className="py-20 bg-slate-50">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-3xl md:text-4xl font-black text-center mb-4">When Is Loom Still Worth It?</h2>
+                    <p className="text-slate-500 text-center mb-10 max-w-xl mx-auto">
+                        SnapRec replaces Loom for most users — but Loom has genuine strengths worth knowing before you switch.
+                    </p>
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">You need AI-powered editing tools</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Loom's paid plans include AI features like automatic filler-word removal, AI-generated transcripts with chapters, and smart summaries. If async video messaging with AI post-production is your core workflow, Loom Business is built for that. SnapRec focuses on capturing and sharing — editing features are annotation-based, not AI-based.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">Your team already has a paid Loom plan</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                If you're mid-contract on Loom Business or Enterprise, switching mid-cycle costs money. Finish your term, evaluate whether the AI features justify the price, then make the move. SnapRec will still be here — and still free.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">You rely on CRM or Salesforce integrations</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Loom integrates directly with HubSpot and Salesforce so sales teams can embed recordings in CRM records and track viewer engagement. If that pipeline data matters to your sales process, Loom's ecosystem plays a role SnapRec doesn't try to fill. For simple async sales videos, SnapRec's shareable link is all most teams need.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">You need per-viewer analytics</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Loom Business shows you who watched your video, how far they got, and whether they rewatched sections. If video engagement data drives decisions for your team, that analytics layer is a real differentiator. SnapRec gives you a shareable link — not a dashboard of viewer behavior.
+                            </p>
+                        </div>
+                    </div>
+                    <p className="text-slate-500 text-sm text-center mt-8 leading-relaxed">
+                        For everyone else — individual creators, educators, developers, remote teams who want fast async video without a subscription — SnapRec is the better choice.
+                    </p>
                 </div>
             </section>
 

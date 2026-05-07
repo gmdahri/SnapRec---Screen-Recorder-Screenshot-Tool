@@ -9,7 +9,7 @@ const jsonLd = {
             '@type': 'WebPage',
             name: 'Free Screen Recorder for Teachers & Schools — SnapRec',
             description: 'The free screen recorder built for teachers. Record lessons, lectures, and student feedback videos with webcam overlay. No watermarks, no time limits, works on Chromebook.',
-            url: 'https://www.snaprecorder.org/screen-recorder-for-teachers',
+            url: 'https://www.snaprecorder.org/screen-recorder-for-teachers/',
         },
         {
             '@type': 'FAQPage',
@@ -45,7 +45,7 @@ const jsonLd = {
             '@type': 'BreadcrumbList',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                { '@type': 'ListItem', position: 2, name: 'Screen Recorder for Teachers' },
+                { '@type': 'ListItem', position: 2, name: 'Screen Recorder for Teachers', item: 'https://www.snaprecorder.org/screen-recorder-for-teachers/' },
             ],
         },
     ],

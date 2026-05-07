@@ -14,15 +14,15 @@ const Contact = () => {
                         {
                             '@type': 'ContactPage',
                             name: 'Contact SnapRec',
-                            url: 'https://www.snaprecorder.org/contact',
+                            url: 'https://www.snaprecorder.org/contact/',
                             description: 'Get in touch with the SnapRec team for support, feedback, or feature requests.',
-                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org' },
+                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
                         },
                         {
                             '@type': 'BreadcrumbList',
                             itemListElement: [
                                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                                { '@type': 'ListItem', position: 2, name: 'Contact' },
+                                { '@type': 'ListItem', position: 2, name: 'Contact', item: 'https://www.snaprecorder.org/contact/' },
                             ],
                         },
                     ],

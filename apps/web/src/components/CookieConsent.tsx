@@ -27,29 +27,25 @@ export const CookieConsent: React.FC = () => {
     if (!visible) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 sm:p-6 pointer-events-none">
-            <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 sm:p-6 pointer-events-auto animate-slide-up">
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-700 font-medium leading-relaxed">
-                            We use cookies for essential site functionality and to serve personalized
-                            ads via Google AdSense. By clicking "Accept", you consent to our use of
-                            cookies.{' '}
-                            <NavLink to="/privacy" className="text-indigo-600 hover:underline font-semibold">
-                                Privacy Policy
-                            </NavLink>
-                        </p>
-                    </div>
+        <div className="fixed bottom-0 left-0 right-0 z-[9999] px-3 py-3 pointer-events-none">
+            <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-xl shadow-2xl px-4 py-3 pointer-events-auto animate-slide-up">
+                <div className="flex flex-row gap-3 items-center">
+                    <p className="flex-1 min-w-0 text-sm text-slate-700 leading-snug">
+                        We use cookies for ads &amp; analytics.{' '}
+                        <NavLink to="/privacy" className="text-indigo-600 hover:underline font-semibold">
+                            Privacy Policy
+                        </NavLink>
+                    </p>
                     <div className="flex gap-2 flex-shrink-0">
                         <button
                             onClick={decline}
-                            className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                         >
                             Decline
                         </button>
                         <button
                             onClick={accept}
-                            className="px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+                            className="px-4 py-1.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
                         >
                             Accept
                         </button>

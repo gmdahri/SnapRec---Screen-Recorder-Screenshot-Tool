@@ -9,7 +9,7 @@ const jsonLd = {
             '@type': 'WebPage',
             name: 'Record Presentation with Webcam Overlay — SnapRec',
             description: 'Record your presentation with webcam overlay directly in Chrome. Free screen recorder with picture-in-picture webcam, mic, and system audio. No account needed.',
-            url: 'https://www.snaprecorder.org/webcam-overlay-presentation',
+            url: 'https://www.snaprecorder.org/webcam-overlay-presentation/',
         },
         {
             '@type': 'FAQPage',
@@ -40,7 +40,7 @@ const jsonLd = {
             '@type': 'BreadcrumbList',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                { '@type': 'ListItem', position: 2, name: 'Record Presentation with Webcam Overlay' },
+                { '@type': 'ListItem', position: 2, name: 'Record Presentation with Webcam Overlay', item: 'https://www.snaprecorder.org/webcam-overlay-presentation/' },
             ],
         },
     ],

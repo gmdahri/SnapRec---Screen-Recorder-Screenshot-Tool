@@ -7,14 +7,26 @@ import authorPhoto from '../assets/author.jpeg';
 function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
     if (!post) return undefined;
     const siteUrl = 'https://www.snaprecorder.org';
+    const postUrl = `${siteUrl}/blog/${post.slug}/`;
+    const publisher = {
+        '@type': 'Organization',
+        name: 'SnapRec',
+        url: `${siteUrl}/`,
+        logo: { '@type': 'ImageObject', url: `${siteUrl}/logo.png`, width: 1024, height: 1024 },
+    };
     const graph: Record<string, unknown>[] = [
         {
-            '@type': 'Article',
+            '@type': 'BlogPosting',
             headline: post.title,
-            image: [`${siteUrl}/og-image.png`],
+            description: post.description,
+            url: postUrl,
+            inLanguage: 'en',
+            mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+            image: { '@type': 'ImageObject', url: `${siteUrl}/og-image.png`, width: 2848, height: 1504 },
             datePublished: new Date(post.date).toISOString(),
-            dateModified: new Date(post.date).toISOString(),
-            author: [{ '@type': 'Person', name: 'Ghulam Muhammad', url: `${siteUrl}/about` }],
+            dateModified: new Date(post.updatedDate ?? post.date).toISOString(),
+            author: [{ '@type': 'Person', name: 'Ghulam Muhammad', url: `${siteUrl}/about/` }],
+            publisher,
             speakable: {
                 '@type': 'SpeakableSpecification',
                 cssSelector: ['article h1', '.prose h2', '.prose p:first-of-type'],
@@ -24,8 +36,8 @@ function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
             '@type': 'BreadcrumbList',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
-                { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
-                { '@type': 'ListItem', position: 3, name: post.title },
+                { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog/` },
+                { '@type': 'ListItem', position: 3, name: post.title, item: postUrl },
             ],
         },
     ];
@@ -49,6 +61,19 @@ function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
                 position: item.position,
                 name: item.name,
                 ...(item.url ? { url: item.url } : {}),
+            })),
+        });
+    }
+
+    if (post.steps?.length) {
+        graph.push({
+            '@type': 'HowTo',
+            name: post.title,
+            description: post.description,
+            totalTime: 'PT10M',
+            tool: { '@type': 'HowToTool', name: 'SnapRec Chrome Extension' },
+            step: post.steps.map((s, i) => ({
+                '@type': 'HowToStep', position: i + 1, name: s.name, text: s.text,
             })),
         });
     }

@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../components';
 
 const About = () => {
@@ -14,15 +15,24 @@ const About = () => {
                         {
                             '@type': 'AboutPage',
                             name: 'About SnapRec',
-                            url: 'https://www.snaprecorder.org/about',
+                            url: 'https://www.snaprecorder.org/about/',
                             description: 'Learn about SnapRec — a free, open-source screen recorder and screenshot tool for Chrome.',
-                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org' },
+                            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+                        },
+                        {
+                            '@type': 'Person',
+                            '@id': 'https://www.snaprecorder.org/about/#founder',
+                            name: 'Ghulam Muhammad',
+                            url: 'https://www.snaprecorder.org/about/',
+                            jobTitle: 'Software Engineer & Founder',
+                            worksFor: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+                            sameAs: ['https://github.com/gmdahri'],
                         },
                         {
                             '@type': 'BreadcrumbList',
                             itemListElement: [
                                 { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
-                                { '@type': 'ListItem', position: 2, name: 'About' },
+                                { '@type': 'ListItem', position: 2, name: 'About', item: 'https://www.snaprecorder.org/about/' },
                             ],
                         },
                     ],
@@ -105,7 +115,7 @@ const About = () => {
                                     { icon: 'screenshot_monitor', title: 'Screenshots', desc: 'Capture visible area, full-page scrolling screenshots, or select a specific region.' },
                                     { icon: 'edit', title: 'Annotation Tools', desc: 'Draw, add text, arrows, shapes, and blur sensitive information — all built in.' },
                                     { icon: 'share', title: 'Instant Sharing', desc: 'Get a shareable link in one click. No account needed, no upload limits.' },
-                                    { icon: 'shield', title: 'Privacy First', desc: 'All captures are processed locally. We never collect, store, or transmit your data.' },
+                                    { icon: 'shield', title: 'Privacy First', desc: 'Local by default — recordings stay on your device unless you choose to upload to your private library.' },
                                     { icon: 'code', title: 'Open Source', desc: 'SnapRec is open source on GitHub. Inspect the code, contribute, or fork it.' },
                                 ].map((f) => (
                                     <div key={f.title} className="flex gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
@@ -125,11 +135,10 @@ const About = () => {
                             <h2 className="text-3xl font-bold text-slate-900 mb-4">Privacy & Security</h2>
                             <p className="text-slate-600 leading-relaxed">
                                 Your privacy matters. SnapRec does not collect personal data, does not track
-                                your browsing activity, and does not store your screenshots or recordings on
-                                any external server. Everything stays on your device unless you choose to
-                                upload it to your own cloud storage. We use only the minimum browser
-                                permissions needed to provide capture functionality, and every permission is
-                                explained in our{' '}
+                                your browsing activity, and processes all captures locally on your device by default.
+                                Local by default — recordings stay on your device unless you choose to upload to your
+                                private cloud library. We use only the minimum browser permissions needed to provide
+                                capture functionality, and every permission is explained in our{' '}
                                 <a href="/privacy" className="text-primary hover:underline font-semibold">Privacy Policy</a>.
                             </p>
                         </section>
@@ -150,6 +159,20 @@ const About = () => {
                                 . You can inspect the code, report issues, suggest features, or contribute
                                 directly. We welcome pull requests and community feedback.
                             </p>
+                        </section>
+
+                        <section className="mb-12">
+                            <h2 className="text-3xl font-bold text-slate-900 mb-4">The Person Behind SnapRec</h2>
+                            <p className="text-slate-600 leading-relaxed mb-4">
+                                SnapRec is built and maintained by Ghulam Muhammad — a full-stack developer who built the extension because he needed a screen recorder that didn't get in the way. He writes guides on screen recording, browser APIs, and productivity tools.
+                            </p>
+                            <NavLink
+                                to="/about/ghulam-muhammad"
+                                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
+                            >
+                                <span className="material-symbols-outlined text-base">person</span>
+                                View author profile →
+                            </NavLink>
                         </section>
 
                         <section className="mb-12">
