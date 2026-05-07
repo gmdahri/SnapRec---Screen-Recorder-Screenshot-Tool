@@ -28,6 +28,7 @@ import LoomAlternative from './pages/LoomAlternative';
 import ScreencastifyAlternative from './pages/ScreencastifyAlternative';
 import WebcamOverlayPresentation from './pages/WebcamOverlayPresentation';
 import ScreenRecorderForTeachers from './pages/ScreenRecorderForTeachers';
+import AuthorPage from './pages/AuthorPage';
 
 import { HelmetProvider } from 'react-helmet-async';
 import { CookieConsent } from './components';
@@ -128,6 +129,7 @@ function App() {
                 <Route path="/screencastify-alternative" element={<ScreencastifyAlternative />} />
                 <Route path="/webcam-overlay-presentation" element={<WebcamOverlayPresentation />} />
                 <Route path="/screen-recorder-for-teachers" element={<ScreenRecorderForTeachers />} />
+                <Route path="/about/ghulam-muhammad" element={<AuthorPage />} />
                 <Route path="/" element={<Landing />} />
               </Routes>
               <CookieConsent />

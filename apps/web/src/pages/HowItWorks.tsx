@@ -220,6 +220,47 @@ const HowItWorks: React.FC = () => {
                     </div>
                 </section>
 
+                {/* Common Questions */}
+                <section className="py-20">
+                    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Common Questions</h2>
+                        <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">Things people ask before they install — answered honestly.</p>
+                        <div className="divide-y divide-slate-100">
+                            {[
+                                {
+                                    q: 'Does SnapRec slow down my browser?',
+                                    a: 'No. SnapRec runs in the background and only activates when you trigger a recording or screenshot. The extension has no persistent background processes consuming CPU or RAM during normal browsing. Heavy recording (4K, long sessions) uses your machine\'s hardware encoder — the same as any screen recording software.',
+                                },
+                                {
+                                    q: 'Where are my recordings stored?',
+                                    a: 'By default, recordings are processed locally in your browser and downloaded directly to your computer — nothing leaves your device unless you choose to share. If you sign in with Google, you can save to your private SnapRec library (hosted on Cloudflare R2). You\'re in full control of where your content lives.',
+                                },
+                                {
+                                    q: 'Can I record system audio (what plays through my speakers)?',
+                                    a: 'Yes, when you record a browser tab, Chrome captures both tab audio and your microphone. For full desktop recordings (entire screen or application window), Chrome\'s permissions model allows system audio on Windows and ChromeOS. On macOS, Chrome can capture system audio from tabs natively — recording external application audio may require a virtual audio device depending on your setup.',
+                                },
+                                {
+                                    q: 'Is there a maximum recording length?',
+                                    a: 'There is no time limit imposed by SnapRec. In practice, very long recordings (over 2 hours) may be constrained by available RAM in your browser tab, since the recording buffer is held in memory until saved. For recordings over an hour, closing other tabs before recording is recommended.',
+                                },
+                                {
+                                    q: 'Does SnapRec work on school or work Chromebooks?',
+                                    a: 'SnapRec works on any Chromium-based browser where you can install extensions from the Chrome Web Store. On managed Chromebooks, whether you can install SnapRec depends on your organisation\'s extension policy. If your IT admin allows the Chrome Web Store and hasn\'t blocklisted the extension, it will work. Contact your IT administrator if you\'re unsure.',
+                                },
+                                {
+                                    q: 'What happens to my recording if the browser crashes?',
+                                    a: 'If the browser crashes mid-recording, the in-progress buffer may be lost — this is a limitation of browser-based recording, not specific to SnapRec. For critical recordings, consider saving frequently or using the tab recording mode (which has a smaller memory footprint than full-desktop capture).',
+                                },
+                            ].map((faq) => (
+                                <div key={faq.q} className="py-7">
+                                    <h3 className="font-black text-slate-900 mb-3">{faq.q}</h3>
+                                    <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
                 {/* CTA */}
                 <section className="py-24 text-center">
                     <div className="max-w-3xl mx-auto px-4">

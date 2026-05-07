@@ -20,7 +20,7 @@ export const LandingNavbar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <NavLink to="/login" className="text-slate-600 hover:text-primary font-semibold px-4 py-2 transition-colors">
+                        <NavLink to="/login" className="text-slate-600 hover:text-primary font-semibold px-4 py-3 min-h-[44px] inline-flex items-center transition-colors">
                             Login
                         </NavLink>
                         <NavLink

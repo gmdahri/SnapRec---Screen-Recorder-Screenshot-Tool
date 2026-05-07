@@ -138,6 +138,13 @@ const jsonLd = {
             description: 'Free screen recorder & screenshot tool for Chrome. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits.',
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
             featureList: ['Free screen recorder with 4K support', 'Screen recording with webcam overlay and audio', 'Full-page screenshot capture', 'Visible area and region screenshot capture', 'Built-in screenshot annotation editor', 'Cloud sharing via instant link', 'No watermarks or time limits', 'Auto-zoom on mouse clicks', 'Works on Chrome, Edge, and Brave browsers'],
+            aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: '5.0',
+                ratingCount: '2',
+                bestRating: '5',
+                worstRating: '1',
+            },
         },
         { '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
         {
@@ -162,6 +169,7 @@ const jsonLd = {
                 'https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool',
                 'https://www.producthunt.com/products/snap-recorder',
                 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg',
+                'https://www.youtube.com/@GhulamMuhammad-n2n',
             ],
         },
         {
@@ -171,7 +179,7 @@ const jsonLd = {
             url: 'https://www.snaprecorder.org/about/',
             jobTitle: 'Software Engineer & Founder',
             worksFor: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
-            sameAs: ['https://github.com/gmdahri'],
+            sameAs: ['https://github.com/gmdahri', 'https://www.youtube.com/@GhulamMuhammad-n2n'],
         },
         {
             '@type': 'WebPage',

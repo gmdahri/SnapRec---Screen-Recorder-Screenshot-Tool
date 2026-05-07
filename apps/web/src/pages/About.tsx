@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../components';
 
 const About = () => {
@@ -158,6 +159,20 @@ const About = () => {
                                 . You can inspect the code, report issues, suggest features, or contribute
                                 directly. We welcome pull requests and community feedback.
                             </p>
+                        </section>
+
+                        <section className="mb-12">
+                            <h2 className="text-3xl font-bold text-slate-900 mb-4">The Person Behind SnapRec</h2>
+                            <p className="text-slate-600 leading-relaxed mb-4">
+                                SnapRec is built and maintained by Ghulam Muhammad — a full-stack developer who built the extension because he needed a screen recorder that didn't get in the way. He writes guides on screen recording, browser APIs, and productivity tools.
+                            </p>
+                            <NavLink
+                                to="/about/ghulam-muhammad"
+                                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
+                            >
+                                <span className="material-symbols-outlined text-base">person</span>
+                                View author profile →
+                            </NavLink>
                         </section>
 
                         <section className="mb-12">

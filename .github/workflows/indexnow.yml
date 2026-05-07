@@ -26,6 +26,17 @@ jobs:
                 "https://www.snaprecorder.org/webcam-overlay-presentation/",
                 "https://www.snaprecorder.org/changelog/",
                 "https://www.snaprecorder.org/about/",
-                "https://www.snaprecorder.org/contact/"
+                "https://www.snaprecorder.org/contact/",
+                "https://www.snaprecorder.org/about/ghulam-muhammad/",
+                "https://www.snaprecorder.org/blog/best-free-chrome-screen-recorder-extension/",
+                "https://www.snaprecorder.org/blog/how-to-record-meetings-free-chrome/",
+                "https://www.snaprecorder.org/blog/screen-recording-for-work-teams-guide/",
+                "https://www.snaprecorder.org/blog/screen-recorder-no-account-no-sign-up/",
+                "https://www.snaprecorder.org/blog/screen-recording-for-customer-support/",
+                "https://www.snaprecorder.org/blog/snaprec-vs-screenity-chrome-recorder/",
+                "https://www.snaprecorder.org/blog/async-video-messaging-vs-meetings/",
+                "https://www.snaprecorder.org/blog/screen-recording-for-online-classes/",
+                "https://www.snaprecorder.org/blog/how-to-create-video-bug-report/",
+                "https://www.snaprecorder.org/blog/how-to-record-product-demo-sales/"
               ]
             }'

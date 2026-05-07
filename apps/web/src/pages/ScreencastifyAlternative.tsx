@@ -232,6 +232,45 @@ const ScreencastifyAlternative: React.FC = () => (
                 </div>
             </section>
 
+            {/* When Screencastify Is Still Worth It */}
+            <section className="py-20 bg-slate-50">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-3xl md:text-4xl font-black text-center mb-4">When Is Screencastify Still Worth It?</h2>
+                    <p className="text-slate-500 text-center mb-10 max-w-xl mx-auto">
+                        SnapRec wins on price and features for most users — but Screencastify has specific strengths, especially in managed school environments.
+                    </p>
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">Your school district mandates it via IT policy</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Many K-12 districts deploy Screencastify through Google Workspace for Education admin consoles. If your district IT team has whitelisted Screencastify and locked down extension installs, you'll need IT approval to switch. In that case, Screencastify is the practical choice — not a features choice. If you have the freedom to install your own extensions, SnapRec is the upgrade.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">You rely on deep Google Classroom integration</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Screencastify Submit lets students record and submit directly to a Google Classroom assignment with a single click. Teachers get all submissions in one place without students needing to manage links. SnapRec generates shareable links that students can paste into Classroom — it works, but it's one extra step. If that one-click submission workflow is critical for classroom management, Screencastify's paid plan handles it natively.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">You need district-wide admin controls and usage reporting</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Screencastify for Schools gives admins a dashboard to manage licenses across all teachers, track usage, and enforce recording policies. For district-level IT administrators overseeing hundreds of teachers, that centralized control matters. SnapRec is an individual tool — there's no multi-seat admin console. Individual teachers and independent educators get more value from SnapRec's features at no cost.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
+                            <h3 className="font-black text-slate-900 mb-2">You use Screencastify's built-in video quiz feature</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Screencastify's paid tier lets teachers embed interactive questions directly inside videos. Students watch and answer without leaving the video player, and responses feed back to the teacher. SnapRec doesn't have an interactive quiz layer. If video-embedded assessment is a core part of your teaching method, that feature is a real differentiator worth evaluating.
+                            </p>
+                        </div>
+                    </div>
+                    <p className="text-slate-500 text-sm text-center mt-8 leading-relaxed">
+                        For individual teachers, homeschool educators, tutors, and content creators who control their own setup — SnapRec gives you more for free, without the watermarks.
+                    </p>
+                </div>
+            </section>
+
             {/* Related Pages */}
             <section className="py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

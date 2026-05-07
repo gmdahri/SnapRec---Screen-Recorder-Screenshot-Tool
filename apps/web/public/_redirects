@@ -1,2 +1,20 @@
-https://snaprecorder.pages.dev/* https://www.snaprecorder.org/:splat 301
-/* /index.html 200
+# Trailing slash — explicit 301 (overrides Cloudflare Pages' default 308)
+/blog/:slug  /blog/:slug/  301
+/about/ghulam-muhammad  /about/ghulam-muhammad/  301
+/blog  /blog/  301
+/about  /about/  301
+/how-it-works  /how-it-works/  301
+/changelog  /changelog/  301
+/privacy  /privacy/  301
+/terms  /terms/  301
+/contact  /contact/  301
+/loom-alternative  /loom-alternative/  301
+/screencastify-alternative  /screencastify-alternative/  301
+/webcam-overlay-presentation  /webcam-overlay-presentation/  301
+/screen-recorder-for-teachers  /screen-recorder-for-teachers/  301
+
+# Redirect pages.dev traffic to production
+https://snaprecorder.pages.dev/*  https://www.snaprecorder.org/:splat  301
+
+# SPA fallback
+/*  /index.html  200
