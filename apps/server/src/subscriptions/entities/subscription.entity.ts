@@ -41,6 +41,9 @@ export class Subscription {
     @Column({ type: 'timestamptz', nullable: true })
     currentPeriodEnd: Date | null;
 
+    @Column({ type: 'timestamptz', nullable: true })
+    trialEnd: Date | null;
+
     @Column({ type: 'int', default: 0 })
     aiMinutesUsedThisCycle: number;
 

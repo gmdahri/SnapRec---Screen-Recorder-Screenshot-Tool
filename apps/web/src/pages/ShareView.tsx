@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton, Tabs, SummaryPanel, TranscriptViewer, ProcessingState, UpgradeModal } from '../components';
 import type { VideoPlayerHandle } from '../components/VideoPlayer';
 import { parseUTCDate } from '../lib/dateUtils';
-import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth, useProcessAi, useRegenerateSummary } from '../hooks/useRecordings';
+import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth, useProcessAi, useRegenerateSummary, useUpdateTranscriptPrivacy, useUpdateTranscriptSegments } from '../hooks/useRecordings';
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -216,6 +216,8 @@ const ShareView: React.FC = () => {
     const claimMutation = useClaimRecordings();
     const processAi = useProcessAi();
     const regenerateSummary = useRegenerateSummary();
+    const updateTranscriptPrivacy = useUpdateTranscriptPrivacy();
+    const updateTranscriptSegments = useUpdateTranscriptSegments();
     const videoPlayerRef = useRef<VideoPlayerHandle>(null);
     const [videoCurrentTime, setVideoCurrentTime] = useState(0);
     const [activeAiTab, setActiveAiTab] = useState<'summary' | 'transcript'>('summary');
@@ -623,6 +625,7 @@ const ShareView: React.FC = () => {
     const transcript = (recording as any)?.transcript;
     const summary = (recording as any)?.summary;
     const recordingDuration = (recording as any)?.durationSec as number | undefined;
+    const transcriptPublic = (recording as any)?.transcriptPublic as boolean | undefined;
     const hasAiContent = transcriptStatus && transcriptStatus !== 'none';
 
     const handleSeekToSec = (sec: number) => {
@@ -836,6 +839,7 @@ const ShareView: React.FC = () => {
                                     summaryStatus={summaryStatus}
                                     transcript={transcript}
                                     summary={summary}
+                                    transcriptPublic={transcriptPublic ?? false}
                                     recordingDuration={recordingDuration}
                                     activeTab={activeAiTab}
                                     onTabChange={setActiveAiTab}
@@ -845,6 +849,18 @@ const ShareView: React.FC = () => {
                                     currentTime={videoCurrentTime}
                                     isGenerating={processAi.isPending}
                                     isRegenerating={regenerateSummary.isPending}
+                                    onToggleTranscriptPrivacy={(pub) =>
+                                        updateTranscriptPrivacy.mutate({
+                                            id: recordingData.id,
+                                            transcriptPublic: pub,
+                                        })
+                                    }
+                                    onSaveTranscriptSegments={(segs) =>
+                                        updateTranscriptSegments.mutateAsync({
+                                            id: recordingData.id,
+                                            segments: segs,
+                                        }).then(() => undefined)
+                                    }
                                 />
                             )}
 
@@ -1070,6 +1086,7 @@ interface AiInsightsSectionProps {
     summaryStatus?: string;
     transcript: any;
     summary: any;
+    transcriptPublic: boolean;
     recordingDuration?: number;
     activeTab: 'summary' | 'transcript';
     onTabChange: (t: 'summary' | 'transcript') => void;
@@ -1079,6 +1096,8 @@ interface AiInsightsSectionProps {
     currentTime: number;
     isGenerating: boolean;
     isRegenerating: boolean;
+    onToggleTranscriptPrivacy?: (pub: boolean) => void;
+    onSaveTranscriptSegments?: (segs: any[]) => Promise<void>;
 }
 
 const AiInsightsSection: React.FC<AiInsightsSectionProps> = ({
@@ -1089,6 +1108,7 @@ const AiInsightsSection: React.FC<AiInsightsSectionProps> = ({
     summaryStatus,
     transcript,
     summary,
+    transcriptPublic,
     recordingDuration,
     activeTab,
     onTabChange,
@@ -1098,6 +1118,8 @@ const AiInsightsSection: React.FC<AiInsightsSectionProps> = ({
     currentTime,
     isGenerating,
     isRegenerating,
+    onToggleTranscriptPrivacy,
+    onSaveTranscriptSegments,
 }) => {
     // Owner with no AI data yet: show CTA
     if (!hasAiContent) {
@@ -1130,17 +1152,45 @@ const AiInsightsSection: React.FC<AiInsightsSectionProps> = ({
     const summaryReady = summaryStatus === 'ready' && summary;
     const transcriptProcessing = transcriptStatus === 'pending' || transcriptStatus === 'processing';
     const summaryProcessing = summaryStatus === 'pending' || summaryStatus === 'processing';
+    const canViewTranscript = isOwner || transcriptPublic;
 
     return (
         <div>
             <Tabs
                 items={[
                     { key: 'summary', label: 'Summary', badge: summaryReady ? null : summaryProcessing ? <Dot color="amber" /> : null },
-                    { key: 'transcript', label: 'Transcript', badge: transcriptReady ? null : transcriptProcessing ? <Dot color="amber" /> : null },
+                    {
+                        key: 'transcript',
+                        label: 'Transcript',
+                        badge: !canViewTranscript
+                            ? <span className="material-symbols-outlined text-[14px] text-slate-400">lock</span>
+                            : transcriptReady ? null : transcriptProcessing ? <Dot color="amber" /> : null,
+                    },
                 ]}
                 active={activeTab}
                 onChange={(k) => onTabChange(k as 'summary' | 'transcript')}
             />
+            {/* Owner privacy toggle */}
+            {isOwner && transcriptReady && onToggleTranscriptPrivacy && (
+                <div className="flex items-center justify-end gap-2 mt-3 mb-1">
+                    <span className="text-xs text-slate-500">
+                        {transcriptPublic ? 'Transcript visible to viewers' : 'Transcript hidden from viewers'}
+                    </span>
+                    <button
+                        onClick={() => onToggleTranscriptPrivacy(!transcriptPublic)}
+                        className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg border transition-colors ${
+                            transcriptPublic
+                                ? 'border-emerald-200 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100'
+                                : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        }`}
+                    >
+                        <span className="material-symbols-outlined text-[14px]">
+                            {transcriptPublic ? 'visibility' : 'visibility_off'}
+                        </span>
+                        {transcriptPublic ? 'Public' : 'Private'}
+                    </button>
+                </div>
+            )}
             <div className="pt-5">
                 {activeTab === 'summary' && (
                     <>
@@ -1178,11 +1228,20 @@ const AiInsightsSection: React.FC<AiInsightsSectionProps> = ({
                 )}
                 {activeTab === 'transcript' && (
                     <>
-                        {transcriptReady && (
+                        {!canViewTranscript && (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-8 flex flex-col items-center gap-3 text-center">
+                                <span className="material-symbols-outlined text-slate-300 text-5xl">lock</span>
+                                <p className="font-semibold text-slate-700 dark:text-slate-300">Transcript is private</p>
+                                <p className="text-sm text-slate-400">The owner hasn't made this transcript public.</p>
+                            </div>
+                        )}
+                        {canViewTranscript && transcriptReady && (
                             <TranscriptViewer
                                 transcript={transcript}
                                 currentTime={currentTime}
                                 onSeek={onSeek}
+                                isOwner={isOwner}
+                                onSaveSegments={isOwner ? onSaveTranscriptSegments : undefined}
                             />
                         )}
                         {!transcriptReady && transcriptProcessing && (

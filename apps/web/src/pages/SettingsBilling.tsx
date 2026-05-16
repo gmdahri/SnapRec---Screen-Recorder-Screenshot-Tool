@@ -9,7 +9,12 @@ const SettingsBilling: React.FC = () => {
     const openPortal = useOpenBillingPortal();
     const startCheckout = useStartCheckout();
 
-    const isProActive = sub?.plan === 'pro' && sub?.status === 'active';
+    const isProActive = sub?.plan === 'pro' && (sub?.status === 'active' || sub?.status === 'trialing');
+    const isTrialing = sub?.status === 'trialing';
+    const trialEndDate = sub?.trialEnd ? new Date(sub.trialEnd) : null;
+    const trialDaysLeft = trialEndDate
+        ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
+        : null;
 
     return (
         <MainLayout>
@@ -37,14 +42,28 @@ const SettingsBilling: React.FC = () => {
                         </div>
                         {isLoading ? (
                             <p className="text-slate-400 text-sm mt-2">Loading…</p>
+                        ) : isTrialing ? (
+                            <div className="mt-2 space-y-1">
+                                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                    <span className="material-symbols-outlined text-[16px]">star</span>
+                                    <span className="text-sm font-semibold">
+                                        Free trial active — {trialDaysLeft !== null ? `${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left` : ''}
+                                    </span>
+                                </div>
+                                <p className="text-slate-500 text-sm">
+                                    {trialEndDate
+                                        ? `Trial ends ${trialEndDate.toLocaleDateString()} — you won't be charged until then.`
+                                        : 'Your trial is active.'}
+                                </p>
+                            </div>
                         ) : isProActive ? (
-                            <p className="text-slate-500 text-sm">
+                            <p className="text-slate-500 text-sm mt-2">
                                 {sub?.currentPeriodEnd
                                     ? `Renews ${new Date(sub.currentPeriodEnd).toLocaleDateString()}`
                                     : 'Subscription active.'}
                             </p>
                         ) : (
-                            <p className="text-slate-500 text-sm">
+                            <p className="text-slate-500 text-sm mt-2">
                                 You're on the free plan. Upgrade to add AI transcripts and summaries.
                             </p>
                         )}
@@ -63,7 +82,7 @@ const SettingsBilling: React.FC = () => {
                                     disabled={startCheckout.isPending}
                                     className="px-4 py-2 bg-primary text-white font-bold text-sm rounded-lg hover:opacity-90 shadow-md shadow-primary/20 disabled:opacity-50"
                                 >
-                                    {startCheckout.isPending ? 'Opening checkout…' : 'Upgrade to Pro'}
+                                    {startCheckout.isPending ? 'Opening checkout…' : 'Start free trial'}
                                 </button>
                             )}
                             <button

@@ -61,6 +61,9 @@ export class Recording {
     @Column({ type: 'varchar', nullable: true })
     transcriptFailReason: string | null;
 
+    @Column({ type: 'boolean', default: false })
+    transcriptPublic: boolean;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 

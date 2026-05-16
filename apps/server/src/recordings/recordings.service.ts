@@ -279,6 +279,43 @@ export class RecordingsService implements OnModuleInit {
         return recording;
     }
 
+    async updateTranscriptPrivacy(
+        recordingId: string,
+        userId: string,
+        transcriptPublic: boolean,
+    ): Promise<Recording> {
+        const recording = await this.recordingsRepository.findOne({
+            where: { id: recordingId },
+            relations: ['user'],
+        });
+        if (!recording) throw new NotFoundException('Recording not found');
+        if (recording.user?.supabaseId !== userId) {
+            throw new ForbiddenException('You do not have permission to update this recording');
+        }
+        recording.transcriptPublic = transcriptPublic;
+        return this.recordingsRepository.save(recording);
+    }
+
+    async updateTranscriptSegments(
+        recordingId: string,
+        userId: string,
+        segments: Array<{ start: number; end: number; text: string; speaker?: number }>,
+    ): Promise<{ success: boolean }> {
+        const recording = await this.recordingsRepository.findOne({
+            where: { id: recordingId },
+            relations: ['user'],
+        });
+        if (!recording) throw new NotFoundException('Recording not found');
+        if (recording.user?.supabaseId !== userId) {
+            throw new ForbiddenException('You do not have permission to update this recording');
+        }
+        const transcript = await this.transcriptsRepository.findOne({ where: { recordingId } });
+        if (!transcript) throw new NotFoundException('Transcript not found');
+        transcript.segmentsJson = segments;
+        await this.transcriptsRepository.save(transcript);
+        return { success: true };
+    }
+
     async addReaction(recordingId: string, type: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Reaction> {
         const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
         if (!recording) throw new NotFoundException('Recording not found');

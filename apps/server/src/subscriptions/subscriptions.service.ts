@@ -61,7 +61,31 @@ export class SubscriptionsService {
     async getPlan(userId: string): Promise<Plan> {
         const sub = await this.findByUserId(userId);
         if (!sub) return 'free';
-        return sub.plan === 'pro' && sub.status === 'active' ? 'pro' : 'free';
+        return sub.plan === 'pro' && (sub.status === 'active' || sub.status === 'trialing')
+            ? 'pro'
+            : 'free';
+    }
+
+    async getSubscriptionInfo(userId: string) {
+        const sub = await this.findByUserId(userId);
+        if (!sub) {
+            return {
+                plan: 'free' as Plan,
+                status: 'inactive',
+                currentPeriodEnd: null,
+                trialEnd: null,
+                aiMinutesUsedThisCycle: 0,
+                aiMinutesIncluded: 0,
+            };
+        }
+        return {
+            plan: sub.plan,
+            status: sub.status,
+            currentPeriodEnd: sub.currentPeriodEnd,
+            trialEnd: sub.trialEnd,
+            aiMinutesUsedThisCycle: sub.aiMinutesUsedThisCycle,
+            aiMinutesIncluded: sub.aiMinutesIncluded,
+        };
     }
 
     /** Hard cap: returns false if adding the recording's minutes would exceed quota. */
@@ -109,7 +133,11 @@ export class SubscriptionsService {
             success_url: successUrl || `${this.webBaseUrl}/settings/billing?checkout=success`,
             cancel_url: cancelUrl || `${this.webBaseUrl}/pricing?checkout=cancelled`,
             metadata: { userId: user.id },
-            subscription_data: { metadata: { userId: user.id } },
+            subscription_data: {
+                metadata: { userId: user.id },
+                trial_period_days: 7,
+            },
+            payment_method_collection: 'always',
         });
 
         return { url: session.url };
@@ -159,6 +187,9 @@ export class SubscriptionsService {
             case 'invoice.paid':
                 await this.onInvoicePaid(event.data.object as Stripe.Invoice);
                 break;
+            case 'customer.subscription.trial_will_end':
+                this.logger.log(`Trial ending soon for subscription ${(event.data.object as Stripe.Subscription).id}`);
+                break;
             default:
                 this.logger.debug(`Unhandled event type: ${event.type}`);
         }
@@ -190,6 +221,7 @@ export class SubscriptionsService {
         if (s.current_period_end) {
             sub.currentPeriodEnd = new Date(s.current_period_end * 1000);
         }
+        sub.trialEnd = s.trial_end ? new Date(s.trial_end * 1000) : null;
         if (sub.plan === 'pro' && sub.aiMinutesIncluded === 0) {
             sub.aiMinutesIncluded = PRO_INCLUDED_MINUTES;
         }

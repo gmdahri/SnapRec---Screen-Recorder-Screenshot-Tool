@@ -24,6 +24,7 @@ export interface TranscriptSegment {
     start: number;
     end: number;
     text: string;
+    speaker?: number;
 }
 
 export interface ActionItem {
@@ -70,6 +71,7 @@ export interface Recording {
     transcriptStatus?: TranscriptStatus;
     summaryStatus?: SummaryStatus;
     transcriptFailReason?: string | null;
+    transcriptPublic?: boolean;
     transcript?: Transcript | null;
     summary?: Summary | null;
     user?: {
@@ -413,6 +415,34 @@ export function useDeleteTranscript() {
         mutationFn: (id: string) =>
             fetchWithAuth<{ success: boolean }>(`/recordings/${id}/transcript`, { method: 'DELETE' }),
         onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+export function useUpdateTranscriptPrivacy() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, transcriptPublic }: { id: string; transcriptPublic: boolean }) =>
+            fetchWithAuth<{ transcriptPublic: boolean }>(`/recordings/${id}/transcript-privacy`, {
+                method: 'PATCH',
+                body: JSON.stringify({ transcriptPublic }),
+            }),
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+export function useUpdateTranscriptSegments() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, segments }: { id: string; segments: TranscriptSegment[] }) =>
+            fetchWithAuth<{ success: boolean }>(`/recordings/${id}/transcript/segments`, {
+                method: 'PATCH',
+                body: JSON.stringify({ segments }),
+            }),
+        onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
         },
     });

@@ -13,6 +13,7 @@ export interface TranscriptSegment {
     end: number;
     text: string;
     confidence?: number;
+    speaker?: number;
 }
 
 @Entity('sr_transcripts')

@@ -31,17 +31,23 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, reason, so
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
                     Unlock AI summaries and transcripts
                 </h2>
-                <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm leading-relaxed">
                     {reason ||
                         'Pro gives you automatic transcripts, AI summaries, action items, and chapters on every recording — no third-party bot joins your call.'}
                 </p>
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 mb-5 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-600 text-[18px]">star</span>
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">
+                        Start with a 7-day free trial — no charge today.
+                    </p>
+                </div>
                 <button
                     onClick={() =>
                         navigate(`/pricing${source ? `?from=${encodeURIComponent(source)}` : ''}`)
                     }
                     className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:opacity-90 transition-opacity shadow-md shadow-primary/20"
                 >
-                    See Pro plans
+                    Start free trial
                 </button>
                 <button
                     onClick={onClose}

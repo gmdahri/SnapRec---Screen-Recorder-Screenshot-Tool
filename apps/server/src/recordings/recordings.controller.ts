@@ -21,7 +21,7 @@ import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { PlanGuard } from '../subscriptions/plan.guard';
-import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto } from './dto';
+import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, UpdateTranscriptPrivacyDto, UpdateTranscriptSegmentsDto } from './dto';
 
 @Controller('recordings')
 export class RecordingsController {
@@ -180,6 +180,27 @@ export class RecordingsController {
     async deleteTranscript(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
         return this.recordingsService.deleteTranscript(id, req.user.id);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id/transcript-privacy')
+    async updateTranscriptPrivacy(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: UpdateTranscriptPrivacyDto,
+        @Req() req: any,
+    ) {
+        return this.recordingsService.updateTranscriptPrivacy(id, req.user.id, dto.transcriptPublic);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id/transcript/segments')
+    async updateTranscriptSegments(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: UpdateTranscriptSegmentsDto,
+        @Req() req: any,
+    ) {
+        return this.recordingsService.updateTranscriptSegments(id, req.user.id, dto.segments);
+    }
+
     @UseGuards(OptionalJwtAuthGuard)
     @Post(':id/reactions')
     async addReaction(

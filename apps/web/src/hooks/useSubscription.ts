@@ -5,6 +5,7 @@ export interface SubscriptionInfo {
     plan: 'free' | 'pro';
     status: string;
     currentPeriodEnd: string | null;
+    trialEnd: string | null;
     aiMinutesUsedThisCycle: number;
     aiMinutesIncluded: number;
 }

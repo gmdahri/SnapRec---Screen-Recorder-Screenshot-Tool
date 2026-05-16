@@ -37,17 +37,23 @@ const PricingTable: React.FC<PricingTableProps> = ({ onSelectPro, isProActive, i
                 <div className="absolute -top-3 left-8 bg-primary text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                     Recommended
                 </div>
+                <div className="absolute -top-3 right-8 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    7-day free trial
+                </div>
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Pro</h3>
                 <p className="text-slate-500 mb-4">For teams that record meetings and need notes.</p>
-                <div className="text-4xl font-black text-slate-900 dark:text-white mb-6">
+                <div className="text-4xl font-black text-slate-900 dark:text-white mb-1">
                     $19<span className="text-base font-medium text-slate-400">/month</span>
                 </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-5">
+                    Free for 7 days, then $19/mo. Cancel anytime.
+                </p>
                 <ul className="space-y-3 text-slate-700 dark:text-slate-300 text-sm flex-1">
                     <li className="flex gap-2"><Check /> Everything in Free</li>
                     <li className="flex gap-2"><Check /> <strong>20 hours/mo</strong> of AI transcription</li>
                     <li className="flex gap-2"><Check /> AI summary, action items, chapters</li>
-                    <li className="flex gap-2"><Check /> Searchable transcript</li>
-                    <li className="flex gap-2"><Check /> Priority processing</li>
+                    <li className="flex gap-2"><Check /> Speaker diarization (who said what)</li>
+                    <li className="flex gap-2"><Check /> Editable transcript</li>
                     <li className="flex gap-2"><Check /> Email when summary is ready</li>
                 </ul>
                 <button
@@ -55,8 +61,9 @@ const PricingTable: React.FC<PricingTableProps> = ({ onSelectPro, isProActive, i
                     disabled={isProActive || isLoading}
                     className="mt-8 w-full bg-primary text-white font-bold py-3 rounded-lg hover:opacity-90 transition-opacity shadow-md shadow-primary/20 disabled:opacity-50"
                 >
-                    {isProActive ? 'Active' : isLoading ? 'Opening checkout…' : 'Upgrade to Pro'}
+                    {isProActive ? 'Active' : isLoading ? 'Opening checkout…' : 'Start free trial'}
                 </button>
+                <p className="text-center text-xs text-slate-400 mt-2">Card required · cancel anytime</p>
             </div>
         </div>
     );

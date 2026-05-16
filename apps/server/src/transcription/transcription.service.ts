@@ -14,6 +14,7 @@ import { StorageService } from '../storage/storage.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 const WHISPER_MODEL = 'whisper-1';
+const DEEPGRAM_MODEL = 'nova-2';
 const WHISPER_MAX_BYTES = 25 * 1024 * 1024;
 const SILENCE_RATIO_THRESHOLD = 0.95;
 
@@ -21,6 +22,7 @@ const SILENCE_RATIO_THRESHOLD = 0.95;
 export class TranscriptionService {
     private readonly logger = new Logger(TranscriptionService.name);
     private readonly openai: OpenAI | null;
+    private readonly deepgramKey: string | null;
 
     constructor(
         private readonly configService: ConfigService,
@@ -33,8 +35,12 @@ export class TranscriptionService {
     ) {
         const key = this.configService.get<string>('OPENAI_API_KEY');
         this.openai = key ? new OpenAI({ apiKey: key }) : null;
-        if (!this.openai) {
-            this.logger.warn('OPENAI_API_KEY not configured — transcription disabled');
+        this.deepgramKey = this.configService.get<string>('DEEPGRAM_API_KEY') || null;
+        if (!this.openai && !this.deepgramKey) {
+            this.logger.warn('Neither OPENAI_API_KEY nor DEEPGRAM_API_KEY configured — transcription disabled');
+        }
+        if (this.deepgramKey) {
+            this.logger.log('Deepgram diarization enabled (nova-2)');
         }
     }
 
@@ -43,8 +49,8 @@ export class TranscriptionService {
      * Caller is responsible for flipping `transcriptStatus` to 'processing' beforehand.
      */
     async transcribe(recordingId: string): Promise<void> {
-        if (!this.openai) {
-            throw new Error('OpenAI not configured');
+        if (!this.openai && !this.deepgramKey) {
+            throw new Error('No transcription provider configured (set OPENAI_API_KEY or DEEPGRAM_API_KEY)');
         }
         const recording = await this.recordingsRepository.findOne({
             where: { id: recordingId },
@@ -94,8 +100,16 @@ export class TranscriptionService {
             const allSegments: TranscriptSegment[] = [];
             let detectedLanguage: string | null = null;
             let rawFirst: any = null;
+            let usedModel = WHISPER_MODEL;
 
-            if (audioSize <= WHISPER_MAX_BYTES) {
+            if (this.deepgramKey) {
+                // Deepgram: single call with speaker diarization, no chunking needed
+                const result = await this.callDeepgram(audioPath);
+                rawFirst = result;
+                detectedLanguage = result.language ?? null;
+                allSegments.push(...result.segments);
+                usedModel = DEEPGRAM_MODEL;
+            } else if (audioSize <= WHISPER_MAX_BYTES) {
                 const result = await this.callWhisper(audioPath);
                 rawFirst = result;
                 detectedLanguage = result.language ?? null;
@@ -116,7 +130,7 @@ export class TranscriptionService {
                 durationSec: recording.durationSec,
                 segmentsJson: allSegments,
                 rawProviderResponse: rawFirst,
-                model: WHISPER_MODEL,
+                model: usedModel,
             });
             await this.transcriptsRepository.save(transcript);
 
@@ -149,6 +163,45 @@ export class TranscriptionService {
             temperature: 0,
         } as any);
         return result as any;
+    }
+
+    private async callDeepgram(filePath: string): Promise<{
+        language: string | null;
+        segments: TranscriptSegment[];
+    }> {
+        const audioBuffer = await fs.readFile(filePath);
+        const url =
+            `https://api.deepgram.com/v1/listen` +
+            `?model=${DEEPGRAM_MODEL}&diarize=true&punctuate=true&smart_format=true&detect_language=true`;
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Authorization: `Token ${this.deepgramKey}`,
+                'Content-Type': 'audio/mpeg',
+            },
+            body: audioBuffer,
+        });
+
+        if (!res.ok) {
+            const body = await res.text().catch(() => '');
+            throw new Error(`Deepgram error ${res.status}: ${body.slice(0, 300)}`);
+        }
+
+        const data: any = await res.json();
+        const channel = data?.results?.channels?.[0];
+        const alternative = channel?.alternatives?.[0];
+        const language: string | null = channel?.detected_language ?? null;
+        const paragraphs: any[] = alternative?.paragraphs?.paragraphs ?? [];
+
+        const segments: TranscriptSegment[] = paragraphs.map((p: any) => ({
+            start: p.start,
+            end: p.end,
+            text: (p.sentences ?? []).map((s: any) => s.text).join(' ').trim(),
+            speaker: typeof p.speaker === 'number' ? p.speaker : undefined,
+        }));
+
+        return { language, segments };
     }
 
     private normalizeSegments(

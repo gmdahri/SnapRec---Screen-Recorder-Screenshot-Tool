@@ -52,14 +52,7 @@ export class SubscriptionsController {
             fullName: req.user.fullName,
             avatarUrl: req.user.avatarUrl,
         });
-        const sub = await this.subscriptionsService.getOrCreate(user.id);
-        return {
-            plan: sub.plan,
-            status: sub.status,
-            currentPeriodEnd: sub.currentPeriodEnd,
-            aiMinutesUsedThisCycle: sub.aiMinutesUsedThisCycle,
-            aiMinutesIncluded: sub.aiMinutesIncluded,
-        };
+        return this.subscriptionsService.getSubscriptionInfo(user.id);
     }
 
     @Post('webhook')
