@@ -13,6 +13,7 @@ import { TranscriptionModule } from '../transcription/transcription.module';
 import { AiModule } from '../ai/ai.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { MailModule } from '../mail/mail.module';
+import { QueueModule } from '../queue/queue.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { MailModule } from '../mail/mail.module';
         AiModule,
         SubscriptionsModule,
         MailModule,
+        QueueModule,
     ],
     controllers: [RecordingsController],
     providers: [RecordingsService],

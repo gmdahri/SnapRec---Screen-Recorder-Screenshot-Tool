@@ -13,6 +13,7 @@ import { TranscriptionService } from '../transcription/transcription.service';
 import { AiSummaryService } from '../ai/ai-summary.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { MailService } from '../mail/mail.service';
+import { AiPipelineQueue } from '../queue/ai-pipeline.queue';
 
 @Injectable()
 export class RecordingsService implements OnModuleInit {
@@ -34,6 +35,7 @@ export class RecordingsService implements OnModuleInit {
         private readonly aiSummaryService: AiSummaryService,
         private readonly subscriptionsService: SubscriptionsService,
         private readonly mailService: MailService,
+        private readonly aiPipelineQueue: AiPipelineQueue,
     ) { }
 
     /**
@@ -143,12 +145,17 @@ export class RecordingsService implements OnModuleInit {
         recording.transcriptFailReason = null;
         await this.recordingsRepository.save(recording);
 
-        // Fire-and-forget; the service tracks state on the recording row.
-        setImmediate(() => {
-            this.runAiPipeline(recording.id).catch((err) => {
-                this.logger.error(`runAiPipeline failed for ${recording.id}`, err);
+        // Prefer BullMQ for resumability; fall back to setImmediate when REDIS_URL is not set.
+        if (this.aiPipelineQueue.enabled) {
+            const { jobId } = await this.aiPipelineQueue.enqueue(recording.id);
+            this.logger.log(`Enqueued AI pipeline job ${jobId} for recording ${recording.id}`);
+        } else {
+            setImmediate(() => {
+                this.runAiPipeline(recording.id).catch((err) => {
+                    this.logger.error(`runAiPipeline failed for ${recording.id}`, err);
+                });
             });
-        });
+        }
 
         return {
             recordingId: recording.id,

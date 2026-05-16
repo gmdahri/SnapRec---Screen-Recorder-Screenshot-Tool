@@ -8,7 +8,10 @@ export interface SubscriptionInfo {
     trialEnd: string | null;
     aiMinutesUsedThisCycle: number;
     aiMinutesIncluded: number;
+    aiMinutesPurchased: number;
 }
+
+export type TopupPackId = '5h' | '10h' | '20h';
 
 export function useSubscription(enabled: boolean = true) {
     return useQuery({
@@ -39,6 +42,19 @@ export function useOpenBillingPortal() {
             const res = await fetchWithAuth<{ url: string }>('/subscriptions/portal', {
                 method: 'POST',
                 body: JSON.stringify({}),
+            });
+            if (res.url) window.location.href = res.url;
+            return res;
+        },
+    });
+}
+
+export function useStartTopup() {
+    return useMutation({
+        mutationFn: async (packId: TopupPackId) => {
+            const res = await fetchWithAuth<{ url: string }>('/subscriptions/topup', {
+                method: 'POST',
+                body: JSON.stringify({ packId }),
             });
             if (res.url) window.location.href = res.url;
             return res;

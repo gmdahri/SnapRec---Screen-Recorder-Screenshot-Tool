@@ -22,3 +22,4 @@ export { default as TranscriptViewer } from './TranscriptViewer';
 export { default as UsageMeter } from './UsageMeter';
 export { default as UpgradeModal } from './UpgradeModal';
 export { default as PricingTable } from './PricingTable';
+export { default as TopupModal } from './TopupModal';

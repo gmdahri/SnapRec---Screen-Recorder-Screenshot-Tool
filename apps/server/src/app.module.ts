@@ -20,6 +20,8 @@ import { MailModule } from './mail/mail.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { TranscriptionModule } from './transcription/transcription.module';
 import { AiModule } from './ai/ai.module';
+import { QueueModule } from './queue/queue.module';
+import { AdminModule } from './admin/admin.module';
 import { DataSource } from 'typeorm';
 
 @Module({
@@ -54,6 +56,8 @@ import { DataSource } from 'typeorm';
     SubscriptionsModule,
     TranscriptionModule,
     AiModule,
+    QueueModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

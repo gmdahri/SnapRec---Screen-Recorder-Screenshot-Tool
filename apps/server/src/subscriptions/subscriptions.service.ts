@@ -8,6 +8,14 @@ import { User } from '../users/entities/user.entity';
 
 const PRO_INCLUDED_MINUTES = 20 * 60;
 
+// Top-up packs: minute count is added to subscription.aiMinutesPurchased.
+// These don't reset on cycle renewal, unlike included minutes.
+export const TOPUP_PACKS: Record<string, { minutes: number; priceIdEnv: string; label: string }> = {
+    '5h': { minutes: 5 * 60, priceIdEnv: 'STRIPE_PRICE_TOPUP_5H', label: '5 hours' },
+    '10h': { minutes: 10 * 60, priceIdEnv: 'STRIPE_PRICE_TOPUP_10H', label: '10 hours' },
+    '20h': { minutes: 20 * 60, priceIdEnv: 'STRIPE_PRICE_TOPUP_20H', label: '20 hours' },
+};
+
 @Injectable()
 export class SubscriptionsService {
     private readonly logger = new Logger(SubscriptionsService.name);
@@ -76,6 +84,7 @@ export class SubscriptionsService {
                 trialEnd: null,
                 aiMinutesUsedThisCycle: 0,
                 aiMinutesIncluded: 0,
+                aiMinutesPurchased: 0,
             };
         }
         return {
@@ -85,14 +94,22 @@ export class SubscriptionsService {
             trialEnd: sub.trialEnd,
             aiMinutesUsedThisCycle: sub.aiMinutesUsedThisCycle,
             aiMinutesIncluded: sub.aiMinutesIncluded,
+            aiMinutesPurchased: sub.aiMinutesPurchased,
         };
+    }
+
+    /** Total minutes available this cycle = included (resets monthly) + purchased (persistent). */
+    private totalAvailableMinutes(sub: Subscription): number {
+        return sub.aiMinutesIncluded + sub.aiMinutesPurchased;
     }
 
     /** Hard cap: returns false if adding the recording's minutes would exceed quota. */
     async hasQuotaFor(userId: string, minutesNeeded: number): Promise<boolean> {
         const sub = await this.findByUserId(userId);
-        if (!sub || sub.plan !== 'pro' || sub.status !== 'active') return false;
-        return sub.aiMinutesUsedThisCycle + minutesNeeded <= sub.aiMinutesIncluded;
+        if (!sub) return false;
+        const isPro = sub.plan === 'pro' && (sub.status === 'active' || sub.status === 'trialing');
+        if (!isPro && sub.aiMinutesPurchased <= 0) return false;
+        return sub.aiMinutesUsedThisCycle + minutesNeeded <= this.totalAvailableMinutes(sub);
     }
 
     async recordUsage(userId: string, minutes: number): Promise<void> {
@@ -138,6 +155,45 @@ export class SubscriptionsService {
                 trial_period_days: 7,
             },
             payment_method_collection: 'always',
+        });
+
+        return { url: session.url };
+    }
+
+    async createTopupSession(userId: string, packId: string, successUrl?: string, cancelUrl?: string) {
+        const stripe = this.requireStripe();
+        const pack = TOPUP_PACKS[packId];
+        if (!pack) {
+            throw new BadRequestException(`Unknown topup pack: ${packId}`);
+        }
+        const priceId = this.configService.get<string>(pack.priceIdEnv);
+        if (!priceId) {
+            throw new BadRequestException(`${pack.priceIdEnv} not configured`);
+        }
+
+        const user = await this.usersRepository.findOne({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        const sub = await this.getOrCreate(userId);
+        let customerId = sub.stripeCustomerId;
+        if (!customerId) {
+            const customer = await stripe.customers.create({
+                email: user.email || undefined,
+                name: user.fullName || undefined,
+                metadata: { userId: user.id },
+            });
+            customerId = customer.id;
+            sub.stripeCustomerId = customerId;
+            await this.subscriptionsRepository.save(sub);
+        }
+
+        const session = await stripe.checkout.sessions.create({
+            mode: 'payment',
+            customer: customerId,
+            line_items: [{ price: priceId, quantity: 1 }],
+            success_url: successUrl || `${this.webBaseUrl}/settings/billing?topup=success`,
+            cancel_url: cancelUrl || `${this.webBaseUrl}/settings/billing?topup=cancelled`,
+            metadata: { userId: user.id, kind: 'topup', packId, minutes: String(pack.minutes) },
         });
 
         return { url: session.url };
@@ -204,6 +260,16 @@ export class SubscriptionsService {
         const sub = await this.getOrCreate(userId);
         if (typeof session.customer === 'string') sub.stripeCustomerId = session.customer;
         if (typeof session.subscription === 'string') sub.stripeSubscriptionId = session.subscription;
+
+        // Top-up: credit purchased minutes (does not reset on cycle renewal)
+        if (session.metadata?.kind === 'topup' && session.mode === 'payment') {
+            const minutes = parseInt(session.metadata.minutes ?? '0', 10);
+            if (minutes > 0) {
+                sub.aiMinutesPurchased += minutes;
+                this.logger.log(`Credited ${minutes} top-up minutes to user ${userId}`);
+            }
+        }
+
         await this.subscriptionsRepository.save(sub);
     }
 

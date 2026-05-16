@@ -50,6 +50,9 @@ export class Subscription {
     @Column({ type: 'int', default: 0 })
     aiMinutesIncluded: number;
 
+    @Column({ type: 'int', default: 0 })
+    aiMinutesPurchased: number;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 

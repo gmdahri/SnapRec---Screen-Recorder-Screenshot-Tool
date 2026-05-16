@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout, UsageMeter } from '../components';
+import { MainLayout, UsageMeter, TopupModal } from '../components';
 import { useSubscription, useOpenBillingPortal, useStartCheckout } from '../hooks/useSubscription';
 
 const SettingsBilling: React.FC = () => {
@@ -8,6 +8,7 @@ const SettingsBilling: React.FC = () => {
     const { data: sub, isLoading } = useSubscription();
     const openPortal = useOpenBillingPortal();
     const startCheckout = useStartCheckout();
+    const [showTopup, setShowTopup] = useState(false);
 
     const isProActive = sub?.plan === 'pro' && (sub?.status === 'active' || sub?.status === 'trialing');
     const isTrialing = sub?.status === 'trialing';
@@ -97,12 +98,40 @@ const SettingsBilling: React.FC = () => {
                     {sub && (
                         <UsageMeter
                             usedMinutes={sub.aiMinutesUsedThisCycle}
-                            includedMinutes={sub.aiMinutesIncluded}
-                            label="AI minutes used this cycle"
+                            includedMinutes={sub.aiMinutesIncluded + (sub.aiMinutesPurchased || 0)}
+                            label={`AI minutes this cycle${sub.aiMinutesPurchased ? ` (+${sub.aiMinutesPurchased} purchased)` : ''}`}
                         />
+                    )}
+
+                    {/* Top-up minutes (only for Pro users) */}
+                    {isProActive && (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                                        Need more minutes?
+                                    </h3>
+                                    <p className="text-sm text-slate-500">
+                                        Top up your account with additional AI minutes. They don't expire and stack on top of your monthly quota.
+                                    </p>
+                                    {sub?.aiMinutesPurchased ? (
+                                        <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">
+                                            {sub.aiMinutesPurchased} minutes available from previous top-ups
+                                        </p>
+                                    ) : null}
+                                </div>
+                                <button
+                                    onClick={() => setShowTopup(true)}
+                                    className="shrink-0 px-4 py-2 bg-primary/10 text-primary font-bold text-sm rounded-lg hover:bg-primary/20"
+                                >
+                                    Buy minutes
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
+            <TopupModal isOpen={showTopup} onClose={() => setShowTopup(false)} />
         </MainLayout>
     );
 };

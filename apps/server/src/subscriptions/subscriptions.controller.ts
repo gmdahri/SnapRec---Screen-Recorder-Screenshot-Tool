@@ -45,6 +45,22 @@ export class SubscriptionsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('topup')
+    async topup(@Req() req: any, @Body() dto: { packId: string; successUrl?: string; cancelUrl?: string }) {
+        const user = await this.usersService.findOrCreateBySupabaseId(req.user.id, {
+            email: req.user.email,
+            fullName: req.user.fullName,
+            avatarUrl: req.user.avatarUrl,
+        });
+        return this.subscriptionsService.createTopupSession(
+            user.id,
+            dto.packId,
+            dto.successUrl,
+            dto.cancelUrl,
+        );
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Get('me')
     async me(@Req() req: any) {
         const user = await this.usersService.findOrCreateBySupabaseId(req.user.id, {

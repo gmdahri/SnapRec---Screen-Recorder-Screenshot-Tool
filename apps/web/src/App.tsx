@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import ShareView from './pages/ShareView';
 import Pricing from './pages/Pricing';
 import SettingsBilling from './pages/SettingsBilling';
+import AdminDashboard from './pages/AdminDashboard';
 
 const Editor = React.lazy(() => import('./pages/Editor'));
 const VideoEditorPage = React.lazy(() => import('./pages/VideoEditor/VideoEditorPage'));
@@ -77,6 +78,11 @@ function App() {
                 <Route path="/settings/billing" element={
                   <ProtectedRoute>
                     <SettingsBilling />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
                   </ProtectedRoute>
                 } />
                 <Route path="/pricing" element={<Pricing />} />
