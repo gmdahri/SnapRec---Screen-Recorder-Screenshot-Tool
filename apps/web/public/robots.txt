@@ -5,7 +5,6 @@ Disallow: /library
 Disallow: /analytics
 Disallow: /settings
 Disallow: /auth
-Disallow: /login
 Disallow: /editor
 Disallow: /v/
 

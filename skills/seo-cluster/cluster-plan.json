@@ -1,0 +1,1060 @@
+{
+  "meta": {
+    "site": "https://www.snaprecorder.org",
+    "generated": "2026-05-07",
+    "analyst": "Semantic Cluster Engine v2 — claude-sonnet-4-6",
+    "seed_keywords": [
+      "chrome screen recorder",
+      "free screen recorder no watermark",
+      "screenshot tool chrome",
+      "screen capture extension",
+      "screen recorder no account",
+      "loom alternative free",
+      "screen recording for remote teams"
+    ],
+    "total_keywords_analyzed": 45,
+    "navigational_excluded": 2,
+    "keywords_clustered": 43,
+    "total_clusters": 5,
+    "existing_posts_inventoried": 28,
+    "pillar_posts_needed": 3,
+    "pillar_posts_need_upgrade": 2,
+    "new_spoke_gaps_identified": 5
+  },
+
+  "existing_content_inventory": {
+    "total_posts": 28,
+    "posts": [
+      { "slug": "how-to-record-google-slides-presentation",      "category": "tutorial",    "intent": "Informational", "cluster": "C2", "role": "spoke" },
+      { "slug": "screen-record-chrome-without-installing",        "category": "tutorial",    "intent": "Informational", "cluster": "C1", "role": "spoke" },
+      { "slug": "how-to-record-screen-chrome-free",              "category": "tutorial",    "intent": "Informational", "cluster": "C1", "role": "spoke" },
+      { "slug": "best-free-screen-recorders-no-watermark",       "category": "comparison",  "intent": "Commercial",    "cluster": "C1", "role": "spoke" },
+      { "slug": "how-to-take-full-page-screenshot-chrome",       "category": "tutorial",    "intent": "Informational", "cluster": "C3", "role": "spoke" },
+      { "slug": "snaprec-vs-loom-free-alternative",              "category": "comparison",  "intent": "Commercial",    "cluster": "C4", "role": "spoke" },
+      { "slug": "record-screen-with-audio-webcam-chrome",        "category": "tutorial",    "intent": "Informational", "cluster": "C2", "role": "spoke" },
+      { "slug": "how-to-screenshot-on-chromebook",               "category": "tutorial",    "intent": "Informational", "cluster": "C1", "role": "spoke" },
+      { "slug": "screen-record-google-meet-free",                "category": "tutorial",    "intent": "Informational", "cluster": "C2", "role": "spoke" },
+      { "slug": "best-screenshot-chrome-extensions-2026",        "category": "comparison",  "intent": "Commercial",    "cluster": "C3", "role": "pillar-candidate (thin — needs upgrade)" },
+      { "slug": "how-to-blur-sensitive-info-screenshot",         "category": "tutorial",    "intent": "Informational", "cluster": "C3", "role": "spoke" },
+      { "slug": "screen-recording-tips-remote-work",             "category": "tips",        "intent": "Informational", "cluster": "C5", "role": "spoke" },
+      { "slug": "how-to-annotate-screenshots-chrome",            "category": "tutorial",    "intent": "Informational", "cluster": "C3", "role": "spoke" },
+      { "slug": "screencastify-vs-snaprec-free-alternative",     "category": "comparison",  "intent": "Commercial",    "cluster": "C4", "role": "spoke" },
+      { "slug": "how-to-record-presentation-with-webcam",        "category": "tutorial",    "intent": "Informational", "cluster": "C2", "role": "spoke" },
+      { "slug": "how-to-capture-scrolling-screenshot",           "category": "tutorial",    "intent": "Informational", "cluster": "C3", "role": "spoke" },
+      { "slug": "obs-vs-browser-screen-recorder",                "category": "comparison",  "intent": "Informational", "cluster": "C4", "role": "spoke" },
+      { "slug": "screen-recorder-for-teachers-free",             "category": "comparison",  "intent": "Commercial",    "cluster": "C5", "role": "spoke" },
+      { "slug": "best-free-loom-alternatives-2026",              "category": "comparison",  "intent": "Commercial",    "cluster": "C4", "role": "pillar-candidate (thin — needs upgrade)" },
+      { "slug": "how-to-record-zoom-meeting-free",               "category": "tutorial",    "intent": "Informational", "cluster": "C2", "role": "spoke" },
+      { "slug": "screen-recording-for-online-classes",           "category": "tutorial",    "intent": "Informational", "cluster": "C5", "role": "spoke" },
+      { "slug": "how-to-create-video-bug-report",                "category": "tips",        "intent": "Informational", "cluster": "C5", "role": "spoke" },
+      { "slug": "how-to-record-microsoft-teams-meeting-free",    "category": "tutorial",    "intent": "Informational", "cluster": "C2", "role": "spoke" },
+      { "slug": "screenshot-vs-screen-recording-when-to-use",   "category": "tips",        "intent": "Informational", "cluster": "C3", "role": "spoke" },
+      { "slug": "how-to-record-product-demo-sales",              "category": "tutorial",    "intent": "Informational", "cluster": "C5", "role": "spoke" },
+      { "slug": "how-to-record-screen-mac-free",                 "category": "tutorial",    "intent": "Informational", "cluster": "C1", "role": "spoke" },
+      { "slug": "how-to-record-screen-windows-10-free",          "category": "tutorial",    "intent": "Informational", "cluster": "C1", "role": "spoke" },
+      { "slug": "how-to-make-tutorial-video-free",               "category": "tutorial",    "intent": "Informational", "cluster": "C5", "role": "spoke" }
+    ]
+  },
+
+  "keyword_expansion": {
+    "total_analyzed": 45,
+    "navigational_excluded": ["screen recorder chrome web store", "snaprec download"],
+    "keywords": [
+      { "keyword": "chrome screen recorder",                          "intent": "Commercial",    "volume_est": "high",        "cluster": "C1" },
+      { "keyword": "free screen recorder no watermark",               "intent": "Commercial",    "volume_est": "high",        "cluster": "C1" },
+      { "keyword": "screen recording extension chrome",               "intent": "Commercial",    "volume_est": "high",        "cluster": "C1" },
+      { "keyword": "screen recorder no account",                      "intent": "Commercial",    "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "best free chrome screen recorder 2026",           "intent": "Commercial",    "volume_est": "high",        "cluster": "C1" },
+      { "keyword": "screen recorder no watermark no sign up",         "intent": "Commercial",    "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "free screen recorder no time limit",              "intent": "Commercial",    "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "4K screen recorder chrome",                       "intent": "Commercial",    "volume_est": "low-medium",  "cluster": "C1" },
+      { "keyword": "screen recorder chromebook free",                 "intent": "Commercial",    "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "how to record screen on chrome",                  "intent": "Informational", "volume_est": "high",        "cluster": "C1" },
+      { "keyword": "how to record screen without installing software", "intent": "Informational", "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "record screen mac free no download",              "intent": "Informational", "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "record screen windows 10 free no watermark",      "intent": "Informational", "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "how to record screen browser tab",                "intent": "Informational", "volume_est": "medium",      "cluster": "C1" },
+      { "keyword": "how to record google meet free",                  "intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "how to record zoom meeting free",                 "intent": "Informational", "volume_est": "high",        "cluster": "C2" },
+      { "keyword": "how to record teams meeting free",                "intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "how to record google slides with audio",          "intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "how to record webcam and screen at same time",    "intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "how to record a presentation with webcam overlay","intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "how to make a tutorial video free",               "intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "record any meeting free chrome 2026",             "intent": "Informational", "volume_est": "medium",      "cluster": "C2" },
+      { "keyword": "screenshot chrome extension",                     "intent": "Commercial",    "volume_est": "high",        "cluster": "C3" },
+      { "keyword": "full page screenshot chrome",                     "intent": "Commercial",    "volume_est": "high",        "cluster": "C3" },
+      { "keyword": "annotate screenshot chrome",                      "intent": "Commercial",    "volume_est": "medium",      "cluster": "C3" },
+      { "keyword": "scrolling screenshot chrome",                     "intent": "Commercial",    "volume_est": "medium",      "cluster": "C3" },
+      { "keyword": "screenshot tool with annotation blur",            "intent": "Commercial",    "volume_est": "medium",      "cluster": "C3" },
+      { "keyword": "blur sensitive info screenshot",                  "intent": "Informational", "volume_est": "low-medium",  "cluster": "C3" },
+      { "keyword": "screenshot vs screen recording",                  "intent": "Informational", "volume_est": "low-medium",  "cluster": "C3" },
+      { "keyword": "loom alternative free",                           "intent": "Commercial",    "volume_est": "high",        "cluster": "C4" },
+      { "keyword": "screencastify alternative free",                  "intent": "Commercial",    "volume_est": "high",        "cluster": "C4" },
+      { "keyword": "loom vs snaprec",                                 "intent": "Commercial",    "volume_est": "medium",      "cluster": "C4" },
+      { "keyword": "OBS vs browser screen recorder",                  "intent": "Informational", "volume_est": "medium",      "cluster": "C4" },
+      { "keyword": "best loom alternatives 2026",                     "intent": "Commercial",    "volume_est": "high",        "cluster": "C4" },
+      { "keyword": "screenity alternative chrome",                    "intent": "Commercial",    "volume_est": "medium",      "cluster": "C4" },
+      { "keyword": "free screen recorder for teachers",               "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "screen recorder for customer support teams",      "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "async video messaging tool",                      "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "screen recorder for developers bug reports",      "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "screen recorder for product demos sales",         "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "screen recorder for online course creators",      "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "screen recording for remote teams",               "intent": "Commercial",    "volume_est": "medium",      "cluster": "C5" },
+      { "keyword": "async video messaging vs live meetings",          "intent": "Informational", "volume_est": "medium",      "cluster": "C5" }
+    ]
+  },
+
+  "serp_overlap_matrix": {
+    "method": "Top-10 organic URL intersection observed via WebSearch SERP. Scores reflect competitor domain co-occurrence across paired searches. Full programmatic scoring requires DataForSEO/SerpAPI API access.",
+    "threshold_guide": {
+      "7_to_10": "same_post — consolidate into one URL",
+      "4_to_6": "same_cluster — separate posts, strong internal link",
+      "2_to_3": "interlink_only — cross-cluster optional link",
+      "0_to_1": "separate — no link needed"
+    },
+    "pairs": [
+      { "kw_a": "chrome screen recorder",              "kw_b": "free screen recorder no watermark",        "shared_domains_observed": 7, "relationship": "same_post",    "cluster_assignment": "C1-pillar" },
+      { "kw_a": "chrome screen recorder",              "kw_b": "screen recording extension chrome",        "shared_domains_observed": 8, "relationship": "same_post",    "cluster_assignment": "C1-pillar" },
+      { "kw_a": "chrome screen recorder",              "kw_b": "screen recorder no account",               "shared_domains_observed": 6, "relationship": "same_post",    "cluster_assignment": "C1-pillar" },
+      { "kw_a": "free screen recorder no watermark",   "kw_b": "screen recorder no account",               "shared_domains_observed": 7, "relationship": "same_post",    "cluster_assignment": "C1-pillar" },
+      { "kw_a": "chrome screen recorder",              "kw_b": "4K screen recorder chrome",                "shared_domains_observed": 5, "relationship": "same_cluster", "cluster_assignment": "C1" },
+      { "kw_a": "how to record screen on chrome",      "kw_b": "how to record screen without installing",  "shared_domains_observed": 6, "relationship": "same_post",    "cluster_assignment": "C1-S1/S2" },
+      { "kw_a": "chrome screen recorder",              "kw_b": "screenshot tool chrome",                   "shared_domains_observed": 3, "relationship": "interlink",    "clusters": "C1 -> C3" },
+      { "kw_a": "loom alternative free",               "kw_b": "screencastify alternative free",           "shared_domains_observed": 8, "relationship": "same_post",    "cluster_assignment": "C4-pillar" },
+      { "kw_a": "loom alternative free",               "kw_b": "best loom alternatives 2026",              "shared_domains_observed": 9, "relationship": "same_post",    "cluster_assignment": "C4-pillar" },
+      { "kw_a": "loom vs snaprec",                     "kw_b": "screencastify alternative free",           "shared_domains_observed": 5, "relationship": "same_cluster", "cluster_assignment": "C4" },
+      { "kw_a": "OBS vs browser screen recorder",      "kw_b": "loom alternative free",                   "shared_domains_observed": 4, "relationship": "same_cluster", "cluster_assignment": "C4" },
+      { "kw_a": "screenshot chrome extension",         "kw_b": "full page screenshot chrome",              "shared_domains_observed": 7, "relationship": "same_post",    "cluster_assignment": "C3-pillar" },
+      { "kw_a": "screenshot chrome extension",         "kw_b": "annotate screenshot chrome",               "shared_domains_observed": 6, "relationship": "same_post",    "cluster_assignment": "C3-pillar" },
+      { "kw_a": "full page screenshot chrome",         "kw_b": "scrolling screenshot chrome",              "shared_domains_observed": 7, "relationship": "same_post",    "cluster_assignment": "C3-pillar" },
+      { "kw_a": "screenshot chrome extension",         "kw_b": "blur sensitive info screenshot",           "shared_domains_observed": 3, "relationship": "interlink",    "clusters": "C3-pillar -> C3-S4" },
+      { "kw_a": "how to record zoom meeting free",     "kw_b": "how to record teams meeting free",         "shared_domains_observed": 5, "relationship": "same_cluster", "cluster_assignment": "C2" },
+      { "kw_a": "how to record zoom meeting free",     "kw_b": "how to record google meet free",           "shared_domains_observed": 5, "relationship": "same_cluster", "cluster_assignment": "C2" },
+      { "kw_a": "how to record webcam and screen",     "kw_b": "how to record screen on chrome",           "shared_domains_observed": 5, "relationship": "same_cluster", "cluster_assignment": "C2" },
+      { "kw_a": "screen recorder for teachers",        "kw_b": "screen recorder for online course creators","shared_domains_observed": 6, "relationship": "same_post",   "cluster_assignment": "C5" },
+      { "kw_a": "screen recorder for customer support","kw_b": "async video messaging tool",               "shared_domains_observed": 5, "relationship": "same_cluster", "cluster_assignment": "C5" },
+      { "kw_a": "screen recorder for developers",      "kw_b": "screen recorder for product demos",        "shared_domains_observed": 3, "relationship": "interlink",    "clusters": "C5-S3 <-> C5-S4" },
+      { "kw_a": "free screen recorder for teachers",   "kw_b": "chrome screen recorder",                   "shared_domains_observed": 3, "relationship": "interlink",    "clusters": "C5 -> C1" },
+      { "kw_a": "loom alternative free",               "kw_b": "chrome screen recorder",                   "shared_domains_observed": 4, "relationship": "same_cluster", "clusters": "C4-pillar <-> C1-pillar" }
+    ]
+  },
+
+  "clusters": [
+    {
+      "id": "C1",
+      "name": "Chrome Screen Recorder — Core Product Cluster",
+      "theme": "Direct product-intent searches: free, no-watermark, no-account Chrome screen recorder",
+      "competitor_srp_presence": ["loom.com", "screencastify.com", "vmaker.com", "screenapp.io", "scre.io"],
+      "pillar": {
+        "title": "Best Free Chrome Screen Recorder Extension (No Watermark, No Account) — 2026",
+        "slug": "best-free-chrome-screen-recorder-extension",
+        "primary_keyword": "chrome screen recorder",
+        "secondary_keywords": [
+          "free screen recorder no watermark",
+          "screen recording extension chrome",
+          "screen recorder no account",
+          "4K screen recorder chrome",
+          "best free chrome screen recorder 2026"
+        ],
+        "intent": "Commercial",
+        "template": "Comparison/Best-of listicle with product CTA",
+        "word_count_target": 3200,
+        "status": "GAP — does not exist",
+        "priority": 1,
+        "rationale": "SnapRec's core commercial cluster has no pillar. The homepage is a product landing page, not an SEO document. All five existing C1 spokes are orphaned. Competitors Loom, Screencastify, and Vmaker hold positions 1-3 for 'chrome screen recorder'. This single pillar is the highest-value content investment on the site."
+      },
+      "spokes": [
+        {
+          "id": "C1-S1",
+          "title": "How to Record Your Screen on Chrome for Free (2026)",
+          "slug": "how-to-record-screen-chrome-free",
+          "primary_keyword": "how to record screen on chrome",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 8
+        },
+        {
+          "id": "C1-S2",
+          "title": "How to Screen Record on Chrome Without Installing Anything (2026)",
+          "slug": "screen-record-chrome-without-installing",
+          "primary_keyword": "how to record screen without installing software",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 7
+        },
+        {
+          "id": "C1-S3",
+          "title": "How to Record Your Screen on a Mac for Free (2026)",
+          "slug": "how-to-record-screen-mac-free",
+          "primary_keyword": "record screen mac free no download",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C1-S4",
+          "title": "How to Record Your Screen on Windows 10 & 11 for Free (2026)",
+          "slug": "how-to-record-screen-windows-10-free",
+          "primary_keyword": "record screen windows 10 free no watermark",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C1-S5",
+          "title": "5 Best Free Screen Recorders in 2026 — No Watermark, No Limits",
+          "slug": "best-free-screen-recorders-no-watermark",
+          "primary_keyword": "free screen recorder no watermark",
+          "intent": "Commercial",
+          "template": "Comparison listicle",
+          "word_count_target": 1800,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 7
+        },
+        {
+          "id": "C1-S6",
+          "title": "How to Take a Screenshot on Chromebook (5 Methods in 2026)",
+          "slug": "how-to-screenshot-on-chromebook",
+          "primary_keyword": "screen recorder chromebook free",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 4
+        }
+      ],
+      "gap_spokes": [
+        {
+          "id": "C1-G1",
+          "title": "Screen Recorder No Account Required — Best Free Options in 2026",
+          "slug": "screen-recorder-no-account-no-sign-up",
+          "primary_keyword": "screen recorder no account",
+          "secondary_keywords": ["screen recorder no sign up", "screen recorder no watermark no login"],
+          "intent": "Commercial",
+          "template": "Comparison listicle",
+          "word_count_target": 1400,
+          "status": "GAP",
+          "priority": 3,
+          "rationale": "SnapRec's no-login feature is a top differentiator vs Loom (requires account) and Screencastify (requires Google sign-in). SERP for 'screen recorder no account' shows Vmaker, ScreenApp, and Gan.AI — all of which SnapRec can outrank. 7/10 overlap with C1 pillar. Medium-high commercial intent."
+        }
+      ]
+    },
+
+    {
+      "id": "C2",
+      "name": "Meeting & Presentation Recording — How-To Cluster",
+      "theme": "Platform-specific recording guides (Zoom, Meet, Teams, Google Slides, webcam)",
+      "competitor_srp_presence": ["tldv.io", "easeus.com", "vmaker.com", "meetgeek.ai", "support.microsoft.com"],
+      "pillar": {
+        "title": "How to Record Any Meeting for Free in 2026 (Zoom, Teams, Meet & More)",
+        "slug": "how-to-record-meetings-free-chrome",
+        "primary_keyword": "how to record meetings free chrome",
+        "secondary_keywords": [
+          "record zoom meeting free",
+          "record google meet free",
+          "record teams meeting free",
+          "how to record google slides with audio",
+          "record any meeting participant no permission"
+        ],
+        "intent": "Informational",
+        "template": "Comprehensive hub guide with platform sub-sections and jump links",
+        "word_count_target": 3000,
+        "status": "GAP — six platform spokes exist as silos with no umbrella pillar",
+        "priority": 2,
+        "rationale": "Six high-volume how-to posts cover Zoom, Teams, Meet, Slides, webcam, and presentations independently but share no pillar authority. tldv.io and easeus.com rank for multiple meeting keywords with single comprehensive pages. One pillar consolidates SERP authority. Google's PAA clusters 'how to record zoom', 'teams', and 'meet' together, confirming they belong in one hub."
+      },
+      "spokes": [
+        {
+          "id": "C2-S1",
+          "title": "How to Screen Record Google Meet for Free (With Audio)",
+          "slug": "screen-record-google-meet-free",
+          "primary_keyword": "how to record google meet free",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 6
+        },
+        {
+          "id": "C2-S2",
+          "title": "How to Record a Zoom Meeting for Free in 2026 (Without Host Permission)",
+          "slug": "how-to-record-zoom-meeting-free",
+          "primary_keyword": "how to record zoom meeting free",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 6
+        },
+        {
+          "id": "C2-S3",
+          "title": "How to Record a Microsoft Teams Meeting for Free (2026)",
+          "slug": "how-to-record-microsoft-teams-meeting-free",
+          "primary_keyword": "how to record teams meeting free",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C2-S4",
+          "title": "How to Record a Google Slides Presentation With Audio (Free, 2026)",
+          "slug": "how-to-record-google-slides-presentation",
+          "primary_keyword": "how to record google slides with audio",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C2-S5",
+          "title": "How to Record Screen with Audio and Webcam on Chrome",
+          "slug": "record-screen-with-audio-webcam-chrome",
+          "primary_keyword": "how to record webcam and screen at same time",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C2-S6",
+          "title": "How to Record a Presentation with Webcam Overlay (Free Guide)",
+          "slug": "how-to-record-presentation-with-webcam",
+          "primary_keyword": "how to record a presentation with webcam overlay",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        }
+      ],
+      "gap_spokes": []
+    },
+
+    {
+      "id": "C3",
+      "name": "Screenshot Tools — Chrome Extension Cluster",
+      "theme": "Capturing, annotating, scrolling, and managing screenshots via Chrome",
+      "competitor_srp_presence": ["gofullpage.com", "awesomescreenshot.com", "markuphero.com", "screencapture.com", "screenshotone.com"],
+      "pillar": {
+        "title": "Best Screenshot Chrome Extension in 2026 — Full Page, Annotate, Blur",
+        "slug": "best-screenshot-chrome-extensions-2026",
+        "primary_keyword": "screenshot chrome extension",
+        "secondary_keywords": [
+          "full page screenshot chrome",
+          "annotate screenshot chrome",
+          "scrolling screenshot chrome",
+          "screenshot tool with annotation blur"
+        ],
+        "intent": "Commercial",
+        "template": "Comparison/Best-of listicle with product CTA",
+        "word_count_target": 2800,
+        "status": "EXISTS but THIN — needs expansion from ~1000 words to 2800+ and upgrade to true pillar with bidirectional spoke links",
+        "priority": 4,
+        "rationale": "An existing comparison post targets 'best screenshot chrome extensions' but is likely thin (~1000 words based on site pattern). GoFullPage, Awesome Screenshot, and Nimbus dominate this SERP. The post must be expanded and restructured as a pillar with a spoke link table, comparison matrix, and 5 spoke cross-links."
+      },
+      "spokes": [
+        {
+          "id": "C3-S1",
+          "title": "How to Take a Full-Page Screenshot in Chrome (3 Easy Methods)",
+          "slug": "how-to-take-full-page-screenshot-chrome",
+          "primary_keyword": "full page screenshot chrome",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1400,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 7
+        },
+        {
+          "id": "C3-S2",
+          "title": "How to Capture a Scrolling Screenshot in Any Browser (2026)",
+          "slug": "how-to-capture-scrolling-screenshot",
+          "primary_keyword": "scrolling screenshot chrome",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1400,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 7
+        },
+        {
+          "id": "C3-S3",
+          "title": "How to Annotate Screenshots in Chrome — Arrows, Text, Blur & More",
+          "slug": "how-to-annotate-screenshots-chrome",
+          "primary_keyword": "annotate screenshot chrome",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1400,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 6
+        },
+        {
+          "id": "C3-S4",
+          "title": "How to Blur Sensitive Information in a Screenshot (Step-by-Step)",
+          "slug": "how-to-blur-sensitive-info-screenshot",
+          "primary_keyword": "blur sensitive info screenshot",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1200,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 4
+        },
+        {
+          "id": "C3-S5",
+          "title": "Screenshot vs Screen Recording: When to Use Which (2026 Guide)",
+          "slug": "screenshot-vs-screen-recording-when-to-use",
+          "primary_keyword": "screenshot vs screen recording",
+          "intent": "Informational",
+          "template": "Explainer/decision guide",
+          "word_count_target": 1200,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 4
+        }
+      ],
+      "gap_spokes": []
+    },
+
+    {
+      "id": "C4",
+      "name": "Alternatives & Comparisons Cluster",
+      "theme": "Bottom-of-funnel comparison and vs-pages capturing tool-switching intent",
+      "competitor_srp_presence": ["supademo.com", "kommodo.ai", "adilo.com", "glitter.io", "claap.io"],
+      "pillar": {
+        "title": "5 Best Free Loom Alternatives in 2026 — No Watermarks, No Limits",
+        "slug": "best-free-loom-alternatives-2026",
+        "primary_keyword": "loom alternative free",
+        "secondary_keywords": [
+          "best loom alternatives 2026",
+          "screencastify alternative free",
+          "free screen recorder no watermark",
+          "loom free plan limits"
+        ],
+        "intent": "Commercial",
+        "template": "Comparison/Best-of listicle with product CTA",
+        "word_count_target": 2800,
+        "status": "EXISTS but THIN — needs expansion to 2800+ words, structured comparison table, and upgrade to true pillar with bidirectional spoke links",
+        "priority": 5,
+        "rationale": "Loom alternative searches are high-intent switcher traffic. Loom's free plan limits (25 videos, 5-min cap) drive significant comparison searches. Kommodo, Supademo, and Glitter rank here with 2000-3500 word posts. SnapRec's existing post needs to become a true pillar with a feature comparison table, Loom pricing section, and proper spoke network."
+      },
+      "spokes": [
+        {
+          "id": "C4-S1",
+          "title": "SnapRec vs Loom — The Best Free Screen Recorder Alternative (2026)",
+          "slug": "snaprec-vs-loom-free-alternative",
+          "primary_keyword": "loom vs snaprec",
+          "intent": "Commercial",
+          "template": "Versus comparison",
+          "word_count_target": 1600,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 8
+        },
+        {
+          "id": "C4-S2",
+          "title": "Screencastify vs SnapRec — Free Screen Recorder Comparison (2026)",
+          "slug": "screencastify-vs-snaprec-free-alternative",
+          "primary_keyword": "screencastify alternative free",
+          "intent": "Commercial",
+          "template": "Versus comparison",
+          "word_count_target": 1600,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 7
+        },
+        {
+          "id": "C4-S3",
+          "title": "OBS vs Browser Screen Recorder — Which Should You Use? (2026)",
+          "slug": "obs-vs-browser-screen-recorder",
+          "primary_keyword": "OBS vs browser screen recorder",
+          "intent": "Informational",
+          "template": "Versus comparison",
+          "word_count_target": 1400,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        }
+      ],
+      "gap_spokes": [
+        {
+          "id": "C4-G1",
+          "title": "SnapRec vs Screenity — Which Free Chrome Recorder Is Better? (2026)",
+          "slug": "snaprec-vs-screenity-chrome-recorder",
+          "primary_keyword": "screenity alternative chrome",
+          "secondary_keywords": ["screenity vs chrome recorder", "screenity free alternative"],
+          "intent": "Commercial",
+          "template": "Versus comparison",
+          "word_count_target": 1400,
+          "status": "GAP",
+          "priority": 7,
+          "rationale": "Screenity appears in top-10 SERP results for 6 of 10 screen-recorder searches conducted. It is the primary open-source alternative to SnapRec and a common comparison target. A direct versus page captures brand-aware comparison traffic and builds topical authority in the Chrome recorder category. Overlap to C4 pillar estimated at 6/10."
+        }
+      ]
+    },
+
+    {
+      "id": "C5",
+      "name": "Professional Use-Cases Cluster",
+      "theme": "Role-based and scenario-based content for professionals, teams, and educators",
+      "competitor_srp_presence": ["zight.com", "tella.com", "berrycast.com", "screencastify.com", "screenrec.com"],
+      "pillar": {
+        "title": "Screen Recording for Work: The Complete Guide for Teams in 2026",
+        "slug": "screen-recording-for-work-teams-guide",
+        "primary_keyword": "screen recording for remote teams",
+        "secondary_keywords": [
+          "async video messaging tool",
+          "screen recorder for customer support",
+          "screen recorder for product demos sales",
+          "screen recorder for developers bug reports",
+          "screen recording async communication"
+        ],
+        "intent": "Commercial",
+        "template": "Comprehensive hub guide with audience sub-sections",
+        "word_count_target": 3500,
+        "status": "GAP — six professional use-case spokes exist but are orphaned, no umbrella pillar",
+        "priority": 3,
+        "rationale": "Six audience-specific spokes (teachers, remote teams, bug reports, product demos, online classes, tutorial videos) share no pillar authority. Zight, Tella, and Berrycast all rank for professional-use screen recording terms with comprehensive work-use hub pages. A B2B/professional pillar targets the audience most likely to convert to paid plans and directly competes with Loom's primary positioning."
+      },
+      "spokes": [
+        {
+          "id": "C5-S1",
+          "title": "Best Free Screen Recorder for Teachers in 2026 — No Watermarks",
+          "slug": "screen-recorder-for-teachers-free",
+          "primary_keyword": "free screen recorder for teachers",
+          "intent": "Commercial",
+          "template": "Audience-specific guide",
+          "word_count_target": 1600,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C5-S2",
+          "title": "10 Screen Recording Tips for Remote Teams (2026 Guide)",
+          "slug": "screen-recording-tips-remote-work",
+          "primary_keyword": "screen recording for remote teams",
+          "intent": "Informational",
+          "template": "Tips listicle",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 6
+        },
+        {
+          "id": "C5-S3",
+          "title": "How to Create a Video Bug Report With Screen Recording (Developer Guide)",
+          "slug": "how-to-create-video-bug-report",
+          "primary_keyword": "screen recorder for developers bug reports",
+          "intent": "Informational",
+          "template": "Tutorial/guide",
+          "word_count_target": 1400,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 4
+        },
+        {
+          "id": "C5-S4",
+          "title": "How to Record a Product Demo for Sales (Free & Easy in 2026)",
+          "slug": "how-to-record-product-demo-sales",
+          "primary_keyword": "screen recorder for product demos sales",
+          "intent": "Informational",
+          "template": "Tutorial/guide",
+          "word_count_target": 1400,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 4
+        },
+        {
+          "id": "C5-S5",
+          "title": "Screen Recording for Online Classes — A Teacher's Complete Guide (2026)",
+          "slug": "screen-recording-for-online-classes",
+          "primary_keyword": "screen recorder for online course creators",
+          "intent": "Informational",
+          "template": "Comprehensive guide",
+          "word_count_target": 1600,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 5
+        },
+        {
+          "id": "C5-S6",
+          "title": "How to Make a Tutorial Video for Free — Step-by-Step Guide (2026)",
+          "slug": "how-to-make-tutorial-video-free",
+          "primary_keyword": "how to make a tutorial video free",
+          "intent": "Informational",
+          "template": "Step-by-step tutorial",
+          "word_count_target": 1500,
+          "status": "EXISTS",
+          "serp_overlap_to_pillar": 4
+        }
+      ],
+      "gap_spokes": [
+        {
+          "id": "C5-G1",
+          "title": "How to Use Screen Recording for Customer Support (Free Guide 2026)",
+          "slug": "screen-recording-for-customer-support",
+          "primary_keyword": "screen recorder for customer support teams",
+          "secondary_keywords": ["async video support", "screen recording customer service", "video support tickets"],
+          "intent": "Commercial",
+          "template": "Audience-specific guide",
+          "word_count_target": 1500,
+          "status": "GAP",
+          "priority": 6,
+          "rationale": "Async video for customer support is a fast-growing segment. Zight, Screendesk, and Loom target this keyword aggressively. SnapRec has no content here despite the product being a direct fit (no-account links ideal for support teams). Estimated SERP overlap to C5 pillar: 5/10."
+        },
+        {
+          "id": "C5-G2",
+          "title": "Async Video Messaging vs Live Meetings — Why Teams Are Switching (2026)",
+          "slug": "async-video-messaging-vs-meetings",
+          "primary_keyword": "async video messaging tool",
+          "secondary_keywords": ["async video communication", "replace meetings with screen recordings", "asynchronous video for teams"],
+          "intent": "Informational",
+          "template": "Explainer/opinion piece",
+          "word_count_target": 1400,
+          "status": "GAP",
+          "priority": 8,
+          "rationale": "Async video messaging is an emerging category. Loom built its brand on this concept. Teams cut 40-60% of meetings with async video (per Zight research). This top-of-funnel educational piece captures early-intent traffic that converts to extension installs. Positions SnapRec in the async work communication category, not just the 'screen recorder' commodity space."
+        }
+      ]
+    }
+  ],
+
+  "top_3_clusters_focus": {
+    "note": "Per the brief: detailed hub-and-spoke architecture for the top 3 topic clusters by strategic value",
+    "cluster_1_C1": {
+      "name": "Chrome Screen Recorder — Core Product",
+      "why_top_3": "Highest commercial intent. Directly drives extension installs. SnapRec's core value proposition. No pillar exists — biggest single gap.",
+      "hub": "best-free-chrome-screen-recorder-extension (CREATE)",
+      "spokes": ["how-to-record-screen-chrome-free", "screen-record-chrome-without-installing", "best-free-screen-recorders-no-watermark", "how-to-record-screen-mac-free", "how-to-record-screen-windows-10-free", "how-to-screenshot-on-chromebook", "screen-recorder-no-account-no-sign-up (CREATE)"]
+    },
+    "cluster_2_C2": {
+      "name": "Meeting & Presentation Recording",
+      "why_top_3": "Six high-volume informational posts exist with no pillar. Meeting recording is searched by tens of thousands monthly. tldv and easeus dominate with hub pages SnapRec doesn't have.",
+      "hub": "how-to-record-meetings-free-chrome (CREATE)",
+      "spokes": ["screen-record-google-meet-free", "how-to-record-zoom-meeting-free", "how-to-record-microsoft-teams-meeting-free", "how-to-record-google-slides-presentation", "record-screen-with-audio-webcam-chrome", "how-to-record-presentation-with-webcam"]
+    },
+    "cluster_3_C5": {
+      "name": "Professional Use-Cases",
+      "why_top_3": "Six use-case spokes exist but are orphaned. B2B professional intent is where Loom is most vulnerable post-Atlassian acquisition. This pillar directly competes in the async work video category and supports upsell to any future paid plan.",
+      "hub": "screen-recording-for-work-teams-guide (CREATE)",
+      "spokes": ["screen-recorder-for-teachers-free", "screen-recording-tips-remote-work", "how-to-create-video-bug-report", "how-to-record-product-demo-sales", "screen-recording-for-online-classes", "how-to-make-tutorial-video-free", "screen-recording-for-customer-support (CREATE)", "async-video-messaging-vs-meetings (CREATE)"]
+    }
+  },
+
+  "content_gap_analysis": {
+    "missing_high_priority": [
+      {
+        "rank": 1,
+        "gap": "C1 Pillar — Core Chrome Screen Recorder hub page",
+        "slug_to_create": "best-free-chrome-screen-recorder-extension",
+        "impact": "Critical",
+        "search_intent": "Commercial",
+        "action": "Create 3200-word pillar. Include: feature comparison table (SnapRec vs Loom vs Vmaker vs ScreenApp vs Screencastify), use-case sections, FAQ schema, CTA to Chrome Web Store. Link to all 7 C1 spokes."
+      },
+      {
+        "rank": 2,
+        "gap": "C2 Pillar — Meeting recording umbrella hub",
+        "slug_to_create": "how-to-record-meetings-free-chrome",
+        "impact": "High",
+        "search_intent": "Informational",
+        "action": "Create 3000-word pillar with jump links to Zoom, Teams, Meet, and Slides sections. Add comparison table of native recording limits. Link to all 6 C2 spokes."
+      },
+      {
+        "rank": 3,
+        "gap": "C5 Pillar — Professional use-case hub",
+        "slug_to_create": "screen-recording-for-work-teams-guide",
+        "impact": "High",
+        "search_intent": "Commercial",
+        "action": "Create 3500-word pillar with sections for developers, teachers, sales, support, and remote teams. Target async video category positioning. Link to all 8 C5 spokes."
+      },
+      {
+        "rank": 4,
+        "gap": "C1 Spoke — Screen recorder no account required",
+        "slug_to_create": "screen-recorder-no-account-no-sign-up",
+        "impact": "Medium-High",
+        "search_intent": "Commercial",
+        "action": "Create 1400-word comparison post. Feature SnapRec prominently as the top no-login option. Compare Loom (requires account), Screencastify (Google sign-in required), ScreenApp (no login needed but cloud storage)."
+      },
+      {
+        "rank": 5,
+        "gap": "C3 Pillar upgrade from thin existing post",
+        "slug_to_upgrade": "best-screenshot-chrome-extensions-2026",
+        "impact": "Medium",
+        "search_intent": "Commercial",
+        "action": "Expand from ~1000 to 2800+ words. Add structured spoke link table, comparison matrix (GoFullPage vs SnapRec vs Awesome Screenshot vs Nimbus), use-case grid, FAQ schema."
+      },
+      {
+        "rank": 6,
+        "gap": "C4 Pillar upgrade from thin existing post",
+        "slug_to_upgrade": "best-free-loom-alternatives-2026",
+        "impact": "Medium",
+        "search_intent": "Commercial",
+        "action": "Expand from ~1200 to 2800+ words. Add Loom pricing section (25 videos, 5-min cap — this is the conversion trigger), feature comparison table, and structured vs-page spoke network."
+      },
+      {
+        "rank": 7,
+        "gap": "C5 Spoke — Customer support use case",
+        "slug_to_create": "screen-recording-for-customer-support",
+        "impact": "Medium",
+        "search_intent": "Commercial",
+        "action": "Create 1500-word guide targeting support teams. Cover: ticket resolution with video, async reply to customers, onboarding walkthroughs. CTA: SnapRec instant share links are ideal for pasting into Zendesk/Intercom."
+      }
+    ],
+    "existing_coverage_strengths": [
+      "Platform-specific meeting recording tutorials (Zoom, Teams, Meet, Slides) — well covered",
+      "Webcam and audio recording combination — covered",
+      "Screenshot annotation and capture how-tos — covered",
+      "Loom and Screencastify comparison/vs pages — covered",
+      "Teacher and educator use case — covered"
+    ],
+    "white_space_opportunities": [
+      "Screen recorder for UX designers / design feedback — not addressed by any post",
+      "Screen recorder for HR onboarding videos — uncovered segment",
+      "Screen recorder keyboard shortcuts / power user tips — no dedicated post",
+      "How to add captions/subtitles to screen recordings — growing search intent",
+      "Screen recording file size and format guide (WebM vs MP4) — technical audience"
+    ]
+  },
+
+  "internal_link_matrix": {
+    "legend": {
+      "mandatory": "Every spoke links to its pillar; every pillar links to every spoke. Bidirectional.",
+      "recommended": "Within-cluster spoke-to-spoke where SERP overlap >= 4. Strong signal.",
+      "optional": "Cross-cluster where SERP overlap = 2-3. Use natural anchor text."
+    },
+    "mandatory_links": [
+      { "from": "C1-pillar", "to": "C1-S1", "anchor_suggestion": "how to record your screen on Chrome for free" },
+      { "from": "C1-pillar", "to": "C1-S2", "anchor_suggestion": "record Chrome without installing software" },
+      { "from": "C1-pillar", "to": "C1-S3", "anchor_suggestion": "record your screen on Mac for free" },
+      { "from": "C1-pillar", "to": "C1-S4", "anchor_suggestion": "record your screen on Windows for free" },
+      { "from": "C1-pillar", "to": "C1-S5", "anchor_suggestion": "best free screen recorders with no watermark" },
+      { "from": "C1-pillar", "to": "C1-S6", "anchor_suggestion": "screenshot and screen recording on Chromebook" },
+      { "from": "C1-pillar", "to": "C1-G1", "anchor_suggestion": "best screen recorders with no account required" },
+      { "from": "C1-S1",    "to": "C1-pillar", "anchor_suggestion": "best free Chrome screen recorder" },
+      { "from": "C1-S2",    "to": "C1-pillar", "anchor_suggestion": "best free Chrome screen recorder extension" },
+      { "from": "C1-S3",    "to": "C1-pillar", "anchor_suggestion": "best Chrome screen recorder for Mac" },
+      { "from": "C1-S4",    "to": "C1-pillar", "anchor_suggestion": "best free Chrome screen recorder" },
+      { "from": "C1-S5",    "to": "C1-pillar", "anchor_suggestion": "our full Chrome screen recorder comparison" },
+      { "from": "C1-S6",    "to": "C1-pillar", "anchor_suggestion": "best Chrome screen recorder extensions" },
+      { "from": "C1-G1",    "to": "C1-pillar", "anchor_suggestion": "best free Chrome screen recorder with no account" },
+
+      { "from": "C2-pillar", "to": "C2-S1", "anchor_suggestion": "how to record Google Meet for free" },
+      { "from": "C2-pillar", "to": "C2-S2", "anchor_suggestion": "how to record a Zoom meeting for free" },
+      { "from": "C2-pillar", "to": "C2-S3", "anchor_suggestion": "how to record a Teams meeting for free" },
+      { "from": "C2-pillar", "to": "C2-S4", "anchor_suggestion": "how to record a Google Slides presentation" },
+      { "from": "C2-pillar", "to": "C2-S5", "anchor_suggestion": "record screen with audio and webcam" },
+      { "from": "C2-pillar", "to": "C2-S6", "anchor_suggestion": "record a presentation with webcam overlay" },
+      { "from": "C2-S1",    "to": "C2-pillar", "anchor_suggestion": "record any meeting for free" },
+      { "from": "C2-S2",    "to": "C2-pillar", "anchor_suggestion": "guide to recording meetings for free" },
+      { "from": "C2-S3",    "to": "C2-pillar", "anchor_suggestion": "record any video meeting free" },
+      { "from": "C2-S4",    "to": "C2-pillar", "anchor_suggestion": "our full meeting recording guide" },
+      { "from": "C2-S5",    "to": "C2-pillar", "anchor_suggestion": "record any meeting free in Chrome" },
+      { "from": "C2-S6",    "to": "C2-pillar", "anchor_suggestion": "recording meetings and presentations for free" },
+
+      { "from": "C3-pillar", "to": "C3-S1", "anchor_suggestion": "how to take a full-page screenshot in Chrome" },
+      { "from": "C3-pillar", "to": "C3-S2", "anchor_suggestion": "capture a scrolling screenshot" },
+      { "from": "C3-pillar", "to": "C3-S3", "anchor_suggestion": "annotate screenshots in Chrome" },
+      { "from": "C3-pillar", "to": "C3-S4", "anchor_suggestion": "blur sensitive information in screenshots" },
+      { "from": "C3-pillar", "to": "C3-S5", "anchor_suggestion": "when to use screenshots vs screen recordings" },
+      { "from": "C3-S1",    "to": "C3-pillar", "anchor_suggestion": "best screenshot Chrome extensions" },
+      { "from": "C3-S2",    "to": "C3-pillar", "anchor_suggestion": "best screenshot tools for Chrome" },
+      { "from": "C3-S3",    "to": "C3-pillar", "anchor_suggestion": "full screenshot and annotation extension comparison" },
+      { "from": "C3-S4",    "to": "C3-pillar", "anchor_suggestion": "best Chrome screenshot extensions with blur" },
+      { "from": "C3-S5",    "to": "C3-pillar", "anchor_suggestion": "best screenshot extension for Chrome" },
+
+      { "from": "C4-pillar", "to": "C4-S1", "anchor_suggestion": "SnapRec vs Loom detailed comparison" },
+      { "from": "C4-pillar", "to": "C4-S2", "anchor_suggestion": "Screencastify vs SnapRec comparison" },
+      { "from": "C4-pillar", "to": "C4-S3", "anchor_suggestion": "OBS vs browser screen recorder" },
+      { "from": "C4-pillar", "to": "C4-G1", "anchor_suggestion": "SnapRec vs Screenity comparison" },
+      { "from": "C4-S1",    "to": "C4-pillar", "anchor_suggestion": "more free Loom alternatives" },
+      { "from": "C4-S2",    "to": "C4-pillar", "anchor_suggestion": "best free Loom and Screencastify alternatives" },
+      { "from": "C4-S3",    "to": "C4-pillar", "anchor_suggestion": "free browser-based Loom alternatives" },
+      { "from": "C4-G1",    "to": "C4-pillar", "anchor_suggestion": "best free Loom alternatives in 2026" },
+
+      { "from": "C5-pillar", "to": "C5-S1", "anchor_suggestion": "best screen recorder for teachers" },
+      { "from": "C5-pillar", "to": "C5-S2", "anchor_suggestion": "screen recording tips for remote teams" },
+      { "from": "C5-pillar", "to": "C5-S3", "anchor_suggestion": "create video bug reports" },
+      { "from": "C5-pillar", "to": "C5-S4", "anchor_suggestion": "record product demos for sales" },
+      { "from": "C5-pillar", "to": "C5-S5", "anchor_suggestion": "screen recording for online classes" },
+      { "from": "C5-pillar", "to": "C5-S6", "anchor_suggestion": "make a tutorial video for free" },
+      { "from": "C5-pillar", "to": "C5-G1", "anchor_suggestion": "screen recording for customer support teams" },
+      { "from": "C5-pillar", "to": "C5-G2", "anchor_suggestion": "async video messaging vs live meetings" },
+      { "from": "C5-S1",    "to": "C5-pillar", "anchor_suggestion": "complete guide to screen recording for work" },
+      { "from": "C5-S2",    "to": "C5-pillar", "anchor_suggestion": "screen recording guide for professional teams" },
+      { "from": "C5-S3",    "to": "C5-pillar", "anchor_suggestion": "how teams use screen recording professionally" },
+      { "from": "C5-S4",    "to": "C5-pillar", "anchor_suggestion": "screen recording for professional use cases" },
+      { "from": "C5-S5",    "to": "C5-pillar", "anchor_suggestion": "complete guide to screen recording for work" },
+      { "from": "C5-S6",    "to": "C5-pillar", "anchor_suggestion": "more ways teams use screen recording at work" },
+      { "from": "C5-G1",    "to": "C5-pillar", "anchor_suggestion": "full guide to screen recording for work teams" },
+      { "from": "C5-G2",    "to": "C5-pillar", "anchor_suggestion": "how professional teams use screen recording" }
+    ],
+    "recommended_spoke_to_spoke": [
+      { "from": "C1-S1",  "to": "C1-S2",  "overlap": 6, "note": "Chrome recording / without-install are same-session companion reads" },
+      { "from": "C1-S5",  "to": "C1-G1",  "overlap": 7, "note": "No-watermark listicle naturally leads to no-account comparison" },
+      { "from": "C2-S2",  "to": "C2-S3",  "overlap": 5, "note": "Zoom/Teams recording pair — frequently co-searched" },
+      { "from": "C2-S1",  "to": "C2-S2",  "overlap": 5, "note": "Meet/Zoom recording pair" },
+      { "from": "C2-S4",  "to": "C2-S6",  "overlap": 5, "note": "Google Slides and webcam presentation recording pair" },
+      { "from": "C3-S1",  "to": "C3-S2",  "overlap": 7, "note": "Full-page / scrolling screenshot are nearest siblings" },
+      { "from": "C3-S3",  "to": "C3-S4",  "overlap": 5, "note": "Annotate / blur are companion editing actions" },
+      { "from": "C4-S1",  "to": "C4-S2",  "overlap": 6, "note": "Loom-vs and Screencastify-vs readers are same audience" },
+      { "from": "C5-S1",  "to": "C5-S5",  "overlap": 5, "note": "Teachers and online classes are same educator audience" },
+      { "from": "C5-S3",  "to": "C5-S4",  "overlap": 4, "note": "Bug reports and product demos are developer/PM companion reads" },
+      { "from": "C5-G1",  "to": "C5-G2",  "overlap": 5, "note": "Customer support and async messaging are same workflow" }
+    ],
+    "optional_cross_cluster": [
+      { "from": "C1-pillar", "to": "C4-pillar", "overlap": 4, "note": "Core recorder pillar should reference Loom alternatives for tool-switching readers" },
+      { "from": "C4-S1",    "to": "C1-pillar",  "overlap": 4, "note": "Loom vs SnapRec -> CTA to SnapRec feature pillar" },
+      { "from": "C4-S2",    "to": "C1-pillar",  "overlap": 4, "note": "Screencastify vs SnapRec -> same CTA" },
+      { "from": "C3-pillar", "to": "C1-pillar",  "overlap": 3, "note": "Screenshot pillar mentions screen recording, link to recorder pillar" },
+      { "from": "C3-S5",    "to": "C1-pillar",  "overlap": 3, "note": "Screenshot vs screen recording decision post -> recorder pillar as next step" },
+      { "from": "C5-S4",    "to": "C2-S6",      "overlap": 3, "note": "Product demo -> presentation with webcam, same sales use case" },
+      { "from": "C2-S2",    "to": "C5-S3",      "overlap": 3, "note": "Zoom recording -> video bug reports, developer audience crossover" },
+      { "from": "C5-G2",    "to": "C1-pillar",  "overlap": 3, "note": "Async video messaging article ends with SnapRec as the tool recommendation" }
+    ]
+  },
+
+  "cannibalization_check": {
+    "risks": [
+      {
+        "post_a": "/blog/how-to-record-screen-chrome-free",
+        "post_b": "/blog/screen-record-chrome-without-installing",
+        "risk_level": "Medium",
+        "primary_keyword_conflict": false,
+        "serp_overlap_between_posts": 6,
+        "action": "Differentiate in H1 and meta: post_a is 'record screen WITH SnapRec extension installed'; post_b is 'record WITHOUT installing any software' (browser-native). Keep H1 angles distinct. Both link to C1 pillar."
+      },
+      {
+        "post_a": "/blog/screen-recorder-for-teachers-free",
+        "post_b": "/blog/screen-recording-for-online-classes",
+        "risk_level": "Medium",
+        "primary_keyword_conflict": false,
+        "serp_overlap_between_posts": 5,
+        "action": "Teachers post = Commercial intent (tool comparison for educators buying/choosing). Online classes post = Informational (how-to for educators delivering lessons). Ensure each maintains its intent frame. No keyword conflict."
+      },
+      {
+        "post_a": "/blog/best-free-screen-recorders-no-watermark",
+        "post_b": "/blog/best-free-loom-alternatives-2026",
+        "risk_level": "Low-Medium",
+        "primary_keyword_conflict": false,
+        "serp_overlap_between_posts": 4,
+        "action": "No-watermark post = broad 'any platform' tool roundup (C1 cluster). Loom alternatives = specifically Loom switchers (C4 cluster). Include a cross-link between them but ensure SnapRec is positioned differently in each (standalone recorder vs Loom replacement)."
+      },
+      {
+        "post_a": "/blog/how-to-record-presentation-with-webcam",
+        "post_b": "/blog/record-screen-with-audio-webcam-chrome",
+        "risk_level": "Low",
+        "primary_keyword_conflict": false,
+        "action": "Presentation-with-webcam = presentation context (slides, talking head). Webcam+screen = general use. Keep distinct by focusing presentation post on slide deck workflows."
+      }
+    ],
+    "no_primary_keyword_duplicates_confirmed": true
+  },
+
+  "top_7_missing_content_pieces": [
+    {
+      "rank": 1,
+      "title": "Best Free Chrome Screen Recorder Extension (No Watermark, No Account) — 2026",
+      "slug": "best-free-chrome-screen-recorder-extension",
+      "type": "NEW pillar — C1",
+      "intent": "Commercial",
+      "word_count": 3200,
+      "why_high_value": "SnapRec's core commercial keyword cluster has no pillar. This is the single most impactful content gap on the site. All 6 existing C1 spokes are orphaned without it."
+    },
+    {
+      "rank": 2,
+      "title": "How to Record Any Meeting for Free in 2026 (Zoom, Teams, Meet & More)",
+      "slug": "how-to-record-meetings-free-chrome",
+      "type": "NEW pillar — C2",
+      "intent": "Informational",
+      "word_count": 3000,
+      "why_high_value": "Six high-volume meeting-recording posts exist without a pillar. tldv.io ranks for all six keywords with a single hub page. Creating this pillar could consolidate and multiply SnapRec's authority across all six existing posts."
+    },
+    {
+      "rank": 3,
+      "title": "Screen Recording for Work: The Complete Guide for Teams in 2026",
+      "slug": "screen-recording-for-work-teams-guide",
+      "type": "NEW pillar — C5",
+      "intent": "Commercial",
+      "word_count": 3500,
+      "why_high_value": "B2B professional use-case cluster has six orphaned spokes. Targets async video category where Loom is most vulnerable. Highest-intent audience for future paid plan conversion."
+    },
+    {
+      "rank": 4,
+      "title": "Screen Recorder No Account Required — Best Free Options in 2026",
+      "slug": "screen-recorder-no-account-no-sign-up",
+      "type": "NEW spoke — C1",
+      "intent": "Commercial",
+      "word_count": 1400,
+      "why_high_value": "No-login is SnapRec's #1 differentiator vs Loom and Screencastify. This keyword has strong commercial intent and SnapRec is the obvious featured tool. High conversion probability."
+    },
+    {
+      "rank": 5,
+      "title": "How to Use Screen Recording for Customer Support (Free Guide 2026)",
+      "slug": "screen-recording-for-customer-support",
+      "type": "NEW spoke — C5",
+      "intent": "Commercial",
+      "word_count": 1500,
+      "why_high_value": "Async support video is a Loom stronghold. Support teams are high-value users (power users, share recordings externally, likely to recommend to others). Zight and Screendesk target this heavily — SnapRec has zero presence here."
+    },
+    {
+      "rank": 6,
+      "title": "SnapRec vs Screenity — Which Free Chrome Recorder Is Better? (2026)",
+      "slug": "snaprec-vs-screenity-chrome-recorder",
+      "type": "NEW spoke — C4",
+      "intent": "Commercial",
+      "word_count": 1400,
+      "why_high_value": "Screenity appeared in top-10 SERP results for 6 of 10 screen-recorder searches. It is the most prominent open-source alternative and a frequent comparison target. A direct vs-page captures high-conversion brand-aware traffic."
+    },
+    {
+      "rank": 7,
+      "title": "Async Video Messaging vs Live Meetings — Why Teams Are Switching (2026)",
+      "slug": "async-video-messaging-vs-meetings",
+      "type": "NEW spoke — C5",
+      "intent": "Informational",
+      "word_count": 1400,
+      "why_high_value": "Top-of-funnel category education piece. Positions SnapRec in the async work communication space (not just 'screen recorder'). Teams that adopt async video are high-retention users. This is the type of content Loom uses to own the category narrative."
+    }
+  ],
+
+  "intent_to_template_map": {
+    "Informational": {
+      "templates": ["Step-by-step tutorial", "Comprehensive guide with sub-sections", "Explainer/decision guide", "Tips listicle"],
+      "word_count_range": "1200-1800",
+      "cta_style": "Soft CTA — 'Try this with SnapRec' inline, not aggressive modal",
+      "posts_in_this_category": 22
+    },
+    "Commercial": {
+      "templates": ["Comparison/Best-of listicle", "Versus comparison", "Audience-specific guide"],
+      "word_count_range": "1400-3500 (pillars 2800-3500)",
+      "cta_style": "Hard CTA — 'Add to Chrome (Free)' button with feature highlight, positioned at top and after comparison table",
+      "posts_in_this_category": 6,
+      "pillar_posts": 5
+    },
+    "Transactional": {
+      "templates": ["Pricing page", "Free trial landing page"],
+      "note": "No transactional content in blog — appropriate for a free product. The homepage serves this role.",
+      "posts_in_this_category": 0
+    },
+    "Navigational": {
+      "note": "Excluded from clustering. 2 navigational keywords removed (Chrome Web Store listing, snaprec download).",
+      "posts_in_this_category": 0
+    }
+  },
+
+  "priority_execution_roadmap": {
+    "phase_1_create_pillars": [
+      {
+        "priority": 1,
+        "action": "CREATE",
+        "slug": "best-free-chrome-screen-recorder-extension",
+        "cluster": "C1 Pillar",
+        "word_count": 3200,
+        "estimated_impact": "Unlocks authority for 6 existing spokes + captures primary commercial keyword cluster"
+      },
+      {
+        "priority": 2,
+        "action": "CREATE",
+        "slug": "how-to-record-meetings-free-chrome",
+        "cluster": "C2 Pillar",
+        "word_count": 3000,
+        "estimated_impact": "Consolidates 6 meeting-recording spokes into one authority node"
+      },
+      {
+        "priority": 3,
+        "action": "CREATE",
+        "slug": "screen-recording-for-work-teams-guide",
+        "cluster": "C5 Pillar",
+        "word_count": 3500,
+        "estimated_impact": "B2B/professional positioning, direct Loom competitor territory"
+      }
+    ],
+    "phase_2_create_high_value_spokes": [
+      {
+        "priority": 4,
+        "action": "CREATE",
+        "slug": "screen-recorder-no-account-no-sign-up",
+        "cluster": "C1 Spoke",
+        "word_count": 1400
+      },
+      {
+        "priority": 5,
+        "action": "CREATE",
+        "slug": "screen-recording-for-customer-support",
+        "cluster": "C5 Spoke",
+        "word_count": 1500
+      },
+      {
+        "priority": 6,
+        "action": "CREATE",
+        "slug": "snaprec-vs-screenity-chrome-recorder",
+        "cluster": "C4 Spoke",
+        "word_count": 1400
+      },
+      {
+        "priority": 7,
+        "action": "CREATE",
+        "slug": "async-video-messaging-vs-meetings",
+        "cluster": "C5 Spoke",
+        "word_count": 1400
+      }
+    ],
+    "phase_3_upgrade_existing_pillars": [
+      {
+        "priority": 8,
+        "action": "UPGRADE to pillar",
+        "slug": "best-screenshot-chrome-extensions-2026",
+        "cluster": "C3",
+        "current_words_est": 1000,
+        "target_words": 2800,
+        "changes": "Add spoke link table, comparison matrix (GoFullPage vs SnapRec vs Awesome Screenshot vs Nimbus), use-case grid, FAQ schema, bidirectional links to all 5 C3 spokes"
+      },
+      {
+        "priority": 9,
+        "action": "UPGRADE to pillar",
+        "slug": "best-free-loom-alternatives-2026",
+        "cluster": "C4",
+        "current_words_est": 1200,
+        "target_words": 2800,
+        "changes": "Add Loom pricing pain section, feature comparison table, bidirectional links to C4-S1, S2, S3, G1"
+      }
+    ],
+    "phase_4_retrofit_existing_spokes": [
+      {
+        "action": "Add C1 pillar backlink to 6 existing C1 spokes",
+        "target_pillar": "best-free-chrome-screen-recorder-extension",
+        "spokes": ["how-to-record-screen-chrome-free", "screen-record-chrome-without-installing", "best-free-screen-recorders-no-watermark", "how-to-record-screen-mac-free", "how-to-record-screen-windows-10-free", "how-to-screenshot-on-chromebook"]
+      },
+      {
+        "action": "Add C2 pillar backlink to 6 existing C2 spokes",
+        "target_pillar": "how-to-record-meetings-free-chrome",
+        "spokes": ["screen-record-google-meet-free", "how-to-record-zoom-meeting-free", "how-to-record-microsoft-teams-meeting-free", "how-to-record-google-slides-presentation", "record-screen-with-audio-webcam-chrome", "how-to-record-presentation-with-webcam"]
+      },
+      {
+        "action": "Add C5 pillar backlink to 6 existing C5 spokes",
+        "target_pillar": "screen-recording-for-work-teams-guide",
+        "spokes": ["screen-recorder-for-teachers-free", "screen-recording-tips-remote-work", "how-to-create-video-bug-report", "how-to-record-product-demo-sales", "screen-recording-for-online-classes", "how-to-make-tutorial-video-free"]
+      }
+    ]
+  },
+
+  "validation": {
+    "no_primary_keyword_duplication": true,
+    "every_spoke_gets_3_plus_incoming_links": {
+      "status": "Will pass after Phase 4 retrofit",
+      "explanation": "Each spoke receives: 1 from pillar (mandatory) + 1-2 from sibling spokes (recommended) + 1 from optional cross-cluster = minimum 3"
+    },
+    "every_spoke_links_to_its_pillar": "Enforced in Phase 4 retrofit tasks above",
+    "every_pillar_links_to_every_spoke": "Defined in mandatory_links section above",
+    "no_orphan_pages": "All 28 existing posts assigned to a cluster. No posts unaccounted for.",
+    "template_matches_intent": true,
+    "word_count_targets_in_spec": {
+      "pillars": "2800-3500 words — within 2500-4000 specification",
+      "spokes": "1200-1800 words — within 1200-1800 specification"
+    },
+    "cluster_count": "5 clusters — within 2-5 specification",
+    "serp_overlap_supports_groupings": "All spoke-to-pillar overlap scores are >= 4. Cross-cluster links are limited to pairs with overlap 2-3."
+  }
+}

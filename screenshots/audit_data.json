@@ -1,0 +1,415 @@
+{
+  "homepage": {
+    "url": "https://www.snaprecorder.org/",
+    "viewports": {
+      "desktop": {
+        "h1_text": "Free Chrome Screen Recorder.\nShare a link.",
+        "h1_visible_above_fold": true,
+        "h1_top": 214,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 1920,
+        "viewport_width": 1920,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/homepage_desktop.png"
+      },
+      "laptop": {
+        "h1_text": "Free Chrome Screen Recorder.\nShare a link.",
+        "h1_visible_above_fold": true,
+        "h1_top": 214,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 1366,
+        "viewport_width": 1366,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/homepage_laptop.png"
+      },
+      "tablet": {
+        "h1_text": "Free Chrome Screen Recorder.\nShare a link.",
+        "h1_visible_above_fold": true,
+        "h1_top": 214,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 768,
+        "viewport_width": 768,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/homepage_tablet.png"
+      },
+      "mobile": {
+        "h1_text": "Free Chrome Screen Recorder.\nShare a link.",
+        "h1_visible_above_fold": true,
+        "h1_top": 234,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 375,
+        "viewport_width": 375,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/homepage_mobile.png"
+      }
+    },
+    "meta": {
+      "title": "Free Chrome Screen Recorder \u2014 No Watermarks, 4K | SnapRec",
+      "meta_description": "The free Loom alternative for Chrome. Record your screen in 4K, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits. No account needed.",
+      "canonical": "https://www.snaprecorder.org",
+      "viewport_meta": "width=device-width, initial-scale=1.0",
+      "og_title": "Free Chrome Screen Recorder \u2014 No Watermarks, 4K | SnapRec | Free Chrome Screen Recorder \u2014 No Watermarks, 4K | SnapRec",
+      "og_description": "The free Loom alternative for Chrome. Record your screen in 4K, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits. | The free Loom alternative for Chrome. Record your screen in 4K, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits. No account needed.",
+      "og_image": "https://www.snaprecorder.org/og-image.png | https://www.snaprecorder.org/og-image.png",
+      "og_type": "website | website",
+      "twitter_card": "summary_large_image",
+      "twitter_image": "https://www.snaprecorder.org/og-image.png",
+      "favicon": "/logo.png",
+      "headings": {
+        "h1": [
+          "Free Chrome Screen Recorder.\nShare a link."
+        ],
+        "h2": [
+          "Up and running in 30 seconds",
+          "Everything in one extension",
+          "Record, annotate, share \u2014 in under a minute",
+          "Why SnapRec?",
+          "Start recording in\n30 seconds.",
+          "Common questions",
+          "The screen recorder\nyou've been looking for."
+        ],
+        "h3": [
+          "Install in 10 seconds",
+          "Capture or record",
+          "Share with a link",
+          "4K Screen Recording",
+          "Screenshot Capture",
+          "Annotation Editor",
+          "Instant Sharing",
+          "Auto-Zoom",
+          "Keyboard Shortcuts"
+        ]
+      },
+      "missing_alt_images": [],
+      "ctas": [
+        {
+          "tag": "A",
+          "text": "Features",
+          "href": "https://www.snaprecorder.org/#features"
+        },
+        {
+          "tag": "A",
+          "text": "How It Works",
+          "href": "https://www.snaprecorder.org/how-it-works"
+        },
+        {
+          "tag": "A",
+          "text": "Blog",
+          "href": "https://www.snaprecorder.org/blog"
+        },
+        {
+          "tag": "A",
+          "text": "About",
+          "href": "https://www.snaprecorder.org/about"
+        },
+        {
+          "tag": "A",
+          "text": "Contact",
+          "href": "https://www.snaprecorder.org/contact"
+        },
+        {
+          "tag": "A",
+          "text": "Login",
+          "href": "https://www.snaprecorder.org/login"
+        },
+        {
+          "tag": "A",
+          "text": "Sign Up",
+          "href": "https://www.snaprecorder.org/login"
+        },
+        {
+          "tag": "A",
+          "text": "Add to Chrome (Free)",
+          "href": "https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg?authuser=0&hl=en"
+        },
+        {
+          "tag": "A",
+          "text": "Watch demo",
+          "href": "https://www.snaprecorder.org/how-it-works"
+        },
+        {
+          "tag": "A",
+          "text": "Full step-by-step guide \u2192",
+          "href": "https://www.snaprecorder.org/how-it-works"
+        },
+        {
+          "tag": "A",
+          "text": "Loom\nFreemium",
+          "href": "https://www.snaprecorder.org/loom-alternative"
+        },
+        {
+          "tag": "A",
+          "text": "Screencastify\nFreemium",
+          "href": "https://www.snaprecorder.org/screencastify-alternative"
+        },
+        {
+          "tag": "A",
+          "text": "Loom",
+          "href": "https://www.snaprecorder.org/loom-alternative"
+        },
+        {
+          "tag": "A",
+          "text": "Screencastify",
+          "href": "https://www.snaprecorder.org/screencastify-alternative"
+        },
+        {
+          "tag": "A",
+          "text": "For Teachers",
+          "href": "https://www.snaprecorder.org/screen-recorder-for-teachers"
+        },
+        {
+          "tag": "A",
+          "text": "Webcam Overlay",
+          "href": "https://www.snaprecorder.org/webcam-overlay-presentation"
+        },
+        {
+          "tag": "A",
+          "text": "Add to Chrome (Free)",
+          "href": "https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg?authuser=0&hl=en"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Is SnapRec really free?\n+",
+          "href": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Does SnapRec work on Edge and Brave?\n+",
+          "href": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Can I record with audio and webcam?\n+",
+          "href": null
+        }
+      ],
+      "body_font_size": "16px",
+      "paragraph_style": {
+        "color": "oklch(0.554 0.046 257.417)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      "total_images": 8
+    }
+  },
+  "blog": {
+    "url": "https://www.snaprecorder.org/blog",
+    "viewports": {
+      "desktop": {
+        "h1_text": "The SnapRec Blog",
+        "h1_visible_above_fold": true,
+        "h1_top": 128,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 1920,
+        "viewport_width": 1920,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/blog_desktop.png"
+      },
+      "laptop": {
+        "h1_text": "The SnapRec Blog",
+        "h1_visible_above_fold": true,
+        "h1_top": 128,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 1366,
+        "viewport_width": 1366,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/blog_laptop.png"
+      },
+      "tablet": {
+        "h1_text": "The SnapRec Blog",
+        "h1_visible_above_fold": true,
+        "h1_top": 128,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 768,
+        "viewport_width": 768,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/blog_tablet.png"
+      },
+      "mobile": {
+        "h1_text": "The SnapRec Blog",
+        "h1_visible_above_fold": true,
+        "h1_top": 128,
+        "primary_cta_text": "Sign Up",
+        "primary_cta_visible": true,
+        "cta_top": 18,
+        "has_horizontal_scroll": false,
+        "scroll_width": 375,
+        "viewport_width": 375,
+        "screenshot": "/Users/codincops/Desktop/Projects/screenshoter/screenshots/blog_mobile.png"
+      }
+    },
+    "meta": {
+      "title": "Blog \u2014 Screen Recording Tips, Tutorials & Comparisons | SnapRec",
+      "meta_description": "The free Loom alternative for Chrome. Record your screen in 4K, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits. No account needed.",
+      "canonical": "https://www.snaprecorder.org/blog",
+      "viewport_meta": "width=device-width, initial-scale=1.0",
+      "og_title": "Free Chrome Screen Recorder \u2014 No Watermarks, 4K | SnapRec | Blog \u2014 Screen Recording Tips, Tutorials & Comparisons | SnapRec",
+      "og_description": "The free Loom alternative for Chrome. Record your screen in 4K, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits. | Learn how to record your screen, take full-page screenshots, and boost productivity. Free tutorials, tool comparisons, and expert tips from the SnapRec team.",
+      "og_image": "https://www.snaprecorder.org/og-image.png | https://www.snaprecorder.org/og-image.png",
+      "og_type": "website | website",
+      "twitter_card": "summary_large_image",
+      "twitter_image": "https://www.snaprecorder.org/og-image.png",
+      "favicon": "/logo.png",
+      "headings": {
+        "h1": [
+          "The SnapRec Blog"
+        ],
+        "h2": [
+          "How to Record a Google Slides Presentation With Audio (Free, 2026)",
+          "Ready to start recording?"
+        ],
+        "h3": [
+          "How to Screen Record on Chrome Without Installing Anything (2026)",
+          "How to Record Your Screen on Chrome for Free (2026)",
+          "5 Best Free Screen Recorders in 2026 \u2014 No Watermark, No Limits",
+          "How to Take a Full-Page Screenshot in Chrome (3 Easy Methods)",
+          "SnapRec vs Loom \u2014 The Best Free Screen Recorder Alternative (2026)",
+          "How to Record Screen with Audio and Webcam on Chrome",
+          "How to Take a Screenshot on Chromebook (5 Methods in 2026)",
+          "How to Screen Record Google Meet for Free (With Audio)",
+          "7 Best Screenshot Chrome Extensions in 2026 (Free & Paid)",
+          "How to Blur Sensitive Information in a Screenshot (Step-by-Step)",
+          "10 Screen Recording Tips for Remote Teams (2026 Guide)",
+          "How to Annotate Screenshots in Chrome \u2014 Arrows, Text, Blur & More",
+          "Screencastify vs SnapRec \u2014 Free Screen Recorder Comparison (2026)",
+          "How to Record a Presentation with Webcam Overlay (Free Guide)",
+          "How to Capture a Scrolling Screenshot in Any Browser (2026)",
+          "OBS vs Browser Screen Recorder \u2014 Which Should You Use? (2026)",
+          "Best Free Screen Recorder for Teachers in 2026 \u2014 No Watermarks",
+          "5 Best Free Loom Alternatives in 2026 \u2014 No Watermarks, No Limits",
+          "How to Record a Zoom Meeting for Free in 2026 (Without Host Permission)",
+          "Screen Recording for Online Classes \u2014 A Teacher's Complete Guide (2026)",
+          "How to Create a Video Bug Report With Screen Recording (Developer Guide)",
+          "How to Record a Microsoft Teams Meeting for Free (2026)",
+          "Screenshot vs Screen Recording: When to Use Which (2026 Guide)",
+          "How to Record a Product Demo for Sales (Free & Easy in 2026)",
+          "How to Record Your Screen on a Mac for Free (2026)",
+          "How to Record Your Screen on Windows 10 & 11 for Free (2026)",
+          "How to Make a Tutorial Video for Free \u2014 Step-by-Step Guide (2026)"
+        ]
+      },
+      "missing_alt_images": [],
+      "ctas": [
+        {
+          "tag": "A",
+          "text": "Features",
+          "href": "https://www.snaprecorder.org/#features"
+        },
+        {
+          "tag": "A",
+          "text": "How It Works",
+          "href": "https://www.snaprecorder.org/how-it-works"
+        },
+        {
+          "tag": "A",
+          "text": "Blog",
+          "href": "https://www.snaprecorder.org/blog"
+        },
+        {
+          "tag": "A",
+          "text": "About",
+          "href": "https://www.snaprecorder.org/about"
+        },
+        {
+          "tag": "A",
+          "text": "Contact",
+          "href": "https://www.snaprecorder.org/contact"
+        },
+        {
+          "tag": "A",
+          "text": "Login",
+          "href": "https://www.snaprecorder.org/login"
+        },
+        {
+          "tag": "A",
+          "text": "Sign Up",
+          "href": "https://www.snaprecorder.org/login"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "article\nAll Posts",
+          "href": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "school\nTutorials",
+          "href": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "compare\nComparisons",
+          "href": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "lightbulb\nTips & Tricks",
+          "href": null
+        },
+        {
+          "tag": "A",
+          "text": "Add to Chrome (Free)",
+          "href": "https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg?authuser=0&hl=en"
+        },
+        {
+          "tag": "A",
+          "text": "Features",
+          "href": "https://www.snaprecorder.org/#features"
+        },
+        {
+          "tag": "A",
+          "text": "Chrome Extension",
+          "href": "https://www.snaprecorder.org/#extension"
+        },
+        {
+          "tag": "A",
+          "text": "How It Works",
+          "href": "https://www.snaprecorder.org/how-it-works"
+        },
+        {
+          "tag": "A",
+          "text": "Blog",
+          "href": "https://www.snaprecorder.org/blog"
+        },
+        {
+          "tag": "A",
+          "text": "Changelog",
+          "href": "https://www.snaprecorder.org/changelog"
+        },
+        {
+          "tag": "A",
+          "text": "About",
+          "href": "https://www.snaprecorder.org/about"
+        },
+        {
+          "tag": "A",
+          "text": "Contact",
+          "href": "https://www.snaprecorder.org/contact"
+        },
+        {
+          "tag": "A",
+          "text": "Privacy Policy",
+          "href": "https://www.snaprecorder.org/privacy"
+        }
+      ],
+      "body_font_size": "16px",
+      "paragraph_style": {
+        "color": "oklch(0.554 0.046 257.417)",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      "total_images": 3
+    }
+  }
+}
