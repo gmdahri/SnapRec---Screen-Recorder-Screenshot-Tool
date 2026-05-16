@@ -81,6 +81,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .then(result => sendResponse({ success: true, blobArray: result.blobArray, mimeType: result.mimeType, size: result.size }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
+
+        case 'offscreen_getBlobInfo':
+            if (!currentRecordingBlob) {
+                sendResponse({ success: false, error: 'No recording available' });
+            } else {
+                sendResponse({
+                    success: true,
+                    size: currentRecordingBlob.size,
+                    mimeType: currentRecordingBlob.type || 'video/webm'
+                });
+            }
+            return false;
+
+        case 'offscreen_getBlobChunk':
+            if (!currentRecordingBlob) {
+                sendResponse({ success: false, error: 'No recording available' });
+                return false;
+            }
+            currentRecordingBlob.slice(message.offset, message.offset + message.length).arrayBuffer()
+                .then(buf => sendResponse({ success: true, chunk: Array.from(new Uint8Array(buf)) }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true;
     }
 });
 
@@ -127,6 +149,7 @@ async function startRecording(options) {
 
         // Get microphone stream if enabled
         let audioTracks = [];
+        let micWarning = null;
         if (options.microphone) {
             try {
                 console.log('[Offscreen] Requesting microphone access...');
@@ -135,13 +158,25 @@ async function startRecording(options) {
                 audioTracks = micStream.getAudioTracks();
                 console.log('[Offscreen] Microphone tracks acquired:', audioTracks.length);
             } catch (e) {
-                console.warn('[Offscreen] Could not get microphone:', e);
+                console.warn('[Offscreen] Could not get microphone:', e.name, e.message);
+                micWarning = e.name === 'NotAllowedError' ? 'mic_permission_denied' : 'mic_unavailable';
+                chrome.runtime.sendMessage({ action: 'offscreen_audioWarning', warning: micWarning });
             }
         }
 
         // Get audio tracks from display stream (system audio)
         const displayAudioTracks = displayStream.getAudioTracks();
         console.log('[Offscreen] Display audio tracks:', displayAudioTracks.length);
+
+        // Warn when system audio was requested but the browser/OS returned no audio tracks.
+        // This happens on macOS for full-screen/window captures (OS restriction) and on
+        // Windows/Linux when the user did not tick "Share audio" in the screen picker.
+        if (options.systemAudio && displayAudioTracks.length === 0) {
+            console.warn('[Offscreen] System audio requested but no audio tracks in display stream. ' +
+                'On macOS this is expected for full-screen/window capture. On Windows, ensure ' +
+                '"Share audio" / "Share system audio" is checked in the screen picker.');
+            chrome.runtime.sendMessage({ action: 'offscreen_audioWarning', warning: 'system_audio_unavailable' });
+        }
 
         // Combine streams
         const videoTracks = displayStream.getVideoTracks();
@@ -151,6 +186,11 @@ async function startRecording(options) {
             // Mix both audio sources using AudioContext
             console.log('[Offscreen] Mixing microphone and system audio');
             audioContext = new AudioContext();
+            // Resume in case Chrome's autoplay policy starts the context suspended
+            // (offscreen documents have no direct user gesture)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
             const destination = audioContext.createMediaStreamDestination();
 
             const systemAudioSource = audioContext.createMediaStreamSource(
