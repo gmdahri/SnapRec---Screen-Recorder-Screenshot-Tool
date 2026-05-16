@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { getWelcomeEmailHtml } from './templates/welcome';
 import { getFounderWelcomeEmailHtml } from './templates/founder-welcome';
+import { getInsightsReadyEmailHtml } from './templates/insights-ready';
 
 @Injectable()
 export class MailService {
@@ -41,6 +42,44 @@ export class MailService {
             this.logger.log(`Welcome email sent to ${to} (id: ${data?.id})`);
         } catch (error) {
             this.logger.error(`Exception sending welcome email to ${to}`, error);
+        }
+    }
+
+    /**
+     * Send the "Your AI summary is ready" email after the pipeline finishes for a
+     * Pro user's recording. Fire-and-forget like the welcome email.
+     */
+    async sendInsightsReady(
+        to: string,
+        name: string | undefined,
+        recordingId: string,
+        recordingTitle: string,
+        tldr: string,
+        topActionItems: string[],
+    ): Promise<void> {
+        try {
+            const webBase =
+                this.configService.get<string>('WEB_BASE_URL') || 'https://www.snaprecorder.org';
+            const shareUrl = `${webBase}/v/${recordingId}`;
+            const { data, error } = await this.resend.emails.send({
+                from: this.fromEmail,
+                to,
+                subject: `Your recording "${recordingTitle}" is ready — summary inside`,
+                html: getInsightsReadyEmailHtml({
+                    name,
+                    recordingTitle,
+                    shareUrl,
+                    tldr,
+                    topActionItems,
+                }),
+            });
+            if (error) {
+                this.logger.error(`Failed to send insights-ready email to ${to}`, error);
+                return;
+            }
+            this.logger.log(`Insights-ready email sent to ${to} (id: ${data?.id})`);
+        } catch (error) {
+            this.logger.error(`Exception sending insights-ready email to ${to}`, error);
         }
     }
 

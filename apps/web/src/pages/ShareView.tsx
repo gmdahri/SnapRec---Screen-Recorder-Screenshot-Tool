@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
+import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton, Tabs, SummaryPanel, TranscriptViewer, ProcessingState, UpgradeModal } from '../components';
+import type { VideoPlayerHandle } from '../components/VideoPlayer';
 import { parseUTCDate } from '../lib/dateUtils';
-import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
+import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth, useProcessAi, useRegenerateSummary } from '../hooks/useRecordings';
+import { useSubscription } from '../hooks/useSubscription';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
@@ -212,6 +214,16 @@ const ShareView: React.FC = () => {
     const addReaction = useAddReaction();
     const addComment = useAddComment();
     const claimMutation = useClaimRecordings();
+    const processAi = useProcessAi();
+    const regenerateSummary = useRegenerateSummary();
+    const videoPlayerRef = useRef<VideoPlayerHandle>(null);
+    const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+    const [activeAiTab, setActiveAiTab] = useState<'summary' | 'transcript'>('summary');
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+    // Only fetch subscription info if the viewer is logged in AND is the owner of this recording
+    const { data: subscription } = useSubscription(!!user);
+    const isPro = subscription?.plan === 'pro' && subscription?.status === 'active';
 
     const [copied, setCopied] = useState(false);
     const [commentText, setCommentText] = useState('');
@@ -231,13 +243,26 @@ const ShareView: React.FC = () => {
     const getUploadUrlMutation = useGetUploadUrl();
     const createRecordingMutation = useCreateRecording();
 
-    // Stop polling once ready or if it's a new local-only recording
+    // Stop polling once everything is settled. AI statuses keep us polling so the
+    // share page auto-refreshes from processing -> ready.
     useEffect(() => {
-        if (recording?.isReady || (recording?.type === 'screenshot' && recording)) {
+        if (!recording) return;
+        const aiSettled =
+            !recording.transcriptStatus ||
+            ['none', 'ready', 'failed', 'skipped_silent', 'skipped_plan', 'skipped_quota'].includes(
+                recording.transcriptStatus,
+            );
+        const summarySettled =
+            !recording.summaryStatus ||
+            ['none', 'ready', 'failed', 'skipped_short'].includes(recording.summaryStatus);
+        if ((recording.isReady || recording.type === 'screenshot') && aiSettled && summarySettled) {
             setPollInterval(false);
             setIsUploaded(true);
+        } else if (recording.isReady || recording.type === 'screenshot') {
+            // Video is ready but AI is still working — keep polling
+            setIsUploaded(true);
         }
-    }, [recording?.isReady, recording?.type]);
+    }, [recording?.isReady, recording?.type, recording?.transcriptStatus, recording?.summaryStatus]);
 
     // Extension Message Listener for local video data
     useEffect(() => {
@@ -592,6 +617,55 @@ const ShareView: React.FC = () => {
         recordingData &&
         (!recordingData.user || (user && recordingData.user.supabaseId === user.id));
 
+    const isOwner = !!user && recordingData?.user?.supabaseId === user.id;
+    const transcriptStatus = (recording as any)?.transcriptStatus as string | undefined;
+    const summaryStatus = (recording as any)?.summaryStatus as string | undefined;
+    const transcript = (recording as any)?.transcript;
+    const summary = (recording as any)?.summary;
+    const recordingDuration = (recording as any)?.durationSec as number | undefined;
+    const hasAiContent = transcriptStatus && transcriptStatus !== 'none';
+
+    const handleSeekToSec = (sec: number) => {
+        videoPlayerRef.current?.seek(sec, { unrestricted: true });
+        videoPlayerRef.current?.play();
+    };
+
+    const handleGenerateAi = () => {
+        if (!user) {
+            setLoginAction('generate AI insights');
+            setIsLoginModalOpen(true);
+            return;
+        }
+        if (!isPro) {
+            setShowUpgradeModal(true);
+            return;
+        }
+        if (!recording?.id) return;
+        processAi.mutate(recording.id, {
+            onSuccess: () => {
+                setPollInterval(3000);
+                showNotification('AI insights are processing. This usually takes a minute or two.', 'info');
+            },
+            onError: (err: any) => {
+                if (err?.message?.includes('403')) {
+                    setShowUpgradeModal(true);
+                } else {
+                    showNotification(err?.message || 'Failed to start AI processing', 'error');
+                }
+            },
+        });
+    };
+
+    const handleRegenerateSummary = () => {
+        if (!recording?.id) return;
+        regenerateSummary.mutate(recording.id, {
+            onSuccess: () => {
+                setPollInterval(3000);
+                showNotification('Regenerating summary…', 'info');
+            },
+        });
+    };
+
 
 
     // Show loader if we are fetching data, OR if this is a "fresh" redirect and we have nothing yet
@@ -737,9 +811,11 @@ const ShareView: React.FC = () => {
                                 ) : (
                                     <>
                                         <VideoPlayer
+                                            ref={videoPlayerRef}
                                             src={downloadUrl || localVideoBlob || undefined}
                                             isProcessing={isProcessing && !localVideoBlob}
                                             showBranding={true}
+                                            onPlaybackUpdate={(p) => setVideoCurrentTime(p.currentTime)}
                                         />
                                         {recordingData.type === 'video' && !downloadUrl && !localVideoBlob && (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm z-40 rounded-xl">
@@ -750,6 +826,27 @@ const ShareView: React.FC = () => {
                                     </>
                                 )}
                             </div>
+
+                            {recordingData.type === 'video' && (
+                                <AiInsightsSection
+                                    hasAiContent={!!hasAiContent}
+                                    isOwner={isOwner}
+                                    isPro={isPro}
+                                    transcriptStatus={transcriptStatus}
+                                    summaryStatus={summaryStatus}
+                                    transcript={transcript}
+                                    summary={summary}
+                                    recordingDuration={recordingDuration}
+                                    activeTab={activeAiTab}
+                                    onTabChange={setActiveAiTab}
+                                    onGenerate={handleGenerateAi}
+                                    onRegenerate={handleRegenerateSummary}
+                                    onSeek={handleSeekToSec}
+                                    currentTime={videoCurrentTime}
+                                    isGenerating={processAi.isPending}
+                                    isRegenerating={regenerateSummary.isPending}
+                                />
+                            )}
 
                             {/* Reaction Bar */}
                             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -955,8 +1052,194 @@ const ShareView: React.FC = () => {
                 onClose={() => setIsLoginModalOpen(false)}
                 actionDescription={loginAction}
             />
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                reason="AI transcripts and summaries are part of SnapRec Pro. Upgrade to get them on every recording."
+                source="share-view-ai"
+            />
         </MainLayout >
     );
 };
+
+interface AiInsightsSectionProps {
+    hasAiContent: boolean;
+    isOwner: boolean;
+    isPro: boolean;
+    transcriptStatus?: string;
+    summaryStatus?: string;
+    transcript: any;
+    summary: any;
+    recordingDuration?: number;
+    activeTab: 'summary' | 'transcript';
+    onTabChange: (t: 'summary' | 'transcript') => void;
+    onGenerate: () => void;
+    onRegenerate: () => void;
+    onSeek: (sec: number) => void;
+    currentTime: number;
+    isGenerating: boolean;
+    isRegenerating: boolean;
+}
+
+const AiInsightsSection: React.FC<AiInsightsSectionProps> = ({
+    hasAiContent,
+    isOwner,
+    isPro,
+    transcriptStatus,
+    summaryStatus,
+    transcript,
+    summary,
+    recordingDuration,
+    activeTab,
+    onTabChange,
+    onGenerate,
+    onRegenerate,
+    onSeek,
+    currentTime,
+    isGenerating,
+    isRegenerating,
+}) => {
+    // Owner with no AI data yet: show CTA
+    if (!hasAiContent) {
+        if (!isOwner) return null;
+        return (
+            <div className="bg-gradient-to-br from-primary/5 to-violet-600/5 dark:from-primary/10 dark:to-violet-600/10 border border-primary/20 rounded-xl p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                    <span className="material-symbols-outlined text-primary text-3xl shrink-0">auto_awesome</span>
+                    <div className="min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white">
+                            Generate AI insights for this recording
+                        </p>
+                        <p className="text-sm text-slate-500">
+                            Transcript, summary, action items, and chapters {isPro ? '— included with Pro.' : '— available on SnapRec Pro.'}
+                        </p>
+                    </div>
+                </div>
+                <button
+                    onClick={onGenerate}
+                    disabled={isGenerating}
+                    className="shrink-0 bg-primary text-white px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 disabled:opacity-50 shadow-md shadow-primary/20"
+                >
+                    {isGenerating ? 'Starting…' : isPro ? 'Generate' : 'Upgrade'}
+                </button>
+            </div>
+        );
+    }
+
+    const transcriptReady = transcriptStatus === 'ready' && transcript;
+    const summaryReady = summaryStatus === 'ready' && summary;
+    const transcriptProcessing = transcriptStatus === 'pending' || transcriptStatus === 'processing';
+    const summaryProcessing = summaryStatus === 'pending' || summaryStatus === 'processing';
+
+    return (
+        <div>
+            <Tabs
+                items={[
+                    { key: 'summary', label: 'Summary', badge: summaryReady ? null : summaryProcessing ? <Dot color="amber" /> : null },
+                    { key: 'transcript', label: 'Transcript', badge: transcriptReady ? null : transcriptProcessing ? <Dot color="amber" /> : null },
+                ]}
+                active={activeTab}
+                onChange={(k) => onTabChange(k as 'summary' | 'transcript')}
+            />
+            <div className="pt-5">
+                {activeTab === 'summary' && (
+                    <>
+                        {summaryReady && (
+                            <SummaryPanel
+                                summary={summary}
+                                onSeek={onSeek}
+                                onRegenerate={onRegenerate}
+                                isOwner={isOwner}
+                                isRegenerating={isRegenerating}
+                            />
+                        )}
+                        {!summaryReady && summaryProcessing && (
+                            <ProcessingState
+                                title="Generating summary…"
+                                durationSec={recordingDuration}
+                                estimateRatio={0.02}
+                            />
+                        )}
+                        {!summaryReady && !summaryProcessing && summaryStatus === 'failed' && (
+                            <FailedNotice
+                                title="Couldn't generate the summary"
+                                detail={transcriptReady ? 'You can retry from the share page.' : 'The transcript is not ready yet.'}
+                                onRetry={isOwner ? onRegenerate : undefined}
+                                retryLabel="Retry"
+                            />
+                        )}
+                        {!summaryReady && summaryStatus === 'skipped_short' && (
+                            <FailedNotice title="Recording too short to summarize" detail="Recordings under 10 seconds skip the summary step." />
+                        )}
+                        {!summaryReady && transcriptStatus === 'skipped_silent' && (
+                            <FailedNotice title="No speech detected" detail="We couldn't hear anything in this recording, so there's nothing to summarize." />
+                        )}
+                    </>
+                )}
+                {activeTab === 'transcript' && (
+                    <>
+                        {transcriptReady && (
+                            <TranscriptViewer
+                                transcript={transcript}
+                                currentTime={currentTime}
+                                onSeek={onSeek}
+                            />
+                        )}
+                        {!transcriptReady && transcriptProcessing && (
+                            <ProcessingState
+                                title="Transcribing audio…"
+                                durationSec={recordingDuration}
+                                estimateRatio={0.05}
+                            />
+                        )}
+                        {!transcriptReady && transcriptStatus === 'failed' && (
+                            <FailedNotice
+                                title="Transcription failed"
+                                detail="Something went wrong on our side. Retry below."
+                                onRetry={isOwner ? onGenerate : undefined}
+                                retryLabel="Retry"
+                            />
+                        )}
+                        {!transcriptReady && transcriptStatus === 'skipped_silent' && (
+                            <FailedNotice title="No speech detected" detail="The audio in this recording is silent." />
+                        )}
+                        {!transcriptReady && transcriptStatus === 'skipped_quota' && (
+                            <FailedNotice title="AI quota exceeded" detail="You've used all included AI minutes this cycle." />
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const Dot: React.FC<{ color: 'amber' | 'red' }> = ({ color }) => (
+    <span
+        className={`size-2 rounded-full inline-block ${color === 'amber' ? 'bg-amber-500 animate-pulse' : 'bg-red-500'}`}
+    />
+);
+
+const FailedNotice: React.FC<{ title: string; detail: string; onRetry?: () => void; retryLabel?: string }> = ({
+    title,
+    detail,
+    onRetry,
+    retryLabel,
+}) => (
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-6 flex items-start gap-4">
+        <span className="material-symbols-outlined text-slate-400 text-3xl">info</span>
+        <div className="flex-1">
+            <p className="font-bold text-slate-900 dark:text-white">{title}</p>
+            <p className="text-sm text-slate-500 mt-1">{detail}</p>
+            {onRetry && (
+                <button
+                    onClick={onRetry}
+                    className="mt-3 text-sm font-bold text-primary hover:underline"
+                >
+                    {retryLabel || 'Retry'}
+                </button>
+            )}
+        </div>
+    </div>
+);
 
 export default ShareView;

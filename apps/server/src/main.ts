@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as bodyParser from 'body-parser';
+import { Request } from 'express';
 import { AppModule } from './app.module';
 // @ts-ignore
 import * as pg from 'pg';
@@ -15,6 +17,18 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create(AppModule);
+
+  // Stripe webhook needs the untouched raw body to verify signatures.
+  // Mount the raw parser only on that route; everything else gets the default JSON parser.
+  app.use(
+    '/subscriptions/webhook',
+    bodyParser.raw({
+      type: 'application/json',
+      verify: (req: Request, _res, buf) => {
+        (req as any).rawBody = buf;
+      },
+    }),
+  );
 
   // Enable global validation pipe for DTOs
   app.useGlobalPipes(

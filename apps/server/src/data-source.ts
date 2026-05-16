@@ -5,6 +5,9 @@ import { Recording } from './recordings/entities/recording.entity';
 import { Reaction } from './recordings/entities/reaction.entity';
 import { Comment } from './recordings/entities/comment.entity';
 import { VideoProject } from './video-projects/entities/video-project.entity';
+import { Subscription } from './subscriptions/entities/subscription.entity';
+import { Transcript } from './transcription/entities/transcript.entity';
+import { Summary } from './ai/entities/summary.entity';
 
 dotenv.config();
 
@@ -15,7 +18,7 @@ export default new DataSource({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [User, Recording, Reaction, Comment, VideoProject],
+    entities: [User, Recording, Reaction, Comment, VideoProject, Subscription, Transcript, Summary],
     migrations: ['src/migrations/*.ts'],
     ssl: {
         rejectUnauthorized: false, // Required for Supabase

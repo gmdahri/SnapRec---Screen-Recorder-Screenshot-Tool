@@ -29,6 +29,7 @@
     "script:email-auto-zoom-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
     "@aws-sdk/client-s3": "^3.893.0",
     "@aws-sdk/s3-request-presigner": "^3.893.0",
     "@nestjs/common": "^11.0.1",
@@ -41,14 +42,18 @@
     "@supabase/supabase-js": "^2.95.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "fluent-ffmpeg": "^2.1.3",
     "jwks-rsa": "^3.2.2",
+    "openai": "^4.77.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.18.0",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.9.2",
     "rxjs": "^7.8.2",
-    "typeorm": "^0.3.28"
+    "stripe": "^17.5.0",
+    "typeorm": "^0.3.28",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -59,6 +64,7 @@
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.10.7",
     "@types/express": "^5.0.0",
+    "@types/fluent-ffmpeg": "^2.1.27",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",

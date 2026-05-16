@@ -13,12 +13,14 @@ import {
     Logger,
     NotFoundException,
     StreamableFile,
+    HttpCode,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
 import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto } from './dto';
 
 @Controller('recordings')
@@ -155,6 +157,28 @@ export class RecordingsController {
     @Delete(':id')
     async deleteRecording(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
         return this.recordingsService.delete(id, req.user.id);
+    }
+
+    @UseGuards(JwtAuthGuard, PlanGuard)
+    @Post(':id/process-ai')
+    @HttpCode(202)
+    async processAi(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+        await this.recordingsService.checkAiOwnership(id, req.user.id);
+        return this.recordingsService.startAiPipeline(id);
+    }
+
+    @UseGuards(JwtAuthGuard, PlanGuard)
+    @Post(':id/regenerate-summary')
+    @HttpCode(202)
+    async regenerateSummary(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+        await this.recordingsService.checkAiOwnership(id, req.user.id);
+        return this.recordingsService.regenerateSummary(id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id/transcript')
+    async deleteTranscript(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+        return this.recordingsService.deleteTranscript(id, req.user.id);
     }
     @UseGuards(OptionalJwtAuthGuard)
     @Post(':id/reactions')

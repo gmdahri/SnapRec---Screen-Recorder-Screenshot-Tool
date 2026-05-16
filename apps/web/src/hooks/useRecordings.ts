@@ -2,6 +2,58 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 // Types
+export type TranscriptStatus =
+    | 'none'
+    | 'pending'
+    | 'processing'
+    | 'ready'
+    | 'failed'
+    | 'skipped_silent'
+    | 'skipped_plan'
+    | 'skipped_quota';
+
+export type SummaryStatus =
+    | 'none'
+    | 'pending'
+    | 'processing'
+    | 'ready'
+    | 'failed'
+    | 'skipped_short';
+
+export interface TranscriptSegment {
+    start: number;
+    end: number;
+    text: string;
+}
+
+export interface ActionItem {
+    owner?: string | null;
+    text: string;
+    dueDate?: string | null;
+}
+
+export interface Chapter {
+    startSec: number;
+    title: string;
+}
+
+export interface Transcript {
+    id: string;
+    language?: string | null;
+    durationSec?: number | null;
+    segmentsJson: TranscriptSegment[];
+}
+
+export interface Summary {
+    id: string;
+    tldr: string;
+    bulletsJson: string[];
+    actionItemsJson: ActionItem[];
+    chaptersJson: Chapter[];
+    keyDecisionsJson: string[];
+    generatedAt: string;
+}
+
 export interface Recording {
     id: string;
     title: string;
@@ -10,10 +62,16 @@ export interface Recording {
     type: 'video' | 'screenshot';
     createdAt: string;
     duration?: number;
+    durationSec?: number | null;
     views: number;
     isReady?: boolean;
     description?: string;
     location?: string;
+    transcriptStatus?: TranscriptStatus;
+    summaryStatus?: SummaryStatus;
+    transcriptFailReason?: string | null;
+    transcript?: Transcript | null;
+    summary?: Summary | null;
     user?: {
         supabaseId: string;
         fullName?: string;
@@ -315,6 +373,46 @@ export function useAddReaction() {
                 body: JSON.stringify({ type, guestId }),
             }),
         onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+/**
+ * Hook to kick off the AI pipeline (transcript + summary) on a recording.
+ * Pro-gated server-side; surfaces a 403/402 if the user is not Pro.
+ */
+export function useProcessAi() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) =>
+            fetchWithAuth<{ recordingId: string; transcriptStatus: string; summaryStatus: string; started: boolean }>(
+                `/recordings/${id}/process-ai`,
+                { method: 'POST' },
+            ),
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+export function useRegenerateSummary() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) =>
+            fetchWithAuth<{ started: boolean }>(`/recordings/${id}/regenerate-summary`, { method: 'POST' }),
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+export function useDeleteTranscript() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) =>
+            fetchWithAuth<{ success: boolean }>(`/recordings/${id}/transcript`, { method: 'DELETE' }),
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
         },
     });

@@ -20,6 +20,10 @@ const Settings: React.FC = () => {
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
                         <span className="font-semibold text-sm">My Library</span>
                     </NavLink>
+                    <NavLink to="/settings/billing" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                        <span className="material-symbols-outlined">credit_card</span>
+                        <span className="font-semibold text-sm">Plan & Billing</span>
+                    </NavLink>
                 </nav>
             </div>
             <div className="flex flex-col gap-6">
