@@ -6,7 +6,7 @@ import { useRecordings, useUpdateRecording, useDeleteRecording, type Recording }
 import { MainLayout, SEO } from '../components';
 import { formatRelativeTime } from '../lib/dateUtils';
 
-type TabFilter = 'all' | 'video' | 'screenshot';
+type TabFilter = 'all' | 'video' | 'screenshot' | 'transcripts';
 type SortOrder = 'newest' | 'oldest' | 'name';
 
 const Dashboard: React.FC = () => {
@@ -53,7 +53,9 @@ const Dashboard: React.FC = () => {
         if (searchQuery) {
             result = result.filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()));
         }
-        if (activeTab !== 'all') {
+        if (activeTab === 'transcripts') {
+            result = result.filter(r => r.transcriptStatus === 'ready');
+        } else if (activeTab !== 'all') {
             result = result.filter(r => r.type === activeTab);
         }
         result.sort((a, b) => {
@@ -130,6 +132,7 @@ const Dashboard: React.FC = () => {
         { key: 'all', label: 'All Items' },
         { key: 'video', label: 'Recordings' },
         { key: 'screenshot', label: 'Screenshots' },
+        { key: 'transcripts', label: 'With transcript' },
     ];
 
     const sortOptions: { key: SortOrder; label: string; icon: string }[] = [
@@ -359,6 +362,9 @@ const Dashboard: React.FC = () => {
                                         <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
                                             <span className="material-symbols-outlined text-sm">schedule</span>
                                             <span>{formatRelativeTime(recording.createdAt)}</span>
+                                            {recording.transcriptStatus && recording.transcriptStatus !== 'none' && (
+                                                <TranscriptPill status={recording.transcriptStatus} summaryStatus={recording.summaryStatus} />
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -409,6 +415,25 @@ const Dashboard: React.FC = () => {
                 </div>
             </div>
         </MainLayout>
+    );
+};
+
+const TranscriptPill: React.FC<{ status?: string; summaryStatus?: string }> = ({ status, summaryStatus }) => {
+    const cfg = (() => {
+        if (status === 'ready' && summaryStatus === 'ready')
+            return { label: 'Summary ready', color: 'bg-emerald-500/10 text-emerald-600' };
+        if (status === 'ready') return { label: 'Transcript ready', color: 'bg-emerald-500/10 text-emerald-600' };
+        if (status === 'failed' || summaryStatus === 'failed')
+            return { label: 'AI failed', color: 'bg-red-500/10 text-red-600' };
+        if (['pending', 'processing'].includes(status || '') || ['pending', 'processing'].includes(summaryStatus || ''))
+            return { label: 'Processing…', color: 'bg-amber-500/10 text-amber-600' };
+        return null;
+    })();
+    if (!cfg) return null;
+    return (
+        <span className={`ml-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cfg.color}`}>
+            {cfg.label}
+        </span>
     );
 };
 

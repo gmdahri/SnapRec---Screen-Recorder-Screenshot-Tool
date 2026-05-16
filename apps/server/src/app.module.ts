@@ -8,12 +8,20 @@ import { Recording } from './recordings/entities/recording.entity';
 import { Reaction } from './recordings/entities/reaction.entity';
 import { Comment } from './recordings/entities/comment.entity';
 import { VideoProject } from './video-projects/entities/video-project.entity';
+import { Subscription } from './subscriptions/entities/subscription.entity';
+import { Transcript } from './transcription/entities/transcript.entity';
+import { Summary } from './ai/entities/summary.entity';
 import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RecordingsModule } from './recordings/recordings.module';
 import { VideoProjectsModule } from './video-projects/video-projects.module';
 import { MailModule } from './mail/mail.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { TranscriptionModule } from './transcription/transcription.module';
+import { AiModule } from './ai/ai.module';
+import { QueueModule } from './queue/queue.module';
+import { AdminModule } from './admin/admin.module';
 import { DataSource } from 'typeorm';
 
 @Module({
@@ -31,7 +39,7 @@ import { DataSource } from 'typeorm';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [User, Recording, Reaction, Comment, VideoProject],
+        entities: [User, Recording, Reaction, Comment, VideoProject, Subscription, Transcript, Summary],
         synchronize: false, // WARNING: Set to false in production
         ssl: {
           rejectUnauthorized: false, // Required for Supabase
@@ -45,6 +53,11 @@ import { DataSource } from 'typeorm';
     RecordingsModule,
     VideoProjectsModule,
     MailModule,
+    SubscriptionsModule,
+    TranscriptionModule,
+    AiModule,
+    QueueModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,6 +2,89 @@
  * A draggable floating button with quick capture options
  */
 
+/* Meeting Platform Banner */
+.snaprec-meeting-banner {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #7b25f4 0%, #a855f7 100%);
+    color: white;
+    padding: 10px 14px 10px 12px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(123, 37, 244, 0.35);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    max-width: 520px;
+    animation: snaprec-banner-in 0.3s ease;
+}
+
+.snaprec-meeting-banner--hiding {
+    animation: snaprec-banner-out 0.3s ease forwards;
+}
+
+@keyframes snaprec-banner-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes snaprec-banner-out {
+    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+    to   { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+}
+
+.snaprec-meeting-banner-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #f0abfc;
+}
+
+.snaprec-meeting-banner-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.snaprec-meeting-banner-cta {
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.snaprec-meeting-banner-cta:hover {
+    background: rgba(255,255,255,0.35);
+}
+
+.snaprec-meeting-banner-dismiss {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.snaprec-meeting-banner-dismiss:hover {
+    color: white;
+}
+
 /* Floating Button Container */
 .snaprec-fab-container {
     position: fixed;

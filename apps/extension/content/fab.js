@@ -16,6 +16,68 @@
         return;
     }
 
+    // Meeting platform detection
+    const MEETING_PLATFORMS = [
+        { pattern: /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/, name: 'Google Meet' },
+        { pattern: /^https:\/\/(www\.)?zoom\.us\/wc\//, name: 'Zoom' },
+        { pattern: /^https:\/\/app\.zoom\.us\/wc\//, name: 'Zoom' },
+        { pattern: /^https:\/\/teams\.(microsoft|live)\.com\//, name: 'Microsoft Teams' },
+        { pattern: /^https:\/\/app\.teams\.microsoft\.com\//, name: 'Microsoft Teams' },
+    ];
+
+    function detectMeetingPlatform() {
+        const url = window.location.href;
+        for (const p of MEETING_PLATFORMS) {
+            if (p.pattern.test(url)) return p.name;
+        }
+        return null;
+    }
+
+    function showMeetingBanner(platformName) {
+        if (document.querySelector('.snaprec-meeting-banner')) return;
+
+        chrome.storage.session.get(['meetingBannerDismissed'], (result) => {
+            if (result.meetingBannerDismissed) return;
+
+            const banner = document.createElement('div');
+            banner.className = 'snaprec-meeting-banner';
+            banner.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" class="snaprec-meeting-banner-icon">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="4" fill="currentColor"/>
+                </svg>
+                <span class="snaprec-meeting-banner-text">
+                    <strong>${platformName} detected</strong> — record &amp; get an AI summary
+                </span>
+                <button class="snaprec-meeting-banner-cta" id="snaprecMeetingRecord">Record meeting</button>
+                <button class="snaprec-meeting-banner-dismiss" id="snaprecMeetingDismiss" aria-label="Dismiss">✕</button>
+            `;
+            document.body.appendChild(banner);
+
+            document.getElementById('snaprecMeetingRecord').addEventListener('click', () => {
+                chrome.runtime.sendMessage({
+                    action: 'startRecording',
+                    options: { source: 'tab', microphone: true, systemAudio: true, webcam: false },
+                });
+                banner.remove();
+            });
+
+            document.getElementById('snaprecMeetingDismiss').addEventListener('click', () => {
+                chrome.storage.session.set({ meetingBannerDismissed: true });
+                banner.classList.add('snaprec-meeting-banner--hiding');
+                setTimeout(() => banner.remove(), 300);
+            });
+
+            // Auto-hide after 15s if user doesn't act
+            setTimeout(() => {
+                if (document.body.contains(banner)) {
+                    banner.classList.add('snaprec-meeting-banner--hiding');
+                    setTimeout(() => banner.remove(), 300);
+                }
+            }, 15000);
+        });
+    }
+
     // Check if FAB is enabled (default: true)
     chrome.storage.local.get(['fabEnabled'], (result) => {
         console.log('SnapRec FAB: fabEnabled =', result.fabEnabled);
@@ -24,6 +86,11 @@
             return;
         }
         console.log('SnapRec FAB: Initializing...');
+        const platform = detectMeetingPlatform();
+        if (platform) {
+            // Small delay so the meeting UI is rendered before our banner appears
+            setTimeout(() => showMeetingBanner(platform), 2000);
+        }
         initFAB();
     });
 
@@ -205,6 +272,9 @@
         chrome.runtime.onMessage.addListener((message) => {
             if (message.action === 'recordingStarted') {
                 isRecording = true;
+                // Hide the meeting banner once recording starts
+                const banner = document.querySelector('.snaprec-meeting-banner');
+                if (banner) banner.remove();
                 fab.classList.add('snaprec-fab-recording');
                 const recordBtn = container.querySelector('#fabRecordBtn');
                 recordBtn.dataset.action = 'stopRecording';

@@ -55,6 +55,48 @@
   }
 }
 
+/* Pro Upgrade Bar */
+.upgrade-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 7px var(--space-lg);
+  background: linear-gradient(135deg, #f5f0ff 0%, #ede8ff 100%);
+  border-bottom: 1px solid rgba(123, 37, 244, 0.15);
+  font-size: var(--font-size-xs);
+  color: #6b21d4;
+}
+
+.upgrade-bar svg {
+  flex-shrink: 0;
+  color: #7b25f4;
+}
+
+.upgrade-bar span {
+  flex: 1;
+  font-weight: 500;
+}
+
+.upgrade-bar-link {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  background: #7b25f4;
+  color: white;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+  text-decoration: none;
+  transition: background var(--transition-normal);
+}
+
+.upgrade-bar-link:hover {
+  background: #6b1fd4;
+}
+
+.upgrade-bar.hidden {
+  display: none !important;
+}
+
 /* Popup Container */
 .popup-container {
   width: 360px;

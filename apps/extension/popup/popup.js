@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadRecentCaptures();
   initUpdateBanner();
   initReviewBanner();
+  initUpgradeBar();
 });
 
 // Update Banner
@@ -281,6 +282,26 @@ async function loadRecentCaptures() {
     await chrome.storage.local.remove('recentCaptures');
     loadRecentCaptures();
   });
+}
+
+// Upgrade Bar
+async function initUpgradeBar() {
+  const bar = document.getElementById('upgradeBar');
+  const link = document.getElementById('upgradeBarLink');
+
+  // Point to the web pricing page using the same base URL as the background config
+  const WEB_BASE_URL = 'https://www.snaprecorder.org';
+  link.href = `${WEB_BASE_URL}/pricing?from=extension`;
+
+  // Hide if user has already dismissed or is known Pro
+  try {
+    const { upgradeBarDismissed } = await chrome.storage.local.get('upgradeBarDismissed');
+    if (upgradeBarDismissed) {
+      bar.classList.add('hidden');
+    }
+  } catch (e) {
+    // keep visible on error
+  }
 }
 
 // Review Banner

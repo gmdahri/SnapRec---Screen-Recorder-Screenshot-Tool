@@ -13,13 +13,15 @@ import {
     Logger,
     NotFoundException,
     StreamableFile,
+    HttpCode,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
-import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto } from './dto';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, UpdateTranscriptPrivacyDto, UpdateTranscriptSegmentsDto } from './dto';
 
 @Controller('recordings')
 export class RecordingsController {
@@ -156,6 +158,49 @@ export class RecordingsController {
     async deleteRecording(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
         return this.recordingsService.delete(id, req.user.id);
     }
+
+    @UseGuards(JwtAuthGuard, PlanGuard)
+    @Post(':id/process-ai')
+    @HttpCode(202)
+    async processAi(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+        await this.recordingsService.checkAiOwnership(id, req.user.id);
+        return this.recordingsService.startAiPipeline(id);
+    }
+
+    @UseGuards(JwtAuthGuard, PlanGuard)
+    @Post(':id/regenerate-summary')
+    @HttpCode(202)
+    async regenerateSummary(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+        await this.recordingsService.checkAiOwnership(id, req.user.id);
+        return this.recordingsService.regenerateSummary(id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id/transcript')
+    async deleteTranscript(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+        return this.recordingsService.deleteTranscript(id, req.user.id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id/transcript-privacy')
+    async updateTranscriptPrivacy(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: UpdateTranscriptPrivacyDto,
+        @Req() req: any,
+    ) {
+        return this.recordingsService.updateTranscriptPrivacy(id, req.user.id, dto.transcriptPublic);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id/transcript/segments')
+    async updateTranscriptSegments(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: UpdateTranscriptSegmentsDto,
+        @Req() req: any,
+    ) {
+        return this.recordingsService.updateTranscriptSegments(id, req.user.id, dto.segments);
+    }
+
     @UseGuards(OptionalJwtAuthGuard)
     @Post(':id/reactions')
     async addReaction(
