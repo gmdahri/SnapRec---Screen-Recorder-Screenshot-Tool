@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SnapRec — Allow Microphone</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f7f5f8 0%, #efeaf6 100%);
+      color: #1a1a1a;
+    }
+
+    .card {
+      max-width: 480px;
+      padding: 40px;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid rgba(123, 37, 244, 0.15);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #7b25f4 0%, #a855f7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0 0 24px;
+      color: #555;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      background: #7b25f4;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      background: #5e16c0;
+    }
+
+    .status {
+      margin-top: 16px;
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    .status.success {
+      color: #1b8b3a;
+    }
+
+    .status.error {
+      color: #b71c1c;
+    }
+
+    .help {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #ece7f4;
+      font-size: 13px;
+      color: #666;
+      text-align: left;
+      line-height: 1.6;
+    }
+
+    .help strong {
+      color: #1a1a1a;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" stroke-width="2" />
+        <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" />
+      </svg>
+    </div>
+    <h1>Allow microphone access</h1>
+    <p>SnapRec needs your microphone to capture your voice during recordings. Click the button below to grant permission.</p>
+    <button class="btn" id="allowBtn">Allow microphone</button>
+    <div class="status" id="status"></div>
+
+    <div class="help">
+      <strong>If the prompt doesn't appear:</strong><br>
+      1. Look for a microphone icon <span style="white-space:nowrap;">🎤</span> in the address bar.<br>
+      2. Click it and choose "Always allow".<br>
+      3. On macOS, also check <strong>System Settings → Privacy &amp; Security → Microphone</strong> and confirm Google Chrome is enabled. Quit and reopen Chrome if you just changed it.
+    </div>
+  </div>
+  <script src="permission.js"></script>
+</body>
+
+</html>

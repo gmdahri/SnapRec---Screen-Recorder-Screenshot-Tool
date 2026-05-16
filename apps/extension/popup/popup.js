@@ -37,7 +37,49 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadRecentCaptures();
   initUpdateBanner();
   initReviewBanner();
+  initMicPermission();
 });
+
+// Microphone Permission
+// getUserMedia inside an extension popup or offscreen document can fail with
+// NotAllowedError even when the user "feels" allowed (sticky session denial,
+// stale Chrome cache, macOS Privacy not enabled). We always attempt the
+// warmup, and on rejection we route the user to a dedicated permission tab —
+// regular tabs reliably surface Chrome's address-bar mic prompt, which
+// persists the grant across the whole extension origin.
+
+function showMicPermissionBanner(detail) {
+  const banner = document.getElementById('micPermissionBanner');
+  if (!banner) return;
+  if (detail) {
+    document.getElementById('micPermissionDetail').textContent = detail;
+  }
+  banner.classList.remove('hidden');
+}
+
+function hideMicPermissionBanner() {
+  document.getElementById('micPermissionBanner')?.classList.add('hidden');
+}
+
+function micDeniedMessage() {
+  return 'Microphone access is blocked. Click below to grant permission in a new tab, then come back here.';
+}
+
+function initMicPermission() {
+  const fixBtn = document.getElementById('micPermissionFixBtn');
+  fixBtn?.addEventListener('click', () => {
+    // Open the dedicated permission page in a real tab. Popups and offscreen
+    // documents can't surface Chrome's address-bar mic prompt reliably (sticky
+    // session-level denials silently reject), but a regular tab can — and the
+    // grant from a tab persists across the whole extension origin.
+    chrome.tabs.create({ url: chrome.runtime.getURL('permission/permission.html') });
+  });
+
+  // Hide the banner when the user toggles mic off — it's no longer relevant.
+  document.getElementById('micToggle')?.addEventListener('change', (e) => {
+    if (!e.target.checked) hideMicPermissionBanner();
+  });
+}
 
 // Update Banner
 async function initUpdateBanner() {
@@ -148,16 +190,21 @@ function initRecordOptions() {
     const activeSource = document.querySelector('.source-btn.active');
     const micEnabled = document.getElementById('micToggle').checked;
 
-    // On macOS, getUserMedia from an offscreen document can fail silently because
-    // the OS requires the permission prompt to originate from a visible window.
-    // Requesting mic here (in the visible popup) warms up the OS permission so
-    // the offscreen document can access the mic immediately after.
     if (micEnabled) {
+      // Always attempt the warmup — even when permissions.query returns "denied"
+      // it can still surface the OS prompt (e.g. when the denial is a stale
+      // session-only value). Only treat an actual rejection as a hard block.
       try {
         const warmupStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         warmupStream.getTracks().forEach(t => t.stop());
+        hideMicPermissionBanner();
       } catch (e) {
-        // Permission denied — continue anyway; offscreen will handle the error
+        if (e.name === 'NotAllowedError') {
+          showMicPermissionBanner(micDeniedMessage());
+        } else {
+          showMicPermissionBanner('Microphone could not be accessed: ' + (e.message || e.name));
+        }
+        return;
       }
     }
 

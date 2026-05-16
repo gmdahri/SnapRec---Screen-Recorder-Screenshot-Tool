@@ -154,6 +154,13 @@
               Microphone
             </span>
           </label>
+          <div class="mic-permission-banner hidden" id="micPermissionBanner">
+            <div class="mic-permission-text">
+              <strong>Microphone blocked.</strong>
+              <span id="micPermissionDetail">Chrome is blocking SnapRec from using your microphone.</span>
+            </div>
+            <button type="button" class="mic-permission-btn" id="micPermissionFixBtn">Fix permission</button>
+          </div>
           <label class="toggle-option">
             <input type="checkbox" id="systemAudioToggle">
             <span class="toggle-switch"></span>

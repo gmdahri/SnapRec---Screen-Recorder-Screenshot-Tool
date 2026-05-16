@@ -500,6 +500,48 @@
   display: none !important;
 }
 
+/* Microphone Permission Banner */
+.mic-permission-banner {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(244, 67, 54, 0.08);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: #b71c1c;
+  animation: fadeIn var(--transition-normal) ease;
+}
+
+.mic-permission-banner strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.mic-permission-text {
+  line-height: 1.4;
+}
+
+.mic-permission-btn {
+  align-self: flex-start;
+  padding: 4px 10px;
+  background: #b71c1c;
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-normal);
+}
+
+.mic-permission-btn:hover {
+  background: #8b1414;
+}
+
 /* Keyboard Shortcuts Section */
 .shortcuts-section {
   margin-top: var(--space-md);

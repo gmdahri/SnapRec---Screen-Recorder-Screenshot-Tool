@@ -585,8 +585,8 @@ async function createOffscreenDocument() {
     console.log('[SnapRec] Creating offscreen document...');
     creatingOffscreen = chrome.offscreen.createDocument({
         url: OFFSCREEN_DOCUMENT_PATH,
-        reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA],
-        justification: 'Recording screen/tab video and audio using getDisplayMedia'
+        reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA, chrome.offscreen.Reason.USER_MEDIA],
+        justification: 'Recording screen/tab video and audio; microphone captured via getUserMedia'
     });
 
     await creatingOffscreen;
@@ -783,6 +783,17 @@ async function finalizeCleanup() {
 
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
+
+    // Clear recording state before opening the share tab. When the user stops
+    // via Chrome's native "Stop sharing" button, offscreen sends recordingComplete
+    // directly and the manual stopRecording → broadcastHideOverlay path is skipped.
+    // Without this, tabs.onActivated/onUpdated still see isRecording=true and
+    // inject the recording overlay into the freshly-created share tab.
+    const { isRecording } = await chrome.storage.local.get('isRecording');
+    if (isRecording) {
+        await broadcastHideOverlay();
+    }
+
     try {
         const { captureCount = 0 } = await chrome.storage.local.get('captureCount');
         await chrome.storage.local.set({ captureCount: captureCount + 1 });
@@ -795,21 +806,18 @@ async function handleRecordingComplete() {
         const shareUrl = `${CONFIG.WEB_BASE_URL}/v`;
         const tab = await chrome.tabs.create({ url: shareUrl });
 
-        // Cache blob data so it survives retries if the page shows an error page initially
-        let cachedBlobArray = null;
-        let cachedMimeType = null;
         let injectionSucceeded = false;
         let retryCount = 0;
         const MAX_RETRIES = 5;
 
-        // Safety timeout: give up after 30 seconds
+        // Safety timeout: chunked injection for large recordings can take a few seconds
         const safetyTimeout = setTimeout(() => {
             if (!injectionSucceeded) {
                 console.warn('[SnapRec] Safety timeout reached, cleaning up');
                 chrome.tabs.onUpdated.removeListener(listener);
                 finalizeCleanup();
             }
-        }, 30000);
+        }, 60000);
 
         const cleanupAfterSuccess = () => {
             injectionSucceeded = true;
@@ -818,120 +826,138 @@ async function handleRecordingComplete() {
             finalizeCleanup();
         };
 
-        // Core injection function (uses cached data if available)
-        const attemptInjection = (blobArray, mimeType, metadataArray) => {
-            chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                func: (blobArray, mimeType, id, metadataStr) => {
-                    console.log('Injected script: reconstructing blob in web page context, size:', blobArray.length);
+        const CHUNK_SIZE = 512 * 1024; // 512 KB per chunk — stays well under Chrome IPC limits
+        let isInjecting = false;
 
-                    // Reconstruct the Blob from the byte array
-                    const uint8Array = new Uint8Array(blobArray);
-                    const blob = new Blob([uint8Array], { type: mimeType });
-                    console.log('Injected script: blob reconstructed, size:', blob.size, 'type:', blob.type);
-
-                    // Store in IndexedDB under the WEB PAGE's origin
-                    try {
-                        const request = indexedDB.open('SnapRecDB', 2);
-
-                        request.onupgradeneeded = (e) => {
-                            const db = e.target.result;
-                            if (!db.objectStoreNames.contains('recordings')) {
-                                db.createObjectStore('recordings');
-                            }
-                        };
-
-                        request.onsuccess = (e) => {
-                            const db = e.target.result;
-                            const transaction = db.transaction(['recordings'], 'readwrite');
-                            const store = transaction.objectStore('recordings');
-                            store.clear(); // Wipe all stale data before writing fresh recording
-                            store.put(blob, 'latest_video_blob');
-                            store.put(id, 'latest_id');
-                            store.put(Date.now(), 'latest_video_timestamp');
-                            store.put(metadataStr, 'latest_metadata'); // Store metadata
-
-                            transaction.oncomplete = () => {
-                                console.log('Injected script: blob stored in web page IDB, signaling React app');
-                                window.postMessage({
-                                    type: 'SNAPREC_VIDEO_DATA',
-                                    fromIDB: true,
-                                    id: id
-                                }, '*');
-                            };
-
-                            transaction.onerror = () => {
-                                console.error('Injected script: IDB transaction failed, sending postMessage anyway');
-                                window.postMessage({
-                                    type: 'SNAPREC_VIDEO_DATA',
-                                    fromIDB: true,
-                                    id: id
-                                }, '*');
-                            };
-                        };
-
-                        request.onerror = () => {
-                            console.error('Injected script: IDB open failed');
-                            window.postMessage({
-                                type: 'SNAPREC_VIDEO_DATA',
-                                fromIDB: true,
-                                id: id
-                            }, '*');
-                        };
-                    } catch (err) {
-                        console.warn('IndexedDB store failed', err);
-                        window.postMessage({
-                            type: 'SNAPREC_VIDEO_DATA',
-                            fromIDB: true,
-                            id: id
-                        }, '*');
+        const attemptChunkedInjection = async () => {
+            // Step 1: get blob metadata only (lightweight message)
+            const infoResponse = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({ action: 'offscreen_getBlobInfo' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        resolve({ success: false, error: chrome.runtime.lastError.message });
+                    } else {
+                        resolve(response);
                     }
+                });
+            });
+
+            if (!infoResponse?.success) {
+                throw new Error(infoResponse?.error || 'No blob info');
+            }
+
+            const { size, mimeType } = infoResponse;
+            const totalChunks = Math.ceil(size / CHUNK_SIZE);
+            console.log(`[SnapRec] Starting chunked injection: ${totalChunks} chunks for ${size} bytes`);
+
+            // Step 2: initialize chunk buffer in web page
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: (totalChunks, mimeType, id, metadataStr) => {
+                    window.__snaprecBuf = new Array(totalChunks);
+                    window.__snaprecMime = mimeType;
+                    window.__snaprecId = id;
+                    window.__snaprecMeta = metadataStr;
                 },
-                args: [blobArray, mimeType, recordingId, JSON.stringify(metadataArray)]
-            }).then(() => {
-                console.log('[SnapRec] Blob injection into web page context successful');
-                cleanupAfterSuccess();
-            }).catch((err) => {
-                retryCount++;
-                console.warn(`[SnapRec] Injection attempt ${retryCount} failed (page may still be loading):`, err.message);
-                // DON'T remove listener or cleanup — wait for the next 'complete' event to retry
-                if (retryCount >= MAX_RETRIES) {
-                    console.error('[SnapRec] Max retries reached, giving up');
-                    cleanupAfterSuccess(); // cleanup even on failure
+                args: [totalChunks, mimeType, recordingId, JSON.stringify(recordingMetadata)]
+            });
+
+            // Step 3: transfer each chunk
+            for (let i = 0; i < totalChunks; i++) {
+                const offset = i * CHUNK_SIZE;
+                const length = Math.min(CHUNK_SIZE, size - offset);
+
+                const chunkResponse = await new Promise((resolve) => {
+                    chrome.runtime.sendMessage(
+                        { action: 'offscreen_getBlobChunk', offset, length },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                resolve({ success: false, error: chrome.runtime.lastError.message });
+                            } else {
+                                resolve(response);
+                            }
+                        }
+                    );
+                });
+
+                if (!chunkResponse?.success) {
+                    throw new Error(`Chunk ${i} failed: ${chunkResponse?.error}`);
                 }
+
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (index, chunkBytes) => {
+                        window.__snaprecBuf[index] = new Uint8Array(chunkBytes);
+                    },
+                    args: [i, chunkResponse.chunk]
+                });
+            }
+
+            // Step 4: assemble blob and store in IDB
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => {
+                    const chunks = window.__snaprecBuf;
+                    const mimeType = window.__snaprecMime;
+                    const id = window.__snaprecId;
+                    const metadataStr = window.__snaprecMeta;
+
+                    const blob = new Blob(chunks, { type: mimeType });
+                    console.log('SnapRec: assembled blob', blob.size, 'bytes,', blob.type);
+
+                    const open = indexedDB.open('SnapRecDB', 2);
+                    open.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('recordings')) {
+                            db.createObjectStore('recordings');
+                        }
+                    };
+                    open.onsuccess = (e) => {
+                        const db = e.target.result;
+                        const tx = db.transaction(['recordings'], 'readwrite');
+                        const store = tx.objectStore('recordings');
+                        store.clear();
+                        store.put(blob, 'latest_video_blob');
+                        store.put(id, 'latest_id');
+                        store.put(Date.now(), 'latest_video_timestamp');
+                        store.put(metadataStr, 'latest_metadata');
+                        const signal = () => {
+                            delete window.__snaprecBuf;
+                            delete window.__snaprecMime;
+                            delete window.__snaprecId;
+                            delete window.__snaprecMeta;
+                            window.postMessage({ type: 'SNAPREC_VIDEO_DATA', fromIDB: true, id }, '*');
+                        };
+                        tx.oncomplete = signal;
+                        tx.onerror = signal;
+                    };
+                    open.onerror = () => {
+                        window.postMessage({ type: 'SNAPREC_VIDEO_DATA', fromIDB: true, id }, '*');
+                    };
+                },
+                args: []
             });
         };
 
-        // Wait for tab to load and inject video blob bridge
+        // Wait for tab to load, then inject blob via chunked transfer
         const listener = (tabId, info) => {
-            if (tabId === tab.id && info.status === 'complete' && !injectionSucceeded) {
-                console.log(`[SnapRec] Tab load complete (attempt ${retryCount + 1}), attempting injection...`);
+            if (tabId === tab.id && info.status === 'complete' && !injectionSucceeded && !isInjecting) {
+                isInjecting = true;
+                console.log(`[SnapRec] Tab loaded (attempt ${retryCount + 1}), starting chunked injection...`);
 
-                // If we already have cached blob data from a previous attempt, reuse it
-                if (cachedBlobArray) {
-                    console.log('[SnapRec] Using cached blob data for retry');
-                    attemptInjection(cachedBlobArray, cachedMimeType, recordingMetadata);
-                    return;
-                }
-
-                // First attempt: get blob data from offscreen
-                chrome.runtime.sendMessage({ action: 'offscreen_getRecordingBlobAsArrayBuffer' }, (blobResponse) => {
-                    if (blobResponse?.success && blobResponse.blobArray) {
-                        console.log('[SnapRec] Got blob data from offscreen, size:', blobResponse.size, 'type:', blobResponse.mimeType);
-                        // Cache for retries
-                        cachedBlobArray = blobResponse.blobArray;
-                        cachedMimeType = blobResponse.mimeType;
-                        attemptInjection(cachedBlobArray, cachedMimeType, recordingMetadata);
-                    } else {
-                        console.warn('[SnapRec] ArrayBuffer retrieval failed:', blobResponse?.error);
-                        // Don't cleanup yet — the offscreen might still be initializing
+                attemptChunkedInjection()
+                    .then(() => {
+                        console.log('[SnapRec] Chunked injection successful');
+                        cleanupAfterSuccess();
+                    })
+                    .catch((err) => {
+                        console.warn(`[SnapRec] Chunked injection attempt ${retryCount + 1} failed:`, err.message);
+                        isInjecting = false;
                         retryCount++;
                         if (retryCount >= MAX_RETRIES) {
-                            console.error('[SnapRec] Max retries reached on blob retrieval');
+                            console.error('[SnapRec] Max retries reached, giving up');
                             cleanupAfterSuccess();
                         }
-                    }
-                });
+                    });
             }
         };
         chrome.tabs.onUpdated.addListener(listener);
@@ -945,7 +971,7 @@ async function handleRecordingComplete() {
 
 
 
-// Separate listener for upload completion from offscreen document
+// Separate listener for upload completion and audio warnings from offscreen document
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'offscreen_uploadComplete') {
         console.log('[SnapRec] Upload complete signal received from offscreen');
@@ -953,6 +979,33 @@ chrome.runtime.onMessage.addListener((message) => {
     } else if (message.action === 'offscreen_uploadError') {
         console.error('[SnapRec] Upload error reported by offscreen:', message.error);
         finalizeCleanup();
+    } else if (message.action === 'offscreen_audioWarning') {
+        const hints = {
+            mic_permission_denied: 'Microphone permission denied — recording will have no mic audio.',
+            mic_unavailable: 'Microphone could not be accessed — recording will have no mic audio.',
+            system_audio_unavailable:
+                'System audio capture returned no tracks. ' +
+                'On macOS this is a browser limitation for full-screen/window recording. ' +
+                'On Windows, tick "Share audio" in the screen picker to capture system sound.'
+        };
+        console.warn('[SnapRec] Audio warning:', hints[message.warning] || message.warning);
+
+        if (message.warning === 'mic_permission_denied' || message.warning === 'mic_unavailable') {
+            chrome.notifications.create('snaprec-mic-denied', {
+                type: 'basic',
+                iconUrl: '../icons/icon128.png',
+                title: 'Microphone not recording',
+                message: hints[message.warning] + ' Click to open Chrome microphone settings.',
+                priority: 2
+            });
+        }
+    }
+});
+
+chrome.notifications.onClicked.addListener((notificationId) => {
+    if (notificationId === 'snaprec-mic-denied') {
+        chrome.tabs.create({ url: 'chrome://settings/content/microphone' });
+        chrome.notifications.clear('snaprec-mic-denied');
     }
 });
 
