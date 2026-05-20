@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStartTopup, type TopupPackId } from '../hooks/useSubscription';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface TopupModalProps {
     isOpen: boolean;
@@ -15,6 +16,15 @@ const PACKS: Array<{ id: TopupPackId; hours: number; price: string; perHour: str
 const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose }) => {
     const [selected, setSelected] = useState<TopupPackId>('10h');
     const startTopup = useStartTopup();
+    const { showNotification } = useNotification();
+
+    const handleTopup = async () => {
+        try {
+            await startTopup.mutateAsync(selected);
+        } catch (err: any) {
+            showNotification(err?.message || 'Failed to open checkout. Please try again.', 'error');
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -65,14 +75,14 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <button
-                    onClick={() => startTopup.mutate(selected)}
+                    onClick={handleTopup}
                     disabled={startTopup.isPending}
                     className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:opacity-90 transition-opacity shadow-md shadow-primary/20 disabled:opacity-50"
                 >
                     {startTopup.isPending ? 'Opening checkout…' : 'Continue to checkout'}
                 </button>
                 <p className="text-center text-xs text-slate-400 mt-2">
-                    Powered by Stripe · secure card payment
+                    Powered by Paddle · secure card payment
                 </p>
             </div>
         </div>

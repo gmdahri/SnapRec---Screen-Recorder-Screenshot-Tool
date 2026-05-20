@@ -2,22 +2,32 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout, PricingTable, SEO } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import { useSubscription, useStartCheckout } from '../hooks/useSubscription';
+import { useNotification } from '../contexts/NotificationContext';
+import { useSubscription } from '../hooks/useSubscription';
+import { usePaddleCheckout } from '../hooks/usePaddle';
+
+const PRICE_ID_PRO = import.meta.env.VITE_PADDLE_PRICE_ID_PRO_MONTHLY as string | undefined;
 
 const Pricing: React.FC = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
+    const { showNotification } = useNotification();
     const { data: sub } = useSubscription(!!user);
-    const startCheckout = useStartCheckout();
+    const { openCheckout } = usePaddleCheckout();
 
     const isProActive = sub?.plan === 'pro' && sub?.status === 'active';
 
     const handleUpgrade = () => {
+        if (authLoading) return;
         if (!user) {
             navigate('/login?next=/pricing');
             return;
         }
-        startCheckout.mutate({});
+        if (!PRICE_ID_PRO) {
+            showNotification('Pricing not configured (VITE_PADDLE_PRICE_ID_PRO_MONTHLY missing).', 'error');
+            return;
+        }
+        openCheckout(PRICE_ID_PRO);
     };
 
     return (
@@ -40,7 +50,7 @@ const Pricing: React.FC = () => {
                     <PricingTable
                         onSelectPro={handleUpgrade}
                         isProActive={isProActive}
-                        isLoading={startCheckout.isPending}
+                        isLoading={authLoading}
                     />
                     <div className="mt-16 max-w-2xl mx-auto text-slate-500 dark:text-slate-400 space-y-6 text-sm">
                         <div>

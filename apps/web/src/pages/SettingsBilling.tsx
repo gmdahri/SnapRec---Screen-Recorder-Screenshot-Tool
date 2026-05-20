@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { MainLayout, UsageMeter, TopupModal } from '../components';
-import { useSubscription, useOpenBillingPortal, useStartCheckout } from '../hooks/useSubscription';
+import { useSubscription, useOpenBillingPortal } from '../hooks/useSubscription';
+import { usePaddleCheckout } from '../hooks/usePaddle';
+import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
+
+const PRICE_ID_PRO = import.meta.env.VITE_PADDLE_PRICE_ID_PRO_MONTHLY as string | undefined;
 
 const SettingsBilling: React.FC = () => {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
+    const { showNotification } = useNotification();
     const { data: sub, isLoading } = useSubscription();
     const openPortal = useOpenBillingPortal();
-    const startCheckout = useStartCheckout();
     const [showTopup, setShowTopup] = useState(false);
+    const { openCheckout } = usePaddleCheckout();
 
     const isProActive = sub?.plan === 'pro' && (sub?.status === 'active' || sub?.status === 'trialing');
     const isTrialing = sub?.status === 'trialing';
@@ -17,8 +24,65 @@ const SettingsBilling: React.FC = () => {
         ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
         : null;
 
+    const handleCheckout = () => {
+        if (!PRICE_ID_PRO) {
+            showNotification('Pricing not configured (VITE_PADDLE_PRICE_ID_PRO_MONTHLY missing).', 'error');
+            return;
+        }
+        openCheckout(PRICE_ID_PRO);
+    };
+
+    const handlePortal = async () => {
+        try {
+            await openPortal.mutateAsync();
+        } catch (err: any) {
+            showNotification(err?.message || 'Failed to open billing portal. Please try again.', 'error');
+        }
+    };
+
+    const Sidebar = (
+        <aside className="w-72 bg-white dark:bg-background-dark border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 overflow-y-auto">
+            <div className="flex flex-col gap-8">
+                <nav className="flex flex-col gap-1">
+                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                        <span className="material-symbols-outlined">dashboard</span>
+                        <span className="font-semibold text-sm">Dashboard</span>
+                    </NavLink>
+                    <NavLink to="/library" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
+                        <span className="font-semibold text-sm">My Library</span>
+                    </NavLink>
+                    <NavLink to="/settings/billing" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                        <span className="material-symbols-outlined">credit_card</span>
+                        <span className="font-semibold text-sm">Plan & Billing</span>
+                    </NavLink>
+                </nav>
+            </div>
+            <div className="flex flex-col gap-6">
+                <button onClick={() => showNotification('Use the SnapRec extension to start a new recording!', 'info')} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-primary/20">
+                    <span className="material-symbols-outlined text-xl">add_circle</span>
+                    <span>New Recording</span>
+                </button>
+                <nav className="flex flex-col gap-1">
+                    <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                        <span className="material-symbols-outlined">analytics</span>
+                        <span className="font-semibold text-sm">Analytics</span>
+                    </NavLink>
+                    <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                        <span className="material-symbols-outlined">settings</span>
+                        <span className="font-semibold text-sm">Settings</span>
+                    </NavLink>
+                    <button onClick={signOut} className="flex items-center gap-3 px-3 py-2 text-red-500 hover:text-red-600 transition-colors w-full text-left">
+                        <span className="material-symbols-outlined">logout</span>
+                        <span className="font-semibold text-sm">Sign Out</span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+    );
+
     return (
-        <MainLayout>
+        <MainLayout sidebar={Sidebar}>
             <div className="bg-slate-50/50 dark:bg-background-dark/50 min-h-full p-8">
                 <div className="mb-8">
                     <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Billing</h1>
@@ -71,19 +135,18 @@ const SettingsBilling: React.FC = () => {
                         <div className="mt-4 flex gap-3">
                             {isProActive ? (
                                 <button
-                                    onClick={() => openPortal.mutate()}
+                                    onClick={handlePortal}
                                     disabled={openPortal.isPending}
                                     className="px-4 py-2 bg-primary/10 text-primary font-bold text-sm rounded-lg hover:bg-primary/20 disabled:opacity-50"
                                 >
-                                    {openPortal.isPending ? 'Opening…' : 'Manage in Stripe'}
+                                    {openPortal.isPending ? 'Opening…' : 'Manage subscription'}
                                 </button>
                             ) : (
                                 <button
-                                    onClick={() => startCheckout.mutate({})}
-                                    disabled={startCheckout.isPending}
-                                    className="px-4 py-2 bg-primary text-white font-bold text-sm rounded-lg hover:opacity-90 shadow-md shadow-primary/20 disabled:opacity-50"
+                                    onClick={handleCheckout}
+                                    className="px-4 py-2 bg-primary text-white font-bold text-sm rounded-lg hover:opacity-90 shadow-md shadow-primary/20"
                                 >
-                                    {startCheckout.isPending ? 'Opening checkout…' : 'Start free trial'}
+                                    Start free trial
                                 </button>
                             )}
                             <button

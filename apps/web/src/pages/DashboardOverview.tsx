@@ -50,6 +50,14 @@ const DashboardOverview: React.FC = () => {
                         <span className="material-symbols-outlined">analytics</span>
                         <span className="font-semibold text-sm">Analytics</span>
                     </NavLink>
+                    <NavLink to="/settings/billing" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                        <span className="material-symbols-outlined">credit_card</span>
+                        <span className="font-semibold text-sm">Billing</span>
+                    </NavLink>
+                    <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                        <span className="material-symbols-outlined">settings</span>
+                        <span className="font-semibold text-sm">Settings</span>
+                    </NavLink>
                 </nav>
             </div>
         </aside>
