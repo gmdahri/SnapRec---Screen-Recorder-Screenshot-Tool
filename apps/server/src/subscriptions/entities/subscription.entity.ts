@@ -26,11 +26,11 @@ export class Subscription {
 
     @Index()
     @Column({ type: 'varchar', nullable: true })
-    stripeCustomerId: string | null;
+    paddleCustomerId: string | null;
 
     @Index()
     @Column({ type: 'varchar', nullable: true })
-    stripeSubscriptionId: string | null;
+    paddleSubscriptionId: string | null;
 
     @Column({ type: 'enum', enum: ['free', 'pro'], default: 'free' })
     plan: Plan;

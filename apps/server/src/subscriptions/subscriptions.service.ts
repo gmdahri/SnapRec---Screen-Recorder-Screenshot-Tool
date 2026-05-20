@@ -2,25 +2,28 @@ import { Injectable, Logger, BadRequestException, NotFoundException } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Stripe from 'stripe';
+import { Paddle, Environment, EventName } from '@paddle/paddle-node-sdk';
+import type {
+    SubscriptionCreatedNotification,
+    TransactionNotification,
+} from '@paddle/paddle-node-sdk';
 import { Subscription, Plan } from './entities/subscription.entity';
 import { User } from '../users/entities/user.entity';
 
 const PRO_INCLUDED_MINUTES = 20 * 60;
 
-// Top-up packs: minute count is added to subscription.aiMinutesPurchased.
-// These don't reset on cycle renewal, unlike included minutes.
 export const TOPUP_PACKS: Record<string, { minutes: number; priceIdEnv: string; label: string }> = {
-    '5h': { minutes: 5 * 60, priceIdEnv: 'STRIPE_PRICE_TOPUP_5H', label: '5 hours' },
-    '10h': { minutes: 10 * 60, priceIdEnv: 'STRIPE_PRICE_TOPUP_10H', label: '10 hours' },
-    '20h': { minutes: 20 * 60, priceIdEnv: 'STRIPE_PRICE_TOPUP_20H', label: '20 hours' },
+    '5h': { minutes: 5 * 60, priceIdEnv: 'PADDLE_PRICE_TOPUP_5H', label: '5 hours' },
+    '10h': { minutes: 10 * 60, priceIdEnv: 'PADDLE_PRICE_TOPUP_10H', label: '10 hours' },
+    '20h': { minutes: 20 * 60, priceIdEnv: 'PADDLE_PRICE_TOPUP_20H', label: '20 hours' },
 };
 
 @Injectable()
 export class SubscriptionsService {
     private readonly logger = new Logger(SubscriptionsService.name);
-    private readonly stripe: Stripe | null;
+    private readonly paddle: Paddle | null;
     private readonly priceIdPro: string | undefined;
+    private readonly webhookSecret: string | undefined;
     private readonly webBaseUrl: string;
 
     constructor(
@@ -30,21 +33,27 @@ export class SubscriptionsService {
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
     ) {
-        const key = this.configService.get<string>('STRIPE_SECRET_KEY');
-        this.stripe = key ? new Stripe(key, { apiVersion: '2024-12-18.acacia' as any }) : null;
-        this.priceIdPro = this.configService.get<string>('STRIPE_PRICE_ID_PRO_MONTHLY');
+        const apiKey = this.configService.get<string>('PADDLE_API_KEY');
+        const env = this.configService.get<string>('PADDLE_ENV');
+        this.paddle = apiKey
+            ? new Paddle(apiKey, {
+                  environment: env === 'production' ? Environment.production : Environment.sandbox,
+              })
+            : null;
+        this.priceIdPro = this.configService.get<string>('PADDLE_PRICE_ID_PRO_MONTHLY');
+        this.webhookSecret = this.configService.get<string>('PADDLE_WEBHOOK_SECRET');
         this.webBaseUrl =
             this.configService.get<string>('WEB_BASE_URL') || 'https://www.snaprecorder.org';
-        if (!this.stripe) {
-            this.logger.warn('STRIPE_SECRET_KEY not configured — billing endpoints disabled');
+        if (!this.paddle) {
+            this.logger.warn('PADDLE_API_KEY not configured — billing endpoints disabled');
         }
     }
 
-    private requireStripe(): Stripe {
-        if (!this.stripe) {
+    private requirePaddle(): Paddle {
+        if (!this.paddle) {
             throw new BadRequestException('Billing is not configured on this server');
         }
-        return this.stripe;
+        return this.paddle;
     }
 
     async findByUserId(userId: string): Promise<Subscription | null> {
@@ -98,12 +107,10 @@ export class SubscriptionsService {
         };
     }
 
-    /** Total minutes available this cycle = included (resets monthly) + purchased (persistent). */
     private totalAvailableMinutes(sub: Subscription): number {
         return sub.aiMinutesIncluded + sub.aiMinutesPurchased;
     }
 
-    /** Hard cap: returns false if adding the recording's minutes would exceed quota. */
     async hasQuotaFor(userId: string, minutesNeeded: number): Promise<boolean> {
         const sub = await this.findByUserId(userId);
         if (!sub) return false;
@@ -120,9 +127,9 @@ export class SubscriptionsService {
     }
 
     async createCheckoutSession(userId: string, successUrl?: string, cancelUrl?: string) {
-        const stripe = this.requireStripe();
+        const paddle = this.requirePaddle();
         if (!this.priceIdPro) {
-            throw new BadRequestException('STRIPE_PRICE_ID_PRO_MONTHLY not configured');
+            throw new BadRequestException('PADDLE_PRICE_ID_PRO_MONTHLY not configured');
         }
 
         const user = await this.usersRepository.findOne({ where: { id: userId } });
@@ -130,38 +137,30 @@ export class SubscriptionsService {
 
         const sub = await this.getOrCreate(userId);
 
-        // Reuse existing customer if we have one
-        let customerId = sub.stripeCustomerId;
+        // Reuse existing Paddle customer or create one
+        let customerId = sub.paddleCustomerId;
         if (!customerId) {
-            const customer = await stripe.customers.create({
-                email: user.email || undefined,
+            const customer = await paddle.customers.create({
+                email: user.email!,
                 name: user.fullName || undefined,
-                metadata: { userId: user.id },
+                customData: { userId: user.id },
             });
             customerId = customer.id;
-            sub.stripeCustomerId = customerId;
+            sub.paddleCustomerId = customerId;
             await this.subscriptionsRepository.save(sub);
         }
 
-        const session = await stripe.checkout.sessions.create({
-            mode: 'subscription',
-            customer: customerId,
-            line_items: [{ price: this.priceIdPro, quantity: 1 }],
-            success_url: successUrl || `${this.webBaseUrl}/settings/billing?checkout=success`,
-            cancel_url: cancelUrl || `${this.webBaseUrl}/pricing?checkout=cancelled`,
-            metadata: { userId: user.id },
-            subscription_data: {
-                metadata: { userId: user.id },
-                trial_period_days: 7,
-            },
-            payment_method_collection: 'always',
+        const transaction = await paddle.transactions.create({
+            items: [{ priceId: this.priceIdPro, quantity: 1 }],
+            customerId,
+            customData: { userId: user.id },
         });
 
-        return { url: session.url };
+        return { url: transaction.checkout?.url };
     }
 
     async createTopupSession(userId: string, packId: string, successUrl?: string, cancelUrl?: string) {
-        const stripe = this.requireStripe();
+        const paddle = this.requirePaddle();
         const pack = TOPUP_PACKS[packId];
         if (!pack) {
             throw new BadRequestException(`Unknown topup pack: ${packId}`);
@@ -175,145 +174,146 @@ export class SubscriptionsService {
         if (!user) throw new NotFoundException('User not found');
 
         const sub = await this.getOrCreate(userId);
-        let customerId = sub.stripeCustomerId;
+        let customerId = sub.paddleCustomerId;
         if (!customerId) {
-            const customer = await stripe.customers.create({
-                email: user.email || undefined,
+            const customer = await paddle.customers.create({
+                email: user.email!,
                 name: user.fullName || undefined,
-                metadata: { userId: user.id },
+                customData: { userId: user.id },
             });
             customerId = customer.id;
-            sub.stripeCustomerId = customerId;
+            sub.paddleCustomerId = customerId;
             await this.subscriptionsRepository.save(sub);
         }
 
-        const session = await stripe.checkout.sessions.create({
-            mode: 'payment',
-            customer: customerId,
-            line_items: [{ price: priceId, quantity: 1 }],
-            success_url: successUrl || `${this.webBaseUrl}/settings/billing?topup=success`,
-            cancel_url: cancelUrl || `${this.webBaseUrl}/settings/billing?topup=cancelled`,
-            metadata: { userId: user.id, kind: 'topup', packId, minutes: String(pack.minutes) },
+        const transaction = await paddle.transactions.create({
+            items: [{ priceId, quantity: 1 }],
+            customerId,
+            customData: { userId: user.id, kind: 'topup', packId, minutes: String(pack.minutes) },
         });
 
-        return { url: session.url };
+        return { url: transaction.checkout?.url };
     }
 
-    async createPortalSession(userId: string, returnUrl?: string) {
-        const stripe = this.requireStripe();
+    async createPortalSession(userId: string) {
+        const paddle = this.requirePaddle();
         const sub = await this.findByUserId(userId);
-        if (!sub?.stripeCustomerId) {
+        if (!sub?.paddleCustomerId) {
             throw new BadRequestException('No active billing customer for this user');
         }
-        const portal = await stripe.billingPortal.sessions.create({
-            customer: sub.stripeCustomerId,
-            return_url: returnUrl || `${this.webBaseUrl}/settings/billing`,
-        });
-        return { url: portal.url };
+        const subscriptionIds = sub.paddleSubscriptionId ? [sub.paddleSubscriptionId] : [];
+        const session = await paddle.customerPortalSessions.create(
+            sub.paddleCustomerId,
+            subscriptionIds,
+        );
+        return { url: session.urls.general.overview };
     }
 
-    async handleWebhook(rawBody: Buffer, signature: string): Promise<void> {
-        const stripe = this.requireStripe();
-        const secret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
-        if (!secret) {
-            throw new BadRequestException('STRIPE_WEBHOOK_SECRET not configured');
+    async handleWebhook(rawBody: string, signature: string): Promise<void> {
+        const paddle = this.requirePaddle();
+        if (!this.webhookSecret) {
+            throw new BadRequestException('PADDLE_WEBHOOK_SECRET not configured');
         }
 
-        let event: Stripe.Event;
+        let event: any;
         try {
-            event = stripe.webhooks.constructEvent(rawBody, signature, secret);
+            event = await paddle.webhooks.unmarshal(rawBody, this.webhookSecret, signature);
         } catch (err: any) {
-            this.logger.error(`Stripe signature verification failed: ${err.message}`);
+            this.logger.error(`Paddle signature verification failed: ${err.message}`);
             throw new BadRequestException(`Webhook signature failed: ${err.message}`);
         }
 
-        this.logger.log(`Stripe event: ${event.type}`);
+        this.logger.log(`Paddle event: ${event.eventType}`);
 
-        switch (event.type) {
-            case 'checkout.session.completed':
-                await this.onCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        switch (event.eventType) {
+            case EventName.TransactionCompleted:
+                await this.onTransactionCompleted(event.data as TransactionNotification);
                 break;
-            case 'customer.subscription.created':
-            case 'customer.subscription.updated':
-                await this.onSubscriptionUpdated(event.data.object as Stripe.Subscription);
+            case EventName.SubscriptionCreated:
+            case EventName.SubscriptionUpdated:
+            case EventName.SubscriptionActivated:
+            case EventName.SubscriptionTrialing:
+                await this.onSubscriptionUpdated(event.data as SubscriptionCreatedNotification);
                 break;
-            case 'customer.subscription.deleted':
-                await this.onSubscriptionDeleted(event.data.object as Stripe.Subscription);
-                break;
-            case 'invoice.paid':
-                await this.onInvoicePaid(event.data.object as Stripe.Invoice);
-                break;
-            case 'customer.subscription.trial_will_end':
-                this.logger.log(`Trial ending soon for subscription ${(event.data.object as Stripe.Subscription).id}`);
+            case EventName.SubscriptionCanceled:
+                await this.onSubscriptionCanceled(event.data as SubscriptionCreatedNotification);
                 break;
             default:
-                this.logger.debug(`Unhandled event type: ${event.type}`);
+                this.logger.debug(`Unhandled Paddle event: ${event.eventType}`);
         }
     }
 
-    private async onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
-        const userId = session.metadata?.userId;
+    private async onTransactionCompleted(data: TransactionNotification): Promise<void> {
+        const customData = data.customData as Record<string, string> | null;
+        const userId = customData?.userId;
         if (!userId) {
-            this.logger.warn('checkout.session.completed without userId metadata');
+            this.logger.warn('transaction.completed without userId in customData');
             return;
         }
-        const sub = await this.getOrCreate(userId);
-        if (typeof session.customer === 'string') sub.stripeCustomerId = session.customer;
-        if (typeof session.subscription === 'string') sub.stripeSubscriptionId = session.subscription;
 
-        // Top-up: credit purchased minutes (does not reset on cycle renewal)
-        if (session.metadata?.kind === 'topup' && session.mode === 'payment') {
-            const minutes = parseInt(session.metadata.minutes ?? '0', 10);
+        const sub = await this.getOrCreate(userId);
+        if (data.customerId) sub.paddleCustomerId = data.customerId;
+        if (data.subscriptionId) sub.paddleSubscriptionId = data.subscriptionId;
+
+        // Top-up: one-time payment, credit purchased minutes
+        if (customData?.kind === 'topup') {
+            const minutes = parseInt(customData.minutes ?? '0', 10);
             if (minutes > 0) {
                 sub.aiMinutesPurchased += minutes;
                 this.logger.log(`Credited ${minutes} top-up minutes to user ${userId}`);
             }
+            await this.subscriptionsRepository.save(sub);
+            return;
+        }
+
+        // Recurring charge: reset cycle usage and re-grant included minutes
+        if (data.origin === 'subscription_recurring') {
+            sub.aiMinutesUsedThisCycle = 0;
+            sub.aiMinutesIncluded = PRO_INCLUDED_MINUTES;
+            await this.subscriptionsRepository.save(sub);
+            return;
         }
 
         await this.subscriptionsRepository.save(sub);
     }
 
-    private async onSubscriptionUpdated(s: Stripe.Subscription): Promise<void> {
-        const userId = s.metadata?.userId;
+    private async onSubscriptionUpdated(data: SubscriptionCreatedNotification): Promise<void> {
+        const customData = data.customData as Record<string, string> | null;
+        const userId = customData?.userId;
         if (!userId) {
-            this.logger.warn(`subscription event for ${s.id} without userId metadata`);
+            this.logger.warn(`Subscription event for ${data.id} without userId in customData`);
             return;
         }
+
         const sub = await this.getOrCreate(userId);
-        sub.stripeSubscriptionId = s.id;
-        if (typeof s.customer === 'string') sub.stripeCustomerId = s.customer;
-        sub.status = s.status;
-        sub.plan = s.status === 'active' || s.status === 'trialing' ? 'pro' : 'free';
-        if (s.current_period_end) {
-            sub.currentPeriodEnd = new Date(s.current_period_end * 1000);
+        sub.paddleCustomerId = data.customerId;
+        sub.paddleSubscriptionId = data.id;
+        sub.status = data.status;
+        sub.plan = data.status === 'active' || data.status === 'trialing' ? 'pro' : 'free';
+
+        if (data.currentBillingPeriod?.endsAt) {
+            sub.currentPeriodEnd = new Date(data.currentBillingPeriod.endsAt);
         }
-        sub.trialEnd = s.trial_end ? new Date(s.trial_end * 1000) : null;
+
+        // Trial end is on the first subscription item's trialDates
+        const trialDates = data.items?.[0]?.trialDates;
+        sub.trialEnd = trialDates?.endsAt ? new Date(trialDates.endsAt) : null;
+
         if (sub.plan === 'pro' && sub.aiMinutesIncluded === 0) {
             sub.aiMinutesIncluded = PRO_INCLUDED_MINUTES;
         }
+
         await this.subscriptionsRepository.save(sub);
     }
 
-    private async onSubscriptionDeleted(s: Stripe.Subscription): Promise<void> {
-        const userId = s.metadata?.userId;
+    private async onSubscriptionCanceled(data: SubscriptionCreatedNotification): Promise<void> {
+        const customData = data.customData as Record<string, string> | null;
+        const userId = customData?.userId;
         if (!userId) return;
         const sub = await this.findByUserId(userId);
         if (!sub) return;
         sub.plan = 'free';
         sub.status = 'canceled';
-        await this.subscriptionsRepository.save(sub);
-    }
-
-    private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-        const subId = typeof invoice.subscription === 'string' ? invoice.subscription : null;
-        if (!subId) return;
-        const sub = await this.subscriptionsRepository.findOne({
-            where: { stripeSubscriptionId: subId },
-        });
-        if (!sub) return;
-        // Reset cycle usage and re-grant included minutes
-        sub.aiMinutesUsedThisCycle = 0;
-        sub.aiMinutesIncluded = PRO_INCLUDED_MINUTES;
         await this.subscriptionsRepository.save(sub);
     }
 }

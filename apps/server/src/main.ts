@@ -18,14 +18,14 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
-  // Stripe webhook needs the untouched raw body to verify signatures.
-  // Mount the raw parser only on that route; everything else gets the default JSON parser.
+  // Paddle webhook needs the raw body as a string to verify signatures.
+  // Mount the text parser only on that route; everything else gets the default JSON parser.
   app.use(
     '/subscriptions/webhook',
-    bodyParser.raw({
+    bodyParser.text({
       type: 'application/json',
       verify: (req: Request, _res, buf) => {
-        (req as any).rawBody = buf;
+        (req as any).rawBody = buf.toString('utf8');
       },
     }),
   );
@@ -43,14 +43,20 @@ async function bootstrap() {
   const allowedOrigins = configService.get<string>('ALLOWED_ORIGINS');
 
   const origins = allowedOrigins
-    ? allowedOrigins.split(',').map((o) => o.trim())
-    : ['https://www.snaprecorder.org', 'https://snaprecorder.org', 'http://localhost:5173'];
+    ? allowedOrigins.split(',').map((o) => o.trim().replace(/\/$/, ''))
+    : [
+          'https://www.snaprecorder.org',
+          'https://snaprecorder.org',
+          'http://localhost:5173',
+          'https://3c74-2407-aa80-116-f827-6d93-ca66-b3c5-94e.ngrok-free.app',
+          /\.ngrok-free\.app$/,
+      ];
 
   app.enableCors({
     origin: origins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'ngrok-skip-browser-warning'],
   });
   const port = configService.get<number>('PORT', 3001);
 

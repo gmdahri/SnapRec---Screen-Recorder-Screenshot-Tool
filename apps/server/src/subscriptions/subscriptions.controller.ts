@@ -73,13 +73,13 @@ export class SubscriptionsController {
 
     @Post('webhook')
     @HttpCode(200)
-    async webhook(@Req() req: Request, @Headers('stripe-signature') signature: string) {
-        const raw = (req as any).rawBody as Buffer | undefined;
+    async webhook(@Req() req: Request, @Headers('paddle-signature') signature: string) {
+        const raw = (req as any).rawBody as string | undefined;
         if (!raw) {
-            this.logger.error('Stripe webhook received without raw body — check main.ts raw-body wiring');
+            this.logger.error('Paddle webhook received without raw body — check main.ts raw-body wiring');
             throw new BadRequestException('Missing raw body');
         }
-        if (!signature) throw new BadRequestException('Missing stripe-signature header');
+        if (!signature) throw new BadRequestException('Missing paddle-signature header');
         await this.subscriptionsService.handleWebhook(raw, signature);
         return { received: true };
     }
