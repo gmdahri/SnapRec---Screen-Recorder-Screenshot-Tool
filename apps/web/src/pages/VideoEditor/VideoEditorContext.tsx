@@ -21,7 +21,7 @@ import type {
 import { fetchWithAuth, uploadFile } from '../../hooks/useRecordings';
 import { recordVideoSegmentToWebm } from './localVideoTrim';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snaprec-backend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snaprec-489525905608.us-central1.run.app';
 
 export interface VideoProjectDto {
   id: string;
