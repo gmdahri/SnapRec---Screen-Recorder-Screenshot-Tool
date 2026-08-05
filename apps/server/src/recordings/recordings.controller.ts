@@ -12,9 +12,8 @@ import {
     ParseUUIDPipe,
     Logger,
     NotFoundException,
-    StreamableFile,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -66,10 +65,11 @@ export class RecordingsController {
         const end = Date.now();
         this.logger.log(`Found ${recordings.length} recordings in ${end - start}ms`);
 
-        return recordings.map((recording) => ({
+        return Promise.all(recordings.map(async (recording) => ({
             ...recording,
-            fileUrl: `/recordings/stream/${recording.fileUrl}`,
-        }));
+            // Send the browser directly to R2. The API no longer proxies video bytes.
+            fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
+        })));
     }
 
     @Get('status/:fileName')
@@ -82,32 +82,12 @@ export class RecordingsController {
     @Get('stream/:fileName')
     async streamFile(
         @Param('fileName') fileName: string,
-        @Req() req: Request,
-        @Res({ passthrough: true }) res: Response
+        @Res() res: Response,
     ) {
         try {
-            const { stream, contentType, contentLength } = await this.storageService.getDownloadStream(fileName);
-
-            const headers: any = {
-                'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=3600',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            };
-
-            if (req.method === 'OPTIONS') {
-                res.status(200).set(headers).send();
-                return;
-            }
-
-            // Support forceful download via query param
-            const isDownload = (req.query as any).download === 'true';
-            headers['Content-Disposition'] = isDownload
-                ? `attachment; filename="${fileName}"`
-                : `inline; filename="${fileName}"`;
-
-            res.set(headers);
-            return new StreamableFile(stream);
+            // Keep old links working without sending the file through this service.
+            const url = await this.storageService.getDownloadUrl(fileName);
+            return res.redirect(302, url);
         } catch (err) {
             if (err.Code === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) {
                 this.logger.warn(`File ${fileName} not yet available for streaming (NoSuchKey)`);
@@ -130,7 +110,9 @@ export class RecordingsController {
         return {
             ...recording,
             isReady,
-            fileUrl: `/recordings/stream/${recording.fileUrl}`,
+            fileUrl: isReady
+                ? await this.storageService.getDownloadUrl(recording.fileUrl)
+                : recording.fileUrl,
         };
     }
 
