@@ -49,15 +49,50 @@ function VideoEditorInner() {
   );
 }
 
+/** Connects the context to the two presentational modals.
+ *
+ * They take props now rather than reaching into context themselves, so their
+ * copy and button ordering are testable without mounting an editor. This is
+ * the one place that translation happens. */
+function EditorModals() {
+  const {
+    exportModal, setExportModal, projectTitle,
+    unsavedLeaveTarget, cancelUnsavedLeave, confirmUnsavedLeave,
+  } = useVideoEditor();
+
+  return (
+    <>
+      {exportModal === 'progress' && (
+        <ExportModal
+          state={{ kind: 'exporting', pct: 0, frame: 0, frames: 0 }}
+          onCancel={() => setExportModal('closed')}
+          onRetry={() => setExportModal('progress')}
+          onRetryLower={() => setExportModal('settings')}
+          onBack={() => setExportModal('closed')}
+        />
+      )}
+
+      {unsavedLeaveTarget && (
+        <UnsavedChangesModal
+          title={projectTitle}
+          summary="draft edit · saved automatically"
+          onLeave={confirmUnsavedLeave}
+          onStay={cancelUnsavedLeave}
+          onDiscard={confirmUnsavedLeave}
+        />
+      )}
+    </>
+  );
+}
+
 export default function VideoEditorPage() {
   return (
     <VideoEditorProvider>
       <SEO title="Video Editor" description="Edit screen recordings in SnapRec." noIndex />
       <div className="relative">
         <VideoEditorInner />
-        <ExportModal />
+        <EditorModals />
         <ShareModal />
-        <UnsavedChangesModal />
       </div>
     </VideoEditorProvider>
   );
