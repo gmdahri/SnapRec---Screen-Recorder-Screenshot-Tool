@@ -4,122 +4,133 @@
 <head>
   <meta charset="UTF-8">
   <title>SnapRec — Allow Microphone</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bundled, never CDN-loaded. The previous version linked Google Fonts,
+       which MV3's CSP blocks outright — the page had been silently falling
+       back to system-ui. -->
+  <link rel="stylesheet" href="../styles/design-system.css">
   <style>
+    * { box-sizing: border-box; }
+
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       margin: 0;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #f7f5f8 0%, #efeaf6 100%);
-      color: #1a1a1a;
+      padding: 24px;
+      background: var(--sr-surface-panel-light);
+      color: var(--sr-text-primary-on-light);
+      font-family: var(--sr-font-ui);
+      -webkit-font-smoothing: antialiased;
     }
 
-    .card {
-      max-width: 480px;
-      padding: 40px;
-      background: #ffffff;
-      border-radius: 16px;
-      border: 1px solid rgba(123, 37, 244, 0.15);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-      text-align: center;
+    .plate {
+      max-width: 460px;
+      width: 100%;
+      padding: 28px;
+      background: var(--sr-surface-paper);
+      border: 1px solid var(--sr-border-light-soft);
     }
 
-    .icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 16px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #7b25f4 0%, #a855f7 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
+    /* Cyan, not coral: nothing has gone wrong yet. Coral is held back for the
+       denied case and for live capture. */
+    .mark {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      margin-bottom: 18px;
     }
+    .mark span { position: absolute; width: 9px; height: 9px; }
+    .mark .tl { left: 0; top: 0; border-left: 2px solid var(--sr-cyan); border-top: 2px solid var(--sr-cyan); }
+    .mark .br { right: 0; bottom: 0; border-right: 2px solid var(--sr-cyan); border-bottom: 2px solid var(--sr-cyan); }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 22px;
-      font-weight: 700;
+      margin: 0 0 10px;
+      font-size: 21px;
+      font-weight: 600;
+      letter-spacing: -.02em;
     }
 
     p {
-      margin: 0 0 24px;
-      color: #555;
-      line-height: 1.5;
-      font-size: 15px;
+      margin: 0 0 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--sr-text-muted-on-light);
+      max-width: 52ch;
     }
 
     .btn {
-      padding: 12px 24px;
-      background: #7b25f4;
-      color: white;
+      height: var(--sr-h-md);
+      padding: 0 18px;
       border: none;
-      border-radius: 10px;
-      font-size: 15px;
+      border-radius: var(--sr-radius-control);
+      background: var(--sr-cyan);
+      color: var(--sr-cyan-fg);
+      font-family: inherit;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
-      font-family: inherit;
     }
-
-    .btn:hover {
-      background: #5e16c0;
-    }
+    .btn:hover { background: var(--sr-cyan-hover); }
+    .btn:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 2px; }
 
     .status {
-      margin-top: 16px;
-      font-size: 14px;
-      min-height: 20px;
+      margin-top: 14px;
+      font-family: var(--sr-font-mono);
+      font-size: 11.5px;
+      color: var(--sr-text-faint-on-light);
+      min-height: 16px;
     }
-
-    .status.success {
-      color: #1b8b3a;
-    }
-
-    .status.error {
-      color: #b71c1c;
-    }
+    .status[data-state="blocked"] { color: var(--sr-coral-hover); }
+    .status[data-state="granted"] { color: var(--sr-green); }
 
     .help {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid #ece7f4;
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--sr-border-light-soft);
       font-size: 13px;
-      color: #666;
-      text-align: left;
-      line-height: 1.6;
+      line-height: 1.7;
+      color: var(--sr-text-muted-on-light);
     }
-
-    .help strong {
-      color: #1a1a1a;
+    .help h2 {
+      margin: 0 0 8px;
+      font-family: var(--sr-font-mono);
+      font-size: 10px;
+      letter-spacing: .12em;
+      font-weight: 400;
+      color: var(--sr-text-faint-on-light);
+      text-transform: uppercase;
     }
+    .help ol { margin: 0; padding-left: 18px; }
+    .help strong { color: var(--sr-text-primary-on-light); font-weight: 600; }
   </style>
 </head>
 
 <body>
-  <div class="card">
-    <div class="icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" stroke-width="2" />
-        <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" />
-      </svg>
-    </div>
+  <main class="plate">
+    <div class="mark" aria-hidden="true"><span class="tl"></span><span class="br"></span></div>
+
+    <!-- What happens, what still works, what to do next. No apology, no blame,
+         and no mention of permission APIs. -->
     <h1>Allow microphone access</h1>
-    <p>SnapRec needs your microphone to capture your voice during recordings. Click the button below to grant permission.</p>
+    <p>
+      Chrome asks once. Allow it and your recordings keep their narration —
+      skip it and screen and tab audio still record perfectly well.
+    </p>
+
     <button class="btn" id="allowBtn">Allow microphone</button>
-    <div class="status" id="status"></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
 
     <div class="help">
-      <strong>If the prompt doesn't appear:</strong><br>
-      1. Look for a microphone icon <span style="white-space:nowrap;">🎤</span> in the address bar.<br>
-      2. Click it and choose "Always allow".<br>
-      3. On macOS, also check <strong>System Settings → Privacy &amp; Security → Microphone</strong> and confirm Google Chrome is enabled. Quit and reopen Chrome if you just changed it.
+      <h2>If the prompt doesn't appear</h2>
+      <ol>
+        <li>Look for the microphone icon in the address bar and choose <strong>Always allow</strong>.</li>
+        <li>On macOS, open <strong>System Settings → Privacy &amp; Security → Microphone</strong> and confirm Chrome is enabled.</li>
+        <li>If you just changed that setting, quit and reopen Chrome.</li>
+      </ol>
     </div>
-  </div>
+  </main>
+
   <script src="permission.js"></script>
 </body>
 
