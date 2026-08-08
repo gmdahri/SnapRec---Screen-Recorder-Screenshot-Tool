@@ -32,8 +32,11 @@ export class Recording {
     /** Who made this while signed out. Lets a claim be scoped to recordings
      * this guest actually made, rather than to every recording nobody owns.
      * Null for anything uploaded signed-in, and for rows predating the column. */
+    // `type` is explicit because the property is `string | null`, which
+    // reflects as Object — TypeORM cannot infer a column type from a union and
+    // fails to build metadata at all.
     @Index()
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     guestId: string | null;
 
     /** Defaults true: every recording uploaded before this column existed was
