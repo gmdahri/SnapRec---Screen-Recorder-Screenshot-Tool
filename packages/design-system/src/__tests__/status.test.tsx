@@ -68,26 +68,47 @@ describe('StatusBadge', () => {
 });
 
 describe('PathSpine', () => {
-  it('names all four nodes', () => {
-    render(<PathSpine reached={1} />);
+  it('names each node in words as well as treatment', () => {
+    render(<PathSpine current={1} />);
     for (const node of PATH_NODES) {
-      expect(screen.getByText(new RegExp(node))).toBeInTheDocument();
+      expect(screen.getByText(node)).toBeInTheDocument();
     }
   });
 
-  it('marks reached nodes complete and leaves the rest hollow', () => {
-    render(<PathSpine reached={2} />);
-    expect(screen.getAllByTestId('node-complete')).toHaveLength(2);
-    expect(screen.getAllByTestId('node-pending')).toHaveLength(2);
+  it('fills completed nodes in green — the only place green appears', () => {
+    render(<PathSpine current={2} state="normal" />);
+    const done = screen.getAllByTestId('spine-node').slice(0, 2);
+    for (const n of done) expect(n.style.background).toBe('var(--sr-green)');
   });
 
-  it('turns the bar coral when the path has failed', () => {
-    render(<PathSpine reached={1} state="failed" />);
-    expect(screen.getByTestId('spine-fill')).toHaveStyle({ background: 'var(--sr-coral-text)' });
+  it('leaves nodes not yet entered hollow', () => {
+    render(<PathSpine current={2} state="normal" />);
+    const pending = screen.getAllByTestId('spine-node').slice(3);
+    for (const n of pending) expect(n.style.background).toBe('transparent');
   });
 
-  it('uses no error colouring when merely offline', () => {
-    render(<PathSpine reached={1} state="offline" />);
-    expect(screen.getByTestId('spine-fill')).not.toHaveStyle({ background: 'var(--sr-coral-text)' });
+  it('draws a tick at the break point when the upload failed', () => {
+    render(<PathSpine current={1} state="failed" breakAt={62} />);
+    const tick = screen.getByTestId('spine-break');
+    expect(tick).toHaveStyle({ left: '62%' });
+    expect(tick.style.background).toBe('var(--sr-coral-text)');
+  });
+
+  it('draws offline as dashed grey, never coral', () => {
+    render(<PathSpine current={1} state="offline" />);
+    const seg = screen.getByTestId('spine-segment-1');
+    expect(seg.style.backgroundImage).toContain('repeating-linear-gradient');
+    expect(seg.style.background).not.toContain('coral');
+  });
+
+  it('is a progressbar with a live value', () => {
+    render(<PathSpine current={1} state="normal" progress={62} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '62');
+  });
+
+  it('says stopped in its accessible value when the path failed', () => {
+    render(<PathSpine current={1} state="failed" breakAt={62} />);
+    expect(screen.getByRole('progressbar'))
+      .toHaveAttribute('aria-valuetext', 'uploading — stopped');
   });
 });
