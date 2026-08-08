@@ -29,6 +29,17 @@ export class Recording {
     @Column({ nullable: true })
     location: string;
 
+    /** Defaults true: every recording uploaded before this column existed was
+     * reachable by anyone holding the link, and backfilling false would
+     * silently revoke every link already in circulation. */
+    @Column({ type: 'boolean', default: true })
+    isPublic: boolean;
+
+    /** Set when the owner turns a link OFF. Distinct from never-public,
+     * because the UI has to offer turning it back on. */
+    @Column({ type: 'timestamptz', nullable: true })
+    sharingDisabledAt: Date | null;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 
