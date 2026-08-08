@@ -1,5 +1,6 @@
 // SnapRec Background Service Worker
 importScripts('config.js');
+importScripts('queue.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
@@ -1075,4 +1076,87 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     } catch (error) {
         console.warn('[SnapRec] Could not inject overlay on tab update (likely restricted page):', error.message);
     }
+});
+
+
+/* ==========================================================================
+ * Offline upload queue
+ *
+ * A capture that cannot upload right now is queued, not failed. The promise
+ * this keeps is "closing the window does not stop the upload" — which is why
+ * the queue lives in the service worker and is persisted, not held in the
+ * popup.
+ * ======================================================================== */
+
+const QUEUE_KEY = 'snaprecUploadQueue';
+const DRAIN_ALARM = 'snaprec-drain-queue';
+const RETENTION_MS = 86_400_000; // 24h, for completed items only
+
+async function readQueue() {
+  const { [QUEUE_KEY]: q = [] } = await chrome.storage.local.get(QUEUE_KEY);
+  return q;
+}
+
+async function writeQueue(q) {
+  await chrome.storage.local.set({ [QUEUE_KEY]: q });
+}
+
+async function queueCapture(item) {
+  await writeQueue(SnapRecQueue.enqueue(await readQueue(), item));
+  chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0.5 });
+}
+
+/** Best-effort notify: the popup is usually closed, and that is fine. */
+function notifyPopup(message) {
+  chrome.runtime.sendMessage(message).catch(() => {});
+}
+
+async function drainQueue() {
+  let q = SnapRecQueue.prune(await readQueue(), Date.now(), RETENTION_MS);
+
+  const next = SnapRecQueue.nextPending(q);
+  if (!next) {
+    await writeQueue(q);
+    return;
+  }
+
+  if (!navigator.onLine) {
+    await writeQueue(q);
+    chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 1 });
+    return;
+  }
+
+  q = SnapRecQueue.markUploading(q, next.id, next.offsetPct);
+  await writeQueue(q);
+
+  try {
+    const url = await uploadQueuedCapture(next, (pct, bytes) =>
+      notifyPopup({ action: 'uploadProgress', id: next.id, pct, bytes }));
+
+    await writeQueue(SnapRecQueue.markDone(await readQueue(), next.id, url));
+    notifyPopup({ action: 'linkReady', id: next.id, url });
+
+    // Keep draining while there is work; the short delay yields to other tasks.
+    chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0.05 });
+  } catch (err) {
+    const failed = SnapRecQueue.markFailed(
+      await readQueue(), next.id, String(err), next.offsetPct);
+    await writeQueue(failed);
+
+    const { attempts } = failed.find((i) => i.id === next.id);
+    notifyPopup({
+      action: 'uploadFailed', id: next.id, reason: String(err), at: next.offsetPct,
+    });
+    chrome.alarms.create(DRAIN_ALARM, {
+      delayInMinutes: SnapRecQueue.backoffMs(attempts) / 60_000,
+    });
+  }
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === DRAIN_ALARM) drainQueue();
+});
+
+self.addEventListener('online', () => {
+  chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0 });
 });
