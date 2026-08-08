@@ -1,3 +1,131 @@
+/* SnapRec — the plate, for MV3.
+ *
+ * A VERBATIM COPY of packages/design-system/src/tokens.css. The extension has
+ * no build step, so it cannot import the package — but drift between the two
+ * files is a real bug, so __tests__/tokens.test.js compares them value by
+ * value and fails on any difference.
+ *
+ * To change a token: change it in the package, then copy the file here.
+ * Never edit this section alone.
+ * ===================================================================== */
+
+/* SnapRec — the plate.
+ * Single source of truth. Primitives read these; nothing hardcodes hex.
+ * Values are normative, from the Plate Prototype's "Shared, not re-decided" panel.
+ */
+:root {
+  /* Surfaces — dark (capture) */
+  --sr-surface-carbon: #0C1011;
+  --sr-surface-well: #040708;
+  --sr-surface-panel-dark: #14191B;
+  --sr-surface-panel-dark-alt: #101416;
+  /* Scrim for stamps laid over media — the well at 80%. */
+  --sr-scrim-dark: rgba(4, 7, 8, .8);
+
+  /* Surfaces — light (management) */
+  --sr-surface-paper: #FAFBFB;
+  --sr-surface-panel-light: #EEF1F1;
+
+  /* Borders */
+  --sr-border-dark: #2A3234;
+  --sr-border-dark-soft: #22292B;
+  --sr-border-dark-strong: #3A4245;
+  --sr-border-light: #C7CFD0;
+  --sr-border-light-soft: #DCE1E2;
+
+  /* Text on dark */
+  --sr-text-primary-on-dark: #F3F6F6;
+  --sr-text-secondary-on-dark: #C1CACC;
+  --sr-text-muted-on-dark: #9BA5A8;
+  --sr-text-faint-on-dark: #8D989B;
+
+  /* Text on light.
+   * faint is #656E71, NOT the prototype's #8D989B. #8D989B measures 2.86:1
+   * on paper and fails AA outright. The prototype's next-darkest grey,
+   * #6B7477, clears paper at 4.62:1 but only reaches 4.21:1 on the panel —
+   * so faint is darkened once more to clear BOTH light surfaces:
+   * 5.04:1 on paper, 4.60:1 on panel. */
+  --sr-text-primary-on-light: #0C1011;
+  --sr-text-secondary-on-light: #2B3234;
+  --sr-text-muted-on-light: #4B5457;
+  --sr-text-faint-on-light: #656E71;
+
+  /* Cyan — focus, selection, sharing */
+  --sr-cyan: #06A6C0;
+  --sr-cyan-hover: #0FBBD6;
+  --sr-cyan-fg: #03252B;
+  --sr-cyan-on-light: #0A7F94;
+  --sr-cyan-tint: #DFF4F8;
+  --sr-focus-ring: 0 0 0 3px rgba(6, 166, 192, .18);
+
+  /* Coral — live capture and needs-a-response ONLY */
+  --sr-coral-text: #D8331F;
+  --sr-coral-text-fg: #FFFFFF;
+  --sr-coral-mark: #FF3B2E;
+  --sr-coral-hover: #B82A18;
+  --sr-coral-on-dark: #FF7A6E;
+
+  /* Completion */
+  --sr-green: #1F9D62;
+
+  /* Control heights.
+   * P0 shipped four. The standalone prototypes need two more: 32px for the web
+   * app's top-bar controls and inline row actions, 36px for the extension's
+   * option rows (fixed so the panel holds at 125% browser zoom). These six are
+   * the complete set — no others. */
+  --sr-h-2xs: 32px;
+  --sr-h-xs: 30px;
+  --sr-h-sm: 34px;
+  --sr-h-md: 40px;
+  --sr-h-lg: 46px;
+  --sr-h-row: 36px;
+
+  /* Radius — 0 on media and rails, 2 on controls */
+  --sr-radius-none: 0px;
+  --sr-radius-control: 2px;
+
+  /* Motion */
+  --sr-dur-fast: 120ms;
+  --sr-dur-mid: 180ms;
+  --sr-dur-slow: 220ms;
+  --sr-ease: cubic-bezier(.2, .8, .2, 1);
+
+  /* Type */
+  --sr-font-ui: 'Schibsted Grotesk Variable', system-ui, sans-serif;
+  --sr-font-mono: 'Azeret Mono Variable', ui-monospace, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sr-dur-fast: 0ms;
+    --sr-dur-mid: 0ms;
+    --sr-dur-slow: 0ms;
+  }
+}
+
+/* Bundled, never CDN-loaded: MV3 CSP blocks remote styles and scripts. */
+@font-face {
+  font-family: 'Schibsted Grotesk Variable';
+  src: url('../fonts/schibsted-grotesk-variable.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Azeret Mono Variable';
+  src: url('../fonts/azeret-mono-variable.woff2') format('woff2-variations');
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+/* =====================================================================
+ * DEPRECATED — the pre-plate purple/pink glassmorphism system.
+ *
+ * Still here only because popup/popup.css has not been rewritten yet (P2
+ * Task 4). Delete this entire section, and the --accent-*/--bg-*/--text-*
+ * tokens below, the moment popup.css stops referencing them. Nothing new
+ * may consume these.
+ * ===================================================================== */
+
 /* SnapRec Design System
  * Cohesive styling across all extension pages
  * Theme: Dark Glassmorphism with Purple/Pink accents

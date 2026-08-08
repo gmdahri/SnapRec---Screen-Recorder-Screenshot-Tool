@@ -1,9 +1,15 @@
 {
-    "name": "@snaprec/extension",
-    "version": "1.3.3",
-    "description": "SnapRec Chrome Extension",
-    "private": true,
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    }
+  "name": "@snaprec/extension",
+  "version": "1.3.3",
+  "description": "SnapRec Chrome Extension",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "vitest": "^3.2.7"
+  }
 }
