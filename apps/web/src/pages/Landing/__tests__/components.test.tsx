@@ -5,7 +5,7 @@ import { ProductDemo } from '../ProductDemo';
 import { ComparisonTable } from '../ComparisonTable';
 import { Faq } from '../Faq';
 import { MobileHero } from '../MobileHero';
-import { COMPARISON, FAQS, MOBILE_COMPARISON } from '../copy';
+import { COMPARISON, DEMO_STEPS, FAQS, MOBILE_COMPARISON } from '../copy';
 
 describe('the product demo (M1)', () => {
   it('opens on the real product, not an empty hero', () => {
@@ -13,24 +13,33 @@ describe('the product demo (M1)', () => {
     expect(screen.getByRole('tab', { selected: true })).toHaveTextContent('Capture');
   });
 
+  it('carries each step body in the rail, so it reads without clicking', () => {
+    render(<ProductDemo />);
+    // The rail is not top tabs: every step shows its explanation at once, and
+    // clicking only changes what the stage shows.
+    for (const step of DEMO_STEPS) {
+      expect(screen.getByText(step.body)).toBeInTheDocument();
+    }
+  });
+
   it('switches step on click', async () => {
     render(<ProductDemo />);
-    await userEvent.click(screen.getByRole('tab', { name: 'Refine' }));
-    expect(screen.getByRole('tab', { name: 'Refine' })).toHaveAttribute('aria-selected', 'true');
+    await userEvent.click(screen.getByRole('tab', { name: /Refine/ }));
+    expect(screen.getByRole('tab', { name: /Refine/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('is reachable by keyboard as a tablist with roving focus', async () => {
     render(<ProductDemo />);
-    screen.getByRole('tab', { name: 'Capture' }).focus();
+    screen.getByRole('tab', { name: /Capture/ }).focus();
     await userEvent.keyboard('{ArrowRight}');
-    expect(screen.getByRole('tab', { name: 'Refine' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /Refine/ })).toHaveFocus();
   });
 
   it('wraps around at the end', async () => {
     render(<ProductDemo />);
-    screen.getByRole('tab', { name: 'Capture' }).focus();
+    screen.getByRole('tab', { name: /Capture/ }).focus();
     await userEvent.keyboard('{ArrowLeft}');
-    expect(screen.getByRole('tab', { name: 'Share' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /Share/ })).toHaveFocus();
   });
 });
 

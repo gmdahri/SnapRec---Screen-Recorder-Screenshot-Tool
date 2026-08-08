@@ -1,50 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { LandingNavbar, LandingFooter, SEO } from '../components';
+import { Icon } from '@iconify/react';
+import { LandingFooter, SEO } from '../components';
+import { LandingNav } from './Landing/LandingNav';
+import { HeroMedia } from './Landing/HeroMedia';
 import { ProductDemo } from './Landing/ProductDemo';
 import { ComparisonTable } from './Landing/ComparisonTable';
 import { Faq } from './Landing/Faq';
 import { COMPARISON } from './Landing/copy';
 
-const YT_ID = 'tEY5kA97Zq8';
-
-function YoutubeFacade() {
-    const [active, setActive] = useState(false);
-    if (active) {
-        return (
-            <iframe
-                src={`https://www.youtube.com/embed/${YT_ID}?start=2&autoplay=1`}
-                title="How to use SnapRec - Screen recorder & screenshot tool"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-            />
-        );
-    }
-    return (
-        <button
-            onClick={() => setActive(true)}
-            className="absolute inset-0 w-full h-full group cursor-pointer"
-            aria-label="Play demo video"
-        >
-            <img
-                src={`https://img.youtube.com/vi/${YT_ID}/maxresdefault.jpg`}
-                alt="SnapRec demo video — screen recorder and screenshot tool"
-                className="w-full h-full object-cover"
-                loading="lazy"
-            />
-            <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                <span className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-white/95 rounded-full shadow-2xl group-hover:scale-110 transition-transform duration-200">
-                    <svg className="w-7 h-7 md:w-8 md:h-8 text-red-600 ml-1" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                </span>
-            </span>
-        </button>
-    );
-}
-
-// ─── Data ────────────────────────────────────────────────────────────────────
+const CHROME_STORE =
+    'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg';
 
 /* The FAQ set below is the LIVE one and feeds FAQPage structured data. It is
  * deliberately NOT swapped for Landing/copy.ts's set: changing it changes what
@@ -177,7 +143,7 @@ function ModeGroup({ title, modes }: { title: string; modes: readonly (readonly 
 
 const Landing: React.FC = () => {
     return (
-        <div className="min-h-screen bg-white text-[var(--sr-text-primary-on-light)] font-display antialiased">
+        <div className="min-h-screen bg-[var(--sr-surface-panel-light)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
             <SEO
                 url="/"
                 title="Free Chrome Screen Recorder — No Watermarks, 4K"
@@ -185,63 +151,81 @@ const Landing: React.FC = () => {
                 keywords="free screen recorder, chrome screen recorder, screen recorder chrome extension, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, loom alternative free, loom alternative, screencastify alternative, screen recorder without watermark, record screen and audio chrome, tab recorder chrome, webcam screen recorder, screen recorder for teachers, tutorial screen recorder, how to record screen chrome, screen recorder microsoft edge, brave browser screen recorder, bug recording tool, full page screenshot, screenshot tool chrome, screen capture chrome, auto zoom screen recorder, free screen capture tool"
                 jsonLd={jsonLd}
             />
-            <LandingNavbar />
+            <LandingNav />
 
             <main>
                 {/* ── Hero: promise left, real product right ───────────── */}
-                <section className="pt-32 pb-20 px-6 lg:px-10">
-                    <div className="max-w-[1180px] mx-auto grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-14 items-center">
-                        <div className="flex flex-col gap-6">
-                            <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--sr-text-faint-on-light)]">
+                <section className="pt-14 pb-16 px-10">
+                    <div className="max-w-[1320px] mx-auto grid lg:grid-cols-[440px_minmax(0,1fr)] gap-11 items-start">
+                        <div className="flex flex-col gap-[18px]">
+                            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--sr-cyan-on-light)]">
                                 screen recorder &amp; screenshot tool
                             </span>
 
-                            <h1 className="text-[clamp(2.5rem,5vw,3.75rem)] font-bold leading-[1.04] tracking-[-0.04em]">
+                            <h1 className="text-[clamp(2.25rem,4.4vw,2.75rem)] font-bold leading-[1.06] tracking-[-0.035em]">
                                 Capture it.<br />Make it clear.<br />Share it.
                             </h1>
 
-                            <p className="text-[15.5px] leading-[1.65] text-[var(--sr-text-muted-on-light)] max-w-[52ch]">
+                            <p className="text-[15.5px] leading-[1.65] text-[var(--sr-text-muted-on-light)] max-w-[42ch]">
                                 Record your screen or grab a screenshot, mark up what matters, and
                                 send a link. Free, no watermark, and it works before you make an
                                 account.
                             </p>
 
                             {/* One CTA, twice — here and at the foot. Nothing between. */}
-                            <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex flex-wrap gap-2.5">
                                 <a
-                                    href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg"
+                                    href={CHROME_STORE}
                                     target="_blank"
                                     rel="noopener"
-                                    className="h-[46px] px-6 inline-flex items-center bg-[var(--sr-text-primary-on-light)] text-white text-[15px] font-semibold rounded-[2px] hover:bg-[var(--sr-text-secondary-on-light)] transition-colors"
+                                    className="h-[46px] px-5 inline-flex items-center gap-2.5 bg-[var(--sr-text-primary-on-light)] text-white text-[15px] font-semibold rounded-[2px] hover:bg-[var(--sr-text-secondary-on-light)] transition-colors"
                                 >
+                                    <Icon icon="ant-design:chrome-outlined" width={17} aria-hidden="true" />
                                     Add to Chrome — free
                                 </a>
                                 <a
                                     href="#how"
-                                    className="h-[46px] px-5 inline-flex items-center border border-[var(--sr-border-light)] text-[15px] rounded-[2px] hover:border-[var(--sr-cyan)] hover:text-[var(--sr-cyan-on-light)] transition-colors"
+                                    className="h-[46px] px-4 inline-flex items-center gap-2 border border-[var(--sr-border-light)] bg-[var(--sr-surface-paper)] text-[15px] rounded-[2px] hover:border-[var(--sr-cyan)] hover:text-[var(--sr-cyan-on-light)] transition-colors"
                                 >
+                                    <Icon icon="ant-design:play-circle-outlined" width={16} aria-hidden="true" />
                                     Watch how it works
                                 </a>
                             </div>
 
-                            <span className="font-mono text-[11px] text-[var(--sr-text-faint-on-light)]">
-                                works without an account
-                            </span>
+                            {/* Green is otherwise reserved for completed path nodes; these
+                                three ticks are the one marketing exception, and they state
+                                the objections rather than answering unasked questions. */}
+                            <div className="flex flex-wrap gap-x-[18px] gap-y-2 font-mono text-[10.5px] text-[var(--sr-text-faint-on-light)]">
+                                {['no watermark', 'no recording limit', 'works without an account'].map((claim) => (
+                                    <span key={claim} className="inline-flex items-center gap-1.5">
+                                        <Icon
+                                            icon="ant-design:check-outlined"
+                                            width={11}
+                                            className="text-[var(--sr-green)]"
+                                            aria-hidden="true"
+                                        />
+                                        {claim}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* The real product, not a stock mockup. */}
-                        <div className="lg:pl-4">
-                            <YoutubeFacade />
-                        </div>
+                        <HeroMedia />
                     </div>
                 </section>
 
                 {/* ── How it works ─────────────────────────────────────── */}
-                <section id="how" className="py-20 px-6 lg:px-10 bg-[var(--sr-surface-panel-light)]">
-                    <div className="max-w-[1180px] mx-auto flex flex-col gap-10">
-                        <h2 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold tracking-[-0.03em]">
-                            How it works
-                        </h2>
+                <section id="how" className="pb-20 px-10">
+                    <div className="max-w-[1320px] mx-auto flex flex-col gap-3.5">
+                        <div className="flex items-center gap-3.5">
+                            <h2 className="font-mono text-[10px] tracking-[0.14em] text-[var(--sr-text-faint-on-light)] font-normal">
+                                How it works
+                            </h2>
+                            <span className="flex-1 h-px bg-[var(--sr-border-light-soft)]" />
+                            <span className="font-mono text-[10px] text-[var(--sr-text-faint-on-light)]">
+                                click a step
+                            </span>
+                        </div>
                         <ProductDemo />
                     </div>
                 </section>
@@ -285,7 +269,7 @@ const Landing: React.FC = () => {
                             you want a link.
                         </p>
                         <a
-                            href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg"
+                            href={CHROME_STORE}
                             target="_blank"
                             rel="noopener"
                             className="h-[46px] px-6 inline-flex items-center bg-[var(--sr-text-primary-on-light)] text-white text-[15px] font-semibold rounded-[2px] hover:bg-[var(--sr-text-secondary-on-light)] transition-colors"
