@@ -5,7 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
+import Library from './pages/Library';
 import Home from './pages/Home';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
@@ -62,7 +62,7 @@ function App() {
                 } />
                 <Route path="/library" element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <Library />
                   </ProtectedRoute>
                 } />
                 <Route path="/analytics" element={
