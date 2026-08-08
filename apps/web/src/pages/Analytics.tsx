@@ -1,144 +1,175 @@
-import React, { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ActivityRow } from '@snaprec/design-system';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, type Recording } from '../hooks/useRecordings';
-import { MainLayout } from '../components';
-import { parseUTCDate } from '../lib/dateUtils';
+import { AppShell, SEO } from '../components';
+import { needsAttention } from '../lib/captureAdapter';
+import { ViewsChart, type ViewsDatum } from './Analytics/ViewsChart';
+import { AnalyticsEmpty } from './Analytics/AnalyticsEmpty';
 
-const Analytics: React.FC = () => {
-    const { user, loading: authLoading, signOut } = useAuth();
-    const { showNotification } = useNotification();
+const DAYS = 30;
+const DAY_MS = 86_400_000;
 
-    const { data: recordings = [], isLoading, isError, error } = useRecordings(!!user, authLoading);
+function initialsOf(name: string | undefined, email: string | undefined): string {
+  const source = name?.trim() || email?.split('@')[0] || 'You';
+  const parts = source.split(/[\s.]+/).filter(Boolean);
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : source.slice(0, 2)).toUpperCase();
+}
 
-    // Show error notification when query fails
-    useEffect(() => {
-        if (isError && error) {
-            showNotification(error.message || 'Failed to load recordings', 'error');
-        }
-    }, [isError, error, showNotification]);
+/** Views are only known in total, not per day — the server has no time series.
+ * Rather than inventing a curve, the chart shows each capture's views on the
+ * day it was created, which is a real distribution even if it is not a trend.
+ * When the server grows a views-by-day endpoint, this is the only thing to
+ * change. */
+function buildSeries(recordings: Recording[], now: number): ViewsDatum[] {
+  const buckets = new Map<string, number>();
 
-    const videoCount = recordings.filter((r: Recording) => r.type === 'video').length;
-    const screenshotCount = recordings.filter((r: Recording) => r.type === 'screenshot').length;
+  for (let i = DAYS - 1; i >= 0; i -= 1) {
+    const date = new Date(now - i * DAY_MS);
+    buckets.set(date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), 0);
+  }
 
-    // Group by date for activity chart
-    const activityByDay = recordings.reduce((acc: Record<string, number>, r: Recording) => {
-        const date = parseUTCDate(r.createdAt).toLocaleDateString();
-        acc[date] = (acc[date] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
+  for (const r of recordings) {
+    const created = Date.parse(r.createdAt);
+    if (now - created > DAYS * DAY_MS) continue;
+    const label = new Date(created).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    if (buckets.has(label)) buckets.set(label, (buckets.get(label) ?? 0) + r.views);
+  }
 
-    const Sidebar = (
-        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 overflow-y-auto">
-            <div className="flex flex-col gap-8">
-                <nav className="flex flex-col gap-1">
-                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <span className="material-symbols-outlined">dashboard</span>
-                        <span className="font-semibold text-sm">Dashboard</span>
-                    </NavLink>
-                    <NavLink to="/library" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
-                        <span className="font-semibold text-sm">My Library</span>
-                    </NavLink>
-                </nav>
+  return [...buckets].map(([label, views]) => ({ label, views }));
+}
+
+export default function Analytics() {
+  const { user, loading: authLoading } = useAuth();
+  const { showNotification } = useNotification();
+  const navigate = useNavigate();
+
+  const { data: recordings = [], isError, error } = useRecordings(!!user, authLoading);
+
+  useEffect(() => {
+    if (isError && error) showNotification(error.message || 'Failed to load analytics', 'error');
+  }, [isError, error, showNotification]);
+
+  const shared = useMemo(
+    () => recordings.filter((r: Recording) => r.views > 0 || r.comments.length > 0),
+    [recordings],
+  );
+
+  const series = useMemo(() => buildSeries(recordings, Date.now()), [recordings]);
+
+  const awaiting = useMemo(
+    () => recordings.filter((r: Recording) => needsAttention(r, user?.id)),
+    [recordings, user?.id],
+  );
+
+  const top = useMemo(
+    () => [...shared].sort((a, b) => b.views - a.views).slice(0, 5),
+    [shared],
+  );
+
+  const shell = (children: React.ReactNode) => (
+    <AppShell
+      title="Analytics"
+      meta="last 30 days"
+      user={{
+        initials: initialsOf(user?.user_metadata?.full_name, user?.email),
+        name: user?.user_metadata?.full_name || user?.email || 'Your account',
+      }}
+      unreadActivity={awaiting.length}
+      onSearch={q => navigate(`/library?q=${encodeURIComponent(q)}`)}
+    >
+      <SEO title="Analytics — SnapRec" description="Who is watching, and what needs a reply." noIndex />
+      {children}
+    </AppShell>
+  );
+
+  if (shared.length === 0) {
+    return shell(<AnalyticsEmpty onGoToLibrary={() => navigate('/library')} />);
+  }
+
+  return shell(
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h2 style={sectionHeading}>Is anyone watching?</h2>
+        <ViewsChart data={series} />
+      </section>
+
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <h2 style={sectionHeading}>What needs a reply?</h2>
+        {awaiting.length === 0 ? (
+          <p style={quiet}>Nothing is waiting on you.</p>
+        ) : awaiting.slice(0, 6).map((r: Recording) => (
+          <ActivityRow
+            key={r.id}
+            actor={r.comments.at(-1)?.user?.fullName ?? 'Someone'}
+            event={<>commented on <strong>{r.title}</strong></>}
+            meta={new Date(r.comments.at(-1)?.createdAt ?? r.createdAt).toLocaleDateString()}
+            needsReply
+            action={{ label: 'Open and reply', onSelect: () => navigate(`/v/${r.id}`) }}
+          />
+        ))}
+      </section>
+
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <h2 style={sectionHeading}>
+          Which captures are doing the work?
+          <span style={{
+            marginLeft: 8, fontFamily: 'var(--sr-font-mono)', fontSize: 10,
+            fontWeight: 400, color: 'var(--sr-text-faint-on-light)',
+          }}>top {top.length} of {shared.length}</span>
+        </h2>
+
+        <div role="table" aria-label="Top captures">
+          <div role="row" style={{ ...row, color: 'var(--sr-text-faint-on-light)' }}>
+            <span role="columnheader">Capture</span>
+            <span role="columnheader">Views</span>
+            <span role="columnheader">Comments</span>
+            <span role="columnheader">Reactions</span>
+          </div>
+          {top.map((r: Recording) => (
+            <div key={r.id} role="row" style={row}>
+              <span role="cell" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {r.title}
+              </span>
+              <span role="cell" style={mono}>{r.views}</span>
+              <span role="cell" style={mono}>{r.comments.length || '—'}</span>
+              <span role="cell" style={mono}>{r.reactions.length || '—'}</span>
             </div>
-            <div className="flex flex-col gap-6">
-                <button onClick={() => showNotification('Use the SnapRec extension to start a new recording!', 'info')} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-primary/20">
-                    <span className="material-symbols-outlined text-xl">add_circle</span>
-                    <span>New Recording</span>
-                </button>
-                <nav className="flex flex-col gap-1">
-                    <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}>
-                        <span className="material-symbols-outlined">analytics</span>
-                        <span className="font-semibold text-sm">Analytics</span>
-                    </NavLink>
-                    <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}>
-                        <span className="material-symbols-outlined">settings</span>
-                        <span className="font-semibold text-sm">Settings</span>
-                    </NavLink>
-                    <button onClick={signOut} className="flex items-center gap-3 px-3 py-2 text-red-500 hover:text-red-600 transition-colors w-full text-left">
-                        <span className="material-symbols-outlined">logout</span>
-                        <span className="font-semibold text-sm">Sign Out</span>
-                    </button>
-                </nav>
-            </div>
-        </aside>
-    );
+          ))}
+        </div>
+      </section>
+    </div>,
+  );
+}
 
-    return (
-        <MainLayout sidebar={Sidebar}>
-            <div className="bg-slate-50/50 min-h-full p-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Analytics</h1>
-                    <p className="text-slate-500 font-medium mt-1">Insights into your capture activity</p>
-                </div>
+const sectionHeading = {
+  margin: 0,
+  fontSize: 15,
+  fontWeight: 600,
+  letterSpacing: '-.01em',
+} as const;
 
-                {isLoading ? (
-                    <div className="flex justify-center py-20">
-                        <div className="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                    </div>
-                ) : (
-                    <>
-                        {/* Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Captures</p>
-                                <p className="text-4xl font-black text-slate-900">{recordings.length}</p>
-                            </div>
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Videos</p>
-                                <p className="text-4xl font-black text-amber-600">{videoCount}</p>
-                            </div>
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Screenshots</p>
-                                <p className="text-4xl font-black text-emerald-600">{screenshotCount}</p>
-                            </div>
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Active Days</p>
-                                <p className="text-4xl font-black text-primary">{Object.keys(activityByDay).length}</p>
-                            </div>
-                        </div>
+const quiet = {
+  margin: 0,
+  fontSize: 12.5,
+  color: 'var(--sr-text-muted-on-light)',
+} as const;
 
-                        {/* Type Breakdown */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                                <h3 className="text-lg font-bold text-slate-900 mb-4">Capture Breakdown</h3>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <div className="h-4 rounded-full bg-slate-100 overflow-hidden">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
-                                                style={{ width: `${recordings.length ? (videoCount / recordings.length) * 100 : 0}%` }}
-                                            />
-                                        </div>
-                                        <div className="flex justify-between mt-2 text-sm">
-                                            <span className="text-amber-600 font-semibold">Videos: {videoCount}</span>
-                                            <span className="text-emerald-600 font-semibold">Screenshots: {screenshotCount}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                                <h3 className="text-lg font-bold text-slate-900 mb-4">Recent Activity</h3>
-                                <div className="flex gap-1 items-end h-20">
-                                    {Object.entries(activityByDay).slice(-7).map(([date, count]) => (
-                                        <div key={date} className="flex-1 flex flex-col items-center gap-1">
-                                            <div
-                                                className="w-full bg-primary rounded-sm min-h-[4px]"
-                                                style={{ height: `${Math.min(count * 20, 80)}px` }}
-                                            />
-                                            <span className="text-[10px] text-slate-400">{parseUTCDate(date).getDate()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </div>
-        </MainLayout>
-    );
-};
+const row = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 3fr) 70px 90px 90px',
+  gap: 12,
+  alignItems: 'center',
+  height: 'var(--sr-h-row)',
+  padding: '0 12px',
+  borderBottom: '1px solid var(--sr-border-light-soft)',
+  fontSize: 13,
+} as const;
 
-export default Analytics;
+const mono = {
+  fontFamily: 'var(--sr-font-mono)',
+  fontSize: 11,
+  color: 'var(--sr-text-muted-on-light)',
+} as const;
