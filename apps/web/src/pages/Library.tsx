@@ -17,6 +17,9 @@ import {
   type LibraryItem,
 } from './Library/useLibraryView';
 import { FilterPopover } from './Library/FilterPopover';
+import { FilterSheet } from './Library/FilterSheet';
+import { MobileList, type MobileItem } from './Library/MobileList';
+import { ActionsSheet } from './Library/ActionsSheet';
 import { EmptyState } from './Library/EmptyState';
 import { NoResults } from './Library/NoResults';
 import { LoadingState } from './Library/LoadingState';
@@ -48,6 +51,7 @@ export default function Library() {
 
   const [view, dispatch] = useReducer(reduce, undefined, initialView);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [actionsFor, setActionsFor] = useState<string | null>(null);
 
   const { data: recordings = [], isLoading, isError, error } =
     useRecordings(!!user, authLoading);
@@ -153,7 +157,7 @@ export default function Library() {
             Filters{chips.length > 0 ? ` · ${chips.length}` : ''}
           </button>
 
-          {filtersOpen && (
+          {filtersOpen && !mobile && (
             <FilterPopover
               filters={view.filters}
               collections={[]}
@@ -198,6 +202,24 @@ export default function Library() {
           suggestions={view.filters.type !== 'all'
             ? [{ label: 'Include everything', onSelect: () => dispatch({ type: 'SET_FILTER', key: 'type', value: 'all' }) }]
             : []}
+        />
+      ) : mobile ? (
+        <MobileList
+          items={visible.map((item): MobileItem => {
+            const r = byId.get(item.id)!;
+            return {
+              id: item.id,
+              title: item.title,
+              kind: item.kind,
+              status: item.status,
+              length: formatDuration(r.duration) ?? '—',
+              created: new Date(item.createdAt).toLocaleDateString(),
+              thumbnailUrl: r.thumbnailUrl,
+            };
+          })}
+          onOpen={id => navigate(`/v/${id}`)}
+          onActions={id => setActionsFor(id)}
+          onInlineAction={id => navigate(`/v/${id}`)}
         />
       ) : mode === 'grid' ? (
         <div style={{
@@ -254,6 +276,45 @@ export default function Library() {
           })}
         </div>
       )}
+
+      {filtersOpen && mobile && (
+        <FilterSheet
+          filters={view.filters}
+          resultCount={visible.length}
+          onChange={(key, value) => dispatch({ type: 'SET_FILTER', key, value })}
+          onClearAll={clearAll}
+          onClose={() => setFiltersOpen(false)}
+        />
+      )}
+
+      {actionsFor && (() => {
+        const item = visible.find(i => i.id === actionsFor);
+        if (!item) return null;
+        const r = byId.get(item.id)!;
+        return (
+          <ActionsSheet
+            item={{
+              id: item.id,
+              title: item.title,
+              kind: item.kind,
+              status: item.status,
+              length: formatDuration(r.duration) ?? '—',
+              created: new Date(item.createdAt).toLocaleDateString(),
+              thumbnailUrl: r.thumbnailUrl,
+            }}
+            onClose={() => setActionsFor(null)}
+            onSelect={action => {
+              if (/delete/i.test(action)) {
+                if (confirm(`Delete "${item.title}"? This cannot be undone.`)) {
+                  deleteRecording.mutate(item.id);
+                }
+                return;
+              }
+              navigate(`/v/${item.id}`);
+            }}
+          />
+        );
+      })()}
     </div>,
   );
 }
