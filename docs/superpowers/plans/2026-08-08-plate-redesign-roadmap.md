@@ -24,7 +24,7 @@ consumes the tokens through `@theme inline`. See
 | **P2** ⏸ | Extension: popup, capture completion, offline queue — code complete, awaiting Chrome verification + packaging | A1–A9, B1–B6 (15) | `2026-08-08-p2-extension-capture.md` |
 | **P3** ✅ | Web app: shell, Home, Library, Projects, Shared, Analytics, Settings | H1–H6, L1–L9, PROJ, SHAR, ANLY, SETT (24) | `2026-08-08-p3-web-app.md` |
 | **P4** ⏸ | Share & viewer surfaces — all six built and tested; ShareView.tsx not yet swapped onto them | C1–C6 (6) | `2026-08-08-p4-share-viewer.md` |
-| **P5** | Editors & in-page overlays | V1–V6, I1–I4, P1–P2 (12) | `2026-08-08-p5-editors.md` |
+| **P5** ✅ | Editors & in-page overlays | V1–V6, I1–I4, P1–P2 (12) | `2026-08-08-p5-editors.md` |
 | **P6** | Marketing & auth | M1–M2, A1–A5 (7) | `2026-08-08-p6-marketing-auth.md` |
 
 **Total: 64 scenes.** The prototype cover page advertises 23 states for file 02
