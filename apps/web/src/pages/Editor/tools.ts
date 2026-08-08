@@ -38,3 +38,23 @@ export const IMAGE_BINDINGS: Binding[] = [
   { key: 'escape', label: 'Deselect', description: 'Deselect or exit the current mode', scope: 'image' },
   { key: 'enter', label: 'Apply', description: 'Apply the current mode', scope: 'image' },
 ];
+
+
+/** ToolKey is the design vocabulary; the Fabric hook has its own, older one.
+ *
+ * Seven of the ten map straight across. The other three — line, highlight and
+ * numbered step — are specified by the prototype but not implemented in
+ * useFabricEditor yet, so they have no Fabric name and the toolbar marks them
+ * rather than rendering a button that quietly does nothing. */
+export const FABRIC_TOOL: Partial<Record<ToolKey, string>> = {
+  select: 'select',
+  crop: 'crop',
+  draw: 'pen',
+  arrow: 'arrow',
+  shape: 'rectangle',
+  text: 'text',
+  blur: 'blur',
+};
+
+/** Tools the design calls for that the canvas cannot do yet. */
+export const UNIMPLEMENTED: ReadonlySet<ToolKey> = new Set<ToolKey>(['line', 'mark', 'step']);

@@ -2,6 +2,12 @@ import React, { useEffect } from 'react';
 import { MainLayout, GatedButton, LoginModal, SEO } from '../components';
 import { Toolbar, PropertySidebar, CanvasArea } from './Editor/components';
 import { EditorProvider, useEditor } from './Editor/context/EditorContext';
+import { FABRIC_TOOL, type ToolKey } from './Editor/tools';
+import { detectApple } from '../lib/shortcuts';
+
+/** Resolved once at the app edge rather than sniffed inside each control —
+ * see lib/shortcuts. */
+const isApple = detectApple();
 
 const EditorContent: React.FC = () => {
     const {
@@ -10,7 +16,8 @@ const EditorContent: React.FC = () => {
         showLoginPrompt, setShowLoginPrompt,
         setupCanvasEvents, initCanvas, isCanvasReady, isInitializing,
         undo, redo, historyIndex, history, handleActionClick,
-        title, setTitle, user, loading
+        title, setTitle, user, loading,
+        activeTool, handleToolChange
     } = useEditor();
 
     // Initial Setup
@@ -135,7 +142,12 @@ const EditorContent: React.FC = () => {
                 noScroll={true}
             >
                 <div className="flex-1 flex h-full overflow-hidden">
-                    <Toolbar />
+                    <Toolbar
+                        active={(Object.keys(FABRIC_TOOL) as ToolKey[])
+                            .find((k) => FABRIC_TOOL[k] === activeTool) ?? 'select'}
+                        onSelect={(key) => handleToolChange(FABRIC_TOOL[key] ?? 'select')}
+                        isApple={isApple}
+                    />
                     <CanvasArea />
                     <PropertySidebar />
                 </div>
