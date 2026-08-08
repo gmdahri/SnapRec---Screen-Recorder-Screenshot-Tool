@@ -16,3 +16,4 @@ export {
   type StatusWord, type PathState, type CaptureStatus,
   type CaptureStateDef, type RuleTreatment,
 } from './status';
+export { CaptureFrame, type CaptureFrameProps, type FrameTreatmentKind } from './primitives/CaptureFrame';
