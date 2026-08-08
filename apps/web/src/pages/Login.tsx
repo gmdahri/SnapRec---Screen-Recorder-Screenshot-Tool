@@ -1,100 +1,87 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Logo } from '../components';
+import { LandingNavbar, SEO } from '../components';
+import { SignInPanel } from './Login/SignInPanel';
+import { decodeReturnTo } from '../lib/returnTo';
 
 const Login: React.FC = () => {
-    const { user, loading, signInWithGoogle } = useAuth();
+    const { user, loading, signInWithGoogle, signInWithMagicLink } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const [sent, setSent] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
     const from = (location.state as { from?: { pathname?: string; search?: string } })?.from;
 
-    useEffect(() => {
-        if (from?.pathname && from.pathname !== '/login') {
-            const path = `${from.pathname}${from.search ?? ''}`;
-            localStorage.setItem('auth_return_path', path);
-        }
-    }, [from?.pathname, from?.search]);
+    // Where to land afterwards. The query param wins because it survives the
+    // OAuth round trip, which router state does not.
+    const returnTo = searchParams.get('returnTo')
+        ? decodeReturnTo(searchParams.get('returnTo'))
+        : from?.pathname && from.pathname !== '/login'
+            ? `${from.pathname}${from.search ?? ''}`
+            : '/home';
 
     useEffect(() => {
-        if (user && !loading) {
-            const to =
-                from?.pathname && from.pathname !== '/login'
-                    ? `${from.pathname}${from.search ?? ''}`
-                    : '/dashboard';
-            navigate(to, { replace: true });
-        }
-    }, [user, loading, navigate, from?.pathname, from?.search]);
+        if (returnTo !== '/home') localStorage.setItem('auth_return_path', returnTo);
+    }, [returnTo]);
+
+    useEffect(() => {
+        if (user && !loading) navigate(returnTo, { replace: true });
+    }, [user, loading, navigate, returnTo]);
+
+    const onMagicLink = async (email: string) => {
+        setError(null);
+        const failure = await signInWithMagicLink(email);
+        if (failure) setError(failure);
+        else setSent(email);
+    };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
-            {/* Background Accent */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
-                <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
-            </div>
+        <div className="min-h-screen bg-[var(--sr-surface-panel-light)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
+            <SEO
+                url="/login"
+                title="Sign in — SnapRec"
+                description="Sign in to keep your captures in one library, rename links and see who watched."
+                noIndex
+            />
+            <LandingNavbar />
 
-            <div className="max-w-md w-full mx-4 relative">
-                {/* Card */}
-                <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-xl shadow-slate-200/50">
-                    {/* Logo */}
-                    <div className="flex justify-center mb-10">
-                        <Logo size="lg" className="!gap-3" />
-                    </div>
-
-                    {/* Heading */}
-                    <div className="text-center mb-10">
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome Back</h2>
-                        <p className="text-slate-500">
-                            {from?.pathname?.includes('video-editor')
-                                ? 'Sign in to open the Video Editor and trim or export your recording.'
-                                : 'Sign in to access your recordings and screenshots'}
-                        </p>
-                    </div>
-
-                    {/* Sign In Button */}
-                    <button
-                        onClick={signInWithGoogle}
-                        disabled={loading}
-                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white text-slate-700 border border-slate-200 rounded-2xl font-semibold hover:bg-slate-50 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed group"
-                    >
-                        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                            <path
-                                fill="#4285F4"
-                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            <main className="flex justify-center px-6 py-16">
+                <div className="w-full max-w-[440px] bg-[var(--sr-surface-paper)] border border-[var(--sr-border-light-soft)] p-7">
+                    {sent ? (
+                        <div className="flex flex-col gap-2.5">
+                            <h1 className="text-[20px] font-semibold tracking-[-0.02em] m-0">
+                                Check your inbox
+                            </h1>
+                            <p className="text-[13.5px] leading-relaxed text-[var(--sr-text-muted-on-light)] m-0">
+                                We sent a one-time link to <strong className="font-semibold">{sent}</strong>.
+                                It works once and expires after 15 minutes.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setSent(null)}
+                                className="self-start h-[var(--sr-h-2xs)] px-3.5 border border-[var(--sr-border-light)] text-[12.5px] rounded-[2px] mt-1"
+                            >
+                                Use a different address
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <SignInPanel
+                                onGoogle={signInWithGoogle}
+                                onMagicLink={onMagicLink}
                             />
-                            <path
-                                fill="#34A853"
-                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                            />
-                            <path
-                                fill="#FBBC05"
-                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                            />
-                            <path
-                                fill="#EA4335"
-                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                            />
-                        </svg>
-                        {loading ? 'Connecting...' : 'Continue with Google'}
-                    </button>
-
-                    {/* Terms */}
-                    <p className="text-center text-slate-400 text-xs mt-8">
-                        By signing in, you agree to our{' '}
-                        <a href="/terms" className="text-primary hover:underline font-medium">Terms of Service</a>
-                        {' '}and{' '}
-                        <a href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</a>
-                    </p>
+                            {error && (
+                                <p role="alert" className="mt-3 text-[12px] text-[var(--sr-coral-hover)]">
+                                    {error}
+                                </p>
+                            )}
+                        </>
+                    )}
                 </div>
-
-                {/* Footer */}
-                <p className="text-center text-slate-400 text-sm mt-8">
-                    New to SnapRec? Sign in with Google to start capturing.
-                </p>
-            </div>
+            </main>
         </div>
     );
 };

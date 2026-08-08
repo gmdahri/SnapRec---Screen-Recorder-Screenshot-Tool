@@ -15,7 +15,7 @@ export { MobileBottomBar, type MobileBottomBarProps } from './MobileBottomBar';
  *  Header.tsx and MainLayout.tsx once the last one lands. */
 export { MainLayout } from './MainLayout';
 export { VideoPlayer } from './VideoPlayer';
-export { LandingNavbar } from './LandingNavbar';
+export { LandingNavbar, LANDING_LINKS, SITE_LINKS, type NavLinkSpec } from './LandingNavbar';
 export { LandingFooter } from './LandingFooter';
 export { AddToChromeButton } from './AddToChromeButton';
 export { default as GoogleAd } from './GoogleAd';

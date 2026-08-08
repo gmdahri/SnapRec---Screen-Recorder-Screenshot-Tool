@@ -31,9 +31,16 @@ export class RecordingsService {
         recording.fileUrl = createRecordingDto.fileUrl;
         recording.type = createRecordingDto.type;
 
-        const userId = createRecordingDto.userId || createRecordingDto.guestId;
-        if (userId) {
-            recording.user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
+        // A guestId is NOT a user id. Passing it to findOrCreateBySupabaseId
+        // minted a synthetic sr_users row keyed by the guest id, which made
+        // the capture un-claimable — the claim compares the owner's supabaseId
+        // against the signed-in user's, and a guest id never matches either
+        // branch. Store it as what it is.
+        if (createRecordingDto.userId) {
+            recording.user = await this.usersService.findOrCreateBySupabaseId(
+                createRecordingDto.userId, userMeta);
+        } else if (createRecordingDto.guestId) {
+            recording.guestId = createRecordingDto.guestId;
         }
 
         return this.recordingsRepository.save(recording);

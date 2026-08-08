@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { LandingFooter, SEO } from '../components';
-import { LandingNav } from './Landing/LandingNav';
+import { LandingFooter, LandingNavbar, LANDING_LINKS, SEO } from '../components';
 import { HeroMedia } from './Landing/HeroMedia';
 import { ProductDemo } from './Landing/ProductDemo';
 import { ComparisonTable } from './Landing/ComparisonTable';
@@ -151,7 +150,7 @@ const Landing: React.FC = () => {
                 keywords="free screen recorder, chrome screen recorder, screen recorder chrome extension, free screen recorder chrome extension, screen recorder no watermark, 4k screen recorder, loom alternative free, loom alternative, screencastify alternative, screen recorder without watermark, record screen and audio chrome, tab recorder chrome, webcam screen recorder, screen recorder for teachers, tutorial screen recorder, how to record screen chrome, screen recorder microsoft edge, brave browser screen recorder, bug recording tool, full page screenshot, screenshot tool chrome, screen capture chrome, auto zoom screen recorder, free screen capture tool"
                 jsonLd={jsonLd}
             />
-            <LandingNav />
+            <LandingNavbar links={LANDING_LINKS} />
 
             <main>
                 {/* ── Hero: promise left, real product right ───────────── */}

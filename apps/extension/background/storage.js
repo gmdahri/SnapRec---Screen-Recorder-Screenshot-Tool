@@ -85,6 +85,20 @@ if (typeof module !== 'undefined') {
 }
 
 
+/** A stable id for this install while signed out.
+ *
+ * Without one the server has no way to tell whose ownerless capture is whose,
+ * which is what made every un-owned recording claimable by anyone holding its
+ * id. Generated once and kept in chrome.storage.local. */
+async function getGuestId() {
+    const { snaprecGuestId } = await chrome.storage.local.get('snaprecGuestId');
+    if (snaprecGuestId) return snaprecGuestId;
+
+    const id = `guest_${crypto.randomUUID()}`;
+    await chrome.storage.local.set({ snaprecGuestId: id });
+    return id;
+}
+
 /**
  * Upload a queued capture, reporting byte-level progress.
  *
@@ -136,6 +150,7 @@ async function uploadQueuedCapture(item, onProgress) {
             title: item.title ?? item.fileName,
             fileUrl: item.fileName,
             type: item.mimeType.includes('video') ? 'video' : 'screenshot',
+            guestId: await getGuestId(),
         }),
     });
     if (!meta.ok) throw new Error('metadata');

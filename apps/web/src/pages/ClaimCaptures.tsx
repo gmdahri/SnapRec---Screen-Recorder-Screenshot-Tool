@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CAPTURE_STATES, StatusBadge, type StatusWord } from '@snaprec/design-system';
+import { useAuth } from '../contexts/AuthContext';
+import { useClaimRecordings, useRecordings, type Recording } from '../hooks/useRecordings';
+import { SEO } from '../components';
+import { decodeReturnTo } from '../lib/returnTo';
+import { formatMeta, toCaptureKind } from '../lib/captureAdapter';
 
 export interface ClaimableCapture {
   id: string;
@@ -121,5 +127,47 @@ export function ClaimPanel({ captures, email, onClaim, onSkip }: ClaimPanelProps
         }}>Not now</button>
       </div>
     </main>
+  );
+}
+
+/** The page. Lists captures this browser made while signed out and offers to
+ * move them into the account that just signed in. */
+export default function ClaimCaptures() {
+  const { user, guestId } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const claim = useClaimRecordings();
+
+  const { data: recordings = [] } = useRecordings(!!user, false);
+
+  // Anything still attributed to this guest rather than to the account.
+  const claimable: ClaimableCapture[] = recordings
+    .filter((r: Recording & { guestId?: string | null }) => r.guestId && r.guestId === guestId)
+    .map((r: Recording) => ({
+      id: r.id,
+      title: r.title,
+      meta: formatMeta(r),
+      kind: toCaptureKind(r) === 'recording' ? 'recording' : 'screenshot',
+    }));
+
+  const returnTo = decodeReturnTo(searchParams.get('returnTo'));
+
+  // Nothing to claim: skip the interstitial rather than showing an empty one.
+  useEffect(() => {
+    if (claimable.length === 0) navigate(returnTo, { replace: true });
+  }, [claimable.length, navigate, returnTo]);
+
+  if (claimable.length === 0) return null;
+
+  return (
+    <div className="min-h-screen bg-[var(--sr-surface-panel-light)] text-[var(--sr-text-primary-on-light)] font-display antialiased flex justify-center px-6 py-16">
+      <SEO title="Claim your captures — SnapRec" description="Move guest captures into your library." noIndex />
+      <ClaimPanel
+        captures={claimable}
+        email={user?.email ?? ''}
+        onClaim={ids => claim.mutate(ids, { onSuccess: () => navigate(returnTo, { replace: true }) })}
+        onSkip={() => navigate(returnTo, { replace: true })}
+      />
+    </div>
   );
 }

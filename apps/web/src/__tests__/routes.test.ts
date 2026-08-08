@@ -12,6 +12,9 @@ const NON_PUBLIC = new Set([
   '/login', '/auth/callback',
   '/home', '/library', '/projects', '/shared', '/analytics', '/settings',
   '/dashboard', '/editor', '/video-editor', '/video-preview',
+  // Auth-adjacent: reachable only mid-sign-in, and indexing them would put
+  // a half-finished auth flow in search results.
+  '/claim', '/session-expired',
 ]);
 
 const app = read('src/App.tsx');

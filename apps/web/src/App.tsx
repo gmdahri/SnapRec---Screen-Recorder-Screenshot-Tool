@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Library from './pages/Library';
 import Projects from './pages/Projects';
 import Shared from './pages/Shared';
+import ClaimCaptures from './pages/ClaimCaptures';
 import Home from './pages/Home';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
@@ -54,6 +55,13 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                {/* Auth-adjacent: deliberately absent from prerender.mjs,
+                    sitemap.xml and indexnow.yml — see src/__tests__/routes.test.ts */}
+                <Route path="/claim" element={
+                  <ProtectedRoute>
+                    <ClaimCaptures />
+                  </ProtectedRoute>
+                } />
                 {/* /dashboard was the old Home. Redirect rather than
                     duplicate — existing links and bookmarks still work. */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />

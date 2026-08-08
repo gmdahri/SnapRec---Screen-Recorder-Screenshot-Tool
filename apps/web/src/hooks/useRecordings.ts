@@ -288,10 +288,16 @@ export function useClaimRecordings() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        // The guestId scopes the claim to captures this browser actually made.
+        // Without it the server can only fall back to ownerless rows, which is
+        // exactly the case anyone holding a share link could exploit.
         mutationFn: (recordingIds: string[]) =>
             fetchWithAuth<{ success: boolean; claimed: string[] }>('/recordings/claim', {
                 method: 'POST',
-                body: JSON.stringify({ recordingIds }),
+                body: JSON.stringify({
+                    recordingIds,
+                    guestId: localStorage.getItem('guestId') ?? undefined,
+                }),
             }),
         onSuccess: (data, recordingIds) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.all });
