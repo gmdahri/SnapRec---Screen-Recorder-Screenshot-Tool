@@ -18,3 +18,5 @@ export {
 } from './status';
 export { CaptureFrame, type CaptureFrameProps, type FrameTreatmentKind } from './primitives/CaptureFrame';
 export { CapturePlate, type CapturePlateProps, type CaptureAction } from './primitives/CapturePlate';
+export { CaptureRow, type CaptureRowProps, type RowColumns } from './primitives/CaptureRow';
+export { ActivityRow, type ActivityRowProps } from './primitives/ActivityRow';
