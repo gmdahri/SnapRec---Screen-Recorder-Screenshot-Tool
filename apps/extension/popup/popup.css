@@ -466,3 +466,187 @@ button { font-family: inherit; cursor: pointer; }
   .sr-popup-header[data-tone="coral"] .sr-dot { animation: none; }
   [data-sweep]::after { animation: none; width: 100%; opacity: .4; }
 }
+
+/* ============================================================ completion */
+
+.sr-completion-title {
+  margin: 14px 12px 0;
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+.sr-completion-body,
+.sr-failure-body {
+  margin: 10px 12px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--sr-text-secondary-on-dark);
+}
+
+.sr-completion { display: flex; margin: 12px 12px 0; background: var(--sr-surface-well); }
+.sr-plate { position: relative; flex: 1; }
+.sr-plate .sr-frame { aspect-ratio: 16 / 9; }
+.sr-plate-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  background: var(--sr-scrim-dark);
+  font-family: var(--sr-font-mono);
+  font-size: 9.5px;
+  color: var(--sr-text-secondary-on-dark);
+}
+
+/* Edge actions describe what is possible now, not a fixed toolbar. */
+.sr-edge-rail {
+  display: flex;
+  flex-direction: column;
+  width: 38px;
+  flex: none;
+  border-left: 1px solid var(--sr-border-dark-soft);
+}
+.sr-edge-rail button {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid var(--sr-border-dark-soft);
+  background: transparent;
+  color: var(--sr-text-secondary-on-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sr-edge-rail button:last-child { border-bottom: none; }
+.sr-edge-rail button:hover { background: var(--sr-surface-panel-dark); color: var(--sr-text-primary-on-dark); }
+.sr-edge-rail button[data-tone="cyan"] { color: var(--sr-cyan); }
+.sr-edge-rail button[data-destructive]:hover {
+  background: var(--sr-coral-wash-dark);
+  color: var(--sr-coral-on-dark);
+}
+.sr-edge-rail button[aria-disabled="true"] {
+  color: var(--sr-text-faint-on-dark);
+  cursor: not-allowed;
+}
+.sr-edge-rail button[aria-disabled="true"]:hover { background: transparent; }
+
+/* ---- the path spine: four nodes, always in the same order --------------- */
+
+.sr-spine {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  margin: 12px 12px 0;
+}
+.sr-spine-col { display: flex; flex-direction: column; gap: 6px; }
+.sr-spine-track { position: relative; height: 3px; background: var(--sr-border-dark); }
+.sr-spine-track > [data-spine-segment] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transition: width var(--sr-dur-slow) var(--sr-ease);
+}
+/* Green marks a completed node — the only place green appears. */
+[data-spine-segment][data-treatment="done"] { background: var(--sr-green); }
+[data-spine-segment][data-treatment="active"] { background: var(--sr-cyan); }
+[data-spine-segment][data-treatment="failed"] { background: var(--sr-coral-text); }
+[data-spine-segment][data-treatment="pending"] { background: transparent; }
+/* Offline is dashed grey, never coral: nothing has failed. */
+[data-spine-segment][data-treatment="dashed"] {
+  background: transparent;
+  width: 100% !important;
+  background-image: repeating-linear-gradient(
+    90deg, var(--sr-text-faint-on-dark) 0 5px, transparent 5px 10px);
+}
+[data-spine-break] {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 9px;
+  background: var(--sr-coral-text);
+}
+[data-spine-node] {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--sr-border-dark);
+}
+[data-spine-node][data-state="done"] { background: var(--sr-green); border-color: var(--sr-green); }
+[data-spine-node][data-state="current"] { border-color: var(--sr-cyan); }
+.sr-spine-label {
+  font-family: var(--sr-font-mono);
+  font-size: 8.5px;
+  color: var(--sr-text-faint-on-dark);
+  line-height: 1.2;
+}
+
+.sr-upload-label {
+  margin: 10px 12px 0;
+  font-family: var(--sr-font-mono);
+  font-size: 11px;
+  color: var(--sr-text-secondary-on-dark);
+}
+
+.sr-completion-actions { display: flex; flex-direction: column; gap: 8px; }
+.sr-secondary-pair { display: flex; gap: 8px; }
+.sr-secondary-pair > * { flex: 1; }
+.sr-primary[data-tone="cyan"] { background: var(--sr-cyan); color: var(--sr-cyan-fg); }
+.sr-primary[data-tone="cyan"]:hover { background: var(--sr-cyan-hover); }
+
+/* ---- link and permissions ---------------------------------------------- */
+
+.sr-link-row { display: flex; gap: 8px; margin: 12px 12px 0; }
+.sr-link-row input {
+  flex: 1;
+  min-width: 0;
+  height: var(--sr-h-md);
+  padding: 0 10px;
+  border: 1px solid var(--sr-border-dark);
+  border-radius: var(--sr-radius-control);
+  background: var(--sr-surface-panel-dark);
+  color: var(--sr-text-primary-on-dark);
+  font-family: var(--sr-font-mono);
+  font-size: 11.5px;
+}
+.sr-link-row input:focus-visible { border-color: var(--sr-cyan); outline: none; }
+.sr-link-row .sr-notice-primary { flex: none; padding: 0 16px; }
+
+.sr-permissions { display: flex; flex-direction: column; gap: 1px; margin: 12px 12px 14px; }
+.sr-permission {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: var(--sr-h-row);
+  padding: 0 10px;
+  background: var(--sr-surface-panel-dark);
+  font-size: 12px;
+}
+.sr-permission select {
+  height: var(--sr-h-xs);
+  border: 1px solid var(--sr-border-dark);
+  background: var(--sr-surface-carbon);
+  color: var(--sr-text-primary-on-dark);
+  font-family: inherit;
+  font-size: 11.5px;
+  border-radius: var(--sr-radius-control);
+}
+.sr-permission [role="switch"] {
+  width: 26px;
+  height: 15px;
+  position: relative;
+  border: none;
+  padding: 0;
+  background: var(--sr-border-dark);
+}
+.sr-permission [role="switch"][aria-checked="true"] { background: var(--sr-cyan); }
+.sr-permission [role="switch"] > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  background: var(--sr-text-muted-on-dark);
+}
+.sr-permission [role="switch"][aria-checked="true"] > span { left: 13px; background: var(--sr-cyan-fg); }
+
+.sr-status-word[data-tone="neutral"] { color: var(--sr-text-faint-on-dark); }
+.sr-status-word { display: block; margin: 14px 12px 0; }

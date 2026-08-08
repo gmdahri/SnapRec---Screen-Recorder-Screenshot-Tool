@@ -202,3 +202,118 @@ describe('finishing (A9)', () => {
     expect(mount(fin).textContent.toLowerCase()).toContain('this device');
   });
 });
+
+const finished = (extra = []) =>
+  [{ type: 'FINISHED', capture: { id: 'c1', bytes: 7_200_000, duration: '0:47' } }, ...extra]
+    .reduce(transition, initialState());
+
+describe('capture completion (B1–B6)', () => {
+  it('B1 offers no Copy link, because there is no link', () => {
+    const root = mount(finished());
+    expect(root.querySelector('[data-action-key="copyLink"]')).toBeNull();
+    expect(root.querySelector('[data-action="primary"]').textContent)
+      .toContain('Upload and get link');
+  });
+
+  it('B1 draws the four-node spine with the first node entered', () => {
+    const nodes = mount(finished()).querySelectorAll('[data-spine-node]');
+    expect(nodes).toHaveLength(4);
+    expect(nodes[0].dataset.state).toBe('current');
+  });
+
+  it('B1 uses a focused frame, never handles — Annotate opens the editor', () => {
+    const root = mount(finished());
+    expect(root.querySelector('.sr-frame').dataset.treatment).toBe('focused');
+    expect(root.querySelector('[data-handle]')).toBeNull();
+  });
+
+  it('B2 names bytes, not just a percentage', () => {
+    const root = mount(finished([
+      { type: 'UPLOAD' }, { type: 'UPLOAD_PROGRESS', pct: 62, bytes: 4_464_000 },
+    ]));
+    expect(root.textContent).toContain('62%');
+    expect(root.textContent).toMatch(/4\.3 of 6\.9 MB/);
+  });
+
+  it('B2 throttles progress announcements to every 25%', () => {
+    const root = mount(finished([{ type: 'UPLOAD' }]));
+    expect(root.querySelector('[role="progressbar"]').dataset.announceEvery).toBe('25');
+  });
+
+  it('B2 gives every disabled edge action a reason', () => {
+    const root = mount(finished([{ type: 'UPLOAD' }]));
+    const disabled = root.querySelectorAll('[data-action-key][aria-disabled="true"]');
+    expect(disabled.length).toBeGreaterThan(0);
+    for (const b of disabled) expect(b.getAttribute('title')).toBeTruthy();
+  });
+
+  it('B3 states the file is safe before anything else', () => {
+    const body = mount(finished([
+      { type: 'UPLOAD' },
+      { type: 'UPLOAD_PROGRESS', pct: 62, bytes: 4_464_000 },
+      { type: 'UPLOAD_FAILED', reason: 'network', at: 62 },
+    ])).querySelector('[data-failure-body]').textContent;
+    expect(body.indexOf('still on this device')).toBeGreaterThan(-1);
+    expect(body.indexOf('still on this device')).toBeLessThan(body.indexOf('connection'));
+  });
+
+  it('B3 marks the break point and names it in words', () => {
+    const root = mount(finished([
+      { type: 'UPLOAD' },
+      { type: 'UPLOAD_PROGRESS', pct: 62, bytes: 4_464_000 },
+      { type: 'UPLOAD_FAILED', reason: 'network', at: 62 },
+    ]));
+    expect(root.querySelector('[data-spine-break]').style.left).toBe('62%');
+    expect(root.textContent).toContain('stopped');
+  });
+
+  it('B3 renders retry as a normal carbon action, not an emergency', () => {
+    const root = mount(finished([
+      { type: 'UPLOAD' }, { type: 'UPLOAD_FAILED', reason: 'network', at: 62 },
+    ]));
+    expect(root.querySelector('[data-action="primary"]').dataset.tone).toBe('carbon');
+  });
+
+  it('B4 uses dashed grey and says closing is safe', () => {
+    const root = mount(finished([{ type: 'UPLOAD' }, { type: 'OFFLINE' }]));
+    expect(root.querySelector('[data-spine-segment="1"]').dataset.treatment).toBe('dashed');
+    expect(root.textContent.toLowerCase()).toContain('you can close');
+    expect(root.textContent.toLowerCase()).not.toContain('failed');
+  });
+
+  it('B5 says uploaded is not shared', () => {
+    const root = mount(finished([
+      { type: 'UPLOAD' }, { type: 'UPLOAD_PROGRESS', pct: 100, bytes: 7_200_000 },
+      { type: 'SAVED' },
+    ]));
+    expect(root.querySelectorAll('[data-spine-node][data-state="done"]')).toHaveLength(2);
+    expect(root.textContent).toContain('no link yet');
+    expect(root.textContent).toContain('private');
+  });
+
+  it('B5 swaps the Drive slot for Move to collection', () => {
+    const root = mount(finished([{ type: 'UPLOAD' }, { type: 'SAVED' }]));
+    expect(root.querySelector('[data-action-key="drive"]')).toBeNull();
+    expect(root.querySelector('[data-action-key="move"]')).toBeTruthy();
+  });
+
+  it('B6 exposes the link in both the rail and the field', () => {
+    const root = mount(finished([
+      { type: 'UPLOAD' }, { type: 'UPLOAD_PROGRESS', pct: 100, bytes: 7_200_000 },
+      { type: 'LINK_READY', url: 'https://www.snaprecorder.org/v/abc' },
+    ]));
+    expect(root.querySelector('[data-action-key="copyLink"]')).toBeTruthy();
+    expect(root.querySelector('[data-link-field]').value).toBe('https://www.snaprecorder.org/v/abc');
+  });
+
+  it('B6 puts permissions beside the link, not behind a settings screen', () => {
+    const root = mount(finished([{ type: 'UPLOAD' }, { type: 'LINK_READY', url: 'https://x' }]));
+    expect(root.querySelector('[data-permission="visibility"]')).toBeTruthy();
+    expect(root.querySelector('[data-permission="download"]')).toBeTruthy();
+  });
+
+  it('B6 strikes the corners once, the third and last time', () => {
+    expect(mount(finished([{ type: 'UPLOAD' }, { type: 'LINK_READY', url: 'https://x' }]))
+      .querySelector('[data-strike]')).toBeTruthy();
+  });
+});

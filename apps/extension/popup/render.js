@@ -342,10 +342,207 @@ function viewFinishing(state) {
     </div>`;
 }
 
+/* --------------------------------------------------- capture completion */
+
+/** Mirrors packages/design-system PathSpine. The extension cannot import it,
+ * so the treatments are duplicated — and PATH_NODES must stay identical to
+ * src/status.ts. Four nodes, always in this order. */
+const PATH_NODES = ['on this device', 'uploading', 'saved to library', 'link ready'];
+
+function spine(d, pct) {
+  const label = PATH_NODES[Math.min(d.spineCurrent, PATH_NODES.length - 1)];
+
+  return `
+    <div class="sr-spine" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+         aria-valuenow="${pct ?? 0}" data-announce-every="25"
+         aria-valuetext="${label}${d.spineState === 'failed' ? ' — stopped' : ''}">
+      ${PATH_NODES.map((node, i) => {
+        const done = i < d.spineCurrent;
+        const current = i === d.spineCurrent;
+        const treatment = !current
+          ? (done ? 'done' : 'pending')
+          : d.spineState === 'failed' ? 'failed'
+          : d.spineState === 'offline' ? 'dashed'
+          : 'active';
+        const width = done ? 100 : current ? (pct ?? 100) : 0;
+
+        return `
+          <div class="sr-spine-col">
+            <div class="sr-spine-track">
+              <span data-spine-segment="${i}" data-treatment="${treatment}" style="width:${width}%"></span>
+              ${current && d.spineState === 'failed' && d.breakAt != null
+                ? `<span data-spine-break style="left:${d.breakAt}%"></span>` : ''}
+            </div>
+            <span data-spine-node data-state="${done ? 'done' : current ? 'current' : 'pending'}"></span>
+            <span class="sr-spine-label">${node}</span>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+const MB = (bytes) => (bytes / 1_048_576).toFixed(1);
+
+function edgeRail(d) {
+  return `
+    <div class="sr-edge-rail">
+      ${d.actions.map((a) => `
+        <button type="button" data-action-key="${a.key}" aria-label="${a.label}"
+                ${a.disabledReason ? `aria-disabled="true" title="${esc(a.disabledReason)}"` : `title="${a.label}"`}
+                ${a.destructive ? 'data-destructive' : ''}
+                ${a.tone ? `data-tone="${a.tone}"` : ''}>
+          ${icon(a.icon, 16)}
+        </button>`).join('')}
+    </div>`;
+}
+
+/** The completion plate. Focused, not editable: registration marks only.
+ * Annotate opens the editor, and only there does the media gain handles. */
+function completionPlate(state, d, { strike = false, badge = '' } = {}) {
+  return `
+    <div class="sr-completion">
+      <div class="sr-plate" ${strike ? 'data-strike' : ''}>
+        <div class="sr-frame" data-treatment="focused">
+          ${['tl', 'tr', 'bl', 'br'].map((c) => `<span class="sr-mark sr-mark-${c}"></span>`).join('')}
+          ${badge ? `<span class="sr-plate-badge">${badge}</span>` : ''}
+        </div>
+      </div>
+      ${edgeRail(d)}
+    </div>`;
+}
+
+/** No Copy link yet: there is no link, so no button pretends there is. The
+ * primary action names its outcome. */
+function viewComplete(state, d) {
+  return `
+    ${header(state)}
+    <h1 class="sr-completion-title">Recording finished</h1>
+    ${completionPlate(state, d, { strike: d.strikesCorners })}
+    ${spine(d)}
+    <div class="sr-footer sr-completion-actions">
+      <button type="button" class="sr-primary" data-action="primary" data-tone="cyan">
+        ${icon('cloudUpload', 15)}Upload and get link
+      </button>
+      <div class="sr-secondary-pair">
+        <button type="button" class="sr-notice-secondary" data-action="save-library">Save to library</button>
+        <button type="button" class="sr-notice-secondary" data-action="annotate">Annotate</button>
+      </div>
+    </div>`;
+}
+
+/** Progress in two places, one meaning: a cyan rule fills along the media's
+ * bottom edge and the same percentage advances the spine. Bytes are named. */
+function viewUploading(state, d) {
+  const pct = state.upload.pct;
+  const total = state.capture?.bytes ?? 0;
+  return `
+    ${header(state)}
+    <h1 class="sr-completion-title">Uploading</h1>
+    ${completionPlate(state, d)}
+    ${spine(d, pct)}
+    <p class="sr-upload-label">${pct}% · ${MB(total * pct / 100)} of ${MB(total)} MB</p>
+    <div class="sr-footer">
+      <button type="button" class="sr-notice-secondary" data-action="cancel">Cancel upload</button>
+      <p class="sr-footnote">Closing this window does not stop the upload.</p>
+    </div>`;
+}
+
+/** Cause, reassurance, two next actions. The file's safety is stated before
+ * anything else. Retry is carbon — a normal action, not an emergency. */
+function viewUploadFailed(state, d) {
+  return `
+    ${header(state)}
+    <span class="sr-status-word">stopped</span>
+    <h1 class="sr-completion-title">Upload stopped</h1>
+    ${completionPlate(state, d)}
+    ${spine(d, state.upload.pct)}
+    <p class="sr-failure-body" data-failure-body>
+      Your recording is still on this device. The connection dropped at
+      ${state.upload.failedAt ?? 0}%, so nothing was lost — the upload can pick
+      up where it stopped.
+    </p>
+    <div class="sr-footer sr-completion-actions">
+      <button type="button" class="sr-primary" data-action="primary" data-tone="carbon">Try again</button>
+      <button type="button" class="sr-notice-secondary" data-action="save-local">Keep it local</button>
+    </div>`;
+}
+
+/** Not an error: neutral grey and a dashed segment, never coral. Nothing has
+ * failed; the work is simply waiting. */
+function viewOffline(state, d) {
+  return `
+    ${header(state)}
+    <span class="sr-status-word" data-tone="neutral">queued</span>
+    <h1 class="sr-completion-title">Waiting for a connection</h1>
+    ${completionPlate(state, d)}
+    ${spine(d)}
+    <p class="sr-completion-body">
+      This will upload by itself when you are back online. You can close this
+      window — the capture is on your device either way.
+    </p>
+    <div class="sr-footer">
+      <button type="button" class="sr-notice-secondary" data-action="download">Download now</button>
+    </div>`;
+}
+
+/** Uploaded is not shared: three nodes complete, the fourth explicitly reads
+ * "no link yet", and the media carries a private badge. */
+function viewSaved(state, d) {
+  return `
+    ${header(state)}
+    <h1 class="sr-completion-title">Saved to your library</h1>
+    ${completionPlate(state, d, { badge: 'private' })}
+    ${spine(d)}
+    <p class="sr-completion-body">
+      In your library and backed up — but <strong>no link yet</strong>. Sharing
+      stays a deliberate act.
+    </p>
+    <div class="sr-footer">
+      <button type="button" class="sr-primary" data-action="primary" data-tone="cyan">
+        ${icon('link', 15)}Create share link
+      </button>
+    </div>`;
+}
+
+/** Now Copy link exists — in two places at once, the edge rail's first slot and
+ * the field. Permissions sit next to the link, not behind a settings screen,
+ * because both are decisions made at the moment of sharing. */
+function viewLinkReady(state, d) {
+  return `
+    ${header(state)}
+    <h1 class="sr-completion-title">Link ready</h1>
+    ${completionPlate(state, d, { strike: d.strikesCorners })}
+    ${spine(d)}
+    <div class="sr-link-row">
+      <input type="text" readonly data-link-field value="${esc(state.link ?? '')}"
+             aria-label="Share link">
+      <button type="button" class="sr-notice-primary" data-action="copy-link">Copy</button>
+    </div>
+    <div class="sr-permissions">
+      <label class="sr-permission">
+        <span>Who can see it</span>
+        <select data-permission="visibility">
+          <option value="link">Anyone with the link</option>
+          <option value="restricted">Only people I invite</option>
+        </select>
+      </label>
+      <label class="sr-permission">
+        <span>Allow download</span>
+        <button type="button" role="switch" aria-checked="true"
+                aria-label="Allow download" data-permission="download"><span></span></button>
+      </label>
+    </div>`;
+}
+
 const VIEWS = {
   ready: viewReady,
   screenshot: viewScreenshot,
   options: viewOptions,
+  complete: viewComplete,
+  uploading: viewUploading,
+  uploadFailed: viewUploadFailed,
+  offline: viewOffline,
+  saved: viewSaved,
+  linkReady: viewLinkReady,
   permission: viewPermission,
   denied: viewDenied,
   countdown: viewCountdown,

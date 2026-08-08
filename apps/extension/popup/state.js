@@ -209,6 +209,15 @@ const SPINE_CURRENT = {
   complete: 0, uploading: 1, uploadFailed: 1, offline: 1, saved: 2, linkReady: 3,
 };
 
+/** While bytes are moving, some edge actions genuinely cannot run. Each one
+ * says when it comes back rather than sitting there inert — a disabled control
+ * with no reason is a dead end. */
+const UPLOADING_BLOCKED = {
+  annotate: 'Available once the upload finishes',
+  drive: 'Available once the upload finishes',
+  discard: 'Cancel the upload first',
+};
+
 function actionsFor(view) {
   if (!COMPLETION.has(view)) return [];
 
@@ -228,6 +237,11 @@ function actionsFor(view) {
       : { key: 'drive', label: 'Save to Google Drive', icon: 'cloudUpload' },
   );
   actions.push({ key: 'discard', label: 'Discard', icon: 'delete', destructive: true });
+
+  if (view === 'uploading') {
+    return actions.map((a) =>
+      (UPLOADING_BLOCKED[a.key] ? { ...a, disabledReason: UPLOADING_BLOCKED[a.key] } : a));
+  }
   return actions;
 }
 
