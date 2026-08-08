@@ -1,5 +1,6 @@
 import {
     Controller,
+    Query,
     Post,
     Body,
     Get,
@@ -18,7 +19,7 @@ import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
-import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto } from './dto';
+import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto } from './dto';
 
 @Controller('recordings')
 export class RecordingsController {
@@ -70,6 +71,14 @@ export class RecordingsController {
             // Send the browser directly to R2. The API no longer proxies video bytes.
             fileUrl: await this.storageService.getDownloadUrl(recording.fileUrl),
         })));
+    }
+
+    /** Declared BEFORE @Get(':id') — Nest matches routes in declaration order,
+     * so a later definition would be swallowed by the id param and 404. */
+    @UseGuards(JwtAuthGuard)
+    @Get('shared')
+    async getShared(@Req() req: any, @Query() query: SharedQueryDto) {
+        return this.recordingsService.findShared(req.user.id, query.direction ?? 'by-me');
     }
 
     @Get('status/:fileName')

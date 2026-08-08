@@ -6,6 +6,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Library from './pages/Library';
+import Projects from './pages/Projects';
+import Shared from './pages/Shared';
 import Home from './pages/Home';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
@@ -63,6 +65,16 @@ function App() {
                 <Route path="/library" element={
                   <ProtectedRoute>
                     <Library />
+                  </ProtectedRoute>
+                } />
+                <Route path="/projects" element={
+                  <ProtectedRoute>
+                    <Projects />
+                  </ProtectedRoute>
+                } />
+                <Route path="/shared" element={
+                  <ProtectedRoute>
+                    <Shared />
                   </ProtectedRoute>
                 } />
                 <Route path="/analytics" element={

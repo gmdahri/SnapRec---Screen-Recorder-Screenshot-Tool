@@ -178,4 +178,84 @@ export class RecordingsService {
         await this.recordingsRepository.remove(recording);
         return { success: true };
     }
+
+    /* ====================================================================
+     * Shared surface (scene SHAR)
+     *
+     * Pure statics so the ordering and visibility rules are testable without
+     * a database. They are the whole point of the page: it is sorted by what
+     * you owe someone, not by what changed most recently.
+     * ================================================================== */
+
+    /** Anything awaiting a reply comes first; within each group, most recent
+     * first. Sorting by date alone buries the one row that needs action. */
+    static sortByObligation<T extends { needsReply: boolean; lastActivityAt: Date | null }>(
+        rows: T[],
+    ): T[] {
+        return [...rows].sort((a, b) => {
+            if (a.needsReply !== b.needsReply) return a.needsReply ? -1 : 1;
+            return (b.lastActivityAt?.getTime() ?? 0) - (a.lastActivityAt?.getTime() ?? 0);
+        });
+    }
+
+    /** A link the owner turned off is 'off', not merely absent — the page has
+     * to offer turning it back on, which needs the distinction.
+     *
+     * NOTE: sr_recordings has no isPublic/sharingDisabledAt columns yet. Until
+     * they exist every uploaded recording is reachable by anyone holding the
+     * link, so an absent pair reports 'link'. Reporting 'restricted' would be
+     * a lie about what the product currently does. */
+    static visibilityOf(
+        row: { isPublic?: boolean; sharingDisabledAt?: Date | null },
+    ): 'link' | 'restricted' | 'off' {
+        if (row.sharingDisabledAt) return 'off';
+        if (row.isPublic === false) return 'restricted';
+        return 'link';
+    }
+
+    /** True when the newest comment came from someone other than the owner. */
+    static needsReply(
+        row: { comments: { createdAt: Date; user?: { supabaseId?: string } }[] },
+        ownerSupabaseId: string | undefined,
+    ): boolean {
+        if (!ownerSupabaseId || row.comments.length === 0) return false;
+        const newest = [...row.comments]
+            .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+            .at(-1);
+        return newest ? newest.user?.supabaseId !== ownerSupabaseId : false;
+    }
+
+    /** Captures this user has shared, ordered by obligation. */
+    async findShared(userId: string, direction: 'by-me' | 'with-me' = 'by-me') {
+        // 'with-me' needs a share-grant table that does not exist yet; until
+        // then it is honestly empty rather than silently showing your own.
+        if (direction === 'with-me') return [];
+
+        const recordings = await this.recordingsRepository.find({
+            where: { user: { supabaseId: userId } },
+            relations: ['user', 'comments', 'comments.user'],
+            order: { createdAt: 'DESC' },
+        });
+
+        const rows = recordings.map((r) => {
+            const lastComment = [...(r.comments ?? [])]
+                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+                .at(-1);
+
+            return {
+                id: r.id,
+                title: r.title,
+                kind: r.type === 'video' ? 'recording' : 'screenshot',
+                visibility: RecordingsService.visibilityOf(r as any),
+                views: r.views,
+                commentCount: r.comments?.length ?? 0,
+                needsReply: RecordingsService.needsReply(r as any, userId),
+                lastActivityAt: lastComment?.createdAt ?? r.createdAt,
+                lastActor: lastComment?.user?.fullName ?? null,
+            };
+        });
+
+        return RecordingsService.sortByObligation(rows);
+    }
+
 }
