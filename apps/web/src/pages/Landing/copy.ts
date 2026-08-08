@@ -25,7 +25,20 @@ export interface ComparisonRow {
   cast: string;
 }
 
-/** ⚠️ FACTUAL CLAIMS ABOUT NAMED COMPETITORS.
+/** ⚠️ NOT YET LIVE — Landing.tsx still renders its own arrays.
+ *
+ * This data and the live page CONTRADICT each other on at least one factual
+ * claim: Landing.tsx's `comparison` says Screencastify watermarks
+ * (`screencastify: false` on 'No watermarks'); the row below says it does not.
+ * One of them is wrong and the live one is indexed.
+ *
+ * The FAQ sets are also entirely different, and Landing.tsx's feeds FAQPage
+ * structured data — swapping them changes what Google has indexed and which
+ * rich result shows.
+ *
+ * Reconcile both before wiring this file into Landing.tsx.
+ *
+ * ⚠️ FACTUAL CLAIMS ABOUT NAMED COMPETITORS.
  *
  * Every Loom and Screencastify cell is that vendor's published free-tier limit.
  * They change, and a wrong cell on a page that names a competitor is the most
