@@ -6,6 +6,13 @@ export { UserMenu } from './UserMenu';
 export { LoginModal } from './LoginModal';
 export { GatedButton } from './GatedButton';
 export { Header } from './Header';
+export { AppShell, NAV, MOBILE_NAV, type AppShellProps, type NavDestination } from './AppShell';
+export { TopBar, type TopBarProps } from './TopBar';
+export { CapturePopover, type CapturePopoverProps } from './CapturePopover';
+export { MobileBottomBar, type MobileBottomBarProps } from './MobileBottomBar';
+/** @deprecated Replaced by AppShell. Still exported because Settings,
+ *  Dashboard, Editor, ShareView, Analytics and DashboardOverview have not been
+ *  rewritten yet — delete this and the file once the last one lands (P5). */
 export { MainLayout } from './MainLayout';
 export { VideoPlayer } from './VideoPlayer';
 export { LandingNavbar } from './LandingNavbar';
