@@ -24,12 +24,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-[#1c142b] rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
                 <div className="text-center mb-6">
                     <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="material-symbols-outlined text-primary text-3xl">lock</span>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">
                         Sign in Required
                     </h3>
                     <p className="text-slate-500 text-sm">
@@ -44,7 +44,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     />
                     <button
                         onClick={onClose}
-                        className="w-full px-4 py-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium text-sm transition-colors cursor-pointer"
+                        className="w-full px-4 py-3 text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors cursor-pointer"
                     >
                         Cancel
                     </button>

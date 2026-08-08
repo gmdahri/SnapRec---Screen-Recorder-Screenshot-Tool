@@ -1,27 +1,66 @@
+/* All @import must precede every other at-rule, @plugin included.
+   Fonts are imported from main.tsx, not here — see design-system/src/fonts.ts. */
 @import "tailwindcss";
+@import "@snaprec/design-system/tokens.css";
+
 @plugin "@tailwindcss/typography";
 
-@theme {
-  --color-primary: #8b5cf6;
-  --color-primary-light: #a78bfa;
-  --color-background-light: #f8fafc;
-  --color-background-dark: #0f172a;
-  --color-slate-grey: #475569;
+/* Tailwind utilities generate FROM the tokens. Do not restate hex here. */
+@theme inline {
+  --color-carbon: var(--sr-surface-carbon);
+  --color-well: var(--sr-surface-well);
+  --color-paper: var(--sr-surface-paper);
+  --color-panel: var(--sr-surface-panel-light);
+  --color-line: var(--sr-border-light);
+  --color-line-soft: var(--sr-border-light-soft);
+  --color-ink: var(--sr-text-primary-on-light);
+  --color-ink-2: var(--sr-text-secondary-on-light);
+  --color-ink-3: var(--sr-text-muted-on-light);
+  --color-ink-4: var(--sr-text-faint-on-light);
+  --color-cyan: var(--sr-cyan);
+  --color-cyan-ink: var(--sr-cyan-on-light);
+  --color-cyan-tint: var(--sr-cyan-tint);
+  --color-coral: var(--sr-coral-text);
+  --color-coral-mark: var(--sr-coral-mark);
+  --color-green: var(--sr-green);
 
-  --font-display: "Inter", sans-serif;
+  --font-ui: var(--sr-font-ui);
+  --font-mono: var(--sr-font-mono);
 
-  --radius-default: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-full: 9999px;
+  --radius-none: var(--sr-radius-none);
+  --radius-control: var(--sr-radius-control);
+
+  /* ---- Transitional compatibility layer ----
+     393 call sites across the not-yet-converted surfaces (dashboard, editors,
+     marketing) still use `bg-primary`, `text-primary`, `bg-background-light`
+     and friends. Without these aliases Tailwind emits no rule at all and those
+     elements render with no fill — invisible buttons, not merely wrong colours.
+     They are remapped onto plate values so those surfaces inherit the new
+     palette while they wait for P3/P5. Delete each line once its last call
+     site is converted.
+
+     `primary` is the cyan-on-light value #0A7F94, not #06A6C0, because the
+     existing markup uses it BOTH as text on white and as a fill under white
+     text. #0A7F94 clears WCAG AA in both directions (4.53:1 and 4.69:1);
+     #06A6C0 fails the second at 2.5:1. */
+  --color-primary: var(--sr-cyan-on-light);
+  --color-primary-light: var(--sr-cyan);
+  --color-background-light: var(--sr-surface-paper);
+  --color-background-dark: var(--sr-surface-carbon);
+  --color-slate-grey: var(--sr-text-muted-on-light);
+  --font-display: var(--sr-font-ui);
 }
 
 @layer base {
   body {
-    @apply font-display transition-colors duration-300;
+    font-family: var(--sr-font-ui);
+    background: var(--sr-surface-paper);
+    color: var(--sr-text-primary-on-light);
   }
 }
 
+/* Material Symbols is still loaded for surfaces not yet converted (P3/P5).
+   Remove this rule once the last Material Symbols call site is gone. */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

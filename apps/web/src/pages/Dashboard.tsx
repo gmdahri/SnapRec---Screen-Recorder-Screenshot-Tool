@@ -139,19 +139,19 @@ const Dashboard: React.FC = () => {
     ];
 
     const Sidebar = (
-        <aside className="w-72 bg-white dark:bg-background-dark border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 overflow-y-auto">
+        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 overflow-y-auto">
             <div className="flex flex-col gap-8">
                 <nav className="flex flex-col gap-1">
                     <NavLink
                         to="/dashboard"
-                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}
                     >
                         <span className="material-symbols-outlined">dashboard</span>
                         <span className="font-semibold text-sm">Dashboard</span>
                     </NavLink>
                     <NavLink
                         to="/library"
-                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}
                     >
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
                         <span className="font-semibold text-sm">My Library</span>
@@ -169,14 +169,14 @@ const Dashboard: React.FC = () => {
                 <nav className="flex flex-col gap-1">
                     <NavLink
                         to="/analytics"
-                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}
+                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}
                     >
                         <span className="material-symbols-outlined">analytics</span>
                         <span className="font-semibold text-sm">Analytics</span>
                     </NavLink>
                     <NavLink
                         to="/settings"
-                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}
+                        className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}
                     >
                         <span className="material-symbols-outlined">settings</span>
                         <span className="font-semibold text-sm">Settings</span>
@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
             <div className="relative group w-full">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
                 <input
-                    className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 pl-11 pr-4 focus:ring-2 focus:ring-primary/20 text-sm transition-all"
+                    className="w-full bg-slate-100 border-none rounded-xl py-2 pl-11 pr-4 focus:ring-2 focus:ring-primary/20 text-sm transition-all"
                     placeholder="Search recordings..."
                     type="text"
                     value={searchQuery}
@@ -215,30 +215,30 @@ const Dashboard: React.FC = () => {
                 description="Manage your screen recordings and screenshots in SnapRec. View, edit, share, and download your captures from one place."
                 noIndex={true}
             />
-            <div className="bg-slate-50/50 dark:bg-background-dark/50 min-h-full">
+            <div className="bg-slate-50/50 min-h-full">
                 {/* Header */}
                 <div className="px-8 pt-8 pb-4">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div className="space-y-1">
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">My Library</h2>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">Manage your recent screen captures and meeting records</p>
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">My Library</h2>
+                            <p className="text-slate-500 font-medium">Manage your recent screen captures and meeting records</p>
                         </div>
                         {/* Sort Dropdown */}
                         <div className="relative" ref={menuRef}>
                             <button
                                 onClick={() => setShowSortMenu(!showSortMenu)}
-                                className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors"
+                                className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
                             >
                                 <span className="material-symbols-outlined text-lg">sort</span>
                                 {sortOptions.find(o => o.key === sortOrder)?.label}
                             </button>
                             {showSortMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-20">
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-20">
                                     {sortOptions.map(opt => (
                                         <button
                                             key={opt.key}
                                             onClick={() => { setSortOrder(opt.key); setShowSortMenu(false); }}
-                                            className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${sortOrder === opt.key ? 'bg-primary/10 text-primary' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                                            className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${sortOrder === opt.key ? 'bg-primary/10 text-primary' : 'text-slate-700 hover:bg-slate-50'}`}
                                         >
                                             <span className="material-symbols-outlined text-lg">{opt.icon}</span>
                                             {opt.label}
@@ -251,13 +251,13 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="px-8 sticky top-0 bg-slate-50/80 dark:bg-background-dark/80 backdrop-blur-md z-10 py-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="px-8 sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 py-4 border-b border-slate-200">
                     <div className="flex items-center gap-6">
                         {tabs.map(tab => (
                             <button
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
-                                className={`pb-2 border-b-2 font-bold text-sm tracking-wide transition-colors ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                                className={`pb-2 border-b-2 font-bold text-sm tracking-wide transition-colors ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
                             >
                                 {tab.label}
                             </button>
@@ -274,9 +274,9 @@ const Dashboard: React.FC = () => {
                                 <p className="text-slate-500 font-bold">Waking up the library...</p>
                             </div>
                         ) : filteredRecordings.length === 0 ? (
-                            <div className="col-span-full flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                            <div className="col-span-full flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
                                 <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">folder_open</span>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                <h3 className="text-xl font-bold text-slate-900">
                                     {searchQuery ? 'No results found' : 'Your library is empty'}
                                 </h3>
                                 <p className="text-slate-500 mt-2 text-center max-w-xs">
@@ -285,9 +285,9 @@ const Dashboard: React.FC = () => {
                             </div>
                         ) : (
                             filteredRecordings.map((recording) => (
-                                <div key={recording.id} className="group bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                                <div key={recording.id} className="group bg-white rounded-xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                                     <a href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/v/${recording.id}`} className="block">
-                                        <div className="relative aspect-video bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                        <div className="relative aspect-video bg-slate-100 flex items-center justify-center">
                                             {recording.type === 'video' ? (
                                                 <div className="absolute inset-0 flex items-center justify-center">
                                                     <span className="material-symbols-outlined text-4xl text-slate-300">videocam</span>
@@ -321,10 +321,10 @@ const Dashboard: React.FC = () => {
                                                     onChange={(e) => setEditTitle(e.target.value)}
                                                     onBlur={() => handleSaveRename(recording.id)}
                                                     onKeyDown={(e) => e.key === 'Enter' && handleSaveRename(recording.id)}
-                                                    className="font-bold text-slate-900 dark:text-white truncate bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 w-full mr-2"
+                                                    className="font-bold text-slate-900 truncate bg-slate-100 rounded px-2 py-1 w-full mr-2"
                                                 />
                                             ) : (
-                                                <h3 className="font-bold text-slate-900 dark:text-white truncate">{recording.title}</h3>
+                                                <h3 className="font-bold text-slate-900 truncate">{recording.title}</h3>
                                             )}
                                             <div className="relative">
                                                 <button
@@ -334,21 +334,21 @@ const Dashboard: React.FC = () => {
                                                     <span className="material-symbols-outlined">more_vert</span>
                                                 </button>
                                                 {activeCardMenu === recording.id && (
-                                                    <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30">
-                                                        <button onClick={() => handleCopyLink(recording.id)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                                                    <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-30">
+                                                        <button onClick={() => handleCopyLink(recording.id)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                                             <span className="material-symbols-outlined text-lg">link</span>
                                                             Copy Link
                                                         </button>
-                                                        <button onClick={() => handleStartRename(recording)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                                                        <button onClick={() => handleStartRename(recording)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                                             <span className="material-symbols-outlined text-lg">edit</span>
                                                             Rename
                                                         </button>
-                                                        <button onClick={() => handleDownload(recording)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                                                        <button onClick={() => handleDownload(recording)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                                             <span className="material-symbols-outlined text-lg">download</span>
                                                             Download
                                                         </button>
-                                                        <hr className="my-1 border-slate-200 dark:border-slate-700" />
-                                                        <button onClick={() => handleDelete(recording.id)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                        <hr className="my-1 border-slate-200" />
+                                                        <button onClick={() => handleDelete(recording.id)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50">
                                                             <span className="material-symbols-outlined text-lg">delete</span>
                                                             Delete
                                                         </button>
@@ -369,10 +369,10 @@ const Dashboard: React.FC = () => {
 
                 {/* Activity Overview */}
                 <div className="px-8 pb-12">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Activity Overview</h3>
+                                <h3 className="text-xl font-bold text-slate-900">Activity Overview</h3>
                                 <p className="text-slate-500 text-sm">Your capture statistics</p>
                             </div>
                         </div>
@@ -383,7 +383,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Total Items</p>
-                                    <p className="text-2xl font-black text-slate-900 dark:text-white">{totalRecordings}</p>
+                                    <p className="text-2xl font-black text-slate-900">{totalRecordings}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -392,7 +392,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Videos</p>
-                                    <p className="text-2xl font-black text-slate-900 dark:text-white">{videoCount}</p>
+                                    <p className="text-2xl font-black text-slate-900">{videoCount}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -401,7 +401,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Screenshots</p>
-                                    <p className="text-2xl font-black text-slate-900 dark:text-white">{screenshotCount}</p>
+                                    <p className="text-2xl font-black text-slate-900">{screenshotCount}</p>
                                 </div>
                             </div>
                         </div>

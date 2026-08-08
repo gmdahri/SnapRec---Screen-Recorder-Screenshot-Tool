@@ -54,12 +54,12 @@ const EditorContent: React.FC = () => {
 
     const EditorActions = (
         <div className="flex items-center gap-4 min-h-[40px]">
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                 <button
                     onClick={undo}
                     disabled={historyIndex <= 0}
                     title="Undo (Ctrl+Z)"
-                    className="p-1.5 hover:bg-white dark:hover:bg-slate-900 rounded-md transition-all cursor-pointer disabled:opacity-30"
+                    className="p-1.5 hover:bg-white rounded-md transition-all cursor-pointer disabled:opacity-30"
                 >
                     <span className="material-symbols-outlined text-[20px]">undo</span>
                 </button>
@@ -67,12 +67,12 @@ const EditorContent: React.FC = () => {
                     onClick={redo}
                     disabled={historyIndex >= history.current.length - 1}
                     title="Redo (Ctrl+Y)"
-                    className="p-1.5 hover:bg-white dark:hover:bg-slate-900 rounded-md transition-all cursor-pointer disabled:opacity-30"
+                    className="p-1.5 hover:bg-white rounded-md transition-all cursor-pointer disabled:opacity-30"
                 >
                     <span className="material-symbols-outlined text-[20px]">redo</span>
                 </button>
             </div>
-            <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+            <div className="h-6 w-[1px] bg-slate-200"></div>
             <GatedButton
                 onClick={() => handleActionClick('export')}
                 icon="download"
@@ -108,20 +108,20 @@ const EditorContent: React.FC = () => {
                 title={
                     <div className="flex items-center gap-1 group/title max-w-xl">
                         {loading ? (
-                            <div className="w-[124px] h-5 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                            <div className="w-[124px] h-5 bg-slate-200 rounded animate-pulse"></div>
                         ) : user ? (
                             <>
                                 <input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 dark:focus:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-all"
+                                    className="bg-transparent border-none outline-none text-sm font-semibold text-slate-500 w-full focus:text-slate-900 hover:bg-slate-50 rounded px-1 transition-all"
                                 />
                                 <span className="material-symbols-outlined text-[16px] text-slate-300 opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
                             </>
                         ) : (
                             <div
                                 onClick={() => setShowLoginPrompt(true)}
-                                className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer flex items-center gap-1"
+                                className="text-sm font-semibold text-slate-500 hover:text-slate-900 cursor-pointer flex items-center gap-1"
                                 title="Login to edit title"
                             >
                                 <span>{title}</span>

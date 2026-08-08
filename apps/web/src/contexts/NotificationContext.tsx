@@ -32,9 +32,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                 {notifications.map((n) => (
                     <div
                         key={n.id}
-                        className={`pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border min-w-[320px] animate-slide-up ${n.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-500/20 dark:text-emerald-400' :
-                            n.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-800 dark:bg-rose-900/20 dark:border-rose-500/20 dark:text-rose-400' :
-                                'bg-white border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200'
+                        className={`pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border min-w-[320px] animate-slide-up ${n.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+                            n.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-800' :
+                                'bg-white border-slate-200 text-slate-800'
                             }`}
                     >
                         <span className="material-symbols-outlined">

@@ -4,9 +4,9 @@ import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../compone
 import { blogPosts, categories } from '../data/blogData';
 
 const categoryStyles: Record<string, { bg: string; text: string }> = {
-    tutorial: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300' },
-    comparison: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300' },
-    tips: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300' },
+    tutorial: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    comparison: { bg: 'bg-purple-100', text: 'text-purple-700' },
+    tips: { bg: 'bg-amber-100', text: 'text-amber-700' },
 };
 
 const Blog: React.FC = () => {

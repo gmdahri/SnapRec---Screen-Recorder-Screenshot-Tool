@@ -26,7 +26,7 @@ export const GatedButton: React.FC<GatedButtonProps> = ({
 
     const variantClasses = {
         primary: 'bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90',
-        secondary: 'hover:bg-[#ece7f4] dark:hover:bg-[#2d2245]',
+        secondary: 'hover:bg-[#ece7f4]',
     };
 
     return (

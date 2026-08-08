@@ -8,6 +8,8 @@
   --sr-surface-well: #040708;
   --sr-surface-panel-dark: #14191B;
   --sr-surface-panel-dark-alt: #101416;
+  /* Scrim for stamps laid over media — the well at 80%. */
+  --sr-scrim-dark: rgba(4, 7, 8, .8);
 
   /* Surfaces — light (management) */
   --sr-surface-paper: #FAFBFB;

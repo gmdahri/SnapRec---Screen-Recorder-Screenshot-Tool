@@ -75,7 +75,7 @@ function App() {
                 {/* Editor and VideoPreview accessible without login, but with limited features */}
                 <Route path="/editor/:id?" element={
                   <Suspense fallback={
-                    <div className="h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark text-slate-600 dark:text-slate-400">
+                    <div className="h-screen flex flex-col items-center justify-center bg-background-light text-slate-600">
                       <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                       <p className="text-sm font-medium">Loading editor...</p>
                     </div>

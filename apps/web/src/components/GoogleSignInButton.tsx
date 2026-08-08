@@ -19,7 +19,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
 
     const variantClasses = {
         filled: 'bg-white text-gray-800 hover:bg-gray-100 shadow-lg',
-        outlined: 'bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700',
+        outlined: 'bg-white border border-slate-200 hover:bg-slate-50',
     };
 
     return (

@@ -24,14 +24,14 @@ const DashboardOverview: React.FC = () => {
     const screenshotCount = recordings.filter((r: Recording) => r.type === 'screenshot').length;
 
     const Sidebar = (
-        <aside className="w-72 bg-white dark:bg-background-dark border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 overflow-y-auto">
+        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 overflow-y-auto">
             <div className="flex flex-col gap-8">
                 <nav className="flex flex-col gap-1">
-                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <span className="material-symbols-outlined">dashboard</span>
                         <span className="font-semibold text-sm">Dashboard</span>
                     </NavLink>
-                    <NavLink to="/library" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    <NavLink to="/library" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
                         <span className="font-semibold text-sm">My Library</span>
                     </NavLink>
@@ -46,7 +46,7 @@ const DashboardOverview: React.FC = () => {
                     <AddToChromeButton size="md" variant="outline" className="w-full !rounded-lg border-slate-200 text-slate-600 hover:text-primary hover:border-primary/30" />
                 </div>
                 <nav className="flex flex-col gap-1">
-                    <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                    <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}>
                         <span className="material-symbols-outlined">analytics</span>
                         <span className="font-semibold text-sm">Analytics</span>
                     </NavLink>
@@ -57,49 +57,49 @@ const DashboardOverview: React.FC = () => {
 
     return (
         <MainLayout sidebar={Sidebar}>
-            <div className="bg-slate-50/50 dark:bg-background-dark/50 min-h-full p-8">
+            <div className="bg-slate-50/50 min-h-full p-8">
                 {/* Welcome Section */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">
                         Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}! 👋
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">
+                    <p className="text-slate-500 font-medium mt-1">
                         Here's what's happening with your captures
                     </p>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 min-h-[104px]">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                 <span className="material-symbols-outlined text-2xl">video_library</span>
                             </div>
                             <div>
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Total Captures</p>
-                                <p className="text-3xl font-black text-slate-900 dark:text-white">{recordings.length}</p>
+                                <p className="text-3xl font-black text-slate-900">{recordings.length}</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
                                 <span className="material-symbols-outlined text-2xl">videocam</span>
                             </div>
                             <div>
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Videos</p>
-                                <p className="text-3xl font-black text-slate-900 dark:text-white">{videoCount}</p>
+                                <p className="text-3xl font-black text-slate-900">{videoCount}</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
                                 <span className="material-symbols-outlined text-2xl">image</span>
                             </div>
                             <div>
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Screenshots</p>
-                                <p className="text-3xl font-black text-slate-900 dark:text-white">{screenshotCount}</p>
+                                <p className="text-3xl font-black text-slate-900">{screenshotCount}</p>
                             </div>
                         </div>
                     </div>
@@ -117,12 +117,12 @@ const DashboardOverview: React.FC = () => {
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <button onClick={() => navigate('/library')} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 flex items-center gap-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
+                    <button onClick={() => navigate('/library')} className="bg-white rounded-2xl border border-slate-200 p-6 flex items-center gap-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
                         <div className="size-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                             <span className="material-symbols-outlined text-2xl">folder_open</span>
                         </div>
                         <div className="text-left">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">View Library</h3>
+                            <h3 className="text-lg font-bold text-slate-900">View Library</h3>
                             <p className="text-slate-500 text-sm">Browse all your captures</p>
                         </div>
                     </button>
@@ -138,9 +138,9 @@ const DashboardOverview: React.FC = () => {
                 </div>
 
                 {/* Recent Captures */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 min-h-[200px]">
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 min-h-[200px]">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Captures</h3>
+                        <h3 className="text-xl font-bold text-slate-900">Recent Captures</h3>
                         <button onClick={() => navigate('/library')} className="text-primary font-bold text-sm hover:underline">
                             View All →
                         </button>
@@ -157,8 +157,8 @@ const DashboardOverview: React.FC = () => {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                             {recentRecordings.map(recording => (
-                                <a key={recording.id} href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/v/${recording.id}`} className="group bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden hover:shadow-md transition-all">
-                                    <div className="aspect-video bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                                <a key={recording.id} href={recording.type === 'screenshot' ? `/editor/${recording.id}` : `/v/${recording.id}`} className="group bg-slate-50 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                                    <div className="aspect-video bg-slate-200 flex items-center justify-center">
                                         {recording.type === 'video' ? (
                                             <span className="material-symbols-outlined text-3xl text-slate-400">videocam</span>
                                         ) : (
@@ -166,7 +166,7 @@ const DashboardOverview: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="p-3">
-                                        <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">{recording.title}</p>
+                                        <p className="font-semibold text-slate-900 text-sm truncate">{recording.title}</p>
                                     </div>
                                 </a>
                             ))}

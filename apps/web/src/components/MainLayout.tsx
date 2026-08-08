@@ -23,7 +23,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     noScroll = false,
 }) => {
     return (
-        <div className={`h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display flex flex-col ${className}`}>
+        <div className={`h-screen bg-background-light text-slate-900 font-display flex flex-col ${className}`}>
             <Header
                 title={title}
                 showBackButton={showBackButton}

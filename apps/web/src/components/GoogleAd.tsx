@@ -76,11 +76,11 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
 
     if (!CLIENT_ID || !SLOT_ID) {
         return (
-            <div className={`bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center text-center group transition-all hover:border-primary/50 ${className}`} style={{ minHeight: '250px', ...style }}>
+            <div className={`bg-slate-50 border border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center text-center group transition-all hover:border-primary/50 ${className}`} style={{ minHeight: '250px', ...style }}>
                 <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
                     <span className="material-symbols-outlined">ads_click</span>
                 </div>
-                <h5 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Ad Placement</h5>
+                <h5 className="text-sm font-bold text-slate-900 mb-1">Ad Placement</h5>
                 <p className="text-xs text-slate-500 max-w-[180px]">Configure VITE_ADSENSE_CLIENT_ID and VITE_ADSENSE_SLOT_ID in .env</p>
             </div>
         );
@@ -90,9 +90,9 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
     // AdSense often rejects localhost even with adtest=on if the domain is not verified.
     if (isLocalhost) {
         return (
-            <div className={`bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center text-center ${className}`} style={{ minHeight: '250px', ...style }}>
+            <div className={`bg-slate-50/50 border border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-center ${className}`} style={{ minHeight: '250px', ...style }}>
                 <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-2">Advertisement</p>
-                <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+                <div className="size-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
                     <span className="material-symbols-outlined text-sm">info</span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium">Ads suppressed on localhost</p>

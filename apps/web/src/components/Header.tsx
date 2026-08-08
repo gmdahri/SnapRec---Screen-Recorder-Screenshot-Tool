@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
     const [showLoginModal, setShowLoginModal] = useState(false);
 
     const variantClasses = {
-        default: 'bg-white dark:bg-[#1c142b] border-b border-[#ece7f4] dark:border-[#2d2245]',
+        default: 'bg-white border-b border-[#ece7f4]',
         transparent: 'bg-transparent',
     };
 
@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {showBackButton ? (
                         <button
                             onClick={() => navigate('/dashboard')}
-                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all text-slate-600 dark:text-slate-400"
+                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 rounded-lg transition-all text-slate-600"
                             title="Back to Dashboard"
                         >
                             <span className="material-symbols-outlined text-[24px]">arrow_back</span>

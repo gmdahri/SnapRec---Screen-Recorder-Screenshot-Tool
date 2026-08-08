@@ -28,7 +28,7 @@ const Login: React.FC = () => {
     }, [user, loading, navigate, from?.pathname, from?.search]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-background-dark">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
             <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
             {/* Background Accent */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -38,7 +38,7 @@ const Login: React.FC = () => {
 
             <div className="max-w-md w-full mx-4 relative">
                 {/* Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
+                <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-xl shadow-slate-200/50">
                     {/* Logo */}
                     <div className="flex justify-center mb-10">
                         <Logo size="lg" className="!gap-3" />
@@ -46,8 +46,8 @@ const Login: React.FC = () => {
 
                     {/* Heading */}
                     <div className="text-center mb-10">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h2>
-                        <p className="text-slate-500 dark:text-slate-400">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome Back</h2>
+                        <p className="text-slate-500">
                             {from?.pathname?.includes('video-editor')
                                 ? 'Sign in to open the Video Editor and trim or export your recording.'
                                 : 'Sign in to access your recordings and screenshots'}
@@ -58,7 +58,7 @@ const Login: React.FC = () => {
                     <button
                         onClick={signInWithGoogle}
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed group"
+                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white text-slate-700 border border-slate-200 rounded-2xl font-semibold hover:bg-slate-50 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed group"
                     >
                         <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
                             <path
@@ -82,7 +82,7 @@ const Login: React.FC = () => {
                     </button>
 
                     {/* Terms */}
-                    <p className="text-center text-slate-400 dark:text-slate-500 text-xs mt-8">
+                    <p className="text-center text-slate-400 text-xs mt-8">
                         By signing in, you agree to our{' '}
                         <a href="/terms" className="text-primary hover:underline font-medium">Terms of Service</a>
                         {' '}and{' '}
@@ -91,7 +91,7 @@ const Login: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-slate-400 dark:text-slate-500 text-sm mt-8">
+                <p className="text-center text-slate-400 text-sm mt-8">
                     New to SnapRec? Sign in with Google to start capturing.
                 </p>
             </div>

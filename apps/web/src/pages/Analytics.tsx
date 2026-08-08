@@ -30,14 +30,14 @@ const Analytics: React.FC = () => {
     }, {} as Record<string, number>);
 
     const Sidebar = (
-        <aside className="w-72 bg-white dark:bg-background-dark border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 overflow-y-auto">
+        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 overflow-y-auto">
             <div className="flex flex-col gap-8">
                 <nav className="flex flex-col gap-1">
-                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <span className="material-symbols-outlined">dashboard</span>
                         <span className="font-semibold text-sm">Dashboard</span>
                     </NavLink>
-                    <NavLink to="/library" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    <NavLink to="/library" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
                         <span className="font-semibold text-sm">My Library</span>
                     </NavLink>
@@ -49,11 +49,11 @@ const Analytics: React.FC = () => {
                     <span>New Recording</span>
                 </button>
                 <nav className="flex flex-col gap-1">
-                    <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                    <NavLink to="/analytics" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}>
                         <span className="material-symbols-outlined">analytics</span>
                         <span className="font-semibold text-sm">Analytics</span>
                     </NavLink>
-                    <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-400 hover:text-primary'}`}>
+                    <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}>
                         <span className="material-symbols-outlined">settings</span>
                         <span className="font-semibold text-sm">Settings</span>
                     </NavLink>
@@ -68,10 +68,10 @@ const Analytics: React.FC = () => {
 
     return (
         <MainLayout sidebar={Sidebar}>
-            <div className="bg-slate-50/50 dark:bg-background-dark/50 min-h-full p-8">
+            <div className="bg-slate-50/50 min-h-full p-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Analytics</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Insights into your capture activity</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Analytics</h1>
+                    <p className="text-slate-500 font-medium mt-1">Insights into your capture activity</p>
                 </div>
 
                 {isLoading ? (
@@ -82,19 +82,19 @@ const Analytics: React.FC = () => {
                     <>
                         {/* Summary Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Captures</p>
-                                <p className="text-4xl font-black text-slate-900 dark:text-white">{recordings.length}</p>
+                                <p className="text-4xl font-black text-slate-900">{recordings.length}</p>
                             </div>
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Videos</p>
                                 <p className="text-4xl font-black text-amber-600">{videoCount}</p>
                             </div>
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Screenshots</p>
                                 <p className="text-4xl font-black text-emerald-600">{screenshotCount}</p>
                             </div>
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
                                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Active Days</p>
                                 <p className="text-4xl font-black text-primary">{Object.keys(activityByDay).length}</p>
                             </div>
@@ -102,11 +102,11 @@ const Analytics: React.FC = () => {
 
                         {/* Type Breakdown */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Capture Breakdown</h3>
+                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                                <h3 className="text-lg font-bold text-slate-900 mb-4">Capture Breakdown</h3>
                                 <div className="flex items-center gap-4">
                                     <div className="flex-1">
-                                        <div className="h-4 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                        <div className="h-4 rounded-full bg-slate-100 overflow-hidden">
                                             <div
                                                 className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
                                                 style={{ width: `${recordings.length ? (videoCount / recordings.length) * 100 : 0}%` }}
@@ -119,8 +119,8 @@ const Analytics: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Recent Activity</h3>
+                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                                <h3 className="text-lg font-bold text-slate-900 mb-4">Recent Activity</h3>
                                 <div className="flex gap-1 items-end h-20">
                                     {Object.entries(activityByDay).slice(-7).map(([date, count]) => (
                                         <div key={date} className="flex-1 flex flex-col items-center gap-1">

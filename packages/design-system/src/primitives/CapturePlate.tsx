@@ -76,7 +76,7 @@ export function CapturePlate({
           <span style={{
             position: 'absolute', left: 8, bottom: 8,
             display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '2px 6px', background: 'rgba(4,7,8,.8)',
+            padding: '2px 6px', background: 'var(--sr-scrim-dark)',
             fontFamily: 'var(--sr-font-mono)', fontSize: 10,
             color: 'var(--sr-text-primary-on-dark)',
           }}>
