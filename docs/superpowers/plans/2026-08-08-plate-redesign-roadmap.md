@@ -20,7 +20,7 @@ consumes the tokens through `@theme inline`. See
 
 | Phase | Scope | Scenes | Plan |
 |---|---|---|---|
-| **P1** | Component layer — 8 new primitives + the 13-state capture model | — | `2026-08-08-p1-component-layer.md` |
+| **P1** ✅ | Component layer — 8 new primitives + the 13-state capture model | — | `2026-08-08-p1-component-layer.md` |
 | **P2** | Extension: popup, capture completion, offline queue | A1–A9, B1–B6 (15) | `2026-08-08-p2-extension-capture.md` |
 | **P3** | Web app: shell, Home, Library, Projects, Shared, Analytics, Settings | H1–H6, L1–L9, PROJ, SHAR, ANLY, SETT (24) | `2026-08-08-p3-web-app.md` |
 | **P4** | Share & viewer surfaces | C1–C6 (6) | `2026-08-08-p4-share-viewer.md` |
