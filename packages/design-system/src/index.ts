@@ -20,3 +20,5 @@ export { CaptureFrame, type CaptureFrameProps, type FrameTreatmentKind } from '.
 export { CapturePlate, type CapturePlateProps, type CaptureAction } from './primitives/CapturePlate';
 export { CaptureRow, type CaptureRowProps, type RowColumns } from './primitives/CaptureRow';
 export { ActivityRow, type ActivityRowProps } from './primitives/ActivityRow';
+export { SelectionBar, type SelectionBarProps } from './primitives/SelectionBar';
+export { AppRail, type AppRailProps, type RailItem } from './primitives/AppRail';
