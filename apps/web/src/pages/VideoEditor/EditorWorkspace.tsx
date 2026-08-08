@@ -185,8 +185,6 @@ export function EditorWorkspace() {
     workspace,
     hasTimelineContent,
     addMediaToTimeline,
-    selectedClipId,
-    clips,
     editorVideoSrc,
     trimStartSec,
     trimEndSec,
@@ -213,7 +211,6 @@ export function EditorWorkspace() {
   const trimRange =
     workspace === 'trim' && rangeOk ? { start: trimStartSec, end: Math.min(trimEndSec, d) } : null;
 
-  const clip = clips.find((c) => c.id === selectedClipId) ?? clips[0];
   const showEditorTimeline = !!(editorVideoSrc && hasTimelineContent);
   const emptyOnboarding = !hasTimelineContent || workspace === 'empty';
 
@@ -305,25 +302,37 @@ export function EditorWorkspace() {
         </div>
 
         {showEditorTimeline ? (
-          workspace === 'trim' ? (
-            <EditorTimeline
-              playerRef={playerRef}
-              playback={playback}
-              clipName="Trim range"
-              compact
-              trimStart={trimRange?.start}
-              trimEnd={trimRange?.end}
-            />
-          ) : (
-            <EditorTimeline
-              playerRef={playerRef}
-              playback={playback}
-              clipName={clip?.name ?? 'Clip'}
-              zoomKeyframes={zoomKeyframes}
-              autoZoomMarkers={autoZoom ? metadata.filter((m) => m.type === 'mousedown' || m.type === 'scrollstop').map((m) => ({ timestamp: m.timestamp / 1000 })) : []}
-              onZoomMarkerClick={(sec) => playerRef.current?.seek(sec, { unrestricted: true })}
-            />
-          )
+          <EditorTimeline
+            project={{
+              durationMs: (playback.duration || 0) * 1000,
+              trim: {
+                startMs: (trimRange?.start ?? 0) * 1000,
+                endMs: (trimRange?.end ?? playback.duration ?? 0) * 1000,
+              },
+              zoomRegions: zoomKeyframes.map((k) => ({
+                id: k.id,
+                startMs: k.timestamp,
+                endMs: k.timestamp + k.duration,
+                scale: k.scale,
+                // A keyframe carries no provenance yet. Everything the user
+                // placed by hand is manual; auto suggestions live below and
+                // only become keyframes once accepted.
+                source: 'manual' as const,
+              })),
+              suggestions: autoZoom
+                ? metadata
+                    .filter((m) => m.type === 'mousedown' || m.type === 'scrollstop')
+                    .map((m, i) => ({ id: `s${i}`, atMs: m.timestamp }))
+                : [],
+              playheadMs: (playback.currentTime || 0) * 1000,
+            }}
+            selection={null}
+            onSelect={(id) => {
+              const k = zoomKeyframes.find((z) => z.id === id);
+              if (k) playerRef.current?.seek(k.timestamp / 1000, { unrestricted: true });
+            }}
+            onTrim={(_edge, ms) => playerRef.current?.seek(ms / 1000, { unrestricted: true })}
+          />
         ) : (
           <TimelineFooter empty={emptyOnboarding} />
         )}

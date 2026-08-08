@@ -78,8 +78,12 @@ export function renumber(comments: ShareComment[]): ShareComment[] {
   return comments.map((comment, i) => ({ ...comment, index: i + 1 }));
 }
 
-/** mm:ss for a timecode marker's accessible name. */
+/** mm:ss for a timecode marker's accessible name.
+ *
+ * FLOORS, matching the video editor: at 11.6s you are still inside the 11th
+ * second, and the same moment must render identically on both surfaces or a
+ * comment marker and a trim handle disagree about where they are. */
 export function formatTimecode(ms: number): string {
-  const total = Math.round(ms / 1000);
+  const total = Math.floor(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
