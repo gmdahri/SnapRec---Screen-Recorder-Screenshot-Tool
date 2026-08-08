@@ -24,6 +24,7 @@ export function initialState() {
     entered: false,
     mode: 'record',
     source: 'tab',
+    area: 'visible',
     inputs: { mic: true, tabAudio: true, camera: false },
     options: { resolution: '1080p', countdown: 3, autoZoom: true, cursor: true },
     count: 0,
@@ -36,6 +37,11 @@ export function initialState() {
     account: null,
     micDevice: null,
     previewUrl: null,
+    /** Live keyboard bindings from chrome.commands.getAll(), keyed by command
+     * name. Null until they resolve — the popup shows no shortcut rather than
+     * a guessed one, because the user can rebind these in chrome://extensions
+     * and a stale hint is worse than none. */
+    shortcuts: null,
   };
 }
 
@@ -55,6 +61,9 @@ export function transition(state, event) {
 
     case 'SET_SOURCE':
       return set(state, { source: event.source });
+
+    case 'SET_AREA':
+      return set(state, { area: event.area });
 
     case 'TOGGLE_INPUT':
       return set(state, {

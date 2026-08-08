@@ -1,357 +1,135 @@
-// SnapRec Popup Script
+import { derive, initialState, transition } from './state.js';
+import { render } from './render.js';
 
-// Wake up service worker and ensure it's ready
-const wakeUpServiceWorker = () => new Promise(resolve => {
-  chrome.runtime.sendMessage({ action: 'ping' }, () => {
-    if (chrome.runtime.lastError) {
-      console.log('Service worker waking up:', chrome.runtime.lastError.message);
-    }
-    setTimeout(resolve, 100);
-  });
-});
+/** Wires the pure state machine to Chrome.
+ *
+ * Every chrome.* call in the popup lives here. state.js and render.js stay
+ * testable in jsdom precisely because neither of them knows Chrome exists.
+ *
+ * The background service worker speaks { action: '...' } — not { type: '...' }.
+ * Do not "modernise" that here without changing background.js with it. */
 
-// Send message with retry for service worker reliability
-async function sendMessage(message, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    await wakeUpServiceWorker();
+let state = initialState();
+let timer = null;
+
+function dispatch(event) {
+  const next = transition(state, event);
+  if (next === state) return;
+  const previous = state;
+  state = next;
+  paint();
+  runSideEffects(event, previous);
+}
+
+function paint() {
+  render(state, dispatch);
+
+  // Focus management the state machine cannot own, because it has no DOM.
+  document.querySelector('[data-focus-target]')?.focus();
+
+  clearInterval(timer);
+  timer = null;
+  if (state.view === 'countdown' || state.view === 'recording') {
+    timer = setInterval(() => dispatch({ type: 'TICK' }), 1000);
+  }
+}
+
+const send = (message) =>
+  new Promise((resolve) => {
     try {
-      return await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, response => {
-          chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve(response);
-        });
+      chrome.runtime.sendMessage(message, (response) => {
+        void chrome.runtime.lastError;
+        resolve(response);
       });
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      await new Promise(r => setTimeout(r, 100));
+    } catch {
+      resolve(undefined);
     }
-  }
-}
-
-// DOM Ready
-document.addEventListener('DOMContentLoaded', async () => {
-  await wakeUpServiceWorker();
-  initModeToggle();
-  initCaptureActions();
-  initRecordOptions();
-  initSettings();
-  loadRecentCaptures();
-  initUpdateBanner();
-  initReviewBanner();
-  initMicPermission();
-});
-
-// Microphone Permission
-// getUserMedia inside an extension popup or offscreen document can fail with
-// NotAllowedError even when the user "feels" allowed (sticky session denial,
-// stale Chrome cache, macOS Privacy not enabled). We always attempt the
-// warmup, and on rejection we route the user to a dedicated permission tab —
-// regular tabs reliably surface Chrome's address-bar mic prompt, which
-// persists the grant across the whole extension origin.
-
-function showMicPermissionBanner(detail) {
-  const banner = document.getElementById('micPermissionBanner');
-  if (!banner) return;
-  if (detail) {
-    document.getElementById('micPermissionDetail').textContent = detail;
-  }
-  banner.classList.remove('hidden');
-}
-
-function hideMicPermissionBanner() {
-  document.getElementById('micPermissionBanner')?.classList.add('hidden');
-}
-
-function micDeniedMessage() {
-  return 'Microphone access is blocked. Click below to grant permission in a new tab, then come back here.';
-}
-
-function initMicPermission() {
-  const fixBtn = document.getElementById('micPermissionFixBtn');
-  fixBtn?.addEventListener('click', () => {
-    // Open the dedicated permission page in a real tab. Popups and offscreen
-    // documents can't surface Chrome's address-bar mic prompt reliably (sticky
-    // session-level denials silently reject), but a regular tab can — and the
-    // grant from a tab persists across the whole extension origin.
-    chrome.tabs.create({ url: chrome.runtime.getURL('permission/permission.html') });
   });
 
-  // Hide the banner when the user toggles mic off — it's no longer relevant.
-  document.getElementById('micToggle')?.addEventListener('change', (e) => {
-    if (!e.target.checked) hideMicPermissionBanner();
-  });
-}
+const AREA_ACTION = {
+  visible: 'captureVisible',
+  region: 'startRegionSelect',
+  fullpage: 'captureFullPage',
+};
 
-// Update Banner
-async function initUpdateBanner() {
-  const banner = document.getElementById('updateBanner');
-  const versionSpan = document.getElementById('updateVersion');
-  const updateBtn = document.getElementById('updateNowBtn');
-
-  // Trigger a fresh update check in background
-  sendMessage({ action: 'checkForUpdate' }).catch(() => { });
-
-  // Check if an update has already been flagged
-  try {
-    const { updateAvailable, updateVersion } = await chrome.storage.local.get(['updateAvailable', 'updateVersion']);
-    if (updateAvailable && updateVersion) {
-      versionSpan.textContent = updateVersion;
-      banner.classList.remove('hidden');
-    }
-  } catch (e) {
-    console.warn('Could not check update state:', e);
-  }
-
-  // "Update Now" triggers a real update check and applies it
-  updateBtn.addEventListener('click', async () => {
-    updateBtn.textContent = 'Checking...';
-    updateBtn.disabled = true;
-
-    const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg';
-
-    try {
-      // Request Chrome to check for and download the update from the Web Store
-      if (chrome.runtime.requestUpdateCheck) {
-        chrome.runtime.requestUpdateCheck((status) => {
-          console.log('[SnapRec] Update check status:', status);
-
-          if (status === 'update_available') {
-            updateBtn.textContent = 'Installing...';
-            // Reload to apply the downloaded update
-            chrome.runtime.reload();
-          } else {
-            // Either 'no_update', 'throttled', or actual error.
-            // Since our version.json said there's an update, it means the CWS hasn't synced for this user yet,
-            // or we're being rate limited. Send them to the store page where they can manually force it.
-            chrome.tabs.create({ url: CHROME_STORE_URL });
-            window.close();
-          }
-        });
-      } else {
-        // Fallback for environments without requestUpdateCheck
-        chrome.tabs.create({ url: CHROME_STORE_URL });
+function runSideEffects(event, previous) {
+  switch (event.type) {
+    case 'START':
+      if (previous.mode === 'screenshot') {
+        send({ action: AREA_ACTION[previous.area ?? 'visible'] });
         window.close();
-      }
-    } catch (e) {
-      console.warn('[SnapRec] Update check failed:', e);
-      // Fallback: open the Chrome store page
-      chrome.tabs.create({ url: CHROME_STORE_URL });
-      window.close();
-    }
-  });
-}
-
-// Mode Toggle
-function initModeToggle() {
-  const toggleGroup = document.querySelector('.mode-toggle');
-  const toggleBtns = document.querySelectorAll('.mode-toggle .toggle-btn');
-  const panels = {
-    screenshot: document.getElementById('screenshotPanel'),
-    record: document.getElementById('recordPanel')
-  };
-
-  toggleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      toggleBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const mode = btn.dataset.mode;
-      panels.screenshot.classList.toggle('hidden', mode !== 'screenshot');
-      panels.record.classList.toggle('hidden', mode !== 'record');
-      toggleGroup.classList.toggle('mode-record', mode === 'record');
-    });
-  });
-}
-
-// Capture Actions
-function initCaptureActions() {
-  document.querySelectorAll('.action-card[data-action]').forEach(card => {
-    card.addEventListener('click', () => {
-      card.style.transform = 'scale(0.98)';
-
-      // Send message and close immediately for best UX
-      sendMessage({ action: card.dataset.action });
-      setTimeout(() => window.close(), 150);
-    });
-  });
-}
-
-// Record Options
-function initRecordOptions() {
-  // Source buttons
-  document.querySelectorAll('.source-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-
-  // Start Recording
-  document.getElementById('startRecordBtn').addEventListener('click', async () => {
-    const activeSource = document.querySelector('.source-btn.active');
-    const micEnabled = document.getElementById('micToggle').checked;
-
-    if (micEnabled) {
-      // Always attempt the warmup — even when permissions.query returns "denied"
-      // it can still surface the OS prompt (e.g. when the denial is a stale
-      // session-only value). Only treat an actual rejection as a hard block.
-      try {
-        const warmupStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        warmupStream.getTracks().forEach(t => t.stop());
-        hideMicPermissionBanner();
-      } catch (e) {
-        if (e.name === 'NotAllowedError') {
-          showMicPermissionBanner(micDeniedMessage());
-        } else {
-          showMicPermissionBanner('Microphone could not be accessed: ' + (e.message || e.name));
-        }
         return;
       }
-    }
-
-    sendMessage({
-      action: 'startRecording',
-      options: {
-        source: activeSource?.dataset.source || 'screen',
-        microphone: micEnabled,
-        systemAudio: document.getElementById('systemAudioToggle').checked,
-        webcam: document.getElementById('webcamToggle').checked
-      }
-    });
-
-    // Close immediately so picker/countdown can show
-    setTimeout(() => window.close(), 150);
-  });
-}
-
-// Settings
-function initSettings() {
-  const settingsPanel = document.getElementById('settingsPanel');
-
-  document.getElementById('settingsBtn').addEventListener('click', () => {
-    settingsPanel.classList.remove('hidden');
-  });
-
-  document.getElementById('backBtn').addEventListener('click', () => {
-    settingsPanel.classList.add('hidden');
-  });
-
-  loadSettings();
-  initShortcuts();
-
-  // Setting toggles
-  const toggles = [
-    { id: 'autoEditToggle', key: 'autoEdit' },
-    { id: 'autoCopyToggle', key: 'autoCopy' },
-    { id: 'fabToggle', key: 'fabEnabled' }
-  ];
-
-  toggles.forEach(({ id, key }) => {
-    document.getElementById(id).addEventListener('change', e => {
-      chrome.storage.local.set({ [key]: e.target.checked });
-    });
-  });
-}
-
-// Shortcuts
-function initShortcuts() {
-  const isMac = navigator.platform.toUpperCase().includes('MAC');
-  const shortcuts = {
-    shortcutFullpage: isMac ? '⌘⇧1' : 'Ctrl+Shift+1',
-    shortcutRegion: isMac ? '⌘⇧2' : 'Ctrl+Shift+2',
-    shortcutVisible: isMac ? '⌘⇧3' : 'Ctrl+Shift+3',
-    shortcutRecord: isMac ? '⌘⇧4' : 'Ctrl+Shift+4'
-  };
-
-  Object.entries(shortcuts).forEach(([id, keys]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = keys;
-  });
-
-  document.getElementById('customizeShortcutsBtn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-    window.close();
-  });
-}
-
-async function loadSettings() {
-  try {
-    const result = await chrome.storage.local.get(['autoEdit', 'autoCopy', 'fabEnabled']);
-    document.getElementById('autoEditToggle').checked = result.autoEdit !== false;
-    document.getElementById('autoCopyToggle').checked = result.autoCopy || false;
-    document.getElementById('fabToggle').checked = result.fabEnabled !== false;
-  } catch (e) {
-    console.warn('Could not load settings:', e);
-  }
-}
-
-// Recent Captures
-async function loadRecentCaptures() {
-  const container = document.getElementById('recentCaptures');
-  const emptyState = document.getElementById('recentEmpty');
-
-  try {
-    const { recentCaptures: captures = [] } = await chrome.storage.local.get('recentCaptures');
-
-    if (!captures.length) {
-      emptyState.classList.remove('hidden');
-      container.style.display = 'none';
-      return;
-    }
-
-    emptyState.classList.add('hidden');
-    container.style.display = 'flex';
-    container.innerHTML = captures.slice(0, 10).map((capture, i) => `
-      <div class="recent-item ${capture.type === 'video' ? 'video' : ''}" data-index="${i}">
-        ${capture.thumbnail || capture.dataUrl
-        ? `<img src="${capture.thumbnail || capture.dataUrl}" alt="Capture">`
-        : ''}
-      </div>
-    `).join('');
-
-    // Add click handlers
-    container.querySelectorAll('.recent-item').forEach((item, index) => {
-      item.addEventListener('click', () => {
-        const capture = captures[index];
-        if (capture?.dataUrl) {
-          chrome.runtime.sendMessage({ action: 'openCapture', capture });
-          window.close();
-        }
+      send({
+        action: 'startRecording',
+        options: {
+          source: state.source,
+          microphone: state.inputs.mic,
+          systemAudio: state.inputs.tabAudio,
+          webcam: state.inputs.camera,
+        },
       });
-    });
-  } catch (e) {
-    console.warn('Could not load recent captures:', e);
-    emptyState.classList.remove('hidden');
-  }
+      break;
 
-  // Clear button
-  document.getElementById('clearRecent').addEventListener('click', async () => {
-    await chrome.storage.local.remove('recentCaptures');
-    loadRecentCaptures();
-  });
-}
+    case 'STOP':
+      send({ action: 'stopRecording' });
+      break;
 
-// Review Banner
-async function initReviewBanner() {
-  try {
-    const { captureCount = 0, reviewDismissed = false, reviewDeferredAt = 0 } =
-      await chrome.storage.local.get(['captureCount', 'reviewDismissed', 'reviewDeferredAt']);
+    case 'CANCEL':
+      if (previous.view === 'countdown') send({ action: 'cancelCountdown' });
+      if (previous.view === 'uploading') send({ action: 'cancelUpload', id: state.capture?.id });
+      break;
 
-    const deferred = captureCount < reviewDeferredAt + 10;
-    if (captureCount < 3 || reviewDismissed || deferred) return;
+    case 'UPLOAD':
+      send({ action: 'uploadCapture', id: state.capture?.id });
+      break;
 
-    const banner = document.getElementById('reviewBanner');
-    banner.classList.remove('hidden');
-
-    document.getElementById('reviewRateBtn').addEventListener('click', async () => {
-      await chrome.storage.local.set({ reviewDismissed: true });
-      banner.classList.add('hidden');
-    });
-
-    document.getElementById('reviewDismissBtn').addEventListener('click', async () => {
-      await chrome.storage.local.set({ reviewDeferredAt: captureCount });
-      banner.classList.add('hidden');
-    });
-  } catch (e) {
-    console.warn('Could not init review banner:', e);
+    default:
+      break;
   }
 }
+
+chrome.runtime.onMessage.addListener((message) => {
+  switch (message?.action) {
+    case 'captureFinished': dispatch({ type: 'FINISHED', capture: message.capture }); break;
+    case 'uploadProgress': dispatch({ type: 'UPLOAD_PROGRESS', pct: message.pct, bytes: message.bytes }); break;
+    case 'uploadFailed': dispatch({ type: 'UPLOAD_FAILED', reason: message.reason, at: message.at }); break;
+    case 'uploadQueued': dispatch({ type: 'OFFLINE' }); break;
+    case 'uploadSaved': dispatch({ type: 'SAVED' }); break;
+    case 'linkReady': dispatch({ type: 'LINK_READY', url: message.url }); break;
+    case 'permissionRequired': dispatch({ type: 'PERMISSION_REQUIRED', input: message.input }); break;
+    case 'permissionDenied': dispatch({ type: 'PERMISSION_DENIED', input: message.input }); break;
+    default: break;
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (state.view === 'countdown' || state.view === 'uploading') dispatch({ type: 'CANCEL' });
+});
+
+/** Read the real key bindings. The user can rebind these, so the popup never
+ * guesses — an unknown binding renders as no hint at all. */
+async function loadShortcuts() {
+  if (!chrome.commands?.getAll) return;
+  const commands = await chrome.commands.getAll();
+  const shortcuts = {};
+  for (const c of commands) if (c.name && c.shortcut) shortcuts[c.name] = c.shortcut;
+  state = { ...state, shortcuts };
+}
+
+async function boot() {
+  await loadShortcuts();
+
+  // The popup is closed and reopened constantly and must never show `ready`
+  // while a recording is running.
+  const live = await send({ action: 'getCaptureState' });
+  if (live) state = { ...state, ...live };
+
+  paint();
+}
+
+boot();
+
+// Exported for the console while debugging; not part of any contract.
+globalThis.__snaprecPopup = { get state() { return state; }, derive: () => derive(state) };
