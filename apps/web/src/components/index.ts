@@ -11,8 +11,8 @@ export { TopBar, type TopBarProps } from './TopBar';
 export { CapturePopover, type CapturePopoverProps } from './CapturePopover';
 export { MobileBottomBar, type MobileBottomBarProps } from './MobileBottomBar';
 /** @deprecated Replaced by AppShell. Still exported because Settings,
- *  Dashboard, Editor, ShareView, Analytics and DashboardOverview have not been
- *  rewritten yet — delete this and the file once the last one lands (P5). */
+ *  Editor (P5) and ShareView (P4) have not been rewritten yet — delete this,
+ *  Header.tsx and MainLayout.tsx once the last one lands. */
 export { MainLayout } from './MainLayout';
 export { VideoPlayer } from './VideoPlayer';
 export { LandingNavbar } from './LandingNavbar';
