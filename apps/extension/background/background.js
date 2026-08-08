@@ -1160,3 +1160,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 self.addEventListener('online', () => {
   chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0 });
 });
+
+
+/** Answers the web app's connectivity ping (scene H5).
+ *
+ * Only origins in manifest.externally_connectable can reach this, and the reply
+ * carries the version only — no capture data crosses the boundary. */
+chrome.runtime.onMessageExternal.addListener((message, _sender, respond) => {
+    if (message?.type === 'PING') {
+        respond({ version: chrome.runtime.getManifest().version });
+    }
+    return false;
+});
