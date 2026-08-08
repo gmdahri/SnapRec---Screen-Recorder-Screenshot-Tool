@@ -100,6 +100,8 @@
         "offscreen/offscreen.html",
         "offscreen/offscreen.js",
         "content/content.js",
+        "content/region.js",
+        "content/webcam.js",
         "content/content.css",
         "content/fab.css",
         "content/fab.js",
