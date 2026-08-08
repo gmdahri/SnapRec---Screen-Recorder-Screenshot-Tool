@@ -29,6 +29,13 @@ export class Recording {
     @Column({ nullable: true })
     location: string;
 
+    /** Who made this while signed out. Lets a claim be scoped to recordings
+     * this guest actually made, rather than to every recording nobody owns.
+     * Null for anything uploaded signed-in, and for rows predating the column. */
+    @Index()
+    @Column({ nullable: true })
+    guestId: string | null;
+
     /** Defaults true: every recording uploaded before this column existed was
      * reachable by anyone holding the link, and backfilling false would
      * silently revoke every link already in circulation. */

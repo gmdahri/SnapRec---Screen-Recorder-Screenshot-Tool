@@ -110,7 +110,19 @@ export class RecordingsService {
         return this.commentsRepository.save(comment);
     }
 
-    async claimRecordings(userId: string, recordingIds: string[], userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<{ claimed: string[] }> {
+    /** Transfers guest captures to a signed-in user.
+     *
+     * SECURITY: an ownerless recording used to be claimable by anyone who knew
+     * its id, and share links expose ids — so opening a guest's share link was
+     * enough to take ownership of their capture.
+     *
+     * With `guestId` supplied, a recording is only claimable when it carries
+     * the same guestId. Rows predating that column have none, so they stay
+     * claimable by id alone: rejecting them would strand real guests who
+     * uploaded before the migration, and inventing a guestId for them would
+     * hand them to whoever asked first. That residue shrinks to nothing as old
+     * guest captures pass their 7-day expiry. */
+    async claimRecordings(userId: string, recordingIds: string[], userMeta?: { email?: string; fullName?: string; avatarUrl?: string }, guestId?: string): Promise<{ claimed: string[] }> {
         const user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
         const claimed: string[] = [];
 
@@ -124,12 +136,21 @@ export class RecordingsService {
         });
 
         for (const recording of recordings) {
-            // Only claim guest recordings (no owner) or recordings already owned by this user
-            if (recording.user === null || recording.user?.supabaseId === userId) {
+            const alreadyMine = recording.user?.supabaseId === userId;
+            const ownerless = recording.user === null || recording.user === undefined;
+
+            // An ownerless row is only claimable when it is provably this
+            // guest's, or when it predates the guestId column entirely.
+            const isThisGuests = recording.guestId
+                ? recording.guestId === guestId
+                : true;
+
+            if (alreadyMine || (ownerless && isThisGuests)) {
                 recording.user = user;
+                recording.guestId = null;
                 claimed.push(recording.id);
             }
-            // Else: recording belongs to another user; skip (do not allow stealing)
+            // Else: belongs to another user or another guest; skip.
         }
 
         await this.recordingsRepository.save(recordings);

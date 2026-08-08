@@ -53,7 +53,12 @@ export class RecordingsController {
     @Post('claim')
     async claimRecordings(@Req() req: any, @Body() claimRecordingsDto: ClaimRecordingsDto) {
         const userMeta = { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl };
-        const { claimed } = await this.recordingsService.claimRecordings(req.user.id, claimRecordingsDto.recordingIds, userMeta);
+        const { claimed } = await this.recordingsService.claimRecordings(
+            req.user.id,
+            claimRecordingsDto.recordingIds,
+            userMeta,
+            claimRecordingsDto.guestId,
+        );
         return { success: true, claimed };
     }
 
