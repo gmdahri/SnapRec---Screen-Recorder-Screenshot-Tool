@@ -36,6 +36,7 @@ export function initialState() {
     returnTo: 'ready',
     account: null,
     micDevice: null,
+    micLevel: 0,
     previewUrl: null,
     /** Live keyboard bindings from chrome.commands.getAll(), keyed by command
      * name. Null until they resolve — the popup shows no shortcut rather than
@@ -64,6 +65,16 @@ export function transition(state, event) {
 
     case 'SET_AREA':
       return set(state, { area: event.area });
+
+    case 'SET_OPTION': {
+      const value = event.key === 'countdown' ? Number(event.value) : event.value;
+      return set(state, { options: { ...state.options, [event.key]: value } });
+    }
+
+    case 'TOGGLE_OPTION':
+      return set(state, {
+        options: { ...state.options, [event.key]: !state.options[event.key] },
+      });
 
     case 'TOGGLE_INPUT':
       return set(state, {

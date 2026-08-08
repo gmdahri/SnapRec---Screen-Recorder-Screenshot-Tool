@@ -493,10 +493,18 @@
 
         recordingOverlay = document.createElement('div');
         recordingOverlay.className = 'snaprec-recording-bar';
+        // A landmark, so a screen-reader user can reach the controls without
+        // hunting through page content.
+        recordingOverlay.setAttribute('role', 'region');
+        recordingOverlay.setAttribute('aria-label', 'SnapRec recording controls');
         recordingOverlay.innerHTML = `
       <div class="snaprec-rec-indicator">
-        <span class="snaprec-rec-dot"></span>
-        <span class="snaprec-timer">${formatTime(recordingSeconds)}</span>
+        <span class="snaprec-rec-dot" aria-hidden="true"></span>
+        <span class="snaprec-status-word">Recording</span>
+        <!-- Announced every 10s, not every second: a per-second live region is
+             unusable with a screen reader running. -->
+        <span class="snaprec-timer" aria-live="polite" data-announce-every="10"
+              >${formatTime(recordingSeconds)}</span>
       </div>
       <div class="snaprec-controls">
         <button class="snaprec-pause-btn" title="Pause">

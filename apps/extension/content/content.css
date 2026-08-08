@@ -75,7 +75,15 @@
     }
 }
 
-/* Recording Bar */
+/* Recording bar — the plate.
+ *
+ * content.css is injected into arbitrary pages and cannot read --sr-*, so the
+ * hex literals here are deliberate. Each one names the token it mirrors; keep
+ * them in sync by hand when tokens.css changes.
+ *
+ * The bar is not site content: a fixed 42px height, carbon body, 1px light
+ * border and a strong outer shadow keep it legible on any page, and it never
+ * inherits page fonts. */
 .snaprec-recording-bar {
     position: fixed;
     bottom: 40px;
@@ -83,53 +91,60 @@
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 20px;
-    background: #ffffff;
-    padding: 12px 24px;
-    border-radius: 50px;
-    border: 1px solid #ece7f4;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    gap: 10px;
+    height: 42px;
+    padding: 0 12px;
+    background: #0C1011;            /* --sr-surface-carbon */
+    border: 1px solid #C7CFD0;      /* --sr-border-light */
+    border-radius: 0;               /* radius is 0 on rails */
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .42);
     z-index: 2147483647;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Schibsted Grotesk Variable', system-ui, -apple-system, sans-serif;
+    color: #F3F6F6;                 /* --sr-text-primary-on-dark */
+}
+
+/* Filled coral means capturing right now; paused empties the fill. */
+.snaprec-recording-bar.paused {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px #D8331F, 0 8px 28px rgba(0, 0, 0, .42);
 }
 
 .snaprec-rec-indicator {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .snaprec-rec-dot {
-    width: 12px;
-    height: 12px;
-    background: #EF4444;
+    width: 9px;
+    height: 9px;
+    background: #FF3B2E;            /* --sr-coral-mark */
     border-radius: 50%;
-    animation: snaprec-pulse 1s infinite;
+    animation: snaprec-pulse 1.6s ease-in-out infinite;
 }
 
+/* Under reduced motion the dot holds solid and the word carries the state. */
 .snaprec-recording-bar.paused .snaprec-rec-dot {
     animation: none;
-    opacity: 0.5;
+    background: transparent;
+    box-shadow: inset 0 0 0 1px #FF7A6E;   /* --sr-coral-on-dark */
 }
 
 @keyframes snaprec-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+}
 
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
+@media (prefers-reduced-motion: reduce) {
+    .snaprec-rec-dot { animation: none; }
 }
 
 .snaprec-timer {
-    color: #130d1c;
-    font-size: 16px;
-    font-weight: 600;
+    color: #F3F6F6;                 /* --sr-text-primary-on-dark */
+    font-family: 'Azeret Mono Variable', ui-monospace, monospace;
+    font-size: 13px;
     font-variant-numeric: tabular-nums;
-    min-width: 50px;
+    min-width: 46px;
 }
 
 .snaprec-controls {
@@ -443,4 +458,13 @@
 
 .snaprec-review-cta a:hover {
     text-decoration: underline;
+}
+/* The word carries the state, so a paused bar is unambiguous in a screenshot
+   and under reduced motion. */
+.snaprec-status-word {
+    font-family: 'Azeret Mono Variable', ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: #FF7A6E;                 /* --sr-coral-on-dark */
+    text-transform: lowercase;
 }

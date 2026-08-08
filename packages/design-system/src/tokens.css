@@ -53,6 +53,8 @@
   --sr-coral-mark: #FF3B2E;
   --sr-coral-hover: #B82A18;
   --sr-coral-on-dark: #FF7A6E;
+  /* Destructive-hover wash on carbon. */
+  --sr-coral-wash-dark: #2A1512;
 
   /* Completion */
   --sr-green: #1F9D62;
