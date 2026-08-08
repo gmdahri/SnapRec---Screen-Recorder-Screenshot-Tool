@@ -24,7 +24,7 @@ export function toCaptureStatus(recording: Recording): CaptureStatus {
   // them behind a spinner that never resolves.
   if (recording.isReady === false) return 'processing';
 
-  const handedOut = recording.views > 0 || recording.comments.length > 0;
+  const handedOut = recording.views > 0 || (recording.comments?.length ?? 0) > 0;
   return handedOut ? 'shared' : 'ready';
 }
 
@@ -33,7 +33,10 @@ export function toCaptureStatus(recording: Recording): CaptureStatus {
  * This is what drives the coral "needs a reply" band on Home — an unanswered
  * question is the one thing on this product that is genuinely owed. */
 export function needsAttention(recording: Recording, ownerSupabaseId: string | undefined): boolean {
-  if (!ownerSupabaseId || recording.comments.length === 0) return false;
+  // An endpoint that loads no `comments` relation leaves the key undefined
+  // rather than empty, so this reads defensively: a capture we cannot prove is
+  // owed a reply is not flagged as one.
+  if (!ownerSupabaseId || !recording.comments?.length) return false;
 
   const newest = [...recording.comments]
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))

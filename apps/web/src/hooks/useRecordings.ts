@@ -333,10 +333,19 @@ export function useAddComment() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, content, guestId }: { id: string; content: string; guestId?: string }) =>
+        // Anchors are optional: a comment can be about the capture as a whole,
+        // which is what every row written before the anchor columns is.
+        mutationFn: ({ id, content, guestId, timecodeMs, anchorX, anchorY }: {
+            id: string;
+            content: string;
+            guestId?: string;
+            timecodeMs?: number;
+            anchorX?: number;
+            anchorY?: number;
+        }) =>
             fetchWithAuth<any>(`/recordings/${id}/comments`, {
                 method: 'POST',
-                body: JSON.stringify({ content, guestId }),
+                body: JSON.stringify({ content, guestId, timecodeMs, anchorX, anchorY }),
             }),
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });

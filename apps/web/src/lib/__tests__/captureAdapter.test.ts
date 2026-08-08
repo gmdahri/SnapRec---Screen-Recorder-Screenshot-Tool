@@ -50,4 +50,25 @@ describe('recording → capture status', () => {
   it('does not flag a capture with no comments', () => {
     expect(needsAttention(rec(), 'sb-owner')).toBe(false);
   });
+
+  /** `GET /recordings` returns rows with no `comments`/`reactions` key at all —
+   * the list query loads no relations, unlike `findOne`. The `Recording` type
+   * declares both as required arrays, so nothing in TypeScript catches it and
+   * every helper here dereferences `.length` straight onto undefined. */
+  describe('rows from the list endpoint, which carries no relations', () => {
+    const bare = () => rec({ comments: undefined, reactions: undefined });
+
+    it('does not crash deriving status without a comments array', () => {
+      expect(() => toCaptureStatus(bare())).not.toThrow();
+    });
+
+    it('still reports a viewed capture as shared without a comments array', () => {
+      expect(toCaptureStatus(rec({ comments: undefined, views: 3 }))).toBe('shared');
+    });
+
+    it('does not crash deciding attention without a comments array', () => {
+      expect(() => needsAttention(bare(), 'sb-owner')).not.toThrow();
+      expect(needsAttention(bare(), 'sb-owner')).toBe(false);
+    });
+  });
 });

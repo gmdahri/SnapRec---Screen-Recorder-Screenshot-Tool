@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout, VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
+import type { VideoPlayerHandle } from '../components/VideoPlayer';
+import { ShareShell } from './Share/ShareShell';
+import { toShareComments, toShareKind, toShareState } from './Share/toShareProps';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
@@ -212,6 +215,11 @@ const ShareView: React.FC = () => {
     const addReaction = useAddReaction();
     const addComment = useAddComment();
     const claimMutation = useClaimRecordings();
+
+    // Drives the C1 timeline: the composer attaches the current position, and
+    // clicking a comment seeks back to it.
+    const [sharePlayheadSec, setSharePlayheadSec] = useState(0);
+    const sharePlayerRef = React.useRef<VideoPlayerHandle | null>(null);
 
     const [copied, setCopied] = useState(false);
     const [commentText, setCommentText] = useState('');
@@ -617,6 +625,80 @@ const ShareView: React.FC = () => {
                 <p className="text-slate-500 mt-2">The link might be expired or invalid.</p>
                 <a href="/dashboard" className="mt-6 text-primary font-bold hover:underline">Go to Dashboard</a>
             </div>
+        );
+    }
+
+    /* ── The redesigned viewing surface (C1–C6) ───────────────────────────
+     *
+     * Only for a persisted recording opened from a share link. The fresh-
+     * capture path below still owns upload, claiming and the local blob — it
+     * is the one flow where getting this wrong loses someone's recording, so
+     * it is deliberately left alone rather than folded in.
+     * ------------------------------------------------------------------- */
+    const isViewingShared = !isFresh && !!recording && !isUploading && !localVideoBlob;
+
+    if (isViewingShared && recording) {
+        const kind = toShareKind(recording);
+        const durationSec = recording.duration ?? 0;
+
+        return (
+            <>
+                <SEO
+                    title={recording.title}
+                    description={`Watch "${recording.title}" on SnapRec.`}
+                    url={`/v/${recording.id}`}
+                />
+                <ShareShell
+                    state={toShareState(recording)}
+                    kind={kind}
+                    capture={{
+                        id: recording.id,
+                        title: recording.title,
+                        owner: recording.user?.fullName ?? 'A SnapRec user',
+                        durationMs: durationSec * 1000,
+                        allowDownload: true,
+                        width: 16,
+                        height: 9,
+                        duration: durationSec
+                            ? `${Math.floor(durationSec / 60)}:${String(Math.floor(durationSec % 60)).padStart(2, '0')}`
+                            : undefined,
+                    }}
+                    comments={toShareComments(recording, recording.user?.supabaseId)}
+                    currentMs={Math.round(sharePlayheadSec * 1000)}
+                    onSeek={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
+                    onPost={({ content, timecodeMs, anchorX, anchorY }) => {
+                        if (!recording.id) return;
+                        addComment.mutate({
+                            id: recording.id,
+                            content,
+                            timecodeMs,
+                            anchorX,
+                            anchorY,
+                        });
+                    }}
+                    onRequestAccess={() => setIsLoginModalOpen(true)}
+                    onDownload={handleDownload}
+                    player={
+                        <VideoPlayer
+                            ref={sharePlayerRef}
+                            src={recording.fileUrl}
+                            isReady={recording.isReady !== false}
+                            onPlaybackUpdate={(p) => setSharePlayheadSec(p.currentTime)}
+                        />
+                    }
+                    media={
+                        kind === 'screenshot'
+                            ? <img src={recording.fileUrl} alt={recording.title}
+                                   style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            : undefined
+                    }
+                />
+                <LoginModal
+                    isOpen={isLoginModalOpen}
+                    onClose={() => setIsLoginModalOpen(false)}
+                    actionDescription={loginAction}
+                />
+            </>
         );
     }
 
