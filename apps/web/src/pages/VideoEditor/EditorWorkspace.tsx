@@ -195,6 +195,8 @@ export function EditorWorkspace() {
     autoZoom,
     metadata,
     zoomKeyframes,
+    updateZoomKeyframe,
+    deleteZoomKeyframe,
   } = useVideoEditor();
 
   const onPlaybackUpdate = useCallback(
@@ -210,6 +212,11 @@ export function EditorWorkspace() {
   const rangeOk = trimEndSec > trimStartSec && trimEndSec <= d + 0.01;
   const trimRange =
     workspace === 'trim' && rangeOk ? { start: trimStartSec, end: Math.min(trimEndSec, d) } : null;
+
+  // Which zoom region the sidebar is editing. New with the redesign: the
+  // context tracks keyframes, not which one is selected.
+  const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null);
+  const selectedZoom = zoomKeyframes.find((k) => k.id === selectedZoomId) ?? null;
 
   const showEditorTimeline = !!(editorVideoSrc && hasTimelineContent);
   const emptyOnboarding = !hasTimelineContent || workspace === 'empty';
@@ -270,7 +277,28 @@ export function EditorWorkspace() {
   return (
     <main className="flex-1 flex min-w-0 min-h-0">
       {workspace === 'zoom' ? (
-        <ZoomSidebar playerRef={playerRef} />
+        // Progressive complexity: the sidebar renders null until a region is
+        // selected, so an empty zoom workspace shows the canvas, not a stub.
+        <ZoomSidebar
+          region={selectedZoom
+            ? {
+                id: selectedZoom.id,
+                startMs: selectedZoom.timestamp,
+                endMs: selectedZoom.timestamp + selectedZoom.duration,
+                scale: selectedZoom.scale,
+                source: 'manual',
+                focus: { x: selectedZoom.x / 100, y: selectedZoom.y / 100 },
+              }
+            : null}
+          onChange={(patch) => {
+            if (!selectedZoom) return;
+            updateZoomKeyframe(selectedZoom.id, {
+              ...(patch.scale != null ? { scale: patch.scale } : {}),
+              ...(patch.focus ? { x: patch.focus.x * 100, y: patch.focus.y * 100 } : {}),
+            });
+          }}
+          onRemove={() => selectedZoom && deleteZoomKeyframe(selectedZoom.id)}
+        />
       ) : showLeftDock ? (
         <LeftDockTabs playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} />
       ) : null}
@@ -326,8 +354,9 @@ export function EditorWorkspace() {
                 : [],
               playheadMs: (playback.currentTime || 0) * 1000,
             }}
-            selection={null}
+            selection={selectedZoomId}
             onSelect={(id) => {
+              setSelectedZoomId(id);
               const k = zoomKeyframes.find((z) => z.id === id);
               if (k) playerRef.current?.seek(k.timestamp / 1000, { unrestricted: true });
             }}

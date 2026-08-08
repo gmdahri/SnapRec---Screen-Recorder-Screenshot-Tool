@@ -149,7 +149,10 @@ const EditorContent: React.FC = () => {
                         isApple={isApple}
                     />
                     <CanvasArea />
-                    <PropertySidebar />
+                    <PropertySidebar
+                        selection={null}
+                        onChange={() => {}}
+                    />
                 </div>
 
                 <LoginModal
