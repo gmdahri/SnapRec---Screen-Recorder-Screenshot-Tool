@@ -6,7 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
-import DashboardOverview from './pages/DashboardOverview';
+import Home from './pages/Home';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import ShareView from './pages/ShareView';
@@ -52,9 +52,12 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/dashboard" element={
+                {/* /dashboard was the old Home. Redirect rather than
+                    duplicate — existing links and bookmarks still work. */}
+                <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={
                   <ProtectedRoute>
-                    <DashboardOverview />
+                    <Home />
                   </ProtectedRoute>
                 } />
                 <Route path="/library" element={
