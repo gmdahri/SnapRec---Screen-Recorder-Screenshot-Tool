@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CAPTURE_STATES, PATH_NODES, STATUS_WORDS, type CaptureStatus } from '../status';
-import { StatusChip } from '../primitives/StatusChip';
+import { StatusBadge } from '../primitives/StatusBadge';
 import { PathSpine } from '../primitives/PathSpine';
 
 describe('status vocabulary', () => {
@@ -52,18 +52,18 @@ describe('capture state model', () => {
   });
 });
 
-describe('StatusChip', () => {
+describe('StatusBadge', () => {
   it('renders the status word as text, never colour alone', () => {
-    render(<StatusChip status="needs a reply" />);
+    render(<StatusBadge status="needs a reply" />);
     expect(screen.getByText('needs a reply')).toBeInTheDocument();
   });
 
   it('uses coral only for the live and needs-a-reply statuses', () => {
-    const { rerender } = render(<StatusChip status="recording" />);
-    expect(screen.getByTestId('chip')).toHaveStyle({ background: 'var(--sr-coral-text)' });
+    const { rerender } = render(<StatusBadge status="recording" />);
+    expect(screen.getByTestId('badge').style.color).toBe('var(--sr-coral-hover)');
 
-    rerender(<StatusChip status="shared" />);
-    expect(screen.getByTestId('chip')).not.toHaveStyle({ background: 'var(--sr-coral-text)' });
+    rerender(<StatusBadge status="shared" />);
+    expect(screen.getByTestId('badge').style.color).not.toContain('coral');
   });
 });
 
