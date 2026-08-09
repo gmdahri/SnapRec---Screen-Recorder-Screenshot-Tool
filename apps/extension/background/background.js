@@ -56,6 +56,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
      * means no overlay, so silence is `false`: a stored value would light the
      * toggle on a tab showing no camera, and the first click would then read
      * as turning it off. */
+    /** What the popup should show on open.
+     *
+     * It asked for this from the day it was written and nothing ever replied,
+     * so reopening during a recording showed `ready` — the one thing the
+     * popup's own comment says must never happen. */
+    if (message.action === 'getCaptureState') {
+        chrome.storage.local.get(['isRecording', 'recordingStartTime'])
+            .then(({ isRecording, recordingStartTime }) => sendResponse(
+                isRecording
+                    ? { view: 'recording', startTime: recordingStartTime ?? null }
+                    : null,
+            ))
+            .catch(() => sendResponse(null));
+        return true;
+    }
+
     if (message.action === 'getMicMuted') {
         chrome.storage.local.get('micMuted')
             .then(({ micMuted }) => sendResponse({ muted: !!micMuted }))
@@ -723,10 +739,19 @@ async function startRecording(options) {
                 console.error('[SnapRec] Failed to get stream:', streamResponse?.error);
                 recordingTabId = null;
                 await closeOffscreenDocument();
+                // Dismissing the picker is a normal thing to do, and the popup
+                // has to come back to ready rather than sit on a dead view.
+                notifyPopup({ action: 'startFailed', reason: streamResponse?.error ?? 'cancelled' });
                 return;
             }
 
             console.log('[SnapRec] Stream acquired, showing countdown...');
+
+            // The picker has been answered. Until this point the popup was
+            // waiting, not counting down — it used to run its own countdown
+            // and then a timer while the picker was still open, which told
+            // people they were recording when nothing was.
+            notifyPopup({ action: 'sourcePicked' });
 
             // Step 2: Inject content script for countdown
             await ContentScriptManager.inject(tab.id);
@@ -759,6 +784,10 @@ async function startRecording(options) {
                 });
 
                 await broadcastRecordingState('recordingStarted');
+                notifyPopup({
+                    action: 'recordingStarted',
+                    startTime: recorderResponse.startTime || Date.now(),
+                });
 
                 // Show recording overlay in the content script
                 await injectRecordingOverlay(tab.id, options);
@@ -1211,6 +1240,10 @@ async function queueCapture(item) {
 }
 
 /** Best-effort notify: the popup is usually closed, and that is fine. */
+/** Speaks to the popup, which is a runtime listener rather than a tab.
+ *
+ * The popup is usually closed and sendMessage then rejects with "Receiving end
+ * does not exist" — the normal case here, not an error. */
 function notifyPopup(message) {
   chrome.runtime.sendMessage(message).catch(() => {});
 }

@@ -267,6 +267,29 @@ function viewDenied(state) {
 
 /** The last moment where nothing has been captured. Esc cancels and writes
  * nothing — said in text, not only bound. */
+/** A7-minus-one: waiting for Chrome's own picker.
+ *
+ * The picker is a browser dialog the extension cannot draw over or dismiss, so
+ * this view says what is being waited for and offers the only thing that
+ * helps — cancelling. It carries registration marks and no coral: nothing is
+ * being captured yet, and coral is reserved for capture that is actually
+ * happening. */
+function viewArming(state) {
+  return `
+    ${header(state)}
+    <!-- No data-strike: the corner strike fires exactly three times in a
+         capture's life, and countdown already owns the first. A fourth here
+         would spend the emphasis on waiting for a dialog. -->
+    <div class="sr-countdown sr-arming">
+      <div class="sr-frame" data-treatment="focused">
+        ${['tl', 'tr', 'bl', 'br'].map((c) => `<span class="sr-mark sr-mark-${c}"></span>`).join('')}
+        <span class="sr-arming-note">Choose what to share</span>
+      </div>
+      <p class="sr-countdown-note">Pick a tab, window or screen in Chrome's dialog. Nothing is recorded until you do.</p>
+      <button type="button" class="sr-notice-secondary" data-action="cancel">Cancel</button>
+    </div>`;
+}
+
 function viewCountdown(state) {
   return `
     ${header(state)}
@@ -549,6 +572,7 @@ const VIEWS = {
   linkReady: viewLinkReady,
   permission: viewPermission,
   denied: viewDenied,
+  arming: viewArming,
   countdown: viewCountdown,
   recording: viewRecording,
   paused: viewPaused,

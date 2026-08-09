@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { initialState, transition } from '../popup/state.js';
 import { render } from '../popup/render.js';
@@ -89,8 +91,8 @@ describe('screenshot view (A2)', () => {
   });
 });
 
-const recording = () =>
-  [{ type: 'START' }, { type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }]
+const recording = (startTime = Date.now()) =>
+  [{ type: 'START' }, { type: 'SOURCE_PICKED' }, { type: 'RECORDING_STARTED', startTime }]
     .reduce(transition, initialState());
 
 describe('recording options (A3)', () => {
@@ -143,8 +145,41 @@ describe('permission (A4) and denial (A5)', () => {
   });
 });
 
+describe('waiting for the picker', () => {
+  const arming = transition(initialState(), { type: 'START' });
+
+  it('says what is being waited for', () => {
+    expect(mount(arming).textContent).toContain('Choose what to share');
+  });
+
+  it('promises nothing is recorded yet', () => {
+    expect(mount(arming).textContent).toMatch(/[Nn]othing is recorded/);
+  });
+
+  it('shows no coral, because nothing is being captured', () => {
+    // The attribute alone proved nothing: this view reuses the countdown's
+    // layout class, and `.sr-countdown .sr-mark-*` painted the registration
+    // marks coral while the picker was still open.
+    const frame = mount(arming).querySelector('.sr-frame');
+    expect(frame.dataset.treatment).toBe('focused');
+    expect(mount(arming).querySelector('.sr-arming')).toBeTruthy();
+    const css = readFileSync(resolve(__dirname, '../popup/popup.css'), 'utf8');
+    expect(css).toMatch(/\.sr-countdown:not\(\.sr-arming\) \.sr-mark-tl/);
+    expect(css).not.toMatch(/^\.sr-countdown \.sr-mark-tl/m);
+  });
+
+  it('offers the only thing that helps — cancelling', () => {
+    expect(mount(arming).querySelector('[data-action="cancel"]')).toBeTruthy();
+  });
+
+  it('does not spend a corner strike on waiting', () => {
+    // Three strikes in a capture's life, and countdown owns the first.
+    expect(mount(arming).querySelector('[data-strike]')).toBeNull();
+  });
+});
+
 describe('countdown (A6)', () => {
-  const cd = transition(initialState(), { type: 'START' });
+  const cd = [{ type: 'START' }, { type: 'SOURCE_PICKED' }].reduce(transition, initialState());
 
   it('offers Esc as well as Cancel', () => {
     const root = mount(cd);

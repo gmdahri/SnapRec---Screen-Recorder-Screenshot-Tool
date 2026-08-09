@@ -390,10 +390,22 @@ button { font-family: inherit; cursor: pointer; }
   justify-content: center;
   background: var(--sr-surface-well);
 }
-.sr-countdown .sr-mark-tl,
-.sr-countdown .sr-mark-tr,
-.sr-countdown .sr-mark-bl,
-.sr-countdown .sr-mark-br { border-color: var(--sr-coral-mark); }
+/* Coral marks mean a capture is about to happen — :not(.sr-arming) because
+   while Chrome's picker is open nothing has been chosen yet, let alone
+   captured, and coral is reserved for capture that is really happening. The
+   arming view keeps the default cyan registration marks. */
+.sr-countdown:not(.sr-arming) .sr-mark-tl,
+.sr-countdown:not(.sr-arming) .sr-mark-tr,
+.sr-countdown:not(.sr-arming) .sr-mark-bl,
+.sr-countdown:not(.sr-arming) .sr-mark-br { border-color: var(--sr-coral-mark); }
+.sr-arming-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sr-text-primary-on-dark);
+  text-align: center;
+  padding: 0 18px;
+}
+
 .sr-numeral {
   font-family: var(--sr-font-mono);
   font-size: 54px;
@@ -415,7 +427,15 @@ button { font-family: inherit; cursor: pointer; }
 [data-strike] .sr-mark-br { animation: sr-strike-br var(--sr-dur-slow) var(--sr-ease) both; }
 
 @keyframes sr-count { from { transform: scale(1.25) } to { transform: scale(1) } }
-[data-strike] .sr-numeral { animation: sr-count 300ms var(--sr-ease); }
+[data-strike] .sr-arming-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sr-text-primary-on-dark);
+  text-align: center;
+  padding: 0 18px;
+}
+
+.sr-numeral { animation: sr-count 300ms var(--sr-ease); }
 
 /* ============================================================ live states */
 

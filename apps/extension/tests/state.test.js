@@ -3,8 +3,15 @@ import { derive, initialState, transition } from '../popup/state.js';
 
 const run = (events, from = initialState()) => events.reduce(transition, from);
 
-const recording = () =>
-  run([{ type: 'START' }, { type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }]);
+/** The real sequence: press Start, answer Chrome's picker, then the recorder
+ * reports that it is live. Ticks alone no longer reach `recording` — that is
+ * the whole point of the change. */
+const recording = (startTime = Date.now()) =>
+  run([
+    { type: 'START' },
+    { type: 'SOURCE_PICKED' },
+    { type: 'RECORDING_STARTED', startTime },
+  ]);
 
 describe('popup state machine', () => {
   it('starts ready to record with six controls and nothing else', () => {
@@ -27,25 +34,66 @@ describe('popup state machine', () => {
     expect(derive(initialState()).primaryTone).toBe('coral');
   });
 
-  it('runs countdown → recording and writes nothing until recording starts', () => {
+  it('waits for the picker before it counts down at all', () => {
+    // Reported from the field: the popup read "recording 0:06" while Chrome's
+    // "Choose what to share" dialog was still open and nothing was captured.
     let s = transition(initialState(), { type: 'START' });
+    expect(s.view).toBe('arming');
+    expect(derive(s).hasWrittenBytes).toBe(false);
+
+    // Ticking forever must not advance it: the picker has not been answered.
+    s = run([{ type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }], s);
+    expect(s.view).toBe('arming');
+    expect(derive(s).hasWrittenBytes).toBe(false);
+  });
+
+  it('counts down only once a source is chosen, and still writes nothing', () => {
+    let s = run([{ type: 'START' }, { type: 'SOURCE_PICKED' }]);
     expect(s.view).toBe('countdown');
     expect(s.count).toBe(3);
     expect(derive(s).hasWrittenBytes).toBe(false);
 
-    s = run([{ type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }], s);
+    // Zero is a floor, not a trigger. The recorder says when it is live.
+    s = run([{ type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' }], s);
+    expect(s.view).toBe('countdown');
+    expect(s.count).toBe(0);
+    expect(derive(s).hasWrittenBytes).toBe(false);
+  });
+
+  it('starts recording when the recorder says so, not when the timer says so', () => {
+    const s = recording();
     expect(s.view).toBe('recording');
     expect(derive(s).hasWrittenBytes).toBe(true);
   });
 
+  it('takes its elapsed time from the recorder, not from when it noticed', () => {
+    // A popup opened 30s into a take must not read 0:00.
+    const s = recording(Date.now() - 30_000);
+    expect(s.elapsed).toBe(30);
+  });
+
+  it('returns to ready when the picker is dismissed', () => {
+    const s = run([{ type: 'START' }, { type: 'START_FAILED', reason: 'cancelled' }]);
+    expect(s.view).toBe('ready');
+    expect(s.elapsed).toBe(0);
+  });
+
+  it('cancelling while waiting for the picker returns to ready', () => {
+    const s = run([{ type: 'START' }, { type: 'CANCEL' }]);
+    expect(s.view).toBe('ready');
+    expect(s.elapsed).toBe(0);
+  });
+
   it('cancelling the countdown returns to ready and writes nothing', () => {
-    const s = run([{ type: 'START' }, { type: 'TICK' }, { type: 'CANCEL' }]);
+    const s = run([{ type: 'START' }, { type: 'SOURCE_PICKED' }, { type: 'TICK' }, { type: 'CANCEL' }]);
     expect(s.view).toBe('ready');
     expect(s.elapsed).toBe(0);
   });
 
   it('paused holds the duration and drops coral to outline', () => {
-    let s = run([{ type: 'TICK' }, { type: 'TICK' }], recording());
+    // Started two seconds ago: elapsed is now real time from the recorder,
+    // not a count of ticks, so it cannot be produced by ticking twice.
+    let s = run([{ type: 'TICK' }], recording(Date.now() - 2000));
     const elapsed = s.elapsed;
     expect(elapsed).toBe(2);
 
@@ -156,7 +204,8 @@ describe('popup state machine', () => {
     let s = initialState();
     for (const e of [
       { type: 'START' },
-      { type: 'TICK' }, { type: 'TICK' }, { type: 'TICK' },
+      { type: 'SOURCE_PICKED' },
+      { type: 'RECORDING_STARTED', startTime: Date.now() },
       { type: 'STOP' },
       { type: 'FINISHED', capture: { id: 'c1', bytes: 1 } },
       { type: 'UPLOAD' },

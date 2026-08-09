@@ -10,7 +10,7 @@
 
 export const VIEWS = [
   'ready', 'screenshot', 'options', 'permission', 'denied',
-  'countdown', 'recording', 'paused', 'finishing',
+  'arming', 'countdown', 'recording', 'paused', 'finishing',
   'complete', 'uploading', 'uploadFailed', 'offline', 'saved', 'linkReady',
 ];
 
@@ -29,6 +29,8 @@ export function initialState() {
     options: { resolution: '1080p', countdown: 3, autoZoom: true, cursor: true },
     count: 0,
     elapsed: 0,
+    /** The recorder's own start time, once it is running. Null until then. */
+    startTime: null,
     capture: null,
     upload: { pct: 0, bytes: 0, failedAt: null, reason: null },
     link: null,
@@ -44,6 +46,13 @@ export function initialState() {
      * and a stale hint is worse than none. */
     shortcuts: null,
   };
+}
+
+/** Whole seconds since a recorder start time. Floors, so the popup never reads
+ * a second ahead of the file. */
+export function elapsedSince(startTime, now = Date.now()) {
+  if (!startTime) return 0;
+  return Math.max(0, Math.floor((now - startTime) / 1000));
 }
 
 const set = (s, patch) => ({
@@ -91,16 +100,49 @@ export function transition(state, event) {
       // A screenshot is instantaneous — there is nothing to count down to, and
       // the capture fires immediately. Only recording gets a countdown.
       if (state.mode === 'screenshot') return state;
-      return set(state, { view: 'countdown', count: state.options.countdown });
+      // NOT countdown: Chrome's "choose what to share" picker opens next, and
+      // nothing is being captured until it is answered. Counting down here —
+      // and then showing a running timer — told people they were recording
+      // while the picker was still open and the screen untouched.
+      return set(state, { view: 'arming' });
+
+    /** The picker has been answered and a source is chosen. */
+    case 'SOURCE_PICKED':
+      return state.view === 'arming'
+        ? set(state, { view: 'countdown', count: state.options.countdown })
+        : state;
+
+    /** The recorder is actually running. `startTime` is the recorder's own, so
+     * the timer matches the file rather than counting from whenever the popup
+     * happened to notice. */
+    case 'RECORDING_STARTED':
+      return set(state, {
+        view: 'recording',
+        count: 0,
+        elapsed: elapsedSince(event.startTime),
+        startTime: event.startTime ?? null,
+      });
+
+    /** The picker was dismissed, or the source could not be captured. */
+    case 'START_FAILED':
+      return set(state, { view: state.mode === 'screenshot' ? 'screenshot' : 'ready', count: 0, elapsed: 0 });
 
     case 'TICK': {
       if (state.view === 'countdown') {
         const next = state.count - 1;
-        return next <= 0
-          ? set(state, { view: 'recording', count: 0, elapsed: 0 })
-          : set(state, { count: next });
+        // Reaching zero no longer starts the recording on its own — the
+        // background says when the recorder is live. The countdown just holds
+        // at zero until it does, so the timer can never run ahead of the file.
+        return set(state, { count: Math.max(0, next) });
       }
-      if (state.view === 'recording') return set(state, { elapsed: state.elapsed + 1 });
+      if (state.view === 'recording') {
+        // Derived from the recorder's start time when there is one, so a popup
+        // that was closed for a minute reopens showing the true elapsed rather
+        // than resuming its own count.
+        return set(state, {
+          elapsed: state.startTime ? elapsedSince(state.startTime) : state.elapsed + 1,
+        });
+      }
       // Paused freezes the timer; every other view ignores ticks entirely.
       return state;
     }
@@ -151,7 +193,7 @@ export function transition(state, event) {
       return set(state, { view: 'linkReady', link: event.url });
 
     case 'CANCEL':
-      if (state.view === 'countdown') {
+      if (state.view === 'arming' || state.view === 'countdown') {
         return set(state, {
           view: state.mode === 'screenshot' ? 'screenshot' : 'ready',
           count: 0,

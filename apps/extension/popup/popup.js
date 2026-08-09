@@ -83,6 +83,10 @@ function runSideEffects(event, previous) {
       break;
 
     case 'CANCEL':
+      // Arming means Chrome's picker is up; the extension cannot dismiss it,
+      // so the honest thing is to stop the attempt behind it and let the user
+      // dismiss the dialog.
+      if (previous.view === 'arming') send({ action: 'stopRecording' });
       if (previous.view === 'countdown') send({ action: 'cancelCountdown' });
       if (previous.view === 'uploading') send({ action: 'cancelUpload', id: state.capture?.id });
       break;
@@ -113,6 +117,12 @@ function runSideEffects(event, previous) {
 
 chrome.runtime.onMessage.addListener((message) => {
   switch (message?.action) {
+    // The capture lifecycle, from the only place that knows it. The popup used
+    // to run its own countdown and timer the moment Start was pressed, so it
+    // showed "recording 0:06" while Chrome's picker was still open.
+    case 'sourcePicked': dispatch({ type: 'SOURCE_PICKED' }); break;
+    case 'recordingStarted': dispatch({ type: 'RECORDING_STARTED', startTime: message.startTime }); break;
+    case 'startFailed': dispatch({ type: 'START_FAILED', reason: message.reason }); break;
     case 'captureFinished': dispatch({ type: 'FINISHED', capture: message.capture }); break;
     case 'uploadProgress': dispatch({ type: 'UPLOAD_PROGRESS', pct: message.pct, bytes: message.bytes }); break;
     case 'uploadFailed': dispatch({ type: 'UPLOAD_FAILED', reason: message.reason, at: message.at }); break;
@@ -209,7 +219,11 @@ async function boot() {
   // The popup is closed and reopened constantly and must never show `ready`
   // while a recording is running.
   const live = await send({ action: 'getCaptureState' });
-  if (live) state = { ...state, ...live };
+  if (live?.view === 'recording') {
+    state = transition(state, { type: 'RECORDING_STARTED', startTime: live.startTime });
+  } else if (live) {
+    state = { ...state, ...live };
+  }
 
   // The overlay outlives the popup, which is rebuilt from initialState() every
   // time it opens. Without this the camera could be running on the page while
