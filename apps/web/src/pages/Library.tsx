@@ -10,7 +10,7 @@ import { useDeleteRecording, useRecordings, type Recording } from '../hooks/useR
 import { AppShell, SEO } from '../components';
 import { gridColumns, rowColumns, useBreakpoint } from '../hooks/useBreakpoint';
 import {
-  captureHref, formatDuration, formatMeta, toCaptureKind, toCaptureStatus,
+  captureHref, capturePreviewUrl, formatDuration, formatMeta, toCaptureKind, toCaptureStatus,
 } from '../lib/captureAdapter';
 import {
   activeFilterChips, applyFilters, initialView, reduce, selectionCapability,
@@ -214,7 +214,7 @@ export default function Library() {
               status: item.status,
               length: formatDuration(r.duration) ?? '—',
               created: new Date(item.createdAt).toLocaleDateString(),
-              thumbnailUrl: r.thumbnailUrl,
+              thumbnailUrl: capturePreviewUrl(r),
             };
           })}
           onOpen={id => navigate(captureHref(toCaptureKind(byId.get(id)!), id))}
@@ -242,9 +242,12 @@ export default function Library() {
                   ? () => dispatch({ type: 'TOGGLE_SELECT', id: item.id, status: item.status })
                   : undefined}
                 onOpen={() => navigate(captureHref(item.kind, item.id))}
-                media={r.thumbnailUrl
-                  ? <img src={r.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : undefined}
+                media={(() => {
+                  const preview = capturePreviewUrl(r);
+                  return preview
+                    ? <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : undefined;
+                })()}
               />
             );
           })}
@@ -300,7 +303,7 @@ export default function Library() {
               status: item.status,
               length: formatDuration(r.duration) ?? '—',
               created: new Date(item.createdAt).toLocaleDateString(),
-              thumbnailUrl: r.thumbnailUrl,
+              thumbnailUrl: capturePreviewUrl(r),
             }}
             onClose={() => setActionsFor(null)}
             onSelect={action => {

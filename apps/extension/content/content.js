@@ -27,6 +27,9 @@
      * window. Without it the camera light comes back on for an overlay the
      * user has already dismissed. */
     let webcamWanted = false;
+    /** The in-flight startWebcam, so concurrent callers wait for one camera
+     * instead of each opening their own. */
+    let webcamStarting = null;
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -572,11 +575,30 @@
      * the ring goes coral. Calling this twice reuses the existing stream
      * rather than opening the camera again. */
     async function startWebcam({ preview = false } = {}) {
+        // Set first, because a re-entrant showRecordingOverlay tears the old
+        // bar down via hideRecordingOverlay — which clears this flag — and
+        // then asks for the camera again on the very next line. Recording the
+        // latest intent up here means an in-flight getUserMedia is kept
+        // rather than cancelled and restarted.
+        webcamWanted = true;
         if (webcamElement) {
             webcamElement.dataset.preview = String(preview);
             return;
         }
-        webcamWanted = true;
+        // Guarding on webcamElement alone is not enough: it stays null for as
+        // long as getUserMedia takes, so two calls in that window both got
+        // past it and opened a camera each. The second overwrote the first's
+        // element and stream, orphaning a live camera that stopWebcam could
+        // no longer reach — which is how a recording could end with the
+        // camera still on and its overlay still on the page. The background
+        // makes this ordinary: onActivated and onUpdated both inject the
+        // recording overlay for the same tab.
+        if (webcamStarting) {
+            await webcamStarting;
+            if (webcamElement) webcamElement.dataset.preview = String(preview);
+            return;
+        }
+        webcamStarting = (async () => {
         try {
             console.log('[SnapRec Content] Starting webcam, preview:', preview);
             webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -606,6 +628,12 @@
             console.warn('[SnapRec Content] Failed to start webcam:', error?.message);
             webcamStream = null;
         }
+        })();
+        try {
+            await webcamStarting;
+        } finally {
+            webcamStarting = null;
+        }
     }
 
     function stopWebcam() {
@@ -614,10 +642,18 @@
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;
         }
-        if (webcamElement) {
-            webcamElement.remove();
-            webcamElement = null;
-        }
+        // Sweep the DOM rather than only the element we are holding. A camera
+        // the page can still see is a camera that is still on, whoever opened
+        // it — an orphan from a race, or one left by an earlier instance of
+        // this script. Stopping the tracks is what turns the light off;
+        // removing the node only hides it.
+        document.querySelectorAll('video.snaprec-webcam').forEach((video) => {
+            const stream = video.srcObject;
+            if (stream && stream.getTracks) stream.getTracks().forEach((t) => t.stop());
+            video.srcObject = null;
+            video.remove();
+        });
+        webcamElement = null;
     }
 
     function formatTime(totalSeconds) {

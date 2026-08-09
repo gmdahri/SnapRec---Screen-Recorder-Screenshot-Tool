@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { captureHref, needsAttention, toCaptureKind, toCaptureStatus } from '../captureAdapter';
+import { captureHref, capturePreviewUrl, needsAttention, toCaptureKind, toCaptureStatus } from '../captureAdapter';
 
 const rec = (over: Record<string, unknown> = {}) => ({
   id: 'r1', title: 'T', fileUrl: 'f', type: 'video' as const,
@@ -90,5 +90,30 @@ describe('where opening a capture lands', () => {
     const vid = rec({ id: 'v1', type: 'video' });
     expect(captureHref(toCaptureKind(shot), 's1')).toBe('/editor/s1');
     expect(captureHref(toCaptureKind(vid), 'v1')).toBe('/v/v1');
+  });
+});
+
+/** Nothing writes `thumbnailUrl` yet — not the extension, not the editor — so
+ * gating the preview on it left every plate an empty black frame. */
+describe('what fills a capture preview', () => {
+  it('previews a screenshot with its own file, which is the image', () => {
+    expect(capturePreviewUrl(rec({ type: 'screenshot', fileUrl: 'https://r2/shot.png' })))
+      .toBe('https://r2/shot.png');
+  });
+
+  it('prefers a real thumbnail when one finally exists', () => {
+    expect(capturePreviewUrl(rec({
+      type: 'screenshot', fileUrl: 'https://r2/shot.png', thumbnailUrl: 'https://r2/thumb.png',
+    }))).toBe('https://r2/thumb.png');
+  });
+
+  it('has nothing to show for a recording without a thumbnail', () => {
+    expect(capturePreviewUrl(rec({ type: 'video', fileUrl: 'https://r2/clip.webm' })))
+      .toBeUndefined();
+  });
+
+  it('uses a recording thumbnail when it has one', () => {
+    expect(capturePreviewUrl(rec({ type: 'video', thumbnailUrl: 'https://r2/poster.jpg' })))
+      .toBe('https://r2/poster.jpg');
   });
 });

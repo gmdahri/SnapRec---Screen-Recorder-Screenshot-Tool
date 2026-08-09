@@ -32,6 +32,23 @@ export function captureHref(kind: CaptureKind, id: string): string {
   return kind === 'screenshot' ? `/editor/${id}` : `/v/${id}`;
 }
 
+/** The image to show in a capture's preview frame.
+ *
+ * `thumbnailUrl` is declared on the entity and accepted by the create DTO, but
+ * nothing has ever written one — neither the extension's upload nor the
+ * editor's save sends the field. Gating the preview on it therefore left every
+ * plate an empty black frame.
+ *
+ * A screenshot needs no separate thumbnail: its own file is the image, and the
+ * list endpoint already hands back a presigned, absolute URL. A recording has
+ * no still to show until poster frames are generated, so it stays undefined
+ * and the plate keeps its empty treatment rather than trying to load a video
+ * into an <img>. */
+export function capturePreviewUrl(recording: Recording): string | undefined {
+  if (recording.thumbnailUrl) return recording.thumbnailUrl;
+  return toCaptureKind(recording) === 'screenshot' ? recording.fileUrl : undefined;
+}
+
 export function toCaptureStatus(recording: Recording): CaptureStatus {
   // `isReady` is absent on older rows. Defaulting to processing would strand
   // them behind a spinner that never resolves.

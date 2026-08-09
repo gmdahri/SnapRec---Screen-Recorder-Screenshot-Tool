@@ -8,7 +8,8 @@ import { AppShell, SEO } from '../components';
 import { useBreakpoint, gridColumns } from '../hooks/useBreakpoint';
 import { useExtensionStatus } from '../hooks/useExtensionStatus';
 import {
-  captureHref, formatDuration, formatMeta, needsAttention, toCaptureKind, toCaptureStatus,
+  captureHref, capturePreviewUrl, formatDuration, formatMeta, needsAttention,
+  toCaptureKind, toCaptureStatus,
 } from '../lib/captureAdapter';
 import { AttentionBand, type AttentionItem } from './Home/AttentionBand';
 import { InProgress, type InProgressItem } from './Home/InProgress';
@@ -113,9 +114,12 @@ export default function Home() {
               status={toCaptureStatus(r)}
               duration={formatDuration(r.duration)}
               onOpen={() => navigate(captureHref(toCaptureKind(r), r.id))}
-              media={r.thumbnailUrl
-                ? <img src={r.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : undefined}
+              media={(() => {
+                const preview = capturePreviewUrl(r);
+                return preview
+                  ? <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : undefined;
+              })()}
               footnotes={r.views > 0
                 ? <span style={{ fontFamily: 'var(--sr-font-mono)', fontSize: 9.5, color: 'var(--sr-text-faint-on-light)' }}>
                     {r.views} views

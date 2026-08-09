@@ -107,3 +107,59 @@ describe('the toggle matches the tab in front of you', () => {
     expect(BACKGROUND).toMatch(/catch \{\s*sendResponse\(\{ on: false \}\);/);
   });
 });
+
+
+/** Reported from the field: stopping a recording — by the in-page stop button
+ * or by Chrome's own "Stop sharing" — left the camera running with its
+ * overlay still on the page.
+ *
+ * Every stop path already called stopWebcam. The leak was upstream:
+ * startWebcam guarded on webcamElement, which stays null for as long as
+ * getUserMedia takes, so two calls inside that window each opened a camera
+ * and the second overwrote the first's references. The orphan was live and
+ * unreachable. The background makes this ordinary rather than exotic —
+ * tabs.onActivated and tabs.onUpdated both inject the recording overlay for
+ * the same tab.
+ *
+ * Reproduced in Chrome with a fake camera: two concurrent showRecordingOverlay
+ * messages produced 2 <video> elements and 2 live streams, and hiding the
+ * overlay left 1 of each behind. After the fix the same sequence gives 1 then
+ * 0, and the full lifecycle — preview, record, in-page stop, record again,
+ * Stop sharing — ends at zero cameras every time. */
+describe('stopping a recording releases the camera', () => {
+  it('serialises concurrent starts onto one camera', () => {
+    expect(CONTENT).toMatch(/let webcamStarting = null;/);
+    expect(CONTENT).toMatch(/if \(webcamStarting\) \{\s*await webcamStarting;/);
+    expect(CONTENT).toMatch(/webcamStarting = \(async \(\) => \{/);
+    // Cleared however the start ends, or every later start would wait on a
+    // settled promise and never open the camera again.
+    expect(CONTENT).toMatch(/finally \{\s*webcamStarting = null;\s*\}/);
+  });
+
+  it('records the intent before anything can clear it', () => {
+    // showRecordingOverlay tears down the previous bar via
+    // hideRecordingOverlay — which clears the flag — and then asks for the
+    // camera again on the next line. Setting it after that check cancelled
+    // the in-flight start and left no camera at all.
+    expect(CONTENT).toMatch(
+      /async function startWebcam\(\{ preview = false \} = \{\} \) *\{|async function startWebcam\(\{ preview = false \} = \{\}\) \{/);
+    const body = CONTENT.slice(CONTENT.indexOf('async function startWebcam'));
+    expect(body.indexOf('webcamWanted = true;')).toBeLessThan(body.indexOf('if (webcamElement)'));
+  });
+
+  it('sweeps every overlay in the page, not just the tracked one', () => {
+    // A camera the page can still see is a camera that is still on, whoever
+    // opened it. Stopping the tracks is what turns the light off; removing
+    // the node only hides it.
+    expect(CONTENT).toMatch(/querySelectorAll\('video\.snaprec-webcam'\)\.forEach/);
+    const sweep = CONTENT.slice(CONTENT.indexOf("querySelectorAll('video.snaprec-webcam')"));
+    expect(sweep).toMatch(/getTracks\(\)\.forEach\(\(t\) => t\.stop\(\)\)/);
+    expect(sweep).toMatch(/video\.remove\(\)/);
+  });
+
+  it('still releases it on every stop path', () => {
+    // The in-page stop button and the broadcast both land here.
+    expect(CONTENT).toMatch(/function hideRecordingOverlay\(\)[\s\S]*?stopWebcam\(\);/);
+    expect(CONTENT).toMatch(/function stopRecording\(\)[\s\S]*?hideRecordingOverlay\(\);/);
+  });
+});
