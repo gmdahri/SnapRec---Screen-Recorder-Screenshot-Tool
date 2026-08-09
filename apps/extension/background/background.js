@@ -724,6 +724,8 @@ async function startRecording(options) {
                     recordingOptions: options
                 });
 
+                await broadcastRecordingState('recordingStarted');
+
                 // Show recording overlay in the content script
                 await injectRecordingOverlay(tab.id, options);
             } else {
@@ -802,6 +804,24 @@ async function stopRecording() {
     }
 }
 
+/** Tells every tab's floating button whether a recording is running.
+ *
+ * fab.js has always listened for recordingStarted/recordingStopped — nothing
+ * ever sent them. Its record button therefore stayed on "Start Recording" for
+ * the whole take, and pressing it fired a second startRecording instead of
+ * stopping the first. */
+async function broadcastRecordingState(action) {
+    const tabs = await chrome.tabs.query({});
+    await Promise.allSettled(
+        tabs
+            .filter(tab => !TabUtils.isRestrictedUrl(tab.url))
+            .map(tab =>
+                chrome.tabs.sendMessage(tab.id, { action })
+                    .catch(() => { /* no content script in this tab */ })
+            )
+    );
+}
+
 // Broadcast hide overlay to ALL tabs immediately and in parallel
 async function broadcastHideOverlay() {
     console.log('[SnapRec] Broadcasting hide overlay to all tabs');
@@ -818,6 +838,7 @@ async function broadcastHideOverlay() {
                     .catch(() => { /* ignore tabs without content script */ })
             )
     );
+    await broadcastRecordingState('recordingStopped');
 }
 
 async function finalizeCleanup() {

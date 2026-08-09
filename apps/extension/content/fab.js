@@ -70,7 +70,7 @@
                 <button class="snaprec-fab-item" data-action="startRecording" id="fabRecordBtn">
                     <svg viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                        <circle cx="12" cy="12" r="4" fill="#EF4444"/>
+                        <circle cx="12" cy="12" r="4" fill="#FF3B2E"/>
                     </svg>
                     Start Recording
                 </button>
@@ -210,7 +210,7 @@
                 recordBtn.dataset.action = 'stopRecording';
                 recordBtn.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none">
-                        <rect x="6" y="6" width="12" height="12" rx="2" fill="#EF4444"/>
+                        <rect x="6" y="6" width="12" height="12" rx="2" fill="#FF3B2E"/>
                     </svg>
                     Stop Recording
                 `;
@@ -222,7 +222,7 @@
                 recordBtn.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                        <circle cx="12" cy="12" r="4" fill="#EF4444"/>
+                        <circle cx="12" cy="12" r="4" fill="#FF3B2E"/>
                     </svg>
                     Start Recording
                 `;

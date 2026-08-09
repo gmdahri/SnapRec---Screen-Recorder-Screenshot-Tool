@@ -7,6 +7,8 @@ const CSS = read('../content/content.css');
 const CONTENT = read('../content/content.js');
 const BACKGROUND = read('../background/background.js');
 const POPUP = read('../popup/popup.js');
+const FAB = read('../content/fab.js');
+const FAB_CSS = read('../content/fab.css');
 
 /** The camera toggle used to flip its own switch and nothing else — the
  * overlay only ever appeared once a recording had started, so there was no
@@ -212,5 +214,48 @@ describe('the camera overlay can be moved', () => {
     // The native drag image and text selection otherwise fight the handlers.
     expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*touch-action:\s*none/s);
     expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*user-select:\s*none/s);
+  });
+});
+
+
+/** Found by running the extension rather than reading it: during a recording
+ * the floating button still said "Start Recording", and its data-action was
+ * still startRecording, so pressing it fired a second startRecording instead
+ * of stopping the first.
+ *
+ * fab.js had always listened for recordingStarted/recordingStopped. Nothing
+ * in the background had ever sent them, so the listener was dead and the
+ * button's isRecording flag never left false.
+ *
+ * Verified in Chrome: before a recording the button reads startRecording /
+ * "Start Recording", during one it reads stopRecording / "Stop Recording",
+ * and it returns afterwards. */
+describe('the floating button knows a recording is running', () => {
+  it('is told when one starts and stops', () => {
+    expect(BACKGROUND).toMatch(/async function broadcastRecordingState\(action\)/);
+    expect(BACKGROUND).toMatch(/broadcastRecordingState\('recordingStarted'\)/);
+    expect(BACKGROUND).toMatch(/broadcastRecordingState\('recordingStopped'\)/);
+  });
+
+  it('reaches every tab, since the button is on all of them', () => {
+    const fn = BACKGROUND.slice(BACKGROUND.indexOf('async function broadcastRecordingState'));
+    expect(fn).toMatch(/chrome\.tabs\.query\(\{\}\)/);
+    // A restricted page has no content script, and messaging it only logs.
+    expect(fn).toMatch(/isRestrictedUrl/);
+  });
+
+  it('still listens for both', () => {
+    expect(FAB).toMatch(/message\.action === 'recordingStarted'/);
+    expect(FAB).toMatch(/message\.action === 'recordingStopped'/);
+    // The guard that made the dead state a real bug rather than a cosmetic one.
+    expect(FAB).toMatch(/case 'startRecording':\s*if \(!isRecording\)/);
+  });
+
+  it('keeps its marks on the plate', () => {
+    // The inline SVG fills were still the pre-plate red; content.css and
+    // fab.css had been migrated but markup inside fab.js had not.
+    expect(FAB).not.toMatch(/#EF4444/i);
+    expect(FAB).toMatch(/#FF3B2E/);
+    expect(FAB_CSS).not.toMatch(/123,\s*37,\s*244|7b25f4|8B5CF6/i);
   });
 });
