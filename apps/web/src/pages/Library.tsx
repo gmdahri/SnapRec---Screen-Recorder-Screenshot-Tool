@@ -10,7 +10,7 @@ import { useDeleteRecording, useRecordings, type Recording } from '../hooks/useR
 import { AppShell, SEO } from '../components';
 import { gridColumns, rowColumns, useBreakpoint } from '../hooks/useBreakpoint';
 import {
-  formatDuration, formatMeta, toCaptureKind, toCaptureStatus,
+  captureHref, formatDuration, formatMeta, toCaptureKind, toCaptureStatus,
 } from '../lib/captureAdapter';
 import {
   activeFilterChips, applyFilters, initialView, reduce, selectionCapability,
@@ -217,9 +217,9 @@ export default function Library() {
               thumbnailUrl: r.thumbnailUrl,
             };
           })}
-          onOpen={id => navigate(`/v/${id}`)}
+          onOpen={id => navigate(captureHref(toCaptureKind(byId.get(id)!), id))}
           onActions={id => setActionsFor(id)}
-          onInlineAction={id => navigate(`/v/${id}`)}
+          onInlineAction={id => navigate(captureHref(toCaptureKind(byId.get(id)!), id))}
         />
       ) : mode === 'grid' ? (
         <div style={{
@@ -241,7 +241,7 @@ export default function Library() {
                 onSelectToggle={CAPTURE_STATES[item.status].canSelect
                   ? () => dispatch({ type: 'TOGGLE_SELECT', id: item.id, status: item.status })
                   : undefined}
-                onOpen={() => navigate(`/v/${item.id}`)}
+                onOpen={() => navigate(captureHref(item.kind, item.id))}
                 media={r.thumbnailUrl
                   ? <img src={r.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : undefined}
@@ -270,7 +270,7 @@ export default function Library() {
                 onSelectToggle={CAPTURE_STATES[item.status].canSelect
                   ? () => dispatch({ type: 'TOGGLE_SELECT', id: item.id, status: item.status })
                   : undefined}
-                onOpen={() => navigate(`/v/${item.id}`)}
+                onOpen={() => navigate(captureHref(item.kind, item.id))}
               />
             );
           })}
@@ -310,7 +310,7 @@ export default function Library() {
                 }
                 return;
               }
-              navigate(`/v/${item.id}`);
+              navigate(captureHref(item.kind, item.id));
             }}
           />
         );

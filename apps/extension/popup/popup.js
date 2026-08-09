@@ -91,6 +91,16 @@ function runSideEffects(event, previous) {
       send({ action: 'uploadCapture', id: state.capture?.id });
       break;
 
+    // The camera toggle used to change nothing but its own switch — you found
+    // out whether the camera worked, and where it sat, only after the
+    // recording had already started. It now puts a live overlay on the page
+    // immediately, so framing happens before the take.
+    case 'TOGGLE_INPUT':
+      if (event.input === 'camera') {
+        send({ action: 'setWebcamPreview', enabled: state.inputs.camera });
+      }
+      break;
+
     default:
       break;
   }

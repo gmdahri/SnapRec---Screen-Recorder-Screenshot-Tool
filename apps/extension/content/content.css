@@ -18,13 +18,13 @@
     left: 50%;
     transform: translateX(-50%);
     background: #ffffff;
-    color: #130d1c;
+    color: #0C1011;
     padding: 12px 24px;
     border-radius: 12px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 14px;
     font-weight: 500;
-    border: 1px solid #ece7f4;
+    border: 1px solid #EEF1F1;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 2147483647;
 }
@@ -32,8 +32,8 @@
 .snaprec-selection-box {
     position: fixed;
     display: none;
-    border: 2px solid #8B5CF6;
-    background: rgba(123, 37, 244, 0.1);
+    border: 2px solid #06A6C0;
+    background: rgba(6, 166, 192, .12);
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     z-index: 2147483647;
     pointer-events: none;
@@ -46,7 +46,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background: #ffffff;
-    color: #130d1c;
+    color: #0C1011;
     padding: 20px 32px;
     border-radius: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -55,7 +55,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid #ece7f4;
+    border: 1px solid #EEF1F1;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
     z-index: 2147483647;
 }
@@ -63,8 +63,8 @@
 .snaprec-loading-spinner {
     width: 20px;
     height: 20px;
-    border: 2px solid rgba(123, 37, 244, 0.3);
-    border-top-color: #8B5CF6;
+    border: 2px solid rgba(6, 166, 192, .3);
+    border-top-color: #06A6C0;
     border-radius: 50%;
     animation: snaprec-spin 0.8s linear infinite;
 }
@@ -176,12 +176,12 @@
 }
 
 .snaprec-stop-btn {
-    background: #EF4444;
+    background: #D8331F;
     color: white;
 }
 
 .snaprec-stop-btn:hover {
-    background: #DC2626;
+    background: #B82A18;
     transform: scale(1.05);
 }
 
@@ -192,6 +192,9 @@
 }
 
 /* Webcam Overlay */
+/* Values are literal here, not var(--sr-*): this stylesheet is injected into
+   the host page, where the design system is not. The tokens it mirrors are
+   --sr-cyan, --sr-coral-mark and --sr-scrim-dark. */
 .snaprec-webcam {
     position: fixed;
     bottom: 120px;
@@ -200,9 +203,20 @@
     height: 180px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid rgba(123, 37, 244, 0.6);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    /* Cyan is focus: you are framing, nothing is being captured yet. The ring
+       is the only thing separating the two states, so it is a 3px edge rather
+       than a tint. Was the pre-plate purple, as this whole file was. */
+    border: 3px solid #06A6C0;
+    box-shadow: 0 8px 32px rgba(4, 7, 8, .45);
     z-index: 2147483646;
+    /* Mirrored so you can frame yourself — a preview that moves the wrong way
+       is useless for aiming. The recorded stream is untouched. */
+    transform: scaleX(-1);
+}
+
+/* Coral is reserved for live capture, and this is the moment it means it. */
+.snaprec-webcam[data-preview="false"] {
+    border-color: #FF3B2E;
 }
 
 /* Countdown Timer Overlay */
@@ -225,7 +239,9 @@
     font-size: 200px;
     font-weight: 700;
     color: white;
-    text-shadow: 0 0 60px rgba(123, 37, 244, 0.8), 0 0 120px rgba(123, 37, 244, 0.4);
+    /* The countdown is the run-up to a live capture, so its glow is coral —
+       the same signal as the recording ring, not a decorative bloom. */
+    text-shadow: 0 0 60px rgba(255, 59, 46, .8), 0 0 120px rgba(255, 59, 46, .4);
     animation: snaprec-countdown-pop 1s ease-out forwards;
 }
 
@@ -299,7 +315,7 @@
 .snaprec-preview-img-container {
     width: 100%;
     aspect-ratio: 16/9;
-    background: #f8fafc;
+    background: #FAFBFB;
     border-radius: 16px;
     overflow: hidden;
     display: flex;
@@ -357,17 +373,17 @@
     margin: 0;
     font-size: 14px;
     font-weight: 700;
-    color: #130d1c;
+    color: #0C1011;
 }
 
 .snaprec-footer-title p {
     margin: 4px 0 0 0;
     font-size: 11px;
-    color: rgba(19, 13, 28, 0.5);
+    color: rgba(12, 16, 17, .5);
 }
 
 .snaprec-share-btn {
-    background: #7b25f4;
+    background: #06A6C0;
     color: white;
     border-radius: 12px;
     padding: 10px 24px;
@@ -376,20 +392,20 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(123, 37, 244, 0.3);
+    box-shadow: 0 4px 12px rgba(6, 166, 192, .3);
 }
 
 .snaprec-share-btn:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(123, 37, 244, 0.4);
+    box-shadow: 0 6px 16px rgba(6, 166, 192, .4);
 }
 
 .snaprec-actions-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
-    border-top: 1px solid rgba(19, 13, 28, 0.05);
+    border-top: 1px solid rgba(12, 16, 17, .06);
     padding-top: 12px;
 }
 
@@ -409,7 +425,7 @@
 }
 
 .snaprec-action-item:hover {
-    background: rgba(19, 13, 28, 0.05);
+    background: rgba(12, 16, 17, .06);
     opacity: 1;
 }
 
@@ -421,21 +437,21 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    color: #475569;
+    color: #4B5457;
 }
 
 .snaprec-action-item.discard .snaprec-action-icon {
-    color: #ef4444;
+    color: #D8331F;
 }
 
 .snaprec-action-label {
     font-size: 11px;
     font-weight: 500;
-    color: #475569;
+    color: #4B5457;
 }
 
 .snaprec-action-item.discard .snaprec-action-label {
-    color: #ef4444;
+    color: #D8331F;
 }
 
 .snaprec-review-cta {
@@ -446,12 +462,12 @@
     margin-top: 6px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
     font-size: 12px;
-    color: #64748b;
+    color: #656E71;
     font-family: 'Inter', -apple-system, sans-serif;
 }
 
 .snaprec-review-cta a {
-    color: #6366f1;
+    color: #0A7F94;
     text-decoration: none;
     font-weight: 600;
 }

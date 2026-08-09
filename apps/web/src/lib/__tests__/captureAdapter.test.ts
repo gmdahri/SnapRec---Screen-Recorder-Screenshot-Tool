@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsAttention, toCaptureKind, toCaptureStatus } from '../captureAdapter';
+import { captureHref, needsAttention, toCaptureKind, toCaptureStatus } from '../captureAdapter';
 
 const rec = (over: Record<string, unknown> = {}) => ({
   id: 'r1', title: 'T', fileUrl: 'f', type: 'video' as const,
@@ -70,5 +70,25 @@ describe('recording → capture status', () => {
       expect(() => needsAttention(bare(), 'sb-owner')).not.toThrow();
       expect(needsAttention(bare(), 'sb-owner')).toBe(false);
     });
+  });
+});
+
+/** A screenshot's home is the annotation editor, which loads it by id; a
+ * recording's is the viewer. The two browse grids share this so the same
+ * thumbnail cannot open in two different places depending on the page. */
+describe('where opening a capture lands', () => {
+  it('opens a screenshot in the image editor', () => {
+    expect(captureHref('screenshot', 'abc123')).toBe('/editor/abc123');
+  });
+
+  it('opens a recording in the viewer', () => {
+    expect(captureHref('recording', 'abc123')).toBe('/v/abc123');
+  });
+
+  it('agrees with the kind the adapter derives from a server row', () => {
+    const shot = rec({ id: 's1', type: 'screenshot' });
+    const vid = rec({ id: 'v1', type: 'video' });
+    expect(captureHref(toCaptureKind(shot), 's1')).toBe('/editor/s1');
+    expect(captureHref(toCaptureKind(vid), 'v1')).toBe('/v/v1');
   });
 });

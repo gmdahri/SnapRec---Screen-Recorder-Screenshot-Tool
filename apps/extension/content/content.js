@@ -22,6 +22,11 @@
     let recordingSeconds = 0;
     let webcamStream = null;
     let webcamElement = null;
+    /** Guards the await inside startWebcam. getUserMedia can take seconds
+     * while the permission prompt is up, and the toggle can flip in that
+     * window. Without it the camera light comes back on for an overlay the
+     * user has already dismissed. */
+    let webcamWanted = false;
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -44,6 +49,14 @@
                     sendResponse({ success: true });
                 });
                 return true; // Keep channel open for async response
+            case 'showWebcamPreview':
+                startWebcam({ preview: true });
+                sendResponse({ success: true });
+                return false;
+            case 'hideWebcamPreview':
+                stopWebcam();
+                sendResponse({ success: true });
+                return false;
             case 'showRecordingOverlay':
                 showRecordingOverlay(message.startTime, message.webcam);
                 startMetadataTracking();
@@ -538,31 +551,62 @@
         pauseBtn.addEventListener('click', togglePause);
         stopBtn.addEventListener('click', stopRecording);
 
-        // Start webcam if requested
+        // Start webcam if requested. If the preview is already up, this only
+        // promotes it — re-running getUserMedia would put a second video on
+        // the page and hold the camera twice.
         if (showWebcam) {
-            startWebcam();
+            startWebcam({ preview: false });
+        } else {
+            // The take does not include the camera, so neither should the page.
+            stopWebcam();
         }
     }
 
-    async function startWebcam() {
+    /** One camera, two meanings.
+     *
+     * `preview: true` is the popup's toggle — you are framing, nothing is
+     * being captured, so the ring is cyan. `preview: false` is the take, and
+     * the ring goes coral. Calling this twice reuses the existing stream
+     * rather than opening the camera again. */
+    async function startWebcam({ preview = false } = {}) {
+        if (webcamElement) {
+            webcamElement.dataset.preview = String(preview);
+            return;
+        }
+        webcamWanted = true;
         try {
-            console.log('[SnapRec Content] Starting webcam...');
+            console.log('[SnapRec Content] Starting webcam, preview:', preview);
             webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+            // Between the await and here the user may have toggled off, or the
+            // recording may have ended. Without this the camera light comes
+            // back on for an overlay nobody asked for.
+            if (!webcamWanted) {
+                webcamStream.getTracks().forEach((t) => t.stop());
+                webcamStream = null;
+                return;
+            }
 
             webcamElement = document.createElement('video');
             webcamElement.className = 'snaprec-webcam';
+            webcamElement.dataset.preview = String(preview);
             webcamElement.autoplay = true;
+            webcamElement.playsInline = true;
             webcamElement.srcObject = webcamStream;
             webcamElement.muted = true; // Avoid feedback
 
             document.body.appendChild(webcamElement);
             console.log('[SnapRec Content] Webcam started');
         } catch (error) {
-            console.error('[SnapRec Content] Failed to start webcam:', error);
+            // Denied, or in use by another app. The overlay is not worth
+            // interrupting the page for — the popup already owns that message.
+            console.warn('[SnapRec Content] Failed to start webcam:', error?.message);
+            webcamStream = null;
         }
     }
 
     function stopWebcam() {
+        webcamWanted = false;
         if (webcamStream) {
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;

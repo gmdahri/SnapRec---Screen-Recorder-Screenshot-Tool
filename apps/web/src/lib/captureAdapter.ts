@@ -19,6 +19,19 @@ export function toCaptureKind(recording: Recording): CaptureKind {
   return recording.type === 'video' ? 'recording' : 'screenshot';
 }
 
+/** Where opening a capture should land.
+ *
+ * A screenshot opens in the annotation editor, which loads it by id — see
+ * `useEditorLifecycle`, which reads the `:id` param and sets the canvas from
+ * `recording.fileUrl`. A recording opens in the viewer.
+ *
+ * Comment threads exist only in the viewer, so the "open and reply" actions on
+ * Home, Analytics and Shared deliberately do not use this: sending someone who
+ * came to answer a question into a canvas would leave the reply nowhere to go. */
+export function captureHref(kind: CaptureKind, id: string): string {
+  return kind === 'screenshot' ? `/editor/${id}` : `/v/${id}`;
+}
+
 export function toCaptureStatus(recording: Recording): CaptureStatus {
   // `isReady` is absent on older rows. Defaulting to processing would strand
   // them behind a spinner that never resolves.

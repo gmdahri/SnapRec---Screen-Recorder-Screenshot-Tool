@@ -8,7 +8,7 @@ import { AppShell, SEO } from '../components';
 import { useBreakpoint, gridColumns } from '../hooks/useBreakpoint';
 import { useExtensionStatus } from '../hooks/useExtensionStatus';
 import {
-  formatDuration, formatMeta, needsAttention, toCaptureKind, toCaptureStatus,
+  captureHref, formatDuration, formatMeta, needsAttention, toCaptureKind, toCaptureStatus,
 } from '../lib/captureAdapter';
 import { AttentionBand, type AttentionItem } from './Home/AttentionBand';
 import { InProgress, type InProgressItem } from './Home/InProgress';
@@ -112,7 +112,7 @@ export default function Home() {
               kind={toCaptureKind(r)}
               status={toCaptureStatus(r)}
               duration={formatDuration(r.duration)}
-              onOpen={() => navigate(`/v/${r.id}`)}
+              onOpen={() => navigate(captureHref(toCaptureKind(r), r.id))}
               media={r.thumbnailUrl
                 ? <img src={r.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : undefined}

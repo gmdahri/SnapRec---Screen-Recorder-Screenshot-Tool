@@ -92,6 +92,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'resumeRecording':
             resumeRecording();
             return false; // No response needed
+        case 'setWebcamPreview':
+            setWebcamPreview(message.enabled);
+            return false; // No response needed
         case 'openCapture':
             openCapture(message.capture);
             return false; // No response needed
@@ -367,6 +370,29 @@ async function captureVisibleTab() {
     } catch (error) {
         console.error('Error capturing visible tab:', error);
         alert('Cannot capture screenshots on this page. Try a normal website instead.');
+    }
+}
+
+/** Live camera preview, independent of recording.
+ *
+ * The desired state is stored as well as sent: the popup closes the moment
+ * focus leaves it, and the preview has to survive that and be re-applicable
+ * when the recording actually starts. */
+async function setWebcamPreview(enabled) {
+    try {
+        await chrome.storage.local.set({ webcamPreview: !!enabled });
+        const tab = await TabUtils.getActiveTab();
+        if (!tab?.id) return;
+        await ContentScriptManager.inject(tab.id);
+        chrome.tabs.sendMessage(
+            tab.id,
+            { action: enabled ? 'showWebcamPreview' : 'hideWebcamPreview' },
+            () => void chrome.runtime.lastError,
+        );
+    } catch (error) {
+        // Restricted pages (chrome://, the Web Store) cannot host the overlay.
+        // The toggle still holds, and the recording path applies it later.
+        console.warn('[SnapRec] Webcam preview unavailable here:', error?.message);
     }
 }
 
