@@ -682,3 +682,13 @@ button { font-family: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .sr-option-row [role="switch"] > span { transition: none; }
 }
+
+/* The live tab preview fills the frame behind the registration marks. */
+.sr-preview-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

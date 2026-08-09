@@ -37,10 +37,14 @@ function modeTabs(state) {
     </div>`;
 }
 
+/** Shows the tab as it is right now, so "this tab" is a fact rather than a
+ * promise. Empty on restricted pages, which cannot be captured — the frame
+ * stays rather than showing an error the user did not cause. */
 function preview(state) {
   return `
     <div class="sr-preview">
       <div class="sr-frame" data-treatment="focused">
+        ${state.previewSrc ? `<img class="sr-preview-img" src="${esc(state.previewSrc)}" alt="">` : ''}
         ${['tl', 'tr', 'bl', 'br'].map((c) => `<span class="sr-mark sr-mark-${c}"></span>`).join('')}
       </div>
       ${state.previewUrl ? `<span class="sr-preview-url">${esc(state.previewUrl)}</span>` : ''}
@@ -551,13 +555,13 @@ const VIEWS = {
   finishing: viewFinishing,
 };
 
-export function render(state, dispatch) {
+export function render(state, dispatch, effects = {}) {
   const root = document.getElementById('root');
   const view = VIEWS[state.view];
   if (!view) throw new Error(`no renderer for view: ${state.view}`);
 
   root.innerHTML = view(state, derive(state));
-  bind(root, dispatch);
+  bind(root, dispatch, effects);
 }
 
 const on = (root, selector, build) => {
@@ -566,14 +570,19 @@ const on = (root, selector, build) => {
   });
 };
 
-function bind(root, dispatch) {
+function bind(root, dispatch, effects = {}) {
   on(root, '[data-mode]', (el) => dispatch({ type: 'SET_MODE', mode: el.dataset.mode }));
   on(root, '[data-source]', (el) => dispatch({ type: 'SET_SOURCE', source: el.dataset.source }));
   on(root, '[data-area]', (el) => dispatch({ type: 'SET_AREA', area: el.dataset.area }));
   on(root, '[data-toggle]', (el) => dispatch({ type: 'TOGGLE_INPUT', input: el.dataset.toggle }));
   on(root, '[data-nav="options"]', () => dispatch({ type: 'OPEN_OPTIONS' }));
+  on(root, '[data-nav="settings"]', () => dispatch({ type: 'OPEN_OPTIONS' }));
   on(root, '[data-nav="back"]', () => dispatch({ type: 'BACK' }));
-  on(root, '[data-action="primary"]', () => dispatch({ type: 'START' }));
+  on(root, '[data-action="primary"]', () => {
+    // A screenshot fires immediately; only recording goes through the machine.
+    if (root.querySelector('[data-area]')) effects.captureScreenshot?.();
+    else dispatch({ type: 'START' });
+  });
   on(root, '[data-action="cancel"]', () => dispatch({ type: 'CANCEL' }));
   on(root, '[data-action="pause"]', () => dispatch({ type: 'PAUSE' }));
   on(root, '[data-action="resume"]', () => dispatch({ type: 'RESUME' }));

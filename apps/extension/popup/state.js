@@ -88,6 +88,9 @@ export function transition(state, event) {
       return set(state, { view: state.returnTo });
 
     case 'START':
+      // A screenshot is instantaneous — there is nothing to count down to, and
+      // the capture fires immediately. Only recording gets a countdown.
+      if (state.mode === 'screenshot') return state;
       return set(state, { view: 'countdown', count: state.options.countdown });
 
     case 'TICK': {
