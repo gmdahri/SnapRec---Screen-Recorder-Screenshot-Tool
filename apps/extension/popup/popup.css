@@ -270,16 +270,22 @@ button { font-family: inherit; cursor: pointer; }
   border-bottom: 1px solid var(--sr-border-dark-soft);
 }
 .sr-options-title { font-size: 12.5px; font-weight: 600; }
+/* Done is the only way back out of this panel, so it takes the carbon primary
+   fill rather than an outline — an outlined control on a near-black header
+   reads as decoration and was being missed. Carbon, not the other two tones:
+   coral stays reserved for live capture, and a cyan fill already means "the
+   selected value" in every row below, so a cyan Done would read as a chip. */
 .sr-done {
   height: var(--sr-h-xs);
   padding: 0 12px;
-  border: 1px solid var(--sr-border-dark);
-  background: transparent;
-  color: var(--sr-text-primary-on-dark);
+  border: none;
+  background: var(--sr-text-primary-on-dark);
+  color: var(--sr-surface-carbon);
   font-size: 12px;
+  font-weight: 600;
   border-radius: var(--sr-radius-control);
 }
-.sr-done:hover { border-color: var(--sr-cyan); color: var(--sr-cyan); }
+.sr-done:hover { filter: brightness(1.08); }
 
 /* The panel scrolls; header and Done stay put. Every row is a fixed height so
    the layout holds at 125% browser zoom — nothing depends on viewport height. */
