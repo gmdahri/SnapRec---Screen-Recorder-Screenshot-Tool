@@ -64,3 +64,36 @@ describe('CapturePlate', () => {
     expect(screen.queryAllByTestId('registration-mark')).toHaveLength(0);
   });
 });
+
+/** The kind icon used to live inside the duration stamp, so it only appeared
+ * when a duration existed — a screenshot has none, and nothing passes
+ * `dimensions`, so screenshots carried no indication of what they were. */
+describe('CapturePlate says what kind of capture it is', () => {
+  it('names a screenshot even though it has no duration', () => {
+    render(<CapturePlate {...base} kind="screenshot" duration={undefined} status="ready" />);
+    expect(screen.getByText(/Screenshot/)).toBeInTheDocument();
+  });
+
+  it('keeps the duration alongside the word for a recording', () => {
+    render(<CapturePlate {...base} kind="recording" duration="0:47" status="ready" />);
+    const chip = screen.getByTestId('kind-chip');
+    expect(chip).toHaveTextContent('Recording');
+    expect(chip).toHaveTextContent('0:47');
+  });
+
+  it('names a full-page capture in words a reader knows', () => {
+    render(<CapturePlate {...base} kind="fullpage" duration={undefined} status="ready" />);
+    expect(screen.getByText(/Full page/)).toBeInTheDocument();
+  });
+
+  it('still says the kind while the capture is not previewable', () => {
+    render(<CapturePlate {...base} kind="screenshot" duration={undefined} status="processing" />);
+    expect(screen.getByTestId('kind-chip')).toHaveTextContent('Screenshot');
+  });
+
+  it('falls back to dimensions when there is no duration', () => {
+    render(<CapturePlate {...base} kind="screenshot" duration={undefined}
+      dimensions="1280×720" status="ready" />);
+    expect(screen.getByTestId('kind-chip')).toHaveTextContent('1280×720');
+  });
+});

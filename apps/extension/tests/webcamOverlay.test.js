@@ -163,3 +163,54 @@ describe('stopping a recording releases the camera', () => {
     expect(CONTENT).toMatch(/function stopRecording\(\)[\s\S]*?hideRecordingOverlay\(\);/);
   });
 });
+
+
+/** Verified in Chrome with a fake camera at a 1200x800 viewport: the overlay
+ * starts bottom-right, drags to where the pointer puts it, stores its place
+ * as viewport percentages, comes back there after being toggled off and on,
+ * keeps 48px on screen when dragged past the edge, and lets no click through
+ * to the page while being moved. */
+describe('the camera overlay can be moved', () => {
+  it('drags with pointer events, so trackpad, pen and touch all work', () => {
+    expect(CONTENT).toMatch(/addEventListener\('pointerdown'/);
+    expect(CONTENT).toMatch(/addEventListener\('pointermove'/);
+    expect(CONTENT).toMatch(/addEventListener\('pointerup', end\)/);
+    // Without capture, moving faster than the render loop drops the overlay
+    // as soon as the pointer leaves it.
+    expect(CONTENT).toMatch(/setPointerCapture\(e\.pointerId\)/);
+    // pointercancel is not optional: a system gesture takes the pointer away
+    // without ever sending pointerup, and the overlay would stay stuck.
+    expect(CONTENT).toMatch(/addEventListener\('pointercancel', end\)/);
+  });
+
+  it('lets no click reach the page after a drag', () => {
+    // Dragging across a link or a canvas otherwise activated what was under
+    // it, because a drag still ends in a click that bubbles into the page.
+    expect(CONTENT).toMatch(/addEventListener\('click', \(e\) => \{\s*if \(!moved\) return;[\s\S]*?stopPropagation\(\);\s*\}, true\)/);
+  });
+
+  it('remembers where it was put, in viewport percentages', () => {
+    // Percentages, because a stored 1400px left edge is off-screen in a
+    // narrower window; a corner should stay a corner.
+    expect(CONTENT).toMatch(/xPct: \(rect\.left \/ window\.innerWidth\) \* 100/);
+    expect(CONTENT).toMatch(/yPct: \(rect\.top \/ window\.innerHeight\) \* 100/);
+    expect(CONTENT).toMatch(/loadWebcamPosition/);
+  });
+
+  it('keeps a grabbable margin on screen', () => {
+    // Fully clamping would forbid parking it half off the edge; clamping not
+    // at all would strand it where it cannot be dragged back.
+    expect(CONTENT).toMatch(/function clampWebcam\(value, size, limit\)/);
+    expect(CONTENT).toMatch(/const visible = Math\.min\(size, 48\);/);
+    // A window that shrinks past the overlay must not strand it either.
+    expect(CONTENT).toMatch(/addEventListener\('resize'/);
+  });
+
+  it('says it is movable, and says when it is being moved', () => {
+    expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*cursor:\s*grab/s);
+    expect(CSS).toMatch(/\.snaprec-webcam\[data-dragging\]\s*\{[^}]*cursor:\s*grabbing/s);
+    // The native drag image and text selection otherwise fight the handlers.
+    expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*touch-action:\s*none/s);
+    expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*user-select:\s*none/s);
+  });
+});

@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { CAPTURE_STATES, type CaptureStatus, type StatusWord } from '../status';
+import { CAPTURE_STATES, KIND_LABEL, type CaptureStatus, type StatusWord } from '../status';
 import { StateRule } from './StateRule';
 import { StatusBadge } from './StatusBadge';
 import type { CaptureAction } from './CapturePlate';
@@ -29,12 +29,6 @@ export interface CaptureRowProps {
   onOpen?: () => void;
   onSelectToggle?: () => void;
 }
-
-const KIND_LABEL = {
-  recording: 'recording',
-  screenshot: 'screenshot',
-  fullpage: 'full page',
-} as const;
 
 const mono = {
   fontFamily: 'var(--sr-font-mono)',

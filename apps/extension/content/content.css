@@ -212,6 +212,20 @@
     /* Mirrored so you can frame yourself — a preview that moves the wrong way
        is useless for aiming. The recorded stream is untouched. */
     transform: scaleX(-1);
+    /* It moves, so it says so before it is touched. */
+    cursor: grab;
+    /* The browser's own drag and text selection would otherwise fight the
+       pointer handlers and start a native drag image mid-gesture. */
+    user-select: none;
+    -webkit-user-drag: none;
+    touch-action: none;
+}
+
+.snaprec-webcam[data-dragging] {
+    cursor: grabbing;
+    /* Lifted while held, so it is clearly above the page rather than part of
+       it — the only moment this overlay is being manipulated. */
+    box-shadow: 0 16px 48px rgba(4, 7, 8, .6);
 }
 
 /* Coral is reserved for live capture, and this is the moment it means it. */

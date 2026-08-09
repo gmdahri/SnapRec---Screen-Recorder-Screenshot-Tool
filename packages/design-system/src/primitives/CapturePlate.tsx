@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Icon } from '@iconify/react';
-import { CAPTURE_STATES, type CaptureStatus, type StatusWord } from '../status';
+import { CAPTURE_STATES, KIND_LABEL, type CaptureStatus, type StatusWord } from '../status';
 import { StateRule } from './StateRule';
 import { StatusBadge } from './StatusBadge';
 import { CaptureFrame } from './CaptureFrame';
@@ -39,6 +39,7 @@ const KIND_ICON = {
   fullpage: 'ant-design:vertical-align-bottom-outlined',
 } as const;
 
+
 /** Media box + caption + hover action rail + state rule.
  *
  * This replaces Card entirely. If a surface finds itself wanting a card, it is
@@ -72,18 +73,25 @@ export function CapturePlate({
           />
         )}
 
-        {stamp && (
-          <span style={{
+        {/* Always present. This chip used to render only when there was a
+            duration, which meant a screenshot — no duration, and nothing passes
+            dimensions — showed nothing at all about what it was. The word does
+            the work; the icon only decorates it, which is why the icon stays
+            aria-hidden and the kind is now announced to screen readers. */}
+        <span
+          data-testid="kind-chip"
+          style={{
             position: 'absolute', left: 8, bottom: 8,
             display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '2px 6px', background: 'var(--sr-scrim-dark)',
             fontFamily: 'var(--sr-font-mono)', fontSize: 10,
             color: 'var(--sr-text-primary-on-dark)',
-          }}>
-            <Icon icon={KIND_ICON[kind]} width={10} aria-hidden="true" />
-            {stamp}
-          </span>
-        )}
+          }}
+        >
+          <Icon icon={KIND_ICON[kind]} width={10} aria-hidden="true" />
+          {KIND_LABEL[kind]}
+          {stamp && ` · ${stamp}`}
+        </span>
 
         {actions.length > 0 && (
           <div

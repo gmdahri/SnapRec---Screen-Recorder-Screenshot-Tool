@@ -620,7 +620,9 @@
             webcamElement.srcObject = webcamStream;
             webcamElement.muted = true; // Avoid feedback
 
+            makeWebcamDraggable(webcamElement);
             document.body.appendChild(webcamElement);
+            applyWebcamPosition(webcamElement, await loadWebcamPosition());
             console.log('[SnapRec Content] Webcam started');
         } catch (error) {
             // Denied, or in use by another app. The overlay is not worth
@@ -634,6 +636,120 @@
         } finally {
             webcamStarting = null;
         }
+    }
+
+    /** Where the user last put the overlay, in viewport percentages.
+     *
+     * Percentages rather than pixels because the same position has to survive
+     * a different window size — a corner stays a corner, where a stored
+     * 1400px left edge would be off-screen on a narrower window. */
+    const WEBCAM_POS_KEY = 'webcamPosition';
+
+    async function loadWebcamPosition() {
+        try {
+            const { [WEBCAM_POS_KEY]: pos } = await chrome.storage.local.get(WEBCAM_POS_KEY);
+            return pos && typeof pos.xPct === 'number' ? pos : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function applyWebcamPosition(el, pos) {
+        if (!pos) return;
+        const { width, height } = el.getBoundingClientRect();
+        const x = clampWebcam((pos.xPct / 100) * window.innerWidth, width, window.innerWidth);
+        const y = clampWebcam((pos.yPct / 100) * window.innerHeight, height, window.innerHeight);
+        // Overrides the stylesheet's default corner. Once the user has placed
+        // it, bottom/right must stop competing with left/top.
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+    }
+
+    /** Keeps a margin of the overlay on screen. Fully clamping to the viewport
+     * would forbid the half-off-screen placement people use to park it. */
+    function clampWebcam(value, size, limit) {
+        const visible = Math.min(size, 48);
+        return Math.max(visible - size, Math.min(value, limit - visible));
+    }
+
+    /** Drag to move, anywhere on screen.
+     *
+     * Pointer events rather than mouse events so a trackpad, a pen and touch
+     * all work, and setPointerCapture so the drag survives the pointer leaving
+     * the element — without it, moving faster than the render loop drops the
+     * overlay mid-gesture. */
+    function makeWebcamDraggable(el) {
+        let dragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        let moved = false;
+
+        el.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            const rect = el.getBoundingClientRect();
+            dragging = true;
+            moved = false;
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            el.setPointerCapture(e.pointerId);
+            el.dataset.dragging = 'true';
+            // The page below must not also receive this gesture — on a map or
+            // a canvas the drag would pan the page as well as the overlay.
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        el.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            moved = true;
+            const rect = el.getBoundingClientRect();
+            el.style.left = `${clampWebcam(e.clientX - offsetX, rect.width, window.innerWidth)}px`;
+            el.style.top = `${clampWebcam(e.clientY - offsetY, rect.height, window.innerHeight)}px`;
+            el.style.right = 'auto';
+            el.style.bottom = 'auto';
+            e.preventDefault();
+        });
+
+        const end = (e) => {
+            if (!dragging) return;
+            dragging = false;
+            delete el.dataset.dragging;
+            try { el.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+            if (!moved) return;
+            const rect = el.getBoundingClientRect();
+            try {
+                chrome.storage.local.set({ [WEBCAM_POS_KEY]: {
+                    xPct: (rect.left / window.innerWidth) * 100,
+                    yPct: (rect.top / window.innerHeight) * 100,
+                } });
+            } catch { /* the overlay still moved; persistence is a nicety */ }
+        };
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
+
+        // A drag still ends in a click, which bubbles into the page — so
+        // moving the overlay across a link or a canvas activated whatever was
+        // underneath. Swallowed in the capture phase, and only when the
+        // pointer actually moved, so a plain click on the overlay is left
+        // alone. `moved` is reset on the next pointerdown.
+        el.addEventListener('click', (e) => {
+            if (!moved) return;
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+
+        // A window that shrinks past the overlay would otherwise strand it
+        // outside the viewport with no way to drag it back.
+        window.addEventListener('resize', () => {
+            if (!webcamElement) return;
+            const rect = webcamElement.getBoundingClientRect();
+            if (webcamElement.style.left) {
+                webcamElement.style.left = `${clampWebcam(rect.left, rect.width, window.innerWidth)}px`;
+                webcamElement.style.top = `${clampWebcam(rect.top, rect.height, window.innerHeight)}px`;
+            }
+        });
     }
 
     function stopWebcam() {

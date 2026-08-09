@@ -3,6 +3,20 @@
  * P0 shipped nine words from spec §3. The standalone prototypes' capture item
  * model (file 03, scene MODEL) needs eight more. This is the union; nothing may
  * be added without a corresponding entry in CAPTURE_STATES or a chip usage. */
+export type CaptureKind = 'recording' | 'screenshot' | 'fullpage';
+
+/** What each kind of capture is called, in the one phrasing it ever gets.
+ *
+ * CaptureRow and CapturePlate each kept a private copy of this map and they had
+ * already drifted — one said "screenshot", the other "Screenshot" — which is
+ * precisely the paraphrasing this file exists to prevent. Lower case, because
+ * the plate's own meta line and every StatusBadge beside it are lower case. */
+export const KIND_LABEL: Record<CaptureKind, string> = {
+  recording: 'recording',
+  screenshot: 'screenshot',
+  fullpage: 'full page',
+};
+
 export const STATUS_WORDS = [
   'on this device',
   'uploading',

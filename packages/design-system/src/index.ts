@@ -12,9 +12,9 @@ export { PathSpine, type PathSpineProps } from './primitives/PathSpine';
 export { icons, type IconName } from './icons';
 export { motion, CORNER_STRIKE_KEYFRAMES } from './motion';
 export {
-  STATUS_WORDS, PATH_NODES, CAPTURE_STATES,
+  STATUS_WORDS, PATH_NODES, CAPTURE_STATES, KIND_LABEL,
   type StatusWord, type PathState, type CaptureStatus,
-  type CaptureStateDef, type RuleTreatment,
+  type CaptureStateDef, type RuleTreatment, type CaptureKind,
 } from './status';
 export { CaptureFrame, type CaptureFrameProps, type FrameTreatmentKind } from './primitives/CaptureFrame';
 export { CapturePlate, type CapturePlateProps, type CaptureAction } from './primitives/CapturePlate';
