@@ -20,10 +20,14 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const EDITOR_DIRS = [
   'pages/VideoEditor',
   'pages/Editor',
+  // The share surfaces: ShareShell and friends were built on the plate, and
+  // the fresh-capture view has now been brought onto it too.
+  'pages/Share',
 ].map(d => join(SRC, d));
 
 const EDITOR_FILES = [
   'pages/Editor.tsx',
+  'pages/ShareView.tsx',
   'components/VideoPlayer.tsx',
   'components/GatedButton.tsx',
 ].map(f => join(SRC, f));

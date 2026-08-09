@@ -45,7 +45,7 @@ export function PrivateCapture({ owner, onRequestAccess }: PrivateCaptureProps) 
 
         <button type="button" onClick={onRequestAccess} style={{
           height: 'var(--sr-h-md)', padding: '0 18px', border: 'none',
-          background: 'var(--sr-text-primary-on-light)', color: '#fff',
+          background: 'var(--sr-text-primary-on-light)', color: 'var(--sr-surface-paper)',
           fontSize: 14, fontWeight: 600, cursor: 'pointer',
           borderRadius: 'var(--sr-radius-control)',
         }}>Request access</button>

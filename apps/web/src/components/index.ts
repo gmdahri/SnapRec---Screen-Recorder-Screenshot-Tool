@@ -5,15 +5,10 @@ export { GoogleSignInButton } from './GoogleSignInButton';
 export { UserMenu } from './UserMenu';
 export { LoginModal } from './LoginModal';
 export { GatedButton } from './GatedButton';
-export { Header } from './Header';
 export { AppShell, NAV, MOBILE_NAV, type AppShellProps, type NavDestination } from './AppShell';
 export { TopBar, type TopBarProps } from './TopBar';
 export { CapturePopover, type CapturePopoverProps } from './CapturePopover';
 export { MobileBottomBar, type MobileBottomBarProps } from './MobileBottomBar';
-/** @deprecated Replaced by AppShell. Still exported because Settings,
- *  Editor (P5) and ShareView (P4) have not been rewritten yet — delete this,
- *  Header.tsx and MainLayout.tsx once the last one lands. */
-export { MainLayout } from './MainLayout';
 export { VideoPlayer } from './VideoPlayer';
 export { LandingNavbar, LANDING_LINKS, SITE_LINKS, type NavLinkSpec } from './LandingNavbar';
 export { LandingFooter } from './LandingFooter';

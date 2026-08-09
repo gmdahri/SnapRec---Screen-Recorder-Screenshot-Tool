@@ -66,7 +66,7 @@ export function CommentComposer({
         rows={2}
         style={{
           border: '1px solid var(--sr-border-light)',
-          background: '#fff',
+          background: 'var(--sr-surface-paper)',
           padding: '8px 10px',
           fontFamily: 'inherit',
           fontSize: 13,
@@ -85,7 +85,7 @@ export function CommentComposer({
             onChange={e => setAuthorName(e.target.value)}
             style={{
               flex: 1, minWidth: 0, minHeight: controlHeight, padding: '0 10px',
-              border: '1px solid var(--sr-border-light)', background: '#fff',
+              border: '1px solid var(--sr-border-light)', background: 'var(--sr-surface-paper)',
               fontSize: 12.5, borderRadius: 'var(--sr-radius-control)',
             }}
           />
@@ -98,7 +98,7 @@ export function CommentComposer({
           style={{
             marginLeft: askForName ? undefined : 'auto',
             minHeight: controlHeight, padding: '0 14px', flex: 'none',
-            border: 'none', background: 'var(--sr-text-primary-on-light)', color: '#fff',
+            border: 'none', background: 'var(--sr-text-primary-on-light)', color: 'var(--sr-surface-paper)',
             fontSize: 12.5, fontWeight: 600,
             cursor: content.trim() ? 'pointer' : 'not-allowed',
             opacity: content.trim() ? 1 : 0.5,
