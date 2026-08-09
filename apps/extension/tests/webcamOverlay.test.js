@@ -360,3 +360,55 @@ describe('the camera overlay carries its own controls', () => {
     expect(WEBCAM).not.toMatch(/const SHAPES = \{/);
   });
 });
+
+
+/** The popup's preview showed whichever tab happened to be in front, because
+ * captureVisibleTab is all it could reach. That is the recorded source only
+ * when recording the current tab; pick a window, another tab or a screen and
+ * the popup showed something else entirely.
+ *
+ * Verified in Chrome: with the active tab painted solid pink and a recording
+ * running, the popup's frame contains no pink at all — it cannot have come
+ * from captureVisibleTab — is scaled to 320px, and changes between grabs. */
+describe('the popup previews what is actually being recorded', () => {
+  it('reads frames from the stream, which only the offscreen document holds', () => {
+    // A MediaStream does not cross contexts, so frames it is.
+    expect(OFFSCREEN).toMatch(/case 'offscreen_grabFrame'/);
+    expect(OFFSCREEN).toMatch(/async function grabSourceFrame/);
+    expect(OFFSCREEN).toMatch(/originalDisplayStream\.getVideoTracks\(\)/);
+    expect(BACKGROUND).toMatch(/message\.action === 'getSourceFrame'/);
+    expect(POPUP).toMatch(/action: 'getSourceFrame'/);
+  });
+
+  it('prefers the recorder over the active tab once a source is chosen', () => {
+    expect(POPUP).toMatch(/const LIVE_VIEWS = \['countdown', 'recording', 'paused'\]/);
+    const fn = POPUP.slice(POPUP.indexOf('async function refreshPreview'));
+    // Compare the calls, not the prose: the comment above the branch names
+    // captureVisibleTab, which made an earlier version of this pass on text.
+    expect(fn.indexOf('LIVE_VIEWS.includes(state.view)'))
+      .toBeLessThan(fn.indexOf('chrome.tabs.captureVisibleTab('));
+  });
+
+  it('keeps one video element rather than one per frame', () => {
+    // Attaching and playing a video per grab costs far more than drawing.
+    expect(OFFSCREEN).toMatch(/if \(!previewVideo\) \{/);
+    expect(OFFSCREEN).toMatch(/if \(!previewCanvas\) previewCanvas = document\.createElement\('canvas'\)/);
+  });
+
+  it('reports nothing rather than a blank frame before the first one arrives', () => {
+    // A blank canvas would read as a black screen being recorded.
+    expect(OFFSCREEN).toMatch(/if \(!previewVideo\.videoWidth \|\| !previewVideo\.videoHeight\) return null;/);
+  });
+
+  it('releases the preview element with the tracks', () => {
+    const cleanup = OFFSCREEN.slice(OFFSCREEN.indexOf('function cleanupTracks'));
+    expect(cleanup.slice(0, 400)).toMatch(/previewVideo = null;/);
+  });
+
+  it('tells the popup when a recording ends somewhere else', () => {
+    // Stopping from the in-page bar or Chrome's "Stop sharing" banner left an
+    // open popup sitting on a running timer for a finished recording.
+    expect(BACKGROUND).toMatch(/notifyPopup\(\{ action: 'recordingStopped' \}\)/);
+    expect(POPUP).toMatch(/case 'recordingStopped':/);
+  });
+});

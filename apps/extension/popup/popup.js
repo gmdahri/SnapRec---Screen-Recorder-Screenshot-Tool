@@ -123,6 +123,13 @@ chrome.runtime.onMessage.addListener((message) => {
     case 'sourcePicked': dispatch({ type: 'SOURCE_PICKED' }); break;
     case 'recordingStarted': dispatch({ type: 'RECORDING_STARTED', startTime: message.startTime }); break;
     case 'startFailed': dispatch({ type: 'START_FAILED', reason: message.reason }); break;
+    case 'recordingStopped':
+      // Only from a live view: this is also broadcast at the end of a stop the
+      // popup itself began, and STOP from `finishing` would be a no-op anyway.
+      if (['arming', 'countdown', 'recording', 'paused'].includes(state.view)) {
+        dispatch({ type: 'STOP' });
+      }
+      break;
     case 'captureFinished': dispatch({ type: 'FINISHED', capture: message.capture }); break;
     case 'uploadProgress': dispatch({ type: 'UPLOAD_PROGRESS', pct: message.pct, bytes: message.bytes }); break;
     case 'uploadFailed': dispatch({ type: 'UPLOAD_FAILED', reason: message.reason, at: message.at }); break;
@@ -151,10 +158,24 @@ function captureScreenshot() {
  * gesture that grants activeTab. */
 let previewTimer = null;
 
+const LIVE_VIEWS = ['countdown', 'recording', 'paused'];
+
 async function refreshPreview() {
-  // Nothing to preview once the capture is under way, and the tab is covered
-  // by the picker anyway.
   if (state.mode !== 'record' && state.mode !== 'screenshot') return;
+
+  // Once a source has been chosen, the preview is of THAT source — read from
+  // the recorder itself. captureVisibleTab shows whichever tab is in front,
+  // which is only the recorded one when recording the current tab; picking a
+  // window or a screen made the popup show something else entirely.
+  if (LIVE_VIEWS.includes(state.view)) {
+    const frame = await send({ action: 'getSourceFrame', maxWidth: 320 });
+    if (frame?.dataUrl) {
+      state = { ...state, previewSrc: frame.dataUrl, previewUrl: null };
+      paint();
+    }
+    return;
+  }
+
   if (!['ready', 'screenshot'].includes(state.view)) return;
 
   try {

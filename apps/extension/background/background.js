@@ -72,6 +72,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    /** The popup asking what the recorded source looks like right now. */
+    if (message.action === 'getSourceFrame') {
+        (async () => {
+            try {
+                if (!(await hasOffscreenDocument())) return sendResponse({ dataUrl: null });
+                const reply = await chrome.runtime.sendMessage({
+                    action: 'offscreen_grabFrame',
+                    maxWidth: message.maxWidth ?? 320,
+                });
+                sendResponse({ dataUrl: reply?.dataUrl ?? null });
+            } catch {
+                sendResponse({ dataUrl: null });
+            }
+        })();
+        return true;
+    }
+
     if (message.action === 'getMicMuted') {
         chrome.storage.local.get('micMuted')
             .then(({ micMuted }) => sendResponse({ muted: !!micMuted }))
@@ -902,6 +919,10 @@ async function broadcastHideOverlay() {
             )
     );
     await broadcastRecordingState('recordingStopped');
+    // And the popup, if it happens to be open. Stopping from the in-page bar
+    // or Chrome's own "Stop sharing" banner otherwise left it sitting on a
+    // running timer for a recording that had already ended.
+    notifyPopup({ action: 'recordingStopped' });
 }
 
 async function finalizeCleanup() {

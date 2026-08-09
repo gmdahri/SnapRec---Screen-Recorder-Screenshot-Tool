@@ -40,6 +40,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true; // Async response
 
 
+        case 'offscreen_grabFrame':
+            grabSourceFrame(message.maxWidth)
+                .then((dataUrl) => sendResponse({ dataUrl }))
+                .catch(() => sendResponse({ dataUrl: null }));
+            return true; // Async response
+
         case 'offscreen_setMicMuted':
             sendResponse({ success: setMicMuted(message.muted) });
             return false;
@@ -445,6 +451,49 @@ async function cropImage(dataUrl, rect) {
 
 // Note: Upload logic has been moved to background.js which has access to chrome.storage
 
+/** A still of whatever the user actually chose to share.
+ *
+ * The popup cannot see this stream — a MediaStream does not cross contexts —
+ * and it used to fall back to captureVisibleTab, which shows the tab that
+ * happens to be in front rather than the source being recorded. Those are the
+ * same thing only when recording the current tab.
+ *
+ * Frames rather than a stream: cheap enough at one a second, and it needs no
+ * new permission. The video element is kept between calls because attaching
+ * and playing one per frame costs far more than drawing from it. */
+let previewVideo = null;
+let previewCanvas = null;
+
+async function grabSourceFrame(maxWidth = 320) {
+    if (!originalDisplayStream) return null;
+    const [track] = originalDisplayStream.getVideoTracks();
+    if (!track || track.readyState !== 'live') return null;
+
+    if (!previewVideo) {
+        previewVideo = document.createElement('video');
+        previewVideo.muted = true;
+        previewVideo.playsInline = true;
+        previewVideo.srcObject = new MediaStream([track]);
+        try {
+            await previewVideo.play();
+        } catch {
+            previewVideo = null;
+            return null;
+        }
+    }
+    // The first frames arrive after play() resolves; report nothing rather
+    // than a blank canvas that would read as a black screen being recorded.
+    if (!previewVideo.videoWidth || !previewVideo.videoHeight) return null;
+
+    if (!previewCanvas) previewCanvas = document.createElement('canvas');
+    const scale = Math.min(1, maxWidth / previewVideo.videoWidth);
+    previewCanvas.width = Math.max(1, Math.round(previewVideo.videoWidth * scale));
+    previewCanvas.height = Math.max(1, Math.round(previewVideo.videoHeight * scale));
+    previewCanvas.getContext('2d').drawImage(
+        previewVideo, 0, 0, previewCanvas.width, previewCanvas.height);
+    return previewCanvas.toDataURL('image/jpeg', 0.55);
+}
+
 /** Mutes without stopping.
  *
  * track.enabled = false makes the track produce silence while staying in the
@@ -473,6 +522,14 @@ function resumeRecording() {
 }
 
 function cleanupTracks() {
+    // Release the preview element too, or it holds a reference to a track
+    // that is about to be stopped.
+    if (previewVideo) {
+        previewVideo.srcObject = null;
+        previewVideo = null;
+    }
+    previewCanvas = null;
+
     // Stop ALL original streams to release hardware (camera light, mic)
     if (originalDisplayStream) {
         originalDisplayStream.getTracks().forEach(track => {
