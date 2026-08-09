@@ -25,6 +25,10 @@ export interface EditorTimelineProps {
   selection: string | null;
   onSelect: (id: string | null) => void;
   onTrim: (edge: 'start' | 'end', ms: number) => void;
+  /** Turns a suggestion into a real zoom region. Required, not optional: the
+   * mark's tooltip says "click to accept", and a mark that says that while
+   * doing nothing is worse than one that never offered. */
+  onAcceptSuggestion: (id: string) => void;
 }
 
 /** Timecodes FLOOR, they do not round. At 14.56s you are still inside the
@@ -40,7 +44,9 @@ const fmt = (ms: number) => {
  * This is the one surface in the product where solid cyan handles are correct,
  * and only on the trim points, because those genuinely drag. The preview above
  * keeps registration marks. */
-export function EditorTimeline({ project, selection, onSelect, onTrim }: EditorTimelineProps) {
+export function EditorTimeline({
+  project, selection, onSelect, onTrim, onAcceptSuggestion,
+}: EditorTimelineProps) {
   const { durationMs, trim, zoomRegions, suggestions, waveform = [], playheadMs } = project;
   const pct = (ms: number) => (durationMs === 0 ? 0 : (ms / durationMs) * 100);
 
@@ -126,14 +132,18 @@ export function EditorTimeline({ project, selection, onSelect, onTrim }: EditorT
         {/* A suggestion is a mark, not a region: it has not been accepted, and
             drawing it as a region would imply it is already applied. */}
         {suggestions.map(suggestion => (
-          <span
+          <button
             key={suggestion.id}
+            type="button"
             data-testid="zoom-suggestion"
             data-accepted="false"
-            title="Auto zoom suggestion — click to accept"
+            title={`Auto zoom suggestion at ${fmt(suggestion.atMs)} — click to accept`}
+            aria-label={`Accept auto zoom suggestion at ${fmt(suggestion.atMs)}`}
+            onClick={() => onAcceptSuggestion(suggestion.id)}
             style={{
               position: 'absolute', top: 8, bottom: 8,
               left: `${pct(suggestion.atMs)}%`, width: 6,
+              padding: 0, border: 'none', cursor: 'pointer',
               background: 'var(--sr-border-dark-strong)',
             }}
           />

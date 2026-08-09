@@ -17,6 +17,9 @@ export interface ZoomKeyframe {
   y: number;          // pivot Y as % of video height (0–100)
   scale: number;      // zoom level 1.1–3.0
   duration: number;   // total zoom window in ms
+  /** Where it came from. Optional so timelineJson saved before this field
+   * still loads; absent reads as 'manual'. */
+  source?: 'auto' | 'manual';
 }
 
 export type ExportModalState = 'closed' | 'settings' | 'progress';

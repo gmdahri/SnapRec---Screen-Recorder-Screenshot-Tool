@@ -19,7 +19,10 @@ const noop = () => {};
 
 describe('the timeline (V1)', () => {
   const mount = () => render(
-    <EditorTimeline project={project} selection={null} onSelect={noop} onTrim={noop} />,
+    <EditorTimeline
+      project={project} selection={null}
+      onSelect={noop} onTrim={noop} onAcceptSuggestion={noop}
+    />,
   );
 
   it('has exactly three lanes', () => {
@@ -52,6 +55,20 @@ describe('the timeline (V1)', () => {
     expect(screen.getByRole('button', { name: /manual 2×/ })).toBeInTheDocument();
   });
 
+  it('offers a suggestion for acceptance, since its tooltip says so', () => {
+    const onAcceptSuggestion = vi.fn();
+    render(
+      <EditorTimeline
+        project={project} selection={null}
+        onSelect={noop} onTrim={noop} onAcceptSuggestion={onAcceptSuggestion}
+      />,
+    );
+    // Regression: this was a <span> with a "click to accept" title and no
+    // handler, and nothing in the app ever created a zoom region as a result.
+    screen.getByRole('button', { name: /accept auto zoom suggestion/i }).click();
+    expect(onAcceptSuggestion).toHaveBeenCalledWith('s1');
+  });
+
   it('shows an unaccepted suggestion as a mark, not a region', () => {
     mount();
     expect(screen.getByTestId('zoom-suggestion').dataset.accepted).toBe('false');
@@ -59,7 +76,12 @@ describe('the timeline (V1)', () => {
 
   it('selects a zoom region on click', async () => {
     const onSelect = vi.fn();
-    render(<EditorTimeline project={project} selection={null} onSelect={onSelect} onTrim={noop} />);
+    render(
+      <EditorTimeline
+        project={project} selection={null}
+        onSelect={onSelect} onTrim={noop} onAcceptSuggestion={noop}
+      />,
+    );
     screen.getByRole('button', { name: /auto 1.6×/ }).click();
     expect(onSelect).toHaveBeenCalledWith('z1');
   });

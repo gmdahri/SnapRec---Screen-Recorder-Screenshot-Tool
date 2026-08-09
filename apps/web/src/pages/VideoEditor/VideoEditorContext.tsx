@@ -105,7 +105,6 @@ interface VideoEditorContextValue {
   cancelUnsavedLeave: () => void;
   confirmUnsavedLeave: () => void;
   autoZoom: boolean;
-  setAutoZoom: (v: boolean) => void;
   metadata: any[];
   zoomKeyframes: ZoomKeyframe[];
   addZoomKeyframe: (kf: ZoomKeyframe) => void;
@@ -221,7 +220,6 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [localModifyStatus, setLocalModifyStatus] = useState<'idle' | 'working' | 'error'>('idle');
   const [localModifyError, setLocalModifyError] = useState<string | null>(null);
   const [localEffectsApplied, setLocalEffectsApplied] = useState<string[]>([]);
-  const [autoZoom, setAutoZoom] = useState(true);
   const [metadata, setMetadata] = useState<any[]>([]);
   const [zoomKeyframes, setZoomKeyframes] = useState<ZoomKeyframe[]>([]);
 
@@ -249,9 +247,12 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     } catch(e) {}
   }, [currentProjectId]);
 
-  useEffect(() => {
-    if (metadata.length === 0) setAutoZoom(false);
-  }, [metadata]);
+  /** Derived, not stored. This was `useState(true)` plus an effect that set it
+   * to false whenever metadata was empty — and nothing ever set it back. On
+   * mount metadata is always [], so the effect latched auto-zoom off before
+   * the stored metadata finished loading, and it stayed off for the rest of
+   * the session. There is no UI toggle, so this is the whole condition. */
+  const autoZoom = metadata.length > 0;
 
   const applyLocalEffect = useCallback((name: string) => {
     setLocalEffectsApplied((prev) => (prev.includes(name) ? prev : [...prev, name]));
@@ -646,7 +647,6 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       cancelUnsavedLeave,
       confirmUnsavedLeave,
       autoZoom,
-      setAutoZoom,
       metadata,
       zoomKeyframes,
       addZoomKeyframe,

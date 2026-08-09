@@ -132,3 +132,54 @@ const numberInput = {
   fontFamily: 'var(--sr-font-mono)', fontSize: 11,
   borderRadius: 'var(--sr-radius-control)',
 } as const;
+
+export interface ZoomEntryProps {
+  onAdd: () => void;
+  /** Unaccepted auto-zoom marks on the timeline. */
+  suggestionCount: number;
+}
+
+/** The way into the zoom tool.
+ *
+ * ZoomSidebar returns null with nothing selected, which is right for a
+ * properties panel and wrong for a whole tool: it left Zoom as a dead end
+ * with no control anywhere that created a region. A tool needs one primary
+ * action; the properties still stay hidden until there is something to edit. */
+export function ZoomEntry({ onAdd, suggestionCount }: ZoomEntryProps) {
+  return (
+    <aside style={{
+      width: 260, flex: 'none', padding: 16,
+      background: 'var(--sr-surface-panel-dark)',
+      color: 'var(--sr-text-primary-on-dark)',
+      display: 'flex', flexDirection: 'column', gap: 12,
+      borderLeft: '1px solid var(--sr-border-dark-soft)',
+    }}>
+      <h2 style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Zoom</h2>
+
+      <p style={{
+        margin: 0, fontSize: 11.5, lineHeight: 1.5,
+        color: 'var(--sr-text-muted-on-dark)',
+      }}>
+        Add a region to punch in on part of the frame. Select one on the
+        timeline to change its scale and focus.
+      </p>
+
+      <button type="button" onClick={onAdd} style={{
+        height: 'var(--sr-h-sm)', border: 'none', cursor: 'pointer',
+        background: 'var(--sr-cyan)', color: 'var(--sr-cyan-fg)',
+        fontSize: 12.5, fontWeight: 600,
+        borderRadius: 'var(--sr-radius-control)',
+      }}>Add zoom at playhead</button>
+
+      {suggestionCount > 0 && (
+        <p style={{
+          margin: 0, fontSize: 11.5, lineHeight: 1.5,
+          color: 'var(--sr-text-faint-on-dark)',
+        }}>
+          {suggestionCount} suggestion{suggestionCount === 1 ? '' : 's'} from
+          {' '}your clicks are marked on the zoom lane. Click one to accept it.
+        </p>
+      )}
+    </aside>
+  );
+}

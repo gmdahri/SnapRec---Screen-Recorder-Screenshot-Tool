@@ -1,11 +1,11 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { getActiveZoom } from './zoomUtils';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { getActiveZoom, AUTO_ZOOM_SCALE, ZOOM_DURATION_MS } from './zoomUtils';
 import { useVideoEditor } from './VideoEditorContext';
 import { VideoPlayer, type VideoPlayerHandle, type VideoPlayerPlayback } from '../../components/VideoPlayer';
 import { EditorTimeline } from './EditorTimeline';
 import type { EditorWorkspace as EditorWorkspaceType } from './types';
 import { MediaGalleryTabContent } from './MediaLibraryPanel';
-import { ZoomSidebar } from './ZoomSidebar';
+import { ZoomSidebar, ZoomEntry } from './ZoomSidebar';
 
 const defaultPlayback: VideoPlayerPlayback = { currentTime: 0, duration: 0, playing: false };
 
@@ -195,6 +195,7 @@ export function EditorWorkspace() {
     autoZoom,
     metadata,
     zoomKeyframes,
+    addZoomKeyframe,
     updateZoomKeyframe,
     deleteZoomKeyframe,
   } = useVideoEditor();
@@ -217,6 +218,55 @@ export function EditorWorkspace() {
   // context tracks keyframes, not which one is selected.
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null);
   const selectedZoom = zoomKeyframes.find((k) => k.id === selectedZoomId) ?? null;
+
+  const suggestionEvents = useMemo(
+    () => (autoZoom
+      ? metadata.filter((m) => m.type === 'mousedown' || m.type === 'scrollstop')
+      : []),
+    [autoZoom, metadata],
+  );
+
+  /** Places a zoom region and selects it, so accepting is one click and the
+   * controls for what you just made are already open. */
+  const placeZoom = useCallback(
+    (atMs: number, x: number, y: number, source: 'auto' | 'manual') => {
+      const id = `z${Math.round(atMs)}`;
+      // Whole percent, because the focus fields are 0–1 stepping by 0.01 and
+      // read x/100. Anything finer rendered as 0.347222222…, overflowing the
+      // input with precision the control cannot accept and the frame cannot
+      // honour — 1% of 1280px is under 13px.
+      const clamp = (v: number) => Math.round(Math.max(15, Math.min(85, v)));
+      addZoomKeyframe({
+        id,
+        timestamp: atMs,
+        x: clamp(x),
+        y: clamp(y),
+        scale: AUTO_ZOOM_SCALE,
+        duration: ZOOM_DURATION_MS,
+        source,
+      });
+      setSelectedZoomId(id);
+    },
+    [addZoomKeyframe],
+  );
+
+  const acceptSuggestion = useCallback(
+    (id: string) => {
+      const event = suggestionEvents[Number(id.slice(1))];
+      if (!event) return;
+      // Fall back to centre when the event carries no viewport: a zoom pinned
+      // to 0,0 would swing the frame into the corner.
+      const w = event.viewportWidth || 0;
+      const h = event.viewportHeight || 0;
+      placeZoom(
+        event.timestamp,
+        w ? (event.x / w) * 100 : 50,
+        h ? (event.y / h) * 100 : 50,
+        'auto',
+      );
+    },
+    [suggestionEvents, placeZoom],
+  );
 
   const showEditorTimeline = !!(editorVideoSrc && hasTimelineContent);
   const emptyOnboarding = !hasTimelineContent || workspace === 'empty';
@@ -276,9 +326,16 @@ export function EditorWorkspace() {
 
   return (
     <main className="flex-1 flex min-w-0 min-h-0">
-      {workspace === 'zoom' ? (
-        // Progressive complexity: the sidebar renders null until a region is
-        // selected, so an empty zoom workspace shows the canvas, not a stub.
+      {workspace === 'zoom' && !selectedZoom ? (
+        // Progressive complexity applies to *properties*, not to the tool
+        // itself: ZoomSidebar rightly renders null with nothing selected, but
+        // that left the Zoom tool with no way in at all — nothing called
+        // addZoomKeyframe anywhere in the app. This is the entry point.
+        <ZoomEntry
+          onAdd={() => placeZoom(Math.round((playback.currentTime || 0) * 1000), 50, 50, 'manual')}
+          suggestionCount={suggestionEvents.length}
+        />
+      ) : workspace === 'zoom' ? (
         <ZoomSidebar
           region={selectedZoom
             ? {
@@ -286,8 +343,12 @@ export function EditorWorkspace() {
                 startMs: selectedZoom.timestamp,
                 endMs: selectedZoom.timestamp + selectedZoom.duration,
                 scale: selectedZoom.scale,
-                source: 'manual',
-                focus: { x: selectedZoom.x / 100, y: selectedZoom.y / 100 },
+                source: selectedZoom.source ?? 'manual',
+                originMs: selectedZoom.source === 'auto' ? selectedZoom.timestamp : undefined,
+                focus: {
+                  x: Math.round(selectedZoom.x) / 100,
+                  y: Math.round(selectedZoom.y) / 100,
+                },
               }
             : null}
           onChange={(patch) => {
@@ -342,16 +403,12 @@ export function EditorWorkspace() {
                 startMs: k.timestamp,
                 endMs: k.timestamp + k.duration,
                 scale: k.scale,
-                // A keyframe carries no provenance yet. Everything the user
-                // placed by hand is manual; auto suggestions live below and
-                // only become keyframes once accepted.
-                source: 'manual' as const,
+                source: k.source ?? 'manual',
               })),
-              suggestions: autoZoom
-                ? metadata
-                    .filter((m) => m.type === 'mousedown' || m.type === 'scrollstop')
-                    .map((m, i) => ({ id: `s${i}`, atMs: m.timestamp }))
-                : [],
+              suggestions: suggestionEvents.map((m, i) => ({
+                id: `s${i}`,
+                atMs: m.timestamp,
+              })),
               playheadMs: (playback.currentTime || 0) * 1000,
             }}
             selection={selectedZoomId}
@@ -361,6 +418,7 @@ export function EditorWorkspace() {
               if (k) playerRef.current?.seek(k.timestamp / 1000, { unrestricted: true });
             }}
             onTrim={(_edge, ms) => playerRef.current?.seek(ms / 1000, { unrestricted: true })}
+            onAcceptSuggestion={acceptSuggestion}
           />
         ) : (
           <TimelineFooter empty={emptyOnboarding} />
