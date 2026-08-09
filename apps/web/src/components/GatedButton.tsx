@@ -11,6 +11,12 @@ interface GatedButtonProps {
     title?: string;
 }
 
+/** A header action that signs-in first when there is no session.
+ *
+ * Only the image editor uses this, and its header is a dark Technical surface,
+ * so the tokens here are the on-dark set. The amber lock bubble that used to
+ * float off the corner is now an inline glyph: "sign in first" is a gate, not
+ * an alarm, and amber was outside the palette entirely. */
 export const GatedButton: React.FC<GatedButtonProps> = ({
     onClick,
     icon,
@@ -22,26 +28,32 @@ export const GatedButton: React.FC<GatedButtonProps> = ({
 }) => {
     const { user } = useAuth();
 
-    const baseClasses = 'flex items-center gap-2 px-4 py-2 rounded-[2px] font-medium text-sm transition-all relative cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    const base =
+        'inline-flex items-center gap-2 h-[34px] px-3.5 rounded-[2px] font-medium text-[13px] ' +
+        'transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed';
 
-    const variantClasses = {
-        primary: 'bg-[var(--sr-cyan)] text-white shadow-lg shadow-primary/20 hover:bg-[var(--sr-cyan)]/90',
-        secondary: 'hover:bg-[#ece7f4]',
+    const variants = {
+        primary:
+            'bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] hover:bg-[var(--sr-cyan-hover)]',
+        secondary:
+            'border border-[var(--sr-border-dark)] text-[var(--sr-text-secondary-on-dark)] ' +
+            'hover:text-[var(--sr-text-primary-on-dark)] hover:border-[var(--sr-border-dark-strong)]',
     };
 
     return (
         <button
             onClick={onClick}
             disabled={disabled}
-            title={title}
-            className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+            title={!user ? `${title ?? ''} — sign in first`.trim() : title}
+            className={`${base} ${variants[variant]} ${className}`}
         >
-            <span className="material-symbols-outlined text-[20px]">{icon}</span>
+            <span className="material-symbols-outlined text-[18px]">{icon}</span>
             <span>{children}</span>
             {!user && (
-                <span className="absolute -top-1 -right-1 size-4 bg-amber-500 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white text-[10px]">lock</span>
-                </span>
+                <span
+                    aria-label="Sign in required"
+                    className="material-symbols-outlined text-[14px] opacity-60"
+                >lock</span>
             )}
         </button>
     );

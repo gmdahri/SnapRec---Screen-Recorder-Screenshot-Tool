@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CAPTURE_STATES, CaptureFrame, StateRule, StatusBadge,
@@ -6,7 +5,7 @@ import {
 } from '@snaprec/design-system';
 import { useAuth } from '../contexts/AuthContext';
 import { AppShell, SEO } from '../components';
-import { useVideoEditor } from './VideoEditor/VideoEditorContext';
+import { VideoEditorProvider, useVideoEditor } from './VideoEditor/VideoEditorContext';
 
 export interface ProjectItem {
   id: string;
@@ -102,12 +101,14 @@ function initialsOf(name: string | undefined, email: string | undefined): string
   return (parts.length > 1 ? parts[0][0] + parts[1][0] : source.slice(0, 2)).toUpperCase();
 }
 
-export default function Projects() {
+function ProjectsInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { projects, projectsLoading, refreshProjects, newProject } = useVideoEditor();
+  const { projects, projectsLoading, newProject } = useVideoEditor();
 
-  useEffect(() => { refreshProjects(); }, [refreshProjects]);
+  // No refresh effect here: the provider mounted just below already fetches the
+  // list whenever there is no :projectId in the URL, which is always true on
+  // this route. Refreshing here too just fetches /video-projects twice.
 
   /** ProjectSummary carries id, title and modified only — the server has no
    * export-state column, so every project reads as a draft edit. When the
@@ -153,5 +154,18 @@ export default function Projects() {
         />
       </div>
     </AppShell>
+  );
+}
+
+/** The projects list and the editor are two screens of one context — it owns
+ * `projects`, `newProject` and the `'projects' | 'editor'` screen state. The
+ * provider is mounted here rather than around the route so that mounting this
+ * page anywhere is sufficient, which is how VideoEditorPage does it too. With
+ * no `:projectId` in the URL the provider resets to the projects screen. */
+export default function Projects() {
+  return (
+    <VideoEditorProvider>
+      <ProjectsInner />
+    </VideoEditorProvider>
   );
 }

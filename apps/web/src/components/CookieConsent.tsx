@@ -32,7 +32,7 @@ export const CookieConsent: React.FC = () => {
                 <div className="flex flex-row gap-3 items-center">
                     <p className="flex-1 min-w-0 text-sm text-[var(--sr-text-primary-on-light)] leading-snug">
                         We use cookies for ads &amp; analytics.{' '}
-                        <NavLink to="/privacy" className="text-indigo-600 hover:underline font-semibold">
+                        <NavLink to="/privacy" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">
                             Privacy Policy
                         </NavLink>
                     </p>
@@ -45,7 +45,7 @@ export const CookieConsent: React.FC = () => {
                         </button>
                         <button
                             onClick={accept}
-                            className="px-4 py-1.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-[2px] transition-colors shadow-sm"
+                            className="px-4 py-1.5 text-sm font-semibold text-[var(--sr-surface-paper)] bg-[var(--sr-text-primary-on-light)] hover:opacity-90 rounded-[2px] transition-opacity"
                         >
                             Accept
                         </button>

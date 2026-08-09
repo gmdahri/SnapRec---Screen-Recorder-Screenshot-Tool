@@ -49,6 +49,13 @@ export class RecordingsService {
     async findAll(userId?: string): Promise<Recording[]> {
         const query: any = {
             order: { createdAt: 'DESC' },
+            // None of these relations are eager, so omitting them here does not
+            // return empty arrays — it leaves the keys absent entirely, and the
+            // web's `Recording` type declares them as required. Home, Library
+            // and Analytics all read `.comments.length` off this list, and
+            // `comments.user` is what decides whether the newest comment came
+            // from someone other than the owner.
+            relations: ['user', 'reactions', 'comments', 'comments.user'],
         };
 
         if (userId) {

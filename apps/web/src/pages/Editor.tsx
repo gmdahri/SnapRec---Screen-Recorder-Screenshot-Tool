@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { MainLayout, GatedButton, LoginModal, SEO } from '../components';
+import { GatedButton, LoginModal, SEO } from '../components';
+import { EditorChrome } from './Editor/components/EditorChrome';
 import { Toolbar, PropertySidebar, CanvasArea } from './Editor/components';
 import { EditorProvider, useEditor } from './Editor/context/EditorContext';
 import { FABRIC_TOOL, type ToolKey } from './Editor/tools';
@@ -60,13 +61,13 @@ const EditorContent: React.FC = () => {
     }, [capturedImage, isCanvasReady, initCanvas]);
 
     const EditorActions = (
-        <div className="flex items-center gap-4 min-h-[40px]">
-            <div className="flex items-center gap-1 bg-[var(--sr-surface-panel-light)] rounded-[2px] p-1">
+        <div className="flex items-center gap-3">
+            <div className="flex items-center gap-0.5">
                 <button
                     onClick={undo}
                     disabled={historyIndex <= 0}
                     title="Undo (Ctrl+Z)"
-                    className="p-1.5 hover:bg-[var(--sr-surface-paper)] rounded-[2px] transition-all cursor-pointer disabled:opacity-30"
+                    className="p-1.5 hover:bg-[var(--sr-border-dark)] rounded-[2px] transition-all cursor-pointer disabled:opacity-30 text-[var(--sr-text-secondary-on-dark)]"
                 >
                     <span className="material-symbols-outlined text-[20px]">undo</span>
                 </button>
@@ -74,12 +75,12 @@ const EditorContent: React.FC = () => {
                     onClick={redo}
                     disabled={historyIndex >= history.current.length - 1}
                     title="Redo (Ctrl+Y)"
-                    className="p-1.5 hover:bg-[var(--sr-surface-paper)] rounded-[2px] transition-all cursor-pointer disabled:opacity-30"
+                    className="p-1.5 hover:bg-[var(--sr-border-dark)] rounded-[2px] transition-all cursor-pointer disabled:opacity-30 text-[var(--sr-text-secondary-on-dark)]"
                 >
                     <span className="material-symbols-outlined text-[20px]">redo</span>
                 </button>
             </div>
-            <div className="h-6 w-[1px] bg-[var(--sr-border-light-soft)]"></div>
+            <div className="h-5 w-px bg-[var(--sr-border-dark)]"></div>
             <GatedButton
                 onClick={() => handleActionClick('export')}
                 icon="download"
@@ -93,11 +94,11 @@ const EditorContent: React.FC = () => {
                 onClick={() => handleActionClick('share')}
                 icon={isUploading ? 'sync' : (isUploaded && user ? 'save' : 'cloud_upload')}
                 variant="primary"
-                className={`px-5 w-[240px] justify-center ${isUploading ? 'animate-pulse' : ''}`}
+                className={`w-[196px] justify-center ${isUploading ? 'animate-pulse' : ''}`}
                 disabled={isUploading || isInitializing}
-                title={isUploaded && user ? 'Update recording' : 'Generate shareable link'}
+                title={isUploaded && user ? 'Update the shared copy' : 'Create a link you can share'}
             >
-                {isUploading ? (isUploaded && user ? 'Updating...' : 'Generating...') : (isUploaded && user ? 'Update' : 'Generate Shareable Link')}
+                {isUploading ? (isUploaded && user ? 'Updating…' : 'Creating…') : (isUploaded && user ? 'Update' : 'Create share link')}
             </GatedButton>
         </div>
     );
@@ -111,35 +112,33 @@ const EditorContent: React.FC = () => {
                 keywords="screenshot editor, image annotator, online photo editor, annotate screenshot, draw on screenshot, blur screenshot, screenshot editor online free, screenshot tool chrome, edit screenshot online, free screenshot annotation tool, screenshot extension editor"
                 noIndex={true}
             />
-            <MainLayout
+            <EditorChrome
                 title={
                     <div className="flex items-center gap-1 group/title max-w-xl">
                         {loading ? (
-                            <div className="w-[124px] h-5 bg-[var(--sr-border-light-soft)] rounded animate-pulse"></div>
+                            <div className="w-[124px] h-5 bg-[var(--sr-surface-panel-dark)] rounded-[2px] animate-pulse"></div>
                         ) : user ? (
                             <>
                                 <input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="bg-transparent border-none outline-none text-sm font-semibold text-[var(--sr-text-faint-on-light)] w-full focus:text-[var(--sr-text-primary-on-light)] hover:bg-[var(--sr-surface-panel-light)] rounded px-1 transition-all"
+                                    className="bg-transparent border-none outline-none text-sm font-semibold text-[var(--sr-text-faint-on-dark)] w-full focus:text-[var(--sr-text-primary-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] rounded-[2px] px-1 transition-all"
                                 />
-                                <span className="material-symbols-outlined text-[16px] text-[var(--sr-text-faint-on-light)] opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
+                                <span className="material-symbols-outlined text-[16px] text-[var(--sr-text-faint-on-dark)] opacity-0 group-hover/title:opacity-100 transition-opacity">edit</span>
                             </>
                         ) : (
                             <div
                                 onClick={() => setShowLoginPrompt(true)}
-                                className="text-sm font-semibold text-[var(--sr-text-faint-on-light)] hover:text-[var(--sr-text-primary-on-light)] cursor-pointer flex items-center gap-1"
+                                className="text-sm font-semibold text-[var(--sr-text-faint-on-dark)] hover:text-[var(--sr-text-primary-on-dark)] cursor-pointer flex items-center gap-1"
                                 title="Login to edit title"
                             >
                                 <span>{title}</span>
-                                <span className="material-symbols-outlined text-[16px] text-[var(--sr-text-faint-on-light)] opacity-0 group-hover/title:opacity-100 transition-opacity">lock</span>
+                                <span className="material-symbols-outlined text-[16px] text-[var(--sr-text-faint-on-dark)] opacity-0 group-hover/title:opacity-100 transition-opacity">lock</span>
                             </div>
                         )}
                     </div>
                 }
-                showBackButton={true}
-                headerActions={EditorActions}
-                noScroll={true}
+                actions={EditorActions}
             >
                 <div className="flex-1 flex h-full overflow-hidden">
                     <Toolbar
@@ -160,7 +159,7 @@ const EditorContent: React.FC = () => {
                     onClose={() => setShowLoginPrompt(false)}
                     actionDescription="upload and share"
                 />
-            </MainLayout>
+            </EditorChrome>
         </>
     );
 };
