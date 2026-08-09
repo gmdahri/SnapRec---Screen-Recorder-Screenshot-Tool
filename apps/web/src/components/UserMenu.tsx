@@ -32,7 +32,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
             <div className="w-[110px] h-9 flex items-center justify-end">
                 <button
                     onClick={onSignIn}
-                    className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 border border-[var(--sr-border-light-soft)] rounded-[2px] text-sm font-medium hover:bg-[var(--sr-surface-panel-light)] transition-colors cursor-pointer"
                 >
                     <span className="material-symbols-outlined text-[18px]">login</span>
                     <span>Sign In</span>
@@ -48,7 +48,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
                     e.stopPropagation();
                     setShowMenu(!showMenu);
                 }}
-                className="size-9 rounded-full border-2 border-primary/20 overflow-hidden bg-primary/10 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors"
+                className="size-9 rounded-full border-2 border-primary/20 overflow-hidden bg-[var(--sr-cyan)]/10 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors"
             >
                 {user?.user_metadata?.avatar_url ? (
                     <img
@@ -57,16 +57,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
                         src={user.user_metadata.avatar_url}
                     />
                 ) : (
-                    <span className="material-symbols-outlined text-primary text-xl">person</span>
+                    <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-xl">person</span>
                 )}
             </button>
 
             {/* Dropdown Menu */}
             {showMenu && (
-                <div className="absolute right-0 top-12 w-64 bg-white rounded-xl shadow-xl border border-[#ece7f4] overflow-hidden z-50">
+                <div className="absolute right-0 top-12 w-64 bg-[var(--sr-surface-paper)] rounded-[2px] shadow-xl border border-[#ece7f4] overflow-hidden z-50">
                     <div className="p-4 border-b border-[#ece7f4]">
                         <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full overflow-hidden bg-primary/10 flex-shrink-0">
+                            <div className="size-10 rounded-full overflow-hidden bg-[var(--sr-cyan)]/10 flex-shrink-0">
                                 {user?.user_metadata?.avatar_url ? (
                                     <img
                                         className="w-full h-full object-cover"
@@ -75,15 +75,15 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-primary">person</span>
+                                        <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)]">person</span>
                                     </div>
                                 )}
                             </div>
                             <div className="min-w-0">
-                                <p className="font-semibold text-sm text-slate-900 truncate">
+                                <p className="font-semibold text-sm text-[var(--sr-text-primary-on-light)] truncate">
                                     {user?.user_metadata?.full_name || 'User'}
                                 </p>
-                                <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                <p className="text-xs text-[var(--sr-text-faint-on-light)] truncate">{user?.email}</p>
                             </div>
                         </div>
                     </div>
@@ -91,7 +91,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
                         <NavLink
                             to="/settings"
                             onClick={() => setShowMenu(false)}
-                            className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}
+                            className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-[2px] transition-colors text-sm font-medium ${isActive ? 'bg-[var(--sr-cyan)]/10 text-[var(--sr-cyan-on-light)]' : 'text-[var(--sr-text-muted-on-light)] hover:bg-[var(--sr-surface-panel-light)]'}`}
                         >
                             <span className="material-symbols-outlined text-[20px]">settings</span>
                             <span>Settings</span>
@@ -102,7 +102,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSignIn }) => {
                                 signOut();
                                 setShowMenu(false);
                             }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-50 rounded-[2px] transition-colors text-sm font-medium cursor-pointer"
                         >
                             <span className="material-symbols-outlined text-[20px]">logout</span>
                             <span>Sign Out</span>

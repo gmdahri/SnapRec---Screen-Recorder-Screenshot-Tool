@@ -22,10 +22,10 @@ export const GatedButton: React.FC<GatedButtonProps> = ({
 }) => {
     const { user } = useAuth();
 
-    const baseClasses = 'flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all relative cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseClasses = 'flex items-center gap-2 px-4 py-2 rounded-[2px] font-medium text-sm transition-all relative cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variantClasses = {
-        primary: 'bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90',
+        primary: 'bg-[var(--sr-cyan)] text-white shadow-lg shadow-primary/20 hover:bg-[var(--sr-cyan)]/90',
         secondary: 'hover:bg-[#ece7f4]',
     };
 

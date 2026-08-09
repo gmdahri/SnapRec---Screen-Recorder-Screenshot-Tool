@@ -15,11 +15,11 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     variant = 'outlined',
     className = '',
 }) => {
-    const baseClasses = 'flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseClasses = 'flex items-center justify-center gap-3 px-4 py-3 rounded-[2px] font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variantClasses = {
-        filled: 'bg-white text-gray-800 hover:bg-gray-100 shadow-lg',
-        outlined: 'bg-white border border-slate-200 hover:bg-slate-50',
+        filled: 'bg-[var(--sr-surface-paper)] text-gray-800 hover:bg-gray-100 shadow-lg',
+        outlined: 'bg-[var(--sr-surface-paper)] border border-[var(--sr-border-light-soft)] hover:bg-[var(--sr-surface-panel-light)]',
     };
 
     return (
