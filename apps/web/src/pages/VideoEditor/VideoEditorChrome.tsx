@@ -107,7 +107,7 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3 min-w-0 flex-wrap">
           <Link
             to="/library"
-            className="flex items-center shrink-0 rounded-[2px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary py-0.5"
+            className="flex items-center shrink-0 rounded-[2px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--sr-cyan)] py-0.5"
             title="Dashboard"
           >
             <img
@@ -195,7 +195,7 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
                   <ToolIcon id={id} />
                 </span>
                 <span className="text-[11px] font-medium text-[var(--sr-text-faint-on-dark)] text-center leading-none">{name}</span>
-                <span className="text-[10px] font-medium text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-medium text-[var(--sr-text-faint-on-dark)] bg-[var(--sr-surface-panel-dark-alt)] px-2 py-0.5 rounded-[2px]">
                   Soon
                 </span>
               </div>
@@ -208,15 +208,15 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
                 onClick={() => onTool(id)}
                 className={`group flex flex-col items-center gap-2 w-full py-3 rounded-[2px] transition-all duration-200 ${
                   activeTool === id
-                    ? 'bg-[var(--sr-surface-panel-dark)] shadow-md shadow-violet-100/80 text-[var(--sr-cyan)] border border-violet-200/80'
+                    ? 'bg-[var(--sr-surface-panel-dark)] text-[var(--sr-cyan)] border border-[var(--sr-border-dark)]'
                     : 'text-[var(--sr-text-primary-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] hover:shadow-sm border border-transparent hover:border-[var(--sr-border-dark)]/80'
                 }`}
               >
                 <span
                   className={`flex items-center justify-center w-11 h-11 rounded-full transition-colors ${
                     activeTool === id
-                      ? 'bg-violet-100 text-[var(--sr-cyan)]'
-                      : 'bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-faint-on-dark)] group-hover:text-[var(--sr-text-primary-on-dark)] ring-1 ring-slate-200/80'
+                      ? 'bg-[var(--sr-border-dark)] text-[var(--sr-cyan)]'
+                      : 'bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-faint-on-dark)] group-hover:text-[var(--sr-text-primary-on-dark)] ring-1 ring-[var(--sr-border-dark)]'
                   }`}
                 >
                   <ToolIcon id={id} />

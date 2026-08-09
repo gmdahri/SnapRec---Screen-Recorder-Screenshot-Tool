@@ -45,7 +45,7 @@ export function CropOverlay({ rect, onChange, onApply, onCancel, onReset }: Crop
         style={{
           position: 'absolute',
           left: rect.x, top: rect.y, width: rect.w, height: rect.h,
-          boxShadow: '0 0 0 9999px rgba(4,7,8,.55)',
+          boxShadow: '0 0 0 9999px var(--sr-scrim-dark)',
         }}
       >
         <span

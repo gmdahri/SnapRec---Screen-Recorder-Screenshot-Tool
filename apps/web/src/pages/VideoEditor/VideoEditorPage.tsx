@@ -25,15 +25,15 @@ function VideoEditorInner() {
   const { projectId } = useParams();
   if (projectId && projectLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--sr-surface-carbon)]">
+        <div className="w-10 h-10 border-2 border-[var(--sr-cyan)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
   if (projectId && projectLoadError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] p-6">
-        <p className="text-red-600 font-medium mb-4">{projectLoadError}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--sr-surface-carbon)] p-6">
+        <p className="text-[var(--sr-coral-on-dark)] font-medium mb-4">{projectLoadError}</p>
         <a href="/video-editor" className="text-[var(--sr-cyan)] font-bold">
           Back to projects
         </a>

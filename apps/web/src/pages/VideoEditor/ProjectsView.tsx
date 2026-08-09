@@ -13,13 +13,13 @@ export function ProjectsView() {
   }, [refreshProjects]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[var(--sr-text-primary-on-dark)]">
+    <div className="min-h-screen bg-[var(--sr-surface-carbon)] text-[var(--sr-text-primary-on-dark)]">
       <header className="sticky top-0 z-10 bg-[var(--sr-surface-panel-dark)] border-b border-[var(--sr-border-dark)] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 flex-wrap">
             <Link
               to="/dashboard"
-              className="flex items-center rounded-[2px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary py-0.5"
+              className="flex items-center rounded-[2px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--sr-cyan)] py-0.5"
               title="Dashboard"
             >
               <img
@@ -54,7 +54,7 @@ export function ProjectsView() {
           <button
             type="button"
             onClick={newProject}
-            className="min-h-[220px] border-2 border-dashed border-[var(--sr-border-dark-strong)] rounded-[2px] flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-[var(--sr-surface-panel-dark)] transition-colors"
+            className="min-h-[220px] border-2 border-dashed border-[var(--sr-border-dark-strong)] rounded-[2px] flex flex-col items-center justify-center gap-3 hover:border-[var(--sr-cyan)] hover:bg-[var(--sr-surface-panel-dark)] transition-colors"
           >
             <div className="w-12 h-12 rounded-[2px] bg-[var(--sr-surface-panel-dark)] flex items-center justify-center text-2xl text-[var(--sr-text-faint-on-dark)]">+</div>
             <span className="font-semibold text-[var(--sr-text-muted-on-dark)]">Create project</span>
@@ -66,7 +66,7 @@ export function ProjectsView() {
               onClick={() => openProject(p.id, p.title)}
               className="bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] rounded-[2px] overflow-hidden shadow-sm hover:shadow-md text-left group"
             >
-              <div className="aspect-video bg-gradient-to-br from-violet-100 to-slate-200 flex items-center justify-center text-[var(--sr-text-faint-on-dark)] text-sm">
+              <div className="aspect-video bg-[var(--sr-surface-panel-dark-alt)] flex items-center justify-center text-[var(--sr-text-faint-on-dark)] text-sm">
                 Thumbnail
               </div>
               <div className="p-4">

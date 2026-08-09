@@ -92,7 +92,7 @@ function PropertiesPanel({
         </div>
         <div>
           <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Opacity</label>
-          <input type="range" className="w-full accent-primary mt-1" defaultValue={100} />
+          <input type="range" className="w-full accent-[var(--sr-cyan)] mt-1" defaultValue={100} />
         </div>
         <PropertiesPanelCore playbackRate={playbackRate} onPlaybackRateChange={onPlaybackRateChange} />
         <hr className="border-[var(--sr-border-dark)]" />
@@ -128,7 +128,7 @@ function LeftDockTabs({
           onClick={() => setRightDockTab('mediaGallery')}
           className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${
             rightDockTab === 'mediaGallery'
-              ? 'text-[var(--sr-cyan)] border-b-2 border-primary bg-violet-50/50'
+              ? 'text-[var(--sr-cyan)] border-b-2 border-[var(--sr-cyan)] bg-[var(--sr-surface-panel-dark-alt)]'
               : 'text-[var(--sr-text-faint-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] border-b-2 border-transparent'
           }`}
         >
@@ -141,7 +141,7 @@ function LeftDockTabs({
           onClick={() => setRightDockTab('properties')}
           className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${
             rightDockTab === 'properties'
-              ? 'text-[var(--sr-cyan)] border-b-2 border-primary bg-violet-50/50'
+              ? 'text-[var(--sr-cyan)] border-b-2 border-[var(--sr-cyan)] bg-[var(--sr-surface-panel-dark-alt)]'
               : 'text-[var(--sr-text-faint-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] border-b-2 border-transparent'
           }`}
         >
@@ -383,7 +383,7 @@ function TimelineFooter({ empty }: { empty?: boolean }) {
         <span>Timeline</span>
         <span className="text-[var(--sr-text-faint-on-dark)]">—</span>
       </div>
-      <div className="flex-1 flex items-center justify-center bg-[#f8fafc] px-4">
+      <div className="flex-1 flex items-center justify-center bg-[var(--sr-surface-carbon)] px-4">
         <p className="text-sm text-[var(--sr-text-faint-on-dark)] font-medium text-center">
           {empty ? 'Add media to enable scrubbing.' : ''}
         </p>

@@ -65,14 +65,14 @@ export function TrimSidebar() {
     <aside
       className={`${EDITOR_LEFT_PANEL_WIDTH} bg-[var(--sr-surface-panel-dark)] border-r border-[var(--sr-border-dark)] flex flex-col min-h-0 z-20`}
     >
-      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-gradient-to-b from-violet-50/70 to-white">
+      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]">
         <h2 className="text-xl font-extrabold text-[var(--sr-cyan)] tracking-tight">Trim</h2>
         <p className="text-sm font-medium text-[var(--sr-text-primary-on-dark)] truncate mt-1">{projectTitle}</p>
         <p className="text-xs text-[var(--sr-text-faint-on-dark)] mt-2">Save in the top bar when you’re done.</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        <div className="rounded-[2px] bg-violet-50 border border-violet-100 p-3 space-y-3">
+        <div className="rounded-[2px] bg-[var(--sr-surface-panel-dark-alt)] border border-[var(--sr-border-dark)] p-3 space-y-3">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-xs font-medium text-[var(--sr-text-muted-on-dark)]">Playhead</span>
             <span className="text-lg font-mono font-semibold text-[var(--sr-text-primary-on-dark)]">{fmt(editorPlaybackTime)}</span>
@@ -80,14 +80,14 @@ export function TrimSidebar() {
           <div className="flex gap-2">
             <button
               type="button"
-              className="flex-1 py-2 text-xs font-semibold bg-[var(--sr-surface-panel-dark)] border border-violet-200 rounded-[2px] hover:bg-violet-100/80"
+              className="flex-1 py-2 text-xs font-semibold bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] rounded-[2px] hover:bg-[var(--sr-border-dark)]"
               onClick={() => setStart(Math.min(editorPlaybackTime, endClamped - MIN_RANGE))}
             >
               Set start
             </button>
             <button
               type="button"
-              className="flex-1 py-2 text-xs font-semibold bg-[var(--sr-surface-panel-dark)] border border-violet-200 rounded-[2px] hover:bg-violet-100/80"
+              className="flex-1 py-2 text-xs font-semibold bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] rounded-[2px] hover:bg-[var(--sr-border-dark)]"
               onClick={() => setEnd(Math.max(editorPlaybackTime, start + MIN_RANGE))}
             >
               Set end
@@ -105,7 +105,7 @@ export function TrimSidebar() {
               step={0.05}
               value={start}
               onChange={(e) => setStart(Number(e.target.value))}
-              className="w-full accent-primary mt-1"
+              className="w-full accent-[var(--sr-cyan)] mt-1"
               aria-label="Trim start"
             />
           </div>
@@ -118,7 +118,7 @@ export function TrimSidebar() {
               step={0.05}
               value={endClamped}
               onChange={(e) => setEnd(Number(e.target.value))}
-              className="w-full accent-primary mt-1"
+              className="w-full accent-[var(--sr-cyan)] mt-1"
               aria-label="Trim end"
             />
           </div>
@@ -158,7 +158,7 @@ export function TrimSidebar() {
             {localModifyStatus === 'working' ? 'Applying…' : 'Modify'}
           </button>
           {localModifyStatus === 'error' && localModifyError && (
-            <p className="text-xs text-red-600 bg-red-50 rounded-[2px] px-2 py-2">
+            <p className="text-xs text-[var(--sr-coral-on-dark)] bg-[var(--sr-coral-wash-dark)] rounded-[2px] px-2 py-2">
               {localModifyError}
               <button type="button" className="block mt-1 font-semibold underline" onClick={clearLocalModifyError}>
                 Dismiss

@@ -22,7 +22,7 @@ export const CanvasArea: React.FC = () => {
                     {/* Media: radius 0, no glow. The border is the frame. */}
                     <div
                         style={{ contain: 'layout' }}
-                        className={`relative bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] shadow-[0_2px_24px_rgba(0,0,0,0.35)] min-h-[400px] min-w-[400px] overflow-hidden transition-opacity duration-300 ${isInitializing ? 'opacity-0' : 'opacity-100'}`}
+                        className={`relative bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] shadow-[0_2px_24px_var(--sr-scrim-dark)] min-h-[400px] min-w-[400px] overflow-hidden transition-opacity duration-300 ${isInitializing ? 'opacity-0' : 'opacity-100'}`}
                     >
                         <canvas ref={canvasRef} />
 

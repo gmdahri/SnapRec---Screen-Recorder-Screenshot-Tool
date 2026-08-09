@@ -42,7 +42,7 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
             onClick={() => setMediaLibraryTab('your')}
             className={`flex-1 py-2 px-1 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
               mediaLibraryTab === 'your'
-                ? 'border-primary text-[var(--sr-cyan)] bg-violet-50/80'
+                ? 'border-[var(--sr-cyan)] text-[var(--sr-cyan)] bg-[var(--sr-surface-panel-dark-alt)]'
                 : 'border-transparent text-[var(--sr-text-faint-on-dark)] hover:bg-[var(--sr-surface-panel-dark)]'
             }`}
           >
@@ -52,7 +52,7 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
             className="flex-1 py-2 px-1 text-center rounded-t-lg text-[var(--sr-text-faint-on-dark)] cursor-not-allowed text-xs font-semibold bg-[var(--sr-surface-panel-dark)]"
             title="Coming soon"
           >
-            Stock <span className="block text-[10px] text-amber-600">Soon</span>
+            Stock <span className="block text-[10px] text-[var(--sr-text-faint-on-dark)]">Soon</span>
           </div>
           <button
             type="button"
@@ -61,7 +61,7 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
             onClick={() => setMediaLibraryTab('favorites')}
             className={`flex-1 py-2 px-1 text-xs font-semibold rounded-t-lg border-b-2 transition-colors ${
               mediaLibraryTab === 'favorites'
-                ? 'border-primary text-[var(--sr-cyan)] bg-violet-50/80'
+                ? 'border-[var(--sr-cyan)] text-[var(--sr-cyan)] bg-[var(--sr-surface-panel-dark-alt)]'
                 : 'border-transparent text-[var(--sr-text-faint-on-dark)] hover:bg-[var(--sr-surface-panel-dark)]'
             }`}
           >
@@ -76,7 +76,7 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
           disabled
           className="w-full bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-faint-on-dark)] py-2 rounded-[2px] text-sm font-medium cursor-not-allowed flex items-center justify-center gap-2"
         >
-          + Import media <span className="text-amber-700 text-xs font-semibold">Soon</span>
+          + Import media <span className="text-[var(--sr-text-faint-on-dark)] text-xs font-semibold">Soon</span>
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
             <div
               key={c.id}
               className={`flex rounded-[2px] border overflow-hidden ${
-                selectedClipId === c.id ? 'border-primary bg-violet-50' : 'border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]'
+                selectedClipId === c.id ? 'border-[var(--sr-cyan)] bg-[var(--sr-surface-panel-dark-alt)]' : 'border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]'
               }`}
             >
               <button
@@ -110,7 +110,7 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
                 onClick={() => toggleFavoriteClip(c.id)}
                 className={`shrink-0 w-11 flex items-center justify-center text-lg border-l ${
                   favoriteClipIds.includes(c.id)
-                    ? 'text-amber-500 bg-amber-50 border-amber-100'
+                    ? 'text-[var(--sr-cyan)] bg-[var(--sr-surface-panel-dark-alt)] border-[var(--sr-cyan)]'
                     : 'text-[var(--sr-text-faint-on-dark)] border-[var(--sr-border-dark)] hover:bg-[var(--sr-surface-panel-dark)]'
                 }`}
                 aria-pressed={favoriteClipIds.includes(c.id)}
@@ -145,9 +145,9 @@ export function MediaGalleryNested({ omitTabRow = false }: { omitTabRow?: boolea
                   setSelectedClipId(c.id);
                   setMediaLibraryTab('your');
                 }}
-                className="w-full flex gap-3 p-3 rounded-[2px] border border-amber-200 bg-amber-50/50 hover:bg-amber-50 text-left"
+                className="w-full flex gap-3 p-3 rounded-[2px] border border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark-alt)] hover:border-[var(--sr-cyan)] text-left"
               >
-                <span className="text-amber-500 text-lg">★</span>
+                <span className="text-[var(--sr-cyan)] text-lg">★</span>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[var(--sr-text-primary-on-dark)] truncate">{c.name}</p>
                   <p className="text-xs text-[var(--sr-text-faint-on-dark)]">
@@ -196,7 +196,7 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
     <aside
       className={`${EDITOR_LEFT_PANEL_WIDTH} bg-[var(--sr-surface-panel-dark)] border-r border-[var(--sr-border-dark)] flex flex-col hidden lg:flex min-h-0`}
     >
-      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-gradient-to-b from-violet-50/50 to-white">
+      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]">
         <h2 className="text-lg font-extrabold text-[var(--sr-cyan)] leading-tight">
           {variant === 'media' ? 'Media' : 'Project'}
         </h2>
@@ -212,7 +212,7 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
               setRightDockTab('mediaGallery');
             }}
             className={`w-full text-left py-2.5 px-3 rounded-[2px] text-sm font-medium transition-colors flex justify-between items-center ${
-              mediaLibraryTab === 'your' ? 'bg-violet-50 text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
+              mediaLibraryTab === 'your' ? 'bg-[var(--sr-surface-panel-dark-alt)] text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
             }`}
           >
             Your media
@@ -227,7 +227,7 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
             title="Coming soon"
           >
             Stock
-            <span className="text-xs text-amber-700 font-semibold">Soon</span>
+            <span className="text-xs text-[var(--sr-text-faint-on-dark)] font-semibold">Soon</span>
           </div>
         </li>
         <li>
@@ -238,7 +238,7 @@ export function LeftSidebarNav({ variant = 'media' }: { variant?: 'media' }) {
               setRightDockTab('mediaGallery');
             }}
             className={`w-full text-left py-2.5 px-3 rounded-[2px] text-sm font-medium transition-colors flex justify-between items-center ${
-              mediaLibraryTab === 'favorites' ? 'bg-violet-50 text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
+              mediaLibraryTab === 'favorites' ? 'bg-[var(--sr-surface-panel-dark-alt)] text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
             }`}
           >
             Favorites
@@ -265,7 +265,7 @@ export function MediaGalleryTabContent() {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 p-4 border-b border-[var(--sr-border-dark)] bg-gradient-to-b from-violet-50/50 to-white">
+      <div className="shrink-0 p-4 border-b border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]">
         <h2 className="text-lg font-extrabold text-[var(--sr-cyan)] leading-tight">Media</h2>
         <p className="text-sm font-medium text-[var(--sr-text-primary-on-dark)] truncate mt-1">{projectTitle}</p>
         <p className="text-xs text-[var(--sr-text-faint-on-dark)] mt-2">Your media, stock, and favorites — add clips to the timeline.</p>
@@ -276,7 +276,7 @@ export function MediaGalleryTabContent() {
             type="button"
             onClick={() => setMediaLibraryTab('your')}
             className={`w-full text-left py-2.5 px-3 rounded-[2px] text-sm font-medium transition-colors flex justify-between items-center ${
-              mediaLibraryTab === 'your' ? 'bg-violet-50 text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
+              mediaLibraryTab === 'your' ? 'bg-[var(--sr-surface-panel-dark-alt)] text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
             }`}
           >
             Your media
@@ -291,7 +291,7 @@ export function MediaGalleryTabContent() {
             title="Coming soon"
           >
             Stock
-            <span className="text-xs text-amber-700 font-semibold">Soon</span>
+            <span className="text-xs text-[var(--sr-text-faint-on-dark)] font-semibold">Soon</span>
           </div>
         </li>
         <li>
@@ -299,7 +299,7 @@ export function MediaGalleryTabContent() {
             type="button"
             onClick={() => setMediaLibraryTab('favorites')}
             className={`w-full text-left py-2.5 px-3 rounded-[2px] text-sm font-medium transition-colors flex justify-between items-center ${
-              mediaLibraryTab === 'favorites' ? 'bg-violet-50 text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
+              mediaLibraryTab === 'favorites' ? 'bg-[var(--sr-surface-panel-dark-alt)] text-[var(--sr-cyan)]' : 'hover:bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)]'
             }`}
           >
             Favorites

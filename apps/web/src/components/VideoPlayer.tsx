@@ -292,7 +292,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
           <button
             type="button"
-            className="size-20 bg-primary/90 backdrop-blur-sm flex items-center justify-center rounded-full shadow-[0_0_30px_rgba(124,58,237,0.5)] border border-white/20 transition-transform duration-300 hover:scale-110 pointer-events-auto"
+            className="size-20 bg-[var(--sr-cyan)]/90 backdrop-blur-sm flex items-center justify-center rounded-full shadow-[0_0_30px_rgba(6,166,192,0.45)] border border-white/20 transition-transform duration-300 hover:scale-110 pointer-events-auto"
             onClick={togglePlay}
           >
             <span className="material-symbols-outlined text-white text-5xl">play_arrow</span>
@@ -305,7 +305,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg"
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute top-3 right-3 z-40 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/15 hover:border-primary/60 transition-all duration-300 group overflow-hidden"
+          className="absolute top-3 right-3 z-40 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/15 hover:border-[var(--sr-cyan)]/60 transition-all duration-300 group overflow-hidden"
           onClick={e => e.stopPropagation()}
         >
           <img src="/logo.png" alt="SnapRec" className="size-5 rounded shrink-0" />
@@ -324,7 +324,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           onClick={handleSeek}
         >
           <div
-            className="absolute h-full bg-primary rounded-full transition-all pointer-events-none"
+            className="absolute h-full bg-[var(--sr-cyan)] rounded-full transition-all pointer-events-none"
             style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
           >
             <div className="absolute right-0 top-1/2 -translate-y-1/2 size-3.5 bg-white rounded-full shadow-lg scale-0 group-hover/progress:scale-100 transition-transform pointer-events-none" />
@@ -362,13 +362,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
                 {displayRate}x
               </button>
               {showSpeedMenu && (
-                <div className="absolute bottom-full mb-2 right-0 bg-[#1a1325]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl min-w-[100px] py-1">
+                <div className="absolute bottom-full mb-2 right-0 bg-[var(--sr-surface-panel-dark)]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl min-w-[100px] py-1">
                   {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
                     <button
                       key={speed}
                       type="button"
                       onClick={() => handleSpeedChange(speed)}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-primary/20 ${displayRate === speed ? 'text-primary font-bold bg-primary/10' : 'text-white/70'}`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[var(--sr-cyan)]/20 ${displayRate === speed ? 'text-[var(--sr-cyan)] font-bold bg-[var(--sr-cyan)]/10' : 'text-white/70'}`}
                     >
                       {speed}x
                     </button>
@@ -390,7 +390,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
                   step="0.01"
                   value={volume}
                   onChange={handleVolumeChange}
-                  className="w-24 h-1 accent-primary cursor-pointer opacity-0 group-hover/volume:opacity-100 transition-opacity duration-300"
+                  className="w-24 h-1 accent-[var(--sr-cyan)] cursor-pointer opacity-0 group-hover/volume:opacity-100 transition-opacity duration-300"
                 />
               </div>
             </div>
@@ -408,8 +408,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       {isProcessing && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md transition-all z-40">
           <div className="relative">
-            <div className="size-20 border-4 border-primary/20 rounded-full animate-pulse shadow-[0_0_40px_rgba(124,58,237,0.2)]" />
-            <div className="absolute inset-0 border-t-4 border-primary rounded-full animate-spin" />
+            <div className="size-20 border-4 border-[var(--sr-cyan)]/20 rounded-full animate-pulse shadow-[0_0_40px_rgba(6,166,192,0.2)]" />
+            <div className="absolute inset-0 border-t-4 border-[var(--sr-cyan)] rounded-full animate-spin" />
           </div>
           <div className="flex flex-col items-center text-center px-6 mt-8">
             <h3 className="text-white text-2xl font-black mb-3 tracking-tight">Polishing your video</h3>

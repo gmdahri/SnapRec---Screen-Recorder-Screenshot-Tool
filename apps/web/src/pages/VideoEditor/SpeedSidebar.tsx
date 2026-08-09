@@ -19,14 +19,14 @@ export function SpeedSidebar() {
     <aside
       className={`${EDITOR_LEFT_PANEL_WIDTH} bg-[var(--sr-surface-panel-dark)] border-r border-[var(--sr-border-dark)] flex flex-col min-h-0 z-20`}
     >
-      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-gradient-to-b from-violet-50/70 to-white">
+      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]">
         <h2 className="text-xl font-extrabold text-[var(--sr-cyan)] tracking-tight">Speed</h2>
         <p className="text-sm font-medium text-[var(--sr-text-primary-on-dark)] truncate mt-1">{projectTitle}</p>
         <p className="text-xs text-[var(--sr-text-faint-on-dark)] mt-2">Save in the top bar when you’re done.</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        <p className="text-xs text-[var(--sr-text-muted-on-dark)] leading-relaxed rounded-[2px] bg-violet-50/80 border border-violet-100 p-3">
+        <p className="text-xs text-[var(--sr-text-muted-on-dark)] leading-relaxed rounded-[2px] bg-[var(--sr-surface-panel-dark-alt)] border border-[var(--sr-border-dark)] p-3">
           Preview only — export uses normal speed. Save stores your choice for next time.
         </p>
 

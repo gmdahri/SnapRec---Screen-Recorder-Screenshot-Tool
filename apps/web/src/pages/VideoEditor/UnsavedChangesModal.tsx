@@ -35,7 +35,7 @@ export function UnsavedChangesModal({
     <div style={{
       position: 'fixed', inset: 0, zIndex: 80,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(4,7,8,.6)', padding: 20,
+      background: 'var(--sr-scrim-dark)', padding: 20,
     }}>
       <div
         ref={ref}
@@ -87,7 +87,7 @@ const primary = {
   height: 'var(--sr-h-md)',
   border: 'none',
   background: 'var(--sr-text-primary-on-light)',
-  color: '#fff',
+  color: 'var(--sr-surface-paper)',
   fontSize: 13.5,
   fontWeight: 600,
   cursor: 'pointer',
