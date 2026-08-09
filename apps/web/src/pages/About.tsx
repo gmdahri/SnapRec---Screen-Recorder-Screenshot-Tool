@@ -3,7 +3,7 @@ import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../compone
 
 const About = () => {
     return (
-        <div className="min-h-screen bg-white text-slate-900 font-display">
+        <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display">
             <SEO
                 url="/about"
                 title="About SnapRec — Free Screen Recorder & Screenshot Tool"
@@ -44,8 +44,8 @@ const About = () => {
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Hero */}
                     <div className="text-center mb-16">
-                        <div className="inline-flex items-center justify-center size-20 rounded-2xl bg-primary/10 mb-6">
-                            <span className="material-symbols-outlined text-primary text-5xl">info</span>
+                        <div className="inline-flex items-center justify-center size-20 rounded-[2px] bg-[var(--sr-cyan)]/10 mb-6">
+                            <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-5xl">info</span>
                         </div>
                         <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4">
                             About{' '}
@@ -53,7 +53,7 @@ const About = () => {
                                 SnapRec
                             </span>
                         </h1>
-                        <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+                        <p className="text-[var(--sr-text-faint-on-light)] text-lg max-w-2xl mx-auto">
                             A free, open-source screen recording and screenshot tool built for everyone.
                         </p>
                     </div>
@@ -61,14 +61,14 @@ const About = () => {
                     {/* Content */}
                     <div className="prose prose-lg prose-slate max-w-none">
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">Our Mission</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Our Mission</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
                                 We believe screen recording and screenshot tools should be free, fast, and
                                 respect your privacy. Too many tools on the market limit free recordings to a
                                 few minutes, slap watermarks on your videos, or require you to create an
                                 account before you can capture a single frame. SnapRec was built to change that.
                             </p>
-                            <p className="text-slate-600 leading-relaxed mt-4">
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed mt-4">
                                 Our mission is to give everyone — students, teachers, remote workers,
                                 developers, designers, and content creators — a powerful capture tool that
                                 works out of the box, right inside the browser they already use. No downloads,
@@ -77,14 +77,14 @@ const About = () => {
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">What Is SnapRec?</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">What Is SnapRec?</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
                                 SnapRec is a lightweight Chrome extension (under 1 MB) that lets you record
                                 your screen in up to 4K resolution, take full-page scrolling screenshots,
                                 annotate images with text, shapes, arrows, and blur, and share everything via
                                 an instant link — all completely free.
                             </p>
-                            <p className="text-slate-600 leading-relaxed mt-4">
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed mt-4">
                                 It works on Chrome, Microsoft Edge, Brave, and any Chromium-based browser.
                                 Whether you're on a powerful desktop or a budget Chromebook, SnapRec runs
                                 smoothly because everything is processed locally on your device.
@@ -92,14 +92,14 @@ const About = () => {
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">Why We Built It</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Why We Built It</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
                                 SnapRec started as a side project born out of frustration. Every screen
                                 recorder we tried had the same problems: paywalls after a few recordings,
                                 watermarks on exports, mandatory account creation, or bloated desktop
                                 installers that ate up system resources.
                             </p>
-                            <p className="text-slate-600 leading-relaxed mt-4">
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed mt-4">
                                 We wanted something simple — click, record, share. No friction. So we built
                                 it ourselves and decided to make it free for everyone. Today SnapRec is used
                                 by thousands of people across education, remote work, content creation, and
@@ -108,7 +108,7 @@ const About = () => {
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">Key Features</h2>
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Key Features</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                                 {[
                                     { icon: 'videocam', title: 'Screen Recording', desc: 'Record your tab, window, or entire screen in up to 4K. Include microphone audio and webcam overlay.' },
@@ -118,13 +118,13 @@ const About = () => {
                                     { icon: 'shield', title: 'Privacy First', desc: 'Local by default — recordings stay on your device unless you choose to upload to your private library.' },
                                     { icon: 'code', title: 'Open Source', desc: 'SnapRec is open source on GitHub. Inspect the code, contribute, or fork it.' },
                                 ].map((f) => (
-                                    <div key={f.title} className="flex gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                        <div className="flex-shrink-0 size-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-primary text-2xl">{f.icon}</span>
+                                    <div key={f.title} className="flex gap-4 p-4 rounded-[2px] bg-[var(--sr-surface-panel-light)] border border-[var(--sr-border-light-soft)]">
+                                        <div className="flex-shrink-0 size-12 rounded-[2px] bg-[var(--sr-cyan)]/10 flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-2xl">{f.icon}</span>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-slate-900 mb-1">{f.title}</h3>
-                                            <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
+                                            <h3 className="font-bold text-[var(--sr-text-primary-on-light)] mb-1">{f.title}</h3>
+                                            <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{f.desc}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -132,27 +132,27 @@ const About = () => {
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">Privacy & Security</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Privacy & Security</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
                                 Your privacy matters. SnapRec does not collect personal data, does not track
                                 your browsing activity, and processes all captures locally on your device by default.
                                 Local by default — recordings stay on your device unless you choose to upload to your
                                 private cloud library. We use only the minimum browser permissions needed to provide
                                 capture functionality, and every permission is explained in our{' '}
-                                <a href="/privacy" className="text-primary hover:underline font-semibold">Privacy Policy</a>.
+                                <a href="/privacy" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">Privacy Policy</a>.
                             </p>
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">Open Source</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Open Source</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
                                 Transparency is important to us. SnapRec's source code is publicly available
                                 on{' '}
                                 <a
                                     href="https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-primary hover:underline font-semibold"
+                                    className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold"
                                 >
                                     GitHub
                                 </a>
@@ -162,13 +162,13 @@ const About = () => {
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">The Person Behind SnapRec</h2>
-                            <p className="text-slate-600 leading-relaxed mb-4">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">The Person Behind SnapRec</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed mb-4">
                                 SnapRec is built and maintained by Ghulam Muhammad — a full-stack developer who built the extension because he needed a screen recorder that didn't get in the way. He writes guides on screen recording, browser APIs, and productivity tools.
                             </p>
                             <NavLink
                                 to="/about/ghulam-muhammad"
-                                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
+                                className="inline-flex items-center gap-2 text-[var(--sr-cyan-on-light)] font-semibold hover:underline"
                             >
                                 <span className="material-symbols-outlined text-base">person</span>
                                 View author profile →
@@ -176,24 +176,24 @@ const About = () => {
                         </section>
 
                         <section className="mb-12">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-4">Contact Us</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                            <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Contact Us</h2>
+                            <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
                                 Have questions, suggestions, or need help? We'd love to hear from you.
                             </p>
-                            <ul className="mt-4 space-y-3 text-slate-600">
+                            <ul className="mt-4 space-y-3 text-[var(--sr-text-muted-on-light)]">
                                 <li className="flex items-center gap-3">
-                                    <span className="material-symbols-outlined text-primary">mail</span>
-                                    <a href="mailto:ghulammuhammadddahri@gmail.com" className="text-primary hover:underline font-semibold">
+                                    <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)]">mail</span>
+                                    <a href="mailto:ghulammuhammadddahri@gmail.com" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">
                                         ghulammuhammadddahri@gmail.com
                                     </a>
                                 </li>
                                 <li className="flex items-center gap-3">
-                                    <svg className="size-5 text-primary" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+                                    <svg className="size-5 text-[var(--sr-cyan-on-light)]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
                                     <a
                                         href="https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-primary hover:underline font-semibold"
+                                        className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold"
                                     >
                                         GitHub Repository
                                     </a>
@@ -204,12 +204,12 @@ const About = () => {
 
                     {/* CTA */}
                     <section className="mt-16">
-                        <div className="bg-slate-900 rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="bg-[var(--sr-surface-carbon)] rounded-[2px] p-10 md:p-16 text-center relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--sr-cyan)]/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
                             <h2 className="text-3xl md:text-4xl font-black text-white mb-4 relative">
                                 Try SnapRec for Free
                             </h2>
-                            <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
+                            <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                                 Install in seconds. No account required. No watermarks. No limits.
                             </p>
                             <div className="flex justify-center">

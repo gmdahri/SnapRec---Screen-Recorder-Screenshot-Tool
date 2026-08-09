@@ -102,7 +102,7 @@ const faqs = [
 ];
 
 const LoomAlternative: React.FC = () => (
-    <div className="min-h-screen bg-white text-slate-900 font-display antialiased">
+    <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
         <SEO
             url="/loom-alternative"
             title="Best Free Loom Alternative — No Limits, No Watermarks, 4K"
@@ -116,11 +116,11 @@ const LoomAlternative: React.FC = () => (
             {/* Hero */}
             <section className="relative pt-36 pb-16 overflow-hidden">
                 <div className="absolute inset-0 -z-10 pointer-events-none">
-                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/6 rounded-full blur-[120px]" />
+                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[var(--sr-cyan)]/6 rounded-full blur-[120px]" />
                     <div className="absolute top-1/4 right-0 w-[400px] h-[400px] bg-blue-400/6 rounded-full blur-[100px]" />
                 </div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-200 text-primary text-sm font-bold px-4 py-2 rounded-full mb-8">
+                    <div className="inline-flex items-center gap-2 bg-[var(--sr-cyan-tint)] border border-[var(--sr-cyan)] text-[var(--sr-cyan-on-light)] text-sm font-bold px-4 py-2 rounded-full mb-8">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         Free Loom Alternative — No account needed
                     </div>
@@ -131,14 +131,14 @@ const LoomAlternative: React.FC = () => (
                             That Doesn't Limit You.
                         </span>
                     </h1>
-                    <p className="text-lg sm:text-xl text-slate-500 mb-10 leading-relaxed max-w-2xl mx-auto">
+                    <p className="text-lg sm:text-xl text-[var(--sr-text-faint-on-light)] mb-10 leading-relaxed max-w-2xl mx-auto">
                         Loom's free plan stops you at 5 minutes and 25 videos. SnapRec is 100% free with{' '}
-                        <span className="font-semibold text-slate-700">no time limits, no video caps, no watermarks, and 4K quality.</span>
+                        <span className="font-semibold text-[var(--sr-text-primary-on-light)]">no time limits, no video caps, no watermarks, and 4K quality.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
                         <AddToChromeButton size="xl" />
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
+                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['∞ Unlimited recordings', '4K quality free', 'No account needed', 'No watermarks'].map((t) => (
                             <span key={t} className="flex items-center gap-1.5">
                                 <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
@@ -150,25 +150,25 @@ const LoomAlternative: React.FC = () => (
             </section>
 
             {/* Comparison Table */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">SnapRec vs Loom — Feature Comparison</h2>
-                    <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">Every feature Loom charges for, SnapRec gives you free.</p>
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
-                        <table className="w-full text-sm bg-white">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">Every feature Loom charges for, SnapRec gives you free.</p>
+                    <div className="overflow-x-auto rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm">
+                        <table className="w-full text-sm bg-[var(--sr-surface-paper)]">
                             <thead>
-                                <tr className="border-b border-slate-100">
-                                    <th className="text-left p-5 font-black text-slate-700 w-1/3">Feature</th>
-                                    <th className="p-5 font-black text-primary text-center">SnapRec (Free)</th>
-                                    <th className="p-5 font-black text-slate-500 text-center">Loom</th>
+                                <tr className="border-b border-[var(--sr-border-light-soft)]">
+                                    <th className="text-left p-5 font-black text-[var(--sr-text-primary-on-light)] w-1/3">Feature</th>
+                                    <th className="p-5 font-black text-[var(--sr-cyan-on-light)] text-center">SnapRec (Free)</th>
+                                    <th className="p-5 font-black text-[var(--sr-text-faint-on-light)] text-center">Loom</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comparison.map((row, i) => (
-                                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                                        <td className="p-5 font-semibold text-slate-700">{row.feature}</td>
+                                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-[var(--sr-surface-paper)]' : 'bg-[var(--sr-surface-panel-light)]/50'}>
+                                        <td className="p-5 font-semibold text-[var(--sr-text-primary-on-light)]">{row.feature}</td>
                                         <td className="p-5 text-center text-emerald-700 font-bold">{row.snaprec}</td>
-                                        <td className="p-5 text-center text-slate-500">{row.loom}</td>
+                                        <td className="p-5 text-center text-[var(--sr-text-faint-on-light)]">{row.loom}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -181,13 +181,13 @@ const LoomAlternative: React.FC = () => (
             <section className="py-20">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">6 Reasons to Switch from Loom</h2>
-                    <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">SnapRec isn't just free — it does things Loom can't, at any price.</p>
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">SnapRec isn't just free — it does things Loom can't, at any price.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {reasons.map((r) => (
-                            <div key={r.title} className="bg-slate-50 rounded-2xl p-7 border border-slate-100 hover:shadow-md transition-shadow">
+                            <div key={r.title} className="bg-[var(--sr-surface-panel-light)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)] hover:shadow-md transition-shadow">
                                 <div className="text-3xl mb-4">{r.icon}</div>
-                                <h3 className="font-black text-slate-900 text-lg mb-2">{r.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{r.desc}</p>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] text-lg mb-2">{r.title}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{r.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -195,10 +195,10 @@ const LoomAlternative: React.FC = () => (
             </section>
 
             {/* How It Works */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-3xl md:text-4xl font-black mb-4">Switch from Loom in 30 Seconds</h2>
-                    <p className="text-slate-500 mb-14 max-w-xl mx-auto">No migration, no setup, no account required.</p>
+                    <p className="text-[var(--sr-text-faint-on-light)] mb-14 max-w-xl mx-auto">No migration, no setup, no account required.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
                             { n: '1', title: 'Add to Chrome', desc: 'Click "Add to Chrome" from the Chrome Web Store. No sign-up, no credit card, nothing to configure.' },
@@ -206,9 +206,9 @@ const LoomAlternative: React.FC = () => (
                             { n: '3', title: 'Share the Link', desc: 'When done, get an instant shareable link — just like Loom, but without the restrictions.' },
                         ].map((s) => (
                             <div key={s.n} className="flex flex-col items-center">
-                                <div className="w-12 h-12 rounded-full bg-primary text-white font-black text-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/30">{s.n}</div>
-                                <h3 className="font-black text-slate-900 mb-2">{s.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
+                                <div className="w-12 h-12 rounded-full bg-[var(--sr-cyan)] text-white font-black text-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/30">{s.n}</div>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">{s.title}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{s.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -225,8 +225,8 @@ const LoomAlternative: React.FC = () => (
                     <div className="divide-y divide-slate-100">
                         {faqs.map((f) => (
                             <div key={f.q} className="py-6">
-                                <h3 className="font-black text-slate-900 mb-2">{f.q}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{f.a}</p>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">{f.q}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{f.a}</p>
                             </div>
                         ))}
                     </div>
@@ -234,39 +234,39 @@ const LoomAlternative: React.FC = () => (
             </section>
 
             {/* When Loom Is Still Worth It */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">When Is Loom Still Worth It?</h2>
-                    <p className="text-slate-500 text-center mb-10 max-w-xl mx-auto">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-10 max-w-xl mx-auto">
                         SnapRec replaces Loom for most users — but Loom has genuine strengths worth knowing before you switch.
                     </p>
                     <div className="space-y-6">
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">You need AI-powered editing tools</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">You need AI-powered editing tools</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Loom's paid plans include AI features like automatic filler-word removal, AI-generated transcripts with chapters, and smart summaries. If async video messaging with AI post-production is your core workflow, Loom Business is built for that. SnapRec focuses on capturing and sharing — editing features are annotation-based, not AI-based.
                             </p>
                         </div>
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">Your team already has a paid Loom plan</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">Your team already has a paid Loom plan</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 If you're mid-contract on Loom Business or Enterprise, switching mid-cycle costs money. Finish your term, evaluate whether the AI features justify the price, then make the move. SnapRec will still be here — and still free.
                             </p>
                         </div>
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">You rely on CRM or Salesforce integrations</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">You rely on CRM or Salesforce integrations</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Loom integrates directly with HubSpot and Salesforce so sales teams can embed recordings in CRM records and track viewer engagement. If that pipeline data matters to your sales process, Loom's ecosystem plays a role SnapRec doesn't try to fill. For simple async sales videos, SnapRec's shareable link is all most teams need.
                             </p>
                         </div>
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">You need per-viewer analytics</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">You need per-viewer analytics</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Loom Business shows you who watched your video, how far they got, and whether they rewatched sections. If video engagement data drives decisions for your team, that analytics layer is a real differentiator. SnapRec gives you a shareable link — not a dashboard of viewer behavior.
                             </p>
                         </div>
                     </div>
-                    <p className="text-slate-500 text-sm text-center mt-8 leading-relaxed">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-sm text-center mt-8 leading-relaxed">
                         For everyone else — individual creators, educators, developers, remote teams who want fast async video without a subscription — SnapRec is the better choice.
                     </p>
                 </div>
@@ -275,11 +275,11 @@ const LoomAlternative: React.FC = () => (
             {/* Related Pages */}
             <section className="py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <p className="text-sm text-slate-500 mb-4">Also comparing other tools?</p>
+                    <p className="text-sm text-[var(--sr-text-faint-on-light)] mb-4">Also comparing other tools?</p>
                     <div className="flex flex-wrap justify-center gap-4 text-sm">
-                        <NavLink to="/screencastify-alternative" className="text-primary font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
-                        <NavLink to="/screen-recorder-for-teachers" className="text-primary font-semibold hover:underline">Screen Recorder for Teachers →</NavLink>
-                        <NavLink to="/webcam-overlay-presentation" className="text-primary font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
+                        <NavLink to="/screencastify-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
+                        <NavLink to="/screen-recorder-for-teachers" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Screen Recorder for Teachers →</NavLink>
+                        <NavLink to="/webcam-overlay-presentation" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
                     </div>
                 </div>
             </section>
@@ -287,12 +287,12 @@ const LoomAlternative: React.FC = () => (
             {/* Bottom CTA */}
             <section className="py-20">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-slate-900 rounded-3xl p-12 md:p-16 text-center relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="bg-[var(--sr-surface-carbon)] rounded-[2px] p-12 md:p-16 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--sr-cyan)]/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
                         <h2 className="text-3xl md:text-4xl font-black text-white mb-4 relative">
                             Stop paying for Loom. Switch today.
                         </h2>
-                        <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
+                        <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             SnapRec is the free Chrome screen recorder with no limits — no 5-minute cap, no 25-video limit, no credit card ever.
                         </p>
                         <AddToChromeButton variant="white" size="xl" />

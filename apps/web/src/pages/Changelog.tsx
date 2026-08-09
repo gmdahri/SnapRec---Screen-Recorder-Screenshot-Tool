@@ -121,7 +121,7 @@ const tagStyles: Record<Release['tag'], { bg: string; text: string; label: strin
 
 const Changelog: React.FC = () => {
     return (
-        <div className="min-h-screen bg-white text-slate-900 font-display">
+        <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display">
             <SEO
                 url="/changelog"
                 title="Changelog — What's New in SnapRec"
@@ -163,14 +163,14 @@ const Changelog: React.FC = () => {
                         <h1 className="text-5xl font-black tracking-tight mb-4">
                             What's New
                         </h1>
-                        <p className="text-slate-500 text-lg">
+                        <p className="text-[var(--sr-text-faint-on-light)] text-lg">
                             Every improvement, feature, and fix — all in one place.
                         </p>
                     </div>
 
                     <div className="relative">
                         {/* Timeline line */}
-                        <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-200 hidden md:block" />
+                        <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-[var(--sr-border-light-soft)] hidden md:block" />
 
                         <div className="space-y-12">
                             {releases.map((release, idx) => {
@@ -179,24 +179,24 @@ const Changelog: React.FC = () => {
                                     <div key={idx} className="relative flex gap-6 md:gap-8 group">
                                         {/* Timeline dot */}
                                         <div className="hidden md:flex flex-col items-center">
-                                            <div className="size-10 rounded-full bg-white border-2 border-slate-300 group-hover:border-primary flex items-center justify-center transition-colors z-10">
-                                                <div className="size-3 rounded-full bg-primary/70 group-hover:bg-primary transition-colors" />
+                                            <div className="size-10 rounded-full bg-[var(--sr-surface-paper)] border-2 border-[var(--sr-border-light)] group-hover:border-[var(--sr-cyan)] flex items-center justify-center transition-colors z-10">
+                                                <div className="size-3 rounded-full bg-[var(--sr-cyan)]/70 group-hover:bg-[var(--sr-cyan)] transition-colors" />
                                             </div>
                                         </div>
 
                                         {/* Card */}
-                                        <div className="flex-1 bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-lg transition-shadow duration-300">
+                                        <div className="flex-1 bg-[var(--sr-surface-paper)] border border-[var(--sr-border-light-soft)] rounded-[2px] p-6 md:p-8 shadow-sm hover:shadow-lg transition-shadow duration-300">
                                             <div className="flex flex-wrap items-center gap-3 mb-4">
                                                 <h2 className="text-2xl font-black">v{release.version}</h2>
                                                 <span className={`px-3 py-0.5 rounded-full text-xs font-bold ${tag.bg} ${tag.text}`}>
                                                     {tag.label}
                                                 </span>
-                                                <span className="text-slate-400 text-sm ml-auto">{release.date}</span>
+                                                <span className="text-[var(--sr-text-faint-on-light)] text-sm ml-auto">{release.date}</span>
                                             </div>
                                             <ul className="space-y-2">
                                                 {release.highlights.map((item, i) => (
-                                                    <li key={i} className="flex items-start gap-3 text-slate-600 text-sm leading-relaxed">
-                                                        <span className="material-symbols-outlined text-primary text-base mt-0.5 flex-shrink-0">check_circle</span>
+                                                    <li key={i} className="flex items-start gap-3 text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
+                                                        <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-base mt-0.5 flex-shrink-0">check_circle</span>
                                                         {item}
                                                     </li>
                                                 ))}
