@@ -9,6 +9,9 @@ const BACKGROUND = read('../background/background.js');
 const POPUP = read('../popup/popup.js');
 const FAB = read('../content/fab.js');
 const FAB_CSS = read('../content/fab.css');
+const OFFSCREEN = read('../offscreen/offscreen.js');
+const INJECT = read('../background/utils/contentScriptManager.js');
+const WEBCAM = read('../content/webcam.js');
 
 /** The camera toggle used to flip its own switch and nothing else — the
  * overlay only ever appeared once a recording had started, so there was no
@@ -61,8 +64,12 @@ describe('the ring says whether you are live', () => {
     expect(CSS).toMatch(/\.snaprec-webcam\[data-preview="false"\]\s*\{\s*border-color:\s*#FF3B2E/s);
   });
 
-  it('mirrors the preview so it can be used for aiming', () => {
-    expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*transform:\s*scaleX\(-1\)/s);
+  it('mirrors the picture, and only the picture', () => {
+    // The mirror moved onto the inner video when the overlay gained controls:
+    // mirroring the container would put the mic button where the eye says the
+    // close button is.
+    expect(CSS).toMatch(/\.snaprec-webcam-video\s*\{[^}]*transform:\s*scaleX\(-1\)/s);
+    expect(CSS).not.toMatch(/\.snaprec-webcam\s*\{[^}]*transform:\s*scaleX\(-1\)/s);
   });
 
   it('keeps the pre-plate palette out of every in-page overlay', () => {
@@ -153,10 +160,10 @@ describe('stopping a recording releases the camera', () => {
     // A camera the page can still see is a camera that is still on, whoever
     // opened it. Stopping the tracks is what turns the light off; removing
     // the node only hides it.
-    expect(CONTENT).toMatch(/querySelectorAll\('video\.snaprec-webcam'\)\.forEach/);
-    const sweep = CONTENT.slice(CONTENT.indexOf("querySelectorAll('video.snaprec-webcam')"));
+    expect(CONTENT).toMatch(/querySelectorAll\('\.snaprec-webcam'\)\.forEach/);
+    const sweep = CONTENT.slice(CONTENT.indexOf("querySelectorAll('.snaprec-webcam')"));
     expect(sweep).toMatch(/getTracks\(\)\.forEach\(\(t\) => t\.stop\(\)\)/);
-    expect(sweep).toMatch(/video\.remove\(\)/);
+    expect(sweep).toMatch(/overlay\.remove\(\)/);
   });
 
   it('still releases it on every stop path', () => {
@@ -257,5 +264,99 @@ describe('the floating button knows a recording is running', () => {
     expect(FAB).not.toMatch(/#EF4444/i);
     expect(FAB).toMatch(/#FF3B2E/);
     expect(FAB_CSS).not.toMatch(/123,\s*37,\s*244|7b25f4|8B5CF6/i);
+  });
+});
+
+
+/** Controls on the overlay itself: mute, shape, and turn the camera off.
+ *
+ * Verified in Chrome with a fake camera and a real recording: the controls
+ * are hidden until hover, muting flips the offscreen mic track to
+ * enabled=false while leaving it live, the popup's switch agrees after a
+ * re-boot, unmuting from the popup updates the overlay, and no script errors
+ * are raised on the page. */
+describe('the camera overlay carries its own controls', () => {
+  it('is a container, because a <video> cannot hold children', () => {
+    expect(CONTENT).toMatch(/webcamElement = document\.createElement\('div'\)/);
+    expect(CONTENT).toMatch(/video\.className = 'snaprec-webcam-video'/);
+    // Mirroring the container would put the mic button where the eye says
+    // close is, so only the picture is flipped.
+    expect(CSS).toMatch(/\.snaprec-webcam-video\s*\{[^}]*transform:\s*scaleX\(-1\)/s);
+  });
+
+  it('offers mute, shape and off — and nothing else', () => {
+    // Bounded to the function: the file has classList.add calls further down.
+    const from = CONTENT.indexOf('function buildWebcamControls');
+    const bar = CONTENT.slice(from, CONTENT.indexOf('return bar;', from));
+    expect(bar.match(/\badd\('(\w+)'/g)).toEqual(["add('mic'", "add('shape'", "add('close'"]);
+    // Real buttons, so they are reachable by keyboard; a hover-only
+    // affordance never is.
+    expect(bar).toMatch(/createElement\('button'\)/);
+    expect(bar).toMatch(/setAttribute\('aria-label'/);
+  });
+
+  it('hides them until they are wanted', () => {
+    // Always-visible chrome would sit in every recording.
+    expect(CSS).toMatch(/\.snaprec-webcam-controls\s*\{[^}]*opacity:\s*0/s);
+    expect(CSS).toMatch(/\.snaprec-webcam:hover \.snaprec-webcam-controls[\s\S]*?opacity:\s*1/);
+    expect(CSS).toMatch(/:focus-within \.snaprec-webcam-controls/);
+  });
+
+  it('does not let a control press drag the overlay', () => {
+    // The drag handler is on the container, and would otherwise swallow the
+    // gesture and move the overlay instead of pressing the button.
+    expect(CONTENT).toMatch(/bar\.addEventListener\('pointerdown', \(e\) => e\.stopPropagation\(\)\)/);
+  });
+
+  it('still works after the overlay has been dragged', () => {
+    // Found in the browser: the drag's click-swallower runs in the capture
+    // phase on the container, so it ate the first click on a control after
+    // any drag — and because the bar stops pointerdown, `moved` never reset,
+    // so it ate every one after that. Drag the overlay, press mute, nothing
+    // happened.
+    const guard = CONTENT.slice(CONTENT.indexOf("el.addEventListener('click'"));
+    expect(guard).toMatch(/moved = false;/);
+    expect(guard).toMatch(/closest\?\.\('\.snaprec-webcam-controls'\)\) return;/);
+  });
+
+  it('mutes for real, in the one place that holds the microphone', () => {
+    expect(CONTENT).toMatch(/action: 'setMicMuted'/);
+    expect(BACKGROUND).toMatch(/case 'setMicMuted'/);
+    expect(BACKGROUND).toMatch(/offscreen_setMicMuted/);
+    expect(OFFSCREEN).toMatch(/case 'offscreen_setMicMuted'/);
+    // enabled=false, never stop(): stopping ends the track for good, and
+    // unmuting could not bring it back without prompting again.
+    expect(OFFSCREEN).toMatch(/getAudioTracks\(\)\.forEach\(\(track\) => \{ track\.enabled = !muted; \}\)/);
+  });
+
+  it('keeps the popup switch and the overlay button on one setting', () => {
+    expect(BACKGROUND).toMatch(/storage\.local\.set\(\{ micMuted/);
+    expect(BACKGROUND).toMatch(/message\.action === 'getMicMuted'/);
+    expect(POPUP).toMatch(/getMicMuted/);
+    expect(POPUP).toMatch(/event\.input === 'mic'/);
+    // And whichever moved, the other is told.
+    expect(BACKGROUND).toMatch(/action: 'micMutedChanged'/);
+    expect(CONTENT).toMatch(/case 'micMutedChanged'/);
+  });
+
+  it('says muted in words, on a chip that survives the camera image', () => {
+    expect(CONTENT).toMatch(/statusLabel\(state\)/);
+    // A text-shadow alone vanishes against a bright or busy frame, and this
+    // has to stay readable when the recording is watched back.
+    expect(CSS).toMatch(/\.snaprec-webcam-status\s*\{[^}]*background:\s*rgba\(4, 7, 8, \.82\)/s);
+  });
+
+  it('takes its shape rules from the tested module rather than repeating them', () => {
+    // webcam.js had no consumer at all until now — nothing injected it.
+    expect(INJECT).toMatch(/'content\/webcam\.js', 'content\/content\.js'/);
+    expect(CONTENT).toMatch(/globalThis\.SnapRecWebcam/);
+    expect(CONTENT).toMatch(/rules\.shapeFor\(webcamShape\)/);
+  });
+
+  it('survives being injected twice', () => {
+    // A classic script re-running threw "Identifier 'SHAPES' has already been
+    // declared", which killed the content script for that tab.
+    expect(WEBCAM).toMatch(/var SHAPES = \{/);
+    expect(WEBCAM).not.toMatch(/const SHAPES = \{/);
   });
 });

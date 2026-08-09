@@ -30,6 +30,10 @@
     /** The in-flight startWebcam, so concurrent callers wait for one camera
      * instead of each opening their own. */
     let webcamStarting = null;
+    /** 'rect' | 'circle' — the two the design allows. A shape picker with six
+     * options is a decision nobody wants while setting up a recording. */
+    let webcamShape = 'circle';
+    let micMuted = false;
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -52,6 +56,13 @@
                     sendResponse({ success: true });
                 });
                 return true; // Keep channel open for async response
+            case 'micMutedChanged':
+                // The popup's switch and this overlay are two views of one
+                // setting; whichever moved, both have to show it.
+                micMuted = !!message.muted;
+                renderWebcamState();
+                sendResponse({ success: true });
+                return false;
             case 'isWebcamPreviewOn':
                 sendResponse({ on: !!webcamElement });
                 return false;
@@ -612,13 +623,25 @@
                 return;
             }
 
-            webcamElement = document.createElement('video');
+            // A <video> cannot hold children, so the overlay is a container
+            // with the video inside it. Only the video is mirrored — mirrored
+            // controls would put the mic button where your eye says the close
+            // button is.
+            webcamElement = document.createElement('div');
             webcamElement.className = 'snaprec-webcam';
             webcamElement.dataset.preview = String(preview);
-            webcamElement.autoplay = true;
-            webcamElement.playsInline = true;
-            webcamElement.srcObject = webcamStream;
-            webcamElement.muted = true; // Avoid feedback
+            webcamElement.dataset.shape = webcamShape;
+
+            const video = document.createElement('video');
+            video.className = 'snaprec-webcam-video';
+            video.autoplay = true;
+            video.playsInline = true;
+            video.srcObject = webcamStream;
+            video.muted = true; // Avoid feedback
+            webcamElement.appendChild(video);
+
+            webcamElement.appendChild(buildWebcamControls());
+            renderWebcamState();
 
             makeWebcamDraggable(webcamElement);
             document.body.appendChild(webcamElement);
@@ -736,6 +759,15 @@
         // alone. `moved` is reset on the next pointerdown.
         el.addEventListener('click', (e) => {
             if (!moved) return;
+            // One shot. The control bar stops pointerdown so the drag handler
+            // never sees it, which means `moved` would otherwise stay true
+            // from the last drag and swallow every later click.
+            moved = false;
+            // Pressing a control is not the tail of a drag. The bar stops its
+            // own clicks from reaching the page, so letting them through here
+            // costs nothing — and swallowing them meant that after moving the
+            // overlay, the next press of mute, shape or close did nothing.
+            if (e.target.closest?.('.snaprec-webcam-controls')) return;
             e.preventDefault();
             e.stopPropagation();
         }, true);
@@ -752,6 +784,91 @@
         });
     }
 
+    /** The controls, revealed on hover or keyboard focus.
+     *
+     * Always-visible chrome would sit in every recording; hidden-until-needed
+     * keeps the overlay a picture of you and nothing else. They are real
+     * buttons so they are reachable by keyboard, which a hover-only affordance
+     * never is. */
+    function buildWebcamControls() {
+        const bar = document.createElement('div');
+        bar.className = 'snaprec-webcam-controls';
+
+        const add = (name, label) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'snaprec-webcam-btn';
+            b.dataset.webcam = name;
+            b.title = label;
+            b.setAttribute('aria-label', label);
+            bar.appendChild(b);
+            return b;
+        };
+        add('mic', 'Mute microphone');
+        add('shape', 'Switch between a circle and a rectangle');
+        add('close', 'Turn the camera off');
+
+        // pointerdown, not click: the drag handler lives on the container and
+        // would otherwise pick the gesture up and move the overlay instead.
+        bar.addEventListener('pointerdown', (e) => e.stopPropagation());
+        bar.addEventListener('click', (e) => {
+            const btn = e.target.closest?.('[data-webcam]');
+            if (!btn) return;
+            e.stopPropagation();
+            if (btn.dataset.webcam === 'close') return stopWebcam();
+            if (btn.dataset.webcam === 'shape') {
+                webcamShape = webcamShape === 'circle' ? 'rect' : 'circle';
+            }
+            if (btn.dataset.webcam === 'mic') {
+                micMuted = !micMuted;
+                // The page cannot reach the microphone — it is held by the
+                // offscreen document — so the background owns the change and
+                // this only asks for it.
+                try { chrome.runtime.sendMessage({ action: 'setMicMuted', muted: micMuted }); } catch { /* no-op */ }
+            }
+            renderWebcamState();
+        });
+        return bar;
+    }
+
+    /** Reads the shared rules module rather than re-deciding them here, so the
+     * overlay and its tests cannot drift. */
+    function renderWebcamState() {
+        if (!webcamElement) return;
+        const rules = globalThis.SnapRecWebcam;
+        const state = { micMuted, cameraLost: false, shape: webcamShape, selected: false };
+
+        webcamElement.dataset.shape = rules ? rules.overlayState(state).shape : webcamShape;
+        if (rules) {
+            const { borderRadius } = rules.shapeFor(webcamShape);
+            webcamElement.style.borderRadius =
+                typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius;
+        }
+
+        const micBtn = webcamElement.querySelector('[data-webcam="mic"]');
+        if (micBtn) {
+            micBtn.dataset.on = String(!micMuted);
+            micBtn.title = micMuted ? 'Unmute microphone' : 'Mute microphone';
+            micBtn.setAttribute('aria-label', micBtn.title);
+            micBtn.setAttribute('aria-pressed', String(micMuted));
+        }
+
+        // The word carries the state, so a muted mic is unambiguous in the
+        // recording itself and under reduced motion — not merely the absence
+        // of something.
+        const label = rules ? rules.statusLabel(state) : (micMuted ? 'Microphone muted' : null);
+        let status = webcamElement.querySelector('.snaprec-webcam-status');
+        if (label && !status) {
+            status = document.createElement('span');
+            status.className = 'snaprec-webcam-status';
+            webcamElement.appendChild(status);
+        }
+        if (status) {
+            status.textContent = label ?? '';
+            status.hidden = !label;
+        }
+    }
+
     function stopWebcam() {
         webcamWanted = false;
         if (webcamStream) {
@@ -763,11 +880,13 @@
         // it — an orphan from a race, or one left by an earlier instance of
         // this script. Stopping the tracks is what turns the light off;
         // removing the node only hides it.
-        document.querySelectorAll('video.snaprec-webcam').forEach((video) => {
-            const stream = video.srcObject;
-            if (stream && stream.getTracks) stream.getTracks().forEach((t) => t.stop());
-            video.srcObject = null;
-            video.remove();
+        document.querySelectorAll('.snaprec-webcam').forEach((overlay) => {
+            overlay.querySelectorAll('video').forEach((video) => {
+                const stream = video.srcObject;
+                if (stream && stream.getTracks) stream.getTracks().forEach((t) => t.stop());
+                video.srcObject = null;
+            });
+            overlay.remove();
         });
         webcamElement = null;
     }

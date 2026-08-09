@@ -99,6 +99,11 @@ function runSideEffects(event, previous) {
       if (event.input === 'camera') {
         send({ action: 'setWebcamPreview', enabled: state.inputs.camera });
       }
+      // The overlay carries a mic button too, so both write to one store
+      // rather than each keeping its own idea of the setting.
+      if (event.input === 'mic') {
+        send({ action: 'setMicMuted', muted: !state.inputs.mic });
+      }
       break;
 
     default:
@@ -213,6 +218,11 @@ async function boot() {
   const cam = await send({ action: 'getWebcamPreview' });
   if (cam && typeof cam.on === 'boolean') {
     state = { ...state, inputs: { ...state.inputs, camera: cam.on } };
+  }
+
+  const mic = await send({ action: 'getMicMuted' });
+  if (mic && typeof mic.muted === 'boolean') {
+    state = { ...state, inputs: { ...state.inputs, mic: !mic.muted } };
   }
 
   paint();

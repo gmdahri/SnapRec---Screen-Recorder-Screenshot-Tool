@@ -40,6 +40,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true; // Async response
 
 
+        case 'offscreen_setMicMuted':
+            sendResponse({ success: setMicMuted(message.muted) });
+            return false;
+
         case 'offscreen_pauseRecording':
             pauseRecording();
             sendResponse({ success: true });
@@ -440,6 +444,19 @@ async function cropImage(dataUrl, rect) {
 }
 
 // Note: Upload logic has been moved to background.js which has access to chrome.storage
+
+/** Mutes without stopping.
+ *
+ * track.enabled = false makes the track produce silence while staying in the
+ * mixed stream, so the recording keeps a continuous audio timeline. Stopping
+ * the track instead would end it for good — unmuting could not bring it back
+ * without re-prompting for the microphone. */
+function setMicMuted(muted) {
+    if (!originalMicStream) return false;
+    originalMicStream.getAudioTracks().forEach((track) => { track.enabled = !muted; });
+    console.log('[Offscreen] Microphone', muted ? 'muted' : 'unmuted');
+    return true;
+}
 
 function pauseRecording() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {

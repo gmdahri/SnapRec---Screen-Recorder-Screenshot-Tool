@@ -4,7 +4,14 @@
  * holds the identical bodies for the tests — __tests__/webcam.test.js fails if
  * the two drift. */
 
-const SHAPES = {
+/* `var`, not `const`: this file is injected fresh on every
+ * ContentScriptManager.inject, and a classic script re-running would throw
+ * "Identifier 'SHAPES' has already been declared" on the second injection —
+ * which killed the whole content script for that tab. `var` and function
+ * declarations both tolerate redeclaration. Content scripts run in an
+ * isolated world, so this shares nothing with the page.
+ * Kept identical in webcam.core.js so the drift test still compares equal. */
+var SHAPES = {
   rect: { borderRadius: 6 },
   circle: { borderRadius: '50%' },
 };

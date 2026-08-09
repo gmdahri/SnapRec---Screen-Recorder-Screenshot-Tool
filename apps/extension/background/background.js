@@ -56,6 +56,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
      * means no overlay, so silence is `false`: a stored value would light the
      * toggle on a tab showing no camera, and the first click would then read
      * as turning it off. */
+    if (message.action === 'getMicMuted') {
+        chrome.storage.local.get('micMuted')
+            .then(({ micMuted }) => sendResponse({ muted: !!micMuted }))
+            .catch(() => sendResponse({ muted: false }));
+        return true;
+    }
+
     if (message.action === 'getWebcamPreview') {
         (async () => {
             try {
@@ -116,6 +123,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false; // No response needed
         case 'resumeRecording':
             resumeRecording();
+            return false; // No response needed
+        case 'setMicMuted':
+            setMicMuted(message.muted);
             return false; // No response needed
         case 'setWebcamPreview':
             setWebcamPreview(message.enabled);
@@ -396,6 +406,30 @@ async function captureVisibleTab() {
         console.error('Error capturing visible tab:', error);
         alert('Cannot capture screenshots on this page. Try a normal website instead.');
     }
+}
+
+/** The microphone, from wherever it is asked about.
+ *
+ * Stored because the popup's switch and the overlay's button are two views of
+ * one setting, and the popup is rebuilt from scratch every time it opens. The
+ * live track only exists while recording, so muting mid-take is forwarded to
+ * the offscreen document as well; before a take, storing it is the whole job.
+ * Every tab's overlay is told, so a second one does not contradict the first. */
+async function setMicMuted(muted) {
+    await chrome.storage.local.set({ micMuted: !!muted });
+
+    if (await hasOffscreenDocument()) {
+        chrome.runtime.sendMessage({ action: 'offscreen_setMicMuted', muted: !!muted })
+            .catch(() => { /* offscreen closed between the check and the send */ });
+    }
+
+    const tabs = await chrome.tabs.query({});
+    await Promise.allSettled(
+        tabs
+            .filter(tab => !TabUtils.isRestrictedUrl(tab.url))
+            .map(tab => chrome.tabs.sendMessage(tab.id, { action: 'micMutedChanged', muted: !!muted })
+                .catch(() => { /* no content script in this tab */ }))
+    );
 }
 
 /** Live camera preview, independent of recording.

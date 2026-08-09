@@ -201,17 +201,13 @@
     right: 40px;
     width: 180px;
     height: 180px;
-    border-radius: 50%;
-    object-fit: cover;
+    overflow: hidden;
     /* Cyan is focus: you are framing, nothing is being captured yet. The ring
        is the only thing separating the two states, so it is a 3px edge rather
        than a tint. Was the pre-plate purple, as this whole file was. */
     border: 3px solid #06A6C0;
     box-shadow: 0 8px 32px rgba(4, 7, 8, .45);
     z-index: 2147483646;
-    /* Mirrored so you can frame yourself — a preview that moves the wrong way
-       is useless for aiming. The recorded stream is untouched. */
-    transform: scaleX(-1);
     /* It moves, so it says so before it is touched. */
     cursor: grab;
     /* The browser's own drag and text selection would otherwise fight the
@@ -219,6 +215,22 @@
     user-select: none;
     -webkit-user-drag: none;
     touch-action: none;
+    font-family: 'Schibsted Grotesk Variable', system-ui, -apple-system, sans-serif;
+}
+
+/* Two shapes, no more — the values come from webcam.core.js. */
+.snaprec-webcam[data-shape="circle"] { border-radius: 50%; }
+.snaprec-webcam[data-shape="rect"]   { border-radius: 6px; }
+
+.snaprec-webcam-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    /* Only the picture is mirrored, so you can frame yourself. Mirroring the
+       whole overlay would put the mic button where your eye says close is.
+       The recorded stream is untouched either way. */
+    transform: scaleX(-1);
 }
 
 .snaprec-webcam[data-dragging] {
@@ -232,6 +244,99 @@
 .snaprec-webcam[data-preview="false"] {
     border-color: #FF3B2E;
 }
+
+/* Controls: hidden until wanted, so the overlay is a picture of you and not a
+   panel. They sit over the foot of the frame on a scrim, because a control
+   bar outside it would change the overlay's footprint as it appears. */
+.snaprec-webcam-controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0 10px;
+    background: linear-gradient(to top, rgba(4, 7, 8, .75), transparent);
+    opacity: 0;
+    transition: opacity .12s ease;
+}
+
+.snaprec-webcam:hover .snaprec-webcam-controls,
+.snaprec-webcam:focus-within .snaprec-webcam-controls {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .snaprec-webcam-controls { transition: none; }
+}
+
+.snaprec-webcam-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 2px;              /* radius is 2 on controls */
+    background: rgba(243, 246, 246, .16);
+    color: #F3F6F6;                  /* --sr-text-primary-on-dark */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+}
+
+.snaprec-webcam-btn:hover { background-color: rgba(243, 246, 246, .3); }
+.snaprec-webcam-btn:focus-visible { outline: 2px solid #06A6C0; outline-offset: 1px; }
+
+/* Icons are inline data URIs: an MV3 content script cannot pull an icon font
+   into an arbitrary page, and the page's own fonts must never be inherited. */
+.snaprec-webcam-btn[data-webcam="mic"][data-on="true"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F6F6' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='2' width='6' height='11' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4'/%3E%3C/svg%3E");
+}
+
+/* Muted is coral and struck through: the absence of a mic icon would not be
+   noticed, and this has to be readable in the recording. */
+.snaprec-webcam-btn[data-webcam="mic"][data-on="false"] {
+    background-color: rgba(255, 59, 46, .28);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF7A6E' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='2' width='6' height='11' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4M3 3l18 18'/%3E%3C/svg%3E");
+}
+
+.snaprec-webcam-btn[data-webcam="shape"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F6F6' stroke-width='2'%3E%3Ccircle cx='9' cy='12' r='6'/%3E%3Crect x='11' y='6' width='12' height='12' rx='2'/%3E%3C/svg%3E");
+}
+
+.snaprec-webcam-btn[data-webcam="close"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F6F6' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 5l14 14M19 5L5 19'/%3E%3C/svg%3E");
+}
+
+/* The word carries the state, not only the struck icon — it has to survive
+   being watched back in the recording. */
+.snaprec-webcam-status {
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    transform: translateX(-50%);
+    max-width: 88%;
+    padding: 2px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Azeret Mono Variable', ui-monospace, monospace;
+    font-size: 9px;
+    letter-spacing: .04em;
+    color: #FF7A6E;                  /* --sr-coral-on-dark */
+    /* A chip, not bare text: this sits on whatever the camera happens to be
+       pointing at, and a text-shadow alone disappears against a bright or
+       busy frame. It has to stay readable when watched back. */
+    background: rgba(4, 7, 8, .82);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.snaprec-webcam-status[hidden] { display: none; }
 
 /* Countdown Timer Overlay */
 .snaprec-countdown-overlay {
