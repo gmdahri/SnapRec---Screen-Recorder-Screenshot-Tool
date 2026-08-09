@@ -34,7 +34,7 @@ function VideoEditorInner() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] p-6">
         <p className="text-red-600 font-medium mb-4">{projectLoadError}</p>
-        <a href="/video-editor" className="text-primary font-bold">
+        <a href="/video-editor" className="text-[var(--sr-cyan)] font-bold">
           Back to projects
         </a>
       </div>

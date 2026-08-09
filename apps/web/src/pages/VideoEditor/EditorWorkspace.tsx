@@ -20,7 +20,7 @@ function CanvasSlot({
 }) {
   return (
     <div
-      className={`w-full max-w-4xl mx-auto aspect-video rounded-xl overflow-hidden bg-black shadow-2xl ${className}`}
+      className={`w-full max-w-4xl mx-auto aspect-video rounded-[2px] overflow-hidden bg-black shadow-2xl ${className}`}
     >
       {children}
     </div>
@@ -38,7 +38,7 @@ function EmptyCanvasPlaceholder({
 }) {
   return (
     <CanvasSlot className="flex flex-col items-center justify-center p-6 text-center border border-white/10">
-      <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-white/90 text-2xl mb-3">
+      <div className="w-14 h-14 rounded-[2px] bg-[var(--sr-surface-panel-dark)]/10 flex items-center justify-center text-white/90 text-2xl mb-3">
         ▶
       </div>
       <p className="text-white font-semibold text-sm mb-1">{title}</p>
@@ -58,9 +58,9 @@ function PropertiesPanelCore({
   return (
     <div className="space-y-3 text-sm">
       <div>
-        <label className="text-xs font-bold text-slate-500 uppercase">Speed</label>
+        <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Speed</label>
         <select
-          className="w-full mt-1 rounded-xl border-0 bg-slate-50 py-2 px-2"
+          className="w-full mt-1 rounded-[2px] border-0 bg-[var(--sr-surface-panel-dark)] py-2 px-2"
           value={playbackRate}
           onChange={(e) => onPlaybackRateChange(Number(e.target.value))}
           aria-label="Playback speed"
@@ -87,22 +87,22 @@ function PropertiesPanel({
     <div className="p-4 overflow-y-auto min-h-0 flex-1">
       <div className="space-y-4 text-sm">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase">Canvas</label>
-          <p className="mt-1 bg-slate-50 rounded-xl p-2 border border-slate-100">1920 × 1080</p>
+          <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Canvas</label>
+          <p className="mt-1 bg-[var(--sr-surface-panel-dark)] rounded-[2px] p-2 border border-[var(--sr-border-dark)]">1920 × 1080</p>
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase">Opacity</label>
+          <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Opacity</label>
           <input type="range" className="w-full accent-primary mt-1" defaultValue={100} />
         </div>
         <PropertiesPanelCore playbackRate={playbackRate} onPlaybackRateChange={onPlaybackRateChange} />
-        <hr className="border-slate-100" />
+        <hr className="border-[var(--sr-border-dark)]" />
         <div className="flex justify-between items-center">
           <span className="text-sm font-semibold">Auto-captions</span>
-          <span className="text-xs text-slate-400">Off</span>
+          <span className="text-xs text-[var(--sr-text-faint-on-dark)]">Off</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm font-semibold">Noise reduction</span>
-          <span className="text-xs text-primary">On</span>
+          <span className="text-xs text-[var(--sr-cyan)]">On</span>
         </div>
       </div>
     </div>
@@ -119,8 +119,8 @@ function LeftDockTabs({
 }) {
   const { rightDockTab, setRightDockTab } = useVideoEditor();
   return (
-    <aside className="w-72 xl:w-80 shrink-0 border-r border-slate-200 bg-white flex flex-col min-h-0 hidden lg:flex">
-      <div className="flex shrink-0 border-b border-slate-200" role="tablist">
+    <aside className="w-72 xl:w-80 shrink-0 border-r border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)] flex flex-col min-h-0 hidden lg:flex">
+      <div className="flex shrink-0 border-b border-[var(--sr-border-dark)]" role="tablist">
         <button
           type="button"
           role="tab"
@@ -128,8 +128,8 @@ function LeftDockTabs({
           onClick={() => setRightDockTab('mediaGallery')}
           className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${
             rightDockTab === 'mediaGallery'
-              ? 'text-primary border-b-2 border-primary bg-violet-50/50'
-              : 'text-slate-500 hover:bg-slate-50 border-b-2 border-transparent'
+              ? 'text-[var(--sr-cyan)] border-b-2 border-primary bg-violet-50/50'
+              : 'text-[var(--sr-text-faint-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] border-b-2 border-transparent'
           }`}
         >
           Media gallery
@@ -141,8 +141,8 @@ function LeftDockTabs({
           onClick={() => setRightDockTab('properties')}
           className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${
             rightDockTab === 'properties'
-              ? 'text-primary border-b-2 border-primary bg-violet-50/50'
-              : 'text-slate-500 hover:bg-slate-50 border-b-2 border-transparent'
+              ? 'text-[var(--sr-cyan)] border-b-2 border-primary bg-violet-50/50'
+              : 'text-[var(--sr-text-faint-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] border-b-2 border-transparent'
           }`}
         >
           Properties
@@ -164,12 +164,12 @@ function ToolRail({
 }) {
   if (workspace === 'effects') {
     return (
-      <aside className="w-72 xl:w-80 shrink-0 border-l border-slate-200 bg-white flex flex-col min-h-0 overflow-y-auto hidden lg:flex">
-        <div className="p-4 border-b border-slate-100">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Effects</h2>
-          <p className="text-sm font-extrabold text-slate-900 mt-1">Coming soon</p>
+      <aside className="w-72 xl:w-80 shrink-0 border-l border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)] flex flex-col min-h-0 overflow-y-auto hidden lg:flex">
+        <div className="p-4 border-b border-[var(--sr-border-dark)]">
+          <h2 className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase tracking-widest">Effects</h2>
+          <p className="text-sm font-extrabold text-[var(--sr-text-primary-on-dark)] mt-1">Coming soon</p>
         </div>
-        <p className="p-4 text-sm text-slate-600">Looks and filters will live here.</p>
+        <p className="p-4 text-sm text-[var(--sr-text-muted-on-dark)]">Looks and filters will live here.</p>
       </aside>
     );
   }
@@ -232,14 +232,14 @@ export function EditorWorkspace() {
         onClick={() => {
           addMediaToTimeline();
         }}
-        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold"
+        className="px-4 py-2 bg-[var(--sr-cyan)] text-white rounded-[2px] text-sm font-semibold"
       >
         + Import
       </button>
       <button
         type="button"
         onClick={() => addMediaToTimeline()}
-        className="px-4 py-2 border border-white/30 text-white rounded-lg text-sm font-semibold"
+        className="px-4 py-2 border border-white/30 text-white rounded-[2px] text-sm font-semibold"
       >
         Media
       </button>
@@ -302,7 +302,7 @@ export function EditorWorkspace() {
       ) : showLeftDock ? (
         <LeftDockTabs playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} />
       ) : null}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-slate-100">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--sr-surface-panel-dark)]">
         <div className="flex-1 flex items-center justify-center p-6 min-h-[200px] min-w-0 overflow-hidden">
           {editorVideoSrc ? (
             <CanvasSlot className="shadow-xl relative overflow-hidden">
@@ -378,13 +378,13 @@ export function EditorWorkspace() {
 
 function TimelineFooter({ empty }: { empty?: boolean }) {
   return (
-    <footer className="h-44 sm:h-48 bg-white border-t border-slate-200 flex flex-col shrink-0">
-      <div className="h-10 border-b flex items-center px-4 justify-between text-xs text-slate-500 bg-slate-50/80">
+    <footer className="h-44 sm:h-48 bg-[var(--sr-surface-panel-dark)] border-t border-[var(--sr-border-dark)] flex flex-col shrink-0">
+      <div className="h-10 border-b flex items-center px-4 justify-between text-xs text-[var(--sr-text-faint-on-dark)] bg-[var(--sr-surface-panel-dark)]/80">
         <span>Timeline</span>
-        <span className="text-slate-400">—</span>
+        <span className="text-[var(--sr-text-faint-on-dark)]">—</span>
       </div>
       <div className="flex-1 flex items-center justify-center bg-[#f8fafc] px-4">
-        <p className="text-sm text-slate-400 font-medium text-center">
+        <p className="text-sm text-[var(--sr-text-faint-on-dark)] font-medium text-center">
           {empty ? 'Add media to enable scrubbing.' : ''}
         </p>
       </div>

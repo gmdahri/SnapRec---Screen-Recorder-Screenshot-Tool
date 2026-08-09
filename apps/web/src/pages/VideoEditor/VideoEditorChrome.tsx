@@ -102,12 +102,12 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#f8fafc] text-slate-800 overflow-hidden font-[family-name:var(--font-display)]">
-      <header className="h-14 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-4 gap-4">
+    <div className="h-screen flex flex-col bg-[var(--sr-surface-carbon)] text-[var(--sr-text-primary-on-dark)] overflow-hidden font-[family-name:var(--sr-font-ui)]">
+      <header className="h-12 shrink-0 bg-[var(--sr-surface-carbon)] border-b border-[var(--sr-border-dark-soft)] flex items-center justify-between px-4 gap-4">
         <div className="flex items-center gap-3 min-w-0 flex-wrap">
           <Link
-            to="/dashboard"
-            className="flex items-center shrink-0 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary py-0.5"
+            to="/library"
+            className="flex items-center shrink-0 rounded-[2px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary py-0.5"
             title="Dashboard"
           >
             <img
@@ -118,7 +118,7 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
           </Link>
           <Link
             to="/video-editor"
-            className="text-sm font-semibold text-primary hover:underline shrink-0 hidden sm:inline border-l border-slate-200 pl-3"
+            className="text-[12.5px] text-[var(--sr-cyan)] shrink-0 hidden sm:inline border-l border-[var(--sr-border-dark)] pl-3"
           >
             All video projects
           </Link>
@@ -126,7 +126,7 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
             <input
               value={projectTitle}
               onChange={(e) => setProjectTitle(e.target.value)}
-              className="text-sm font-medium border-0 bg-slate-100 rounded-lg px-3 py-1.5 max-w-[200px] focus:ring-2 focus:ring-primary"
+              className="text-[12.5px] border border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-primary-on-dark)] rounded-[2px] px-3 h-[var(--sr-h-xs)] max-w-[200px]"
               aria-label="Project title"
             />
           </div>
@@ -135,7 +135,7 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
           <input
             type="search"
             placeholder="Search assets, effects…"
-            className="w-full rounded-full bg-slate-100 border-0 px-4 py-2 text-sm focus:ring-2 focus:ring-primary"
+            className="w-full rounded-[2px] bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] text-[var(--sr-text-primary-on-dark)] px-3 h-[var(--sr-h-xs)] text-[12.5px]"
           />
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -144,10 +144,10 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
               type="button"
               disabled={!hasUnsavedChanges || saveStatus === 'saving'}
               onClick={() => void saveProject()}
-              className={`px-3 py-2 text-sm font-semibold rounded-lg border ${
+              className={`px-3 h-[var(--sr-h-xs)] text-[12.5px] rounded-[2px] border ${
                 hasUnsavedChanges
-                  ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                  : 'border-slate-200 text-slate-400 cursor-not-allowed bg-slate-50'
+                  ? 'border-[var(--sr-cyan)] text-[var(--sr-cyan)]'
+                  : 'border-[var(--sr-border-dark-soft)] text-[var(--sr-text-faint-on-dark)] cursor-not-allowed'
               } disabled:opacity-60`}
               title={
                 hasUnsavedChanges
@@ -163,14 +163,14 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setShareModal(true)}
-            className="px-3 py-2 text-sm font-semibold border border-slate-200 rounded-lg hover:bg-slate-50"
+            className="px-3 h-[var(--sr-h-xs)] text-[12.5px] border border-[var(--sr-border-dark)] rounded-[2px] hover:border-[var(--sr-cyan)] hover:text-[var(--sr-cyan)]"
           >
             Share
           </button>
           <button
             type="button"
             onClick={() => setExportModal('settings')}
-            className="px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:opacity-90"
+            className="px-3 h-[var(--sr-h-xs)] text-[12.5px] font-semibold bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] rounded-[2px] hover:bg-[var(--sr-cyan-hover)]"
           >
             Export
           </button>
@@ -180,21 +180,21 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <div className="flex flex-1 min-h-0">
         <nav
-          className="w-[4.5rem] sm:w-[5rem] shrink-0 bg-slate-50/80 border-r border-slate-200 flex flex-col items-center py-4 px-2 gap-3"
+          className="w-[4.5rem] sm:w-[5rem] shrink-0 bg-[var(--sr-surface-panel-dark)]/80 border-r border-[var(--sr-border-dark)] flex flex-col items-center py-4 px-2 gap-3"
           aria-label="Editor tools"
         >
           {tools.map(({ id, name, disabled }) =>
             disabled ? (
               <div
                 key={id}
-                className="flex flex-col items-center gap-1.5 w-full py-2 rounded-2xl bg-white/60 border border-slate-100 text-slate-400 cursor-not-allowed select-none"
+                className="flex flex-col items-center gap-1.5 w-full py-2 rounded-[2px] bg-[var(--sr-surface-panel-dark)]/60 border border-[var(--sr-border-dark)] text-[var(--sr-text-faint-on-dark)] cursor-not-allowed select-none"
                 title={`${name} — coming soon`}
                 aria-disabled
               >
-                <span className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-400">
+                <span className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-faint-on-dark)]">
                   <ToolIcon id={id} />
                 </span>
-                <span className="text-[11px] font-medium text-slate-500 text-center leading-none">{name}</span>
+                <span className="text-[11px] font-medium text-[var(--sr-text-faint-on-dark)] text-center leading-none">{name}</span>
                 <span className="text-[10px] font-medium text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-full">
                   Soon
                 </span>
@@ -206,24 +206,24 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
                 aria-label={name}
                 aria-pressed={activeTool === id}
                 onClick={() => onTool(id)}
-                className={`group flex flex-col items-center gap-2 w-full py-3 rounded-2xl transition-all duration-200 ${
+                className={`group flex flex-col items-center gap-2 w-full py-3 rounded-[2px] transition-all duration-200 ${
                   activeTool === id
-                    ? 'bg-white shadow-md shadow-violet-100/80 text-primary border border-violet-200/80'
-                    : 'text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200/80'
+                    ? 'bg-[var(--sr-surface-panel-dark)] shadow-md shadow-violet-100/80 text-[var(--sr-cyan)] border border-violet-200/80'
+                    : 'text-[var(--sr-text-primary-on-dark)] hover:bg-[var(--sr-surface-panel-dark)] hover:shadow-sm border border-transparent hover:border-[var(--sr-border-dark)]/80'
                 }`}
               >
                 <span
                   className={`flex items-center justify-center w-11 h-11 rounded-full transition-colors ${
                     activeTool === id
-                      ? 'bg-violet-100 text-primary'
-                      : 'bg-white text-slate-500 group-hover:text-slate-700 ring-1 ring-slate-200/80'
+                      ? 'bg-violet-100 text-[var(--sr-cyan)]'
+                      : 'bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-faint-on-dark)] group-hover:text-[var(--sr-text-primary-on-dark)] ring-1 ring-slate-200/80'
                   }`}
                 >
                   <ToolIcon id={id} />
                 </span>
                 <span
                   className={`text-[13px] font-semibold tracking-tight text-center leading-tight px-0.5 ${
-                    activeTool === id ? 'text-primary' : 'text-slate-700'
+                    activeTool === id ? 'text-[var(--sr-cyan)]' : 'text-[var(--sr-text-primary-on-dark)]'
                   }`}
                 >
                   {name}
