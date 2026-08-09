@@ -27,8 +27,6 @@ describe('the camera toggle shows a live overlay', () => {
   it('routes it through the background, which owns tabs and injection', () => {
     expect(BACKGROUND).toMatch(/case 'setWebcamPreview'/);
     expect(BACKGROUND).toMatch(/showWebcamPreview.*:.*hideWebcamPreview/s);
-    // The popup closes as soon as focus leaves it, so the intent is stored.
-    expect(BACKGROUND).toMatch(/webcamPreview/);
   });
 
   it('handles both messages in the page', () => {
@@ -73,5 +71,39 @@ describe('the ring says whether you are live', () => {
     expect(CSS).not.toMatch(/123,\s*37,\s*244|7b25f4|8B5CF6|6366f1/i);
     expect(CSS).not.toMatch(/#(ef4444|dc2626)\b/i);
     expect(CSS).not.toMatch(/#(475569|64748b|130d1c|ece7f4)\b/i);
+  });
+});
+
+
+/** Reported from the field: the overlay came up but the switch still read
+ * "off". The popup is rebuilt from initialState() every time it opens, and
+ * the overlay outlives it, so the two drifted apart the moment the popup
+ * closed — leaving a switch that needed two clicks to turn off a camera that
+ * was already running.
+ *
+ * Verified in Chrome with a fake camera: with the overlay up and the page
+ * frontmost, re-booting the popup reads the toggle as on, and a single click
+ * then takes it to off with zero overlays left. A tab that never had an
+ * overlay reads off. */
+describe('the toggle matches the tab in front of you', () => {
+  it('asks on open instead of assuming the default', () => {
+    expect(POPUP).toMatch(/getWebcamPreview/);
+    expect(POPUP).toMatch(/inputs:\s*\{\s*\.\.\.state\.inputs,\s*camera:\s*cam\.on\s*\}/);
+  });
+
+  it('answers from the page, which is where the overlay actually lives', () => {
+    expect(BACKGROUND).toMatch(/message\.action === 'getWebcamPreview'/);
+    expect(BACKGROUND).toMatch(/isWebcamPreviewOn/);
+    expect(CONTENT).toMatch(/case 'isWebcamPreviewOn'/);
+    expect(CONTENT).toMatch(/sendResponse\(\{ on: !!webcamElement \}\)/);
+  });
+
+  it('never answers from a stored preference', () => {
+    // A stored flag lit the toggle on tabs showing no camera, so the first
+    // click read as turning something off. Silence means no content script,
+    // which means no overlay — so silence is false.
+    expect(BACKGROUND).not.toMatch(/storage\.local\.(get|set)\(.*webcamPreview/);
+    expect(BACKGROUND).toMatch(/sendResponse\(\{ on: reply\?\.on === true \}\)/);
+    expect(BACKGROUND).toMatch(/catch \{\s*sendResponse\(\{ on: false \}\);/);
   });
 });

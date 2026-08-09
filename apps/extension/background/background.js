@@ -50,6 +50,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Keep channel open for async
     }
 
+    /** The overlay is a DOM element, so it is per-tab, and the toggle has to
+     * match the tab in front of the user. The answer comes from that page —
+     * never from a stored preference. Silence means no content script, which
+     * means no overlay, so silence is `false`: a stored value would light the
+     * toggle on a tab showing no camera, and the first click would then read
+     * as turning it off. */
+    if (message.action === 'getWebcamPreview') {
+        (async () => {
+            try {
+                const tab = await TabUtils.getActiveTab();
+                if (!tab?.id) return sendResponse({ on: false });
+                const reply = await new Promise((resolve) => {
+                    chrome.tabs.sendMessage(tab.id, { action: 'isWebcamPreviewOn' }, (r) => {
+                        void chrome.runtime.lastError;
+                        resolve(r);
+                    });
+                });
+                sendResponse({ on: reply?.on === true });
+            } catch {
+                sendResponse({ on: false });
+            }
+        })();
+        return true;
+    }
+
     // Handle getDriveAuthStatus with async response
     if (message.action === 'getDriveAuthStatus') {
         checkDriveAuth()
@@ -375,12 +400,10 @@ async function captureVisibleTab() {
 
 /** Live camera preview, independent of recording.
  *
- * The desired state is stored as well as sent: the popup closes the moment
- * focus leaves it, and the preview has to survive that and be re-applicable
- * when the recording actually starts. */
+ * Nothing is stored. The overlay lives in the page, so the page is the only
+ * honest record of whether it is up — see getWebcamPreview. */
 async function setWebcamPreview(enabled) {
     try {
-        await chrome.storage.local.set({ webcamPreview: !!enabled });
         const tab = await TabUtils.getActiveTab();
         if (!tab?.id) return;
         await ContentScriptManager.inject(tab.id);

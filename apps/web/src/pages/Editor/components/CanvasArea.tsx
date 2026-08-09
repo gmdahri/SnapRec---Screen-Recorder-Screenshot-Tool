@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEditor } from '../context/EditorContext';
+import { parseZoomInput } from '../zoom';
 
 /** The canvas sits in a well, not on paper.
  *
@@ -10,14 +11,36 @@ import { useEditor } from '../context/EditorContext';
  * — the accent here is cyan, and only on focus. */
 export const CanvasArea: React.FC = () => {
     const {
-        canvasRef, isCropping, capturedImage, zoomLevel,
+        canvasRef, canvasWellRef, isCropping, capturedImage, zoomLevel,
         handleSetZoom, initCanvas, handleCropConfirm, handleCropCancel,
         isInitializing
     } = useEditor();
 
+    /** The field is only authoritative while it has focus. Otherwise it tracks
+     * zoomLevel, so the buttons and Fit to view keep it honest. */
+    const [draft, setDraft] = React.useState<string | null>(null);
+    const shown = draft ?? String(Math.round(zoomLevel * 100));
+
+    /** Escape blurs the field, and blur is what commits — so it has to say
+     * first that this edit is being thrown away. Clearing the draft is not
+     * enough: the blur handler reads the DOM value, which React has not
+     * re-rendered yet. */
+    const abandoned = React.useRef(false);
+
+    const commit = (text: string) => {
+        if (abandoned.current) {
+            abandoned.current = false;
+            setDraft(null);
+            return;
+        }
+        const zoom = parseZoomInput(text);
+        if (zoom !== null) handleSetZoom(zoom);
+        setDraft(null);
+    };
+
     return (
         <section className="flex-1 min-w-0 bg-[var(--sr-surface-well)] overflow-auto relative flex flex-col">
-            <div className="flex-1 px-12 pt-10 pb-12 overflow-auto">
+            <div ref={canvasWellRef} className="flex-1 px-12 pt-10 pb-12 overflow-auto">
                 <div className="max-w-5xl mx-auto flex flex-col items-center pb-24 min-h-full">
                     {/* Media: radius 0, no glow. The border is the frame. */}
                     <div
@@ -69,9 +92,24 @@ export const CanvasArea: React.FC = () => {
                     >
                         <span className="material-symbols-outlined text-[18px]">remove</span>
                     </button>
-                    <span className="font-[family-name:var(--sr-font-mono)] text-[11px] w-12 text-center text-[var(--sr-text-secondary-on-dark)]">
-                        {Math.round(zoomLevel * 100)}%
-                    </span>
+                    <div className="flex items-center">
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            aria-label="Zoom percentage"
+                            value={shown}
+                            onChange={e => setDraft(e.target.value)}
+                            onFocus={e => e.target.select()}
+                            onBlur={e => commit(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') e.currentTarget.blur();
+                                // Abandon the edit and fall back to the live zoom.
+                                if (e.key === 'Escape') { abandoned.current = true; e.currentTarget.blur(); }
+                            }}
+                            className="font-[family-name:var(--sr-font-mono)] text-[11px] w-8 text-right bg-transparent text-[var(--sr-text-secondary-on-dark)] focus:text-[var(--sr-text-primary-on-dark)] outline-none focus:ring-1 focus:ring-[var(--sr-cyan)] rounded-[2px] cursor-text"
+                        />
+                        <span className="font-[family-name:var(--sr-font-mono)] text-[11px] text-[var(--sr-text-secondary-on-dark)] pr-1">%</span>
+                    </div>
                     <button
                         onClick={() => handleSetZoom(zoomLevel + 0.1)}
                         title="Zoom in"

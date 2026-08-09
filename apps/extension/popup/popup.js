@@ -206,6 +206,15 @@ async function boot() {
   const live = await send({ action: 'getCaptureState' });
   if (live) state = { ...state, ...live };
 
+  // The overlay outlives the popup, which is rebuilt from initialState() every
+  // time it opens. Without this the camera could be running on the page while
+  // this switch read "off" — the toggle would then need two clicks to turn
+  // something off that was already on.
+  const cam = await send({ action: 'getWebcamPreview' });
+  if (cam && typeof cam.on === 'boolean') {
+    state = { ...state, inputs: { ...state.inputs, camera: cam.on } };
+  }
+
   paint();
 
   await refreshPreview();

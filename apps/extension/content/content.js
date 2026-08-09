@@ -49,6 +49,9 @@
                     sendResponse({ success: true });
                 });
                 return true; // Keep channel open for async response
+            case 'isWebcamPreviewOn':
+                sendResponse({ on: !!webcamElement });
+                return false;
             case 'showWebcamPreview':
                 startWebcam({ preview: true });
                 sendResponse({ success: true });
