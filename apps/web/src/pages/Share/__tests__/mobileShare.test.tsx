@@ -20,6 +20,20 @@ const iComments: ShareComment[] = [
 const noop = () => {};
 
 describe('mobile video share (C3)', () => {
+  it('shows watched progress, unavailable transcript, and chapter jump targets', () => {
+    const frames = [
+      { startSec: 0, sampleSec: 0.5, dataUrl: 'data:image/jpeg;base64,AAA' },
+      { startSec: 39, sampleSec: 39.5, dataUrl: null },
+    ];
+    render(<MobileVideoShare capture={{ ...video, watchedPercent: 87 }} comments={vComments}
+      frames={frames} onSeek={noop} onPost={noop} />);
+
+    expect(screen.getByText('87%')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Transcript/ })).toBeDisabled();
+    expect(screen.getByTestId('mobile-chapters')).toHaveTextContent('CHAPTERS');
+    expect(screen.getAllByRole('button', { name: /Jump to/ })).toHaveLength(2);
+  });
+
   it('pins the player so seeking never scrolls it out of view', () => {
     render(<MobileVideoShare capture={video} comments={vComments} onSeek={noop} onPost={noop} />);
     expect(screen.getByTestId('sticky-player').dataset.sticky).toBe('true');

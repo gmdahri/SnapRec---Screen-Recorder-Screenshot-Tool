@@ -154,19 +154,17 @@ describe('the side rail', () => {
     expect(screen.getByTestId('viewer-rail')).toHaveTextContent(/No comments yet/i);
   });
 
-  /** Transcription was cut from the product (plan O8). The tab is gone rather
-   * than permanently empty — an inert tab is a promise the product will not
-   * keep, and the tables behind it are recorded in docs/unused-schema.md. */
-  it('offers no transcript tab at all', () => {
+  it('shows Transcript as an unavailable tab', () => {
     render(<VideoViewer {...base} />);
-    expect(screen.queryByRole('tab', { name: /transcript/i })).toBeNull();
-    expect(screen.getByTestId('viewer-rail')).not.toHaveTextContent(/transcript/i);
+    expect(screen.getByRole('tab', { name: /Transcript/ }))
+      .toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('tab', { name: /Transcript/ })).toBeDisabled();
   });
 
-  it('leaves exactly the two tabs that have something behind them', () => {
+  it('keeps the supported tabs alongside the unavailable transcript', () => {
     render(<VideoViewer {...base} />);
     expect(screen.getAllByRole('tab').map(t => t.textContent))
-      .toEqual(['Comments 2', 'Details']);
+      .toEqual(['Comments 2', 'Transcript', 'Details']);
   });
 
   it('shows details of the capture on the details tab', async () => {
@@ -340,6 +338,8 @@ describe('the auto-generated filmstrip', () => {
   it('shows a frame per section with its timecode', () => {
     render(<VideoViewer {...base} frames={frames} />);
     const strip = screen.getByTestId('viewer-frames');
+    expect(strip).toHaveTextContent('CHAPTERS');
+    expect(strip).not.toHaveTextContent('FRAMES');
     expect(within(strip).getAllByRole('button')).toHaveLength(3);
     expect(within(strip).getByText('2:18')).toBeInTheDocument();
   });
