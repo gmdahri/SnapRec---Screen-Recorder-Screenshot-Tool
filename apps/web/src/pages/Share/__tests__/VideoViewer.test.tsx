@@ -267,6 +267,8 @@ describe('desktop rail geometry', () => {
 
       for (const viewport of [
         { width: 1440, height: 1024 },
+        { width: 1440, height: 700 },
+        { width: 1366, height: 768 },
         { width: 1180, height: 850 },
         { width: 1024, height: 768 },
       ]) {
@@ -283,6 +285,8 @@ describe('desktop rail geometry', () => {
           const media = document.querySelector<HTMLElement>('[data-testid="geometry-media"]');
           const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
           const content = document.querySelector<HTMLElement>('.sr-viewer-content-column');
+          const metadata = document.querySelector<HTMLElement>('.sr-viewer-metadata-row');
+          const metadataTitle = metadata?.querySelector<HTMLElement>('h1');
           const chapters = document.querySelector<HTMLElement>('.sr-viewer-chapters');
           const chapterTrack = document.querySelector<HTMLElement>('.sr-viewer-chapter-grid');
           const composer = rail?.lastElementChild as HTMLElement | null;
@@ -290,8 +294,8 @@ describe('desktop rail geometry', () => {
             getComputedStyle(child).overflowY === 'auto'
           )) as HTMLElement | undefined;
 
-          if (!root || !stage || !frame || !media || !rail || !content || !chapters
-            || !chapterTrack || !composer || !scrollArea) {
+          if (!root || !stage || !frame || !media || !rail || !content || !metadata
+            || !metadataTitle || !chapters || !chapterTrack || !composer || !scrollArea) {
             throw new Error('Viewer geometry fixture did not render the expected regions');
           }
 
@@ -300,6 +304,7 @@ describe('desktop rail geometry', () => {
           const frameRect = frame.getBoundingClientRect();
           const railRect = rail.getBoundingClientRect();
           const contentRect = content.getBoundingClientRect();
+          const metadataTitleRect = metadataTitle.getBoundingClientRect();
           const composerRect = composer.getBoundingClientRect();
           const chapterTops = Array.from(chapterTrack.children).map((chapter) => (
             (chapter as HTMLElement).getBoundingClientRect().top
@@ -322,6 +327,8 @@ describe('desktop rail geometry', () => {
             contentScrollHeight: content.scrollHeight,
             contentClientHeight: content.clientHeight,
             contentOverflowY: getComputedStyle(content).overflowY,
+            metadataTitleTop: metadataTitleRect.top,
+            metadataTitleBottom: metadataTitleRect.bottom,
             chapterRowCount: new Set(chapterTops.map(top => Math.round(top))).size,
             chapterScrollWidth: chapterTrack.scrollWidth,
             chapterClientWidth: chapterTrack.clientWidth,
@@ -333,10 +340,13 @@ describe('desktop rail geometry', () => {
         expect(geometry.documentScrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
         expect(geometry.rootBottom).toBeLessThanOrEqual(geometry.viewportHeight);
         expect(geometry.stageHeight).toBeGreaterThan(0);
+        expect(geometry.contentClientHeight).toBeGreaterThan(0);
         expect(geometry.contentTop).toBeGreaterThan(0);
         expect(geometry.contentBottom).toBeLessThanOrEqual(geometry.viewportHeight);
         expect(geometry.contentOverflowY).toBe('auto');
         expect(geometry.contentScrollHeight).toBeGreaterThan(geometry.contentClientHeight);
+        expect(geometry.metadataTitleTop).toBeGreaterThanOrEqual(geometry.contentTop);
+        expect(geometry.metadataTitleBottom).toBeLessThanOrEqual(geometry.contentBottom + 1);
         expect(Math.abs(geometry.stageHeight - geometry.frameHeight)).toBeLessThan(1);
         expect(Math.abs(geometry.stageWidth - geometry.frameWidth)).toBeLessThan(1);
         expect(Math.abs(geometry.frameRatio - (16 / 9))).toBeLessThan(0.01);

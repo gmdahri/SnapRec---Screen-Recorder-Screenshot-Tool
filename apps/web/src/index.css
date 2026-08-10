@@ -158,6 +158,9 @@
   }
 
   .sr-viewer-page {
+    --sr-viewer-usable-height: calc(100dvh - 50px - 22px - 40px);
+    --sr-viewer-stage-max-height: calc(var(--sr-viewer-usable-height) * 0.62);
+
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     flex: none;
@@ -167,15 +170,18 @@
   }
 
   .sr-viewer-workspace {
-    width: 100%;
+    width: min(100%, calc(var(--sr-viewer-stage-max-height) * 16 / 9 + 326px));
     min-height: 0;
   }
 
-  /* The 16:9 workspace owns the intrinsic first row. The content column then
-     receives the definite remaining height and scrolls internally, so even a
-     full-length editable description cannot grow or escape the viewport. */
+  /* The workspace stays 16:9 even when viewport height, rather than width, is
+     the limiting dimension. Its intrinsic row leaves a definite remainder for
+     long metadata and Chapters to scroll inside without moving the document. */
   .sr-viewer-content-column {
-    width: calc(100% - 326px);
+    width: min(
+      calc(100% - 326px),
+      calc(var(--sr-viewer-stage-max-height) * 16 / 9)
+    );
     height: 100%;
     min-height: 0;
     overflow-y: auto;
