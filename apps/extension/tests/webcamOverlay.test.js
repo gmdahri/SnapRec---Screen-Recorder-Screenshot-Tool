@@ -367,10 +367,15 @@ describe('the camera overlay carries its own controls', () => {
  * when recording the current tab; pick a window, another tab or a screen and
  * the popup showed something else entirely.
  *
- * Verified in Chrome: with the active tab painted solid pink and a recording
- * running, the popup's frame contains no pink at all — it cannot have come
- * from captureVisibleTab — is scaled to 320px, and changes between grabs. */
-describe('the popup previews what is actually being recorded', () => {
+ * It shows a single still of the chosen source, not a feed: rebroadcasting the
+ * capture into the popup is a second copy of the screen to encode, and you are
+ * already looking at the thing being recorded. The still answers one question
+ * — did I pick the right one — and then the popup gets out of the way.
+ *
+ * Verified in Chrome: the countdown carries a still of the picked source, the
+ * popup closes when recording starts, and a popup reopened mid-recording shows
+ * one still whose bytes do not change over the next five seconds. */
+describe('the popup shows the chosen source, once', () => {
   it('reads frames from the stream, which only the offscreen document holds', () => {
     // A MediaStream does not cross contexts, so frames it is.
     expect(OFFSCREEN).toMatch(/case 'offscreen_grabFrame'/);
@@ -380,13 +385,35 @@ describe('the popup previews what is actually being recorded', () => {
     expect(POPUP).toMatch(/action: 'getSourceFrame'/);
   });
 
-  it('prefers the recorder over the active tab once a source is chosen', () => {
-    expect(POPUP).toMatch(/const LIVE_VIEWS = \['countdown', 'recording', 'paused'\]/);
+  it('grabs the still once, when the picker is answered', () => {
+    expect(POPUP).toMatch(/case 'SOURCE_PICKED':\s*showChosenSource\(\);/);
+    // Bounded retries only, because the first frame can be a beat behind the
+    // stream and the countdown is only three seconds long.
+    expect(POPUP).toMatch(/async function showChosenSource\(attempts = 3\)/);
+    // And no interval: the live tab preview stays in the pre-capture views.
     const fn = POPUP.slice(POPUP.indexOf('async function refreshPreview'));
-    // Compare the calls, not the prose: the comment above the branch names
-    // captureVisibleTab, which made an earlier version of this pass on text.
-    expect(fn.indexOf('LIVE_VIEWS.includes(state.view)'))
-      .toBeLessThan(fn.indexOf('chrome.tabs.captureVisibleTab('));
+    expect(fn.slice(0, 400)).toMatch(/if \(!\['ready', 'screenshot'\]\.includes\(state\.view\)\) return;/);
+    expect(fn).not.toMatch(/getSourceFrame/);
+  });
+
+  it('closes once recording starts, leaving the page bar in charge', () => {
+    expect(POPUP).toMatch(/case 'RECORDING_STARTED':[\s\S]*?window\.close\(\);/);
+    // boot() adopts a running recording with transition, not dispatch — the
+    // side effect would close the popup the instant it was reopened.
+    expect(POPUP).toMatch(/state = transition\(state, \{ type: 'RECORDING_STARTED'/);
+  });
+
+  it('waits for a real frame rather than handing back a blank one', () => {
+    // play() resolves before the first frame decodes, so the one grab the
+    // countdown gets used to find a 0x0 video and return nothing.
+    expect(OFFSCREEN).toMatch(/addEventListener\('loadeddata', done, \{ once: true \}\)/);
+  });
+
+  it('shows the still behind the count, on its own ground', () => {
+    const render = read('../popup/render.js');
+    expect(render).toMatch(/data-over-preview/);
+    // A numeral alone is unreadable against an arbitrary screenshot.
+    expect(read('../popup/popup.css')).toMatch(/\.sr-numeral\[data-over-preview="true"\][\s\S]*?background: rgba\(4, 7, 8, \.62\)/);
   });
 
   it('keeps one video element rather than one per frame', () => {

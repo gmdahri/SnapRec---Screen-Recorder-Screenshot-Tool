@@ -398,6 +398,14 @@ button { font-family: inherit; cursor: pointer; }
 .sr-countdown:not(.sr-arming) .sr-mark-tr,
 .sr-countdown:not(.sr-arming) .sr-mark-bl,
 .sr-countdown:not(.sr-arming) .sr-mark-br { border-color: var(--sr-coral-mark); }
+/* The countdown sits over a still of the chosen source, so it needs its own
+   ground — a numeral alone is unreadable against an arbitrary screenshot. */
+.sr-numeral[data-over-preview="true"] {
+  padding: 0 14px;
+  border-radius: 2px;
+  background: rgba(4, 7, 8, .62);
+}
+
 .sr-arming-note {
   font-size: 13px;
   font-weight: 600;
@@ -427,7 +435,15 @@ button { font-family: inherit; cursor: pointer; }
 [data-strike] .sr-mark-br { animation: sr-strike-br var(--sr-dur-slow) var(--sr-ease) both; }
 
 @keyframes sr-count { from { transform: scale(1.25) } to { transform: scale(1) } }
-[data-strike] .sr-arming-note {
+[data-strike] /* The countdown sits over a still of the chosen source, so it needs its own
+   ground — a numeral alone is unreadable against an arbitrary screenshot. */
+.sr-numeral[data-over-preview="true"] {
+  padding: 0 14px;
+  border-radius: 2px;
+  background: rgba(4, 7, 8, .62);
+}
+
+.sr-arming-note {
   font-size: 13px;
   font-weight: 600;
   color: var(--sr-text-primary-on-dark);

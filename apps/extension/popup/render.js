@@ -295,8 +295,9 @@ function viewCountdown(state) {
     ${header(state)}
     <div class="sr-countdown" data-strike>
       <div class="sr-frame" data-treatment="coral">
+        ${state.previewSrc ? `<img class="sr-preview-img" src="${esc(state.previewSrc)}" alt="">` : ''}
         ${['tl', 'tr', 'bl', 'br'].map((c) => `<span class="sr-mark sr-mark-${c}"></span>`).join('')}
-        <span class="sr-numeral">${state.count}</span>
+        <span class="sr-numeral" data-over-preview="${state.previewSrc ? 'true' : 'false'}">${state.count}</span>
       </div>
       <p class="sr-countdown-note">Nothing is recorded yet. Esc cancels.</p>
       <button type="button" class="sr-notice-secondary" data-action="cancel">Cancel</button>

@@ -481,8 +481,18 @@ async function grabSourceFrame(maxWidth = 320) {
             return null;
         }
     }
-    // The first frames arrive after play() resolves; report nothing rather
-    // than a blank canvas that would read as a black screen being recorded.
+    // play() resolves before the first frame has decoded, so the very first
+    // grab — the one right after the picker is answered, which is the only
+    // one the countdown gets — used to find a 0x0 video and return nothing.
+    if (!previewVideo.videoWidth || !previewVideo.videoHeight) {
+        await new Promise((resolve) => {
+            const done = () => { clearTimeout(bail); resolve(); };
+            const bail = setTimeout(resolve, 1200);
+            previewVideo.addEventListener('loadeddata', done, { once: true });
+        });
+    }
+    // Still nothing: report none rather than a blank canvas, which would read
+    // as a black screen being recorded.
     if (!previewVideo.videoWidth || !previewVideo.videoHeight) return null;
 
     if (!previewCanvas) previewCanvas = document.createElement('canvas');

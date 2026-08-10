@@ -95,6 +95,20 @@ function runSideEffects(event, previous) {
       send({ action: 'uploadCapture', id: state.capture?.id });
       break;
 
+    // The picker has been answered: show what was picked, once.
+    case 'SOURCE_PICKED':
+      showChosenSource();
+      break;
+
+    // Recording is under way, and the in-page bar owns pause and stop from
+    // here. The popup steps out of the way rather than sitting over the thing
+    // being recorded — which is also why there is no live preview in it.
+    case 'RECORDING_STARTED':
+      clearInterval(previewTimer);
+      clearInterval(timer);
+      window.close();
+      break;
+
     // The camera toggle used to change nothing but its own switch — you found
     // out whether the camera worked, and where it sat, only after the
     // recording had already started. It now puts a live overlay on the page
@@ -158,24 +172,33 @@ function captureScreenshot() {
  * gesture that grants activeTab. */
 let previewTimer = null;
 
-const LIVE_VIEWS = ['countdown', 'recording', 'paused'];
-
-async function refreshPreview() {
-  if (state.mode !== 'record' && state.mode !== 'screenshot') return;
-
-  // Once a source has been chosen, the preview is of THAT source — read from
-  // the recorder itself. captureVisibleTab shows whichever tab is in front,
-  // which is only the recorded one when recording the current tab; picking a
-  // window or a screen made the popup show something else entirely.
-  if (LIVE_VIEWS.includes(state.view)) {
+/** One still of whatever the user just chose in Chrome's picker.
+ *
+ * Deliberately a single frame, not a feed. A live rebroadcast of the capture
+ * inside the popup is both pointless — you are looking at the thing being
+ * recorded — and a second copy of the screen to keep encoding. This exists
+ * only to answer "did I pick the right one", so it is grabbed once, when the
+ * picker is answered, and left alone. */
+async function showChosenSource(attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
     const frame = await send({ action: 'getSourceFrame', maxWidth: 320 });
     if (frame?.dataUrl) {
       state = { ...state, previewSrc: frame.dataUrl, previewUrl: null };
       paint();
+      return;
     }
-    return;
+    // Bounded, and short: the countdown is only three seconds, and a still
+    // that arrives after the popup has closed helps nobody.
+    await new Promise((r) => setTimeout(r, 400));
   }
+}
 
+async function refreshPreview() {
+  if (state.mode !== 'record' && state.mode !== 'screenshot') return;
+
+  // The live tab preview belongs to the pre-capture views only. Once a source
+  // is chosen the popup shows the still from showChosenSource, and once the
+  // recording starts the popup closes.
   if (!['ready', 'screenshot'].includes(state.view)) return;
 
   try {
@@ -241,6 +264,8 @@ async function boot() {
   // while a recording is running.
   const live = await send({ action: 'getCaptureState' });
   if (live?.view === 'recording') {
+    // transition, not dispatch: dispatch would run the RECORDING_STARTED side
+    // effect and close the popup the instant it was reopened.
     state = transition(state, { type: 'RECORDING_STARTED', startTime: live.startTime });
   } else if (live) {
     state = { ...state, ...live };
@@ -261,6 +286,13 @@ async function boot() {
   }
 
   paint();
+
+  // Reopened mid-recording: one still of the source, so the frame is not an
+  // empty box. Still one frame, never a feed.
+  if (state.view === 'recording') {
+    await showChosenSource();
+    return;
+  }
 
   await refreshPreview();
   previewTimer = setInterval(refreshPreview, 1500);
