@@ -36,6 +36,42 @@ const base = {
   onBack: noop, onSeek: noop, onPost: noop, onCopyLink: noop,
 };
 
+async function viewerFixtureCss(): Promise<string> {
+  const [css, tokens, uiFont, monoFont] = await Promise.all([
+    readFile(resolve(process.cwd(), 'src/index.css'), 'utf8'),
+    readFile(resolve(process.cwd(), '../../packages/design-system/src/tokens.css'), 'utf8'),
+    readFile(resolve(
+      process.cwd(),
+      '../../node_modules/@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2',
+    )),
+    readFile(resolve(
+      process.cwd(),
+      '../../node_modules/@fontsource-variable/azeret-mono/files/azeret-mono-latin-wght-normal.woff2',
+    )),
+  ]);
+
+  // page.setContent does not run Vite/Tailwind. Supply the production tokens,
+  // self-hosted fonts, and the box-sizing reset this geometry depends on so
+  // wrapping and border dimensions match the shipped surface.
+  return `
+    @font-face {
+      font-family: 'Schibsted Grotesk Variable';
+      src: url(data:font/woff2;base64,${uiFont.toString('base64')}) format('woff2');
+      font-weight: 400 800;
+    }
+    @font-face {
+      font-family: 'Azeret Mono Variable';
+      src: url(data:font/woff2;base64,${monoFont.toString('base64')}) format('woff2');
+      font-weight: 400 800;
+    }
+    ${tokens}
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { font-family: var(--sr-font-ui); }
+    ${css}
+  `;
+}
+
 describe('viewer top bar', () => {
   it('names the capture and its sharing state', () => {
     render(<VideoViewer {...base} />);
@@ -189,21 +225,36 @@ describe('the side rail', () => {
 });
 
 describe('desktop rail geometry', () => {
-  it('keeps the populated desktop viewer inside the viewport with an internally scrolling rail', async () => {
-    const css = await readFile(resolve(process.cwd(), 'src/index.css'), 'utf8');
+  it('keeps dynamic desktop metadata and every chapter reachable across viewport sizes', async () => {
+    const css = await viewerFixtureCss();
     const longThread = Array.from({ length: 30 }, (_, index): ShareComment => ({
       ...comments[0],
       id: `long-${index}`,
       body: `Comment ${index} needs enough room to make the rail overflow.`,
       index,
     }));
-    const frames = [0, 41, 138].map((startSec) => ({
+    const frames = [0, 24, 41, 72, 104, 138, 156, 174].map((startSec) => ({
       startSec,
       sampleSec: startSec + 0.5,
       dataUrl: null,
     }));
+    const expandedCapture: ViewerCapture = {
+      ...capture,
+      watchedPercent: 87,
+      description: [
+        'This review covers the revised opening, the account hand-off, and the final confirmation state.',
+        'Please compare the pacing against the earlier cut and check that the customer context remains clear.',
+        'The notes are intentionally detailed enough to wrap at the 1024px desktop boundary.',
+      ].join(' '),
+    };
     const markup = renderToStaticMarkup(
-      <VideoViewer {...base} comments={longThread} frames={frames} />,
+      <VideoViewer
+        {...base}
+        capture={expandedCapture}
+        comments={longThread}
+        frames={frames}
+        player={<video data-testid="geometry-media" />}
+      />,
     );
     const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     const browser = await puppeteer.launch({
@@ -213,60 +264,93 @@ describe('desktop rail geometry', () => {
 
     try {
       const page = await browser.newPage();
-      await page.setViewport({ width: 1440, height: 1024, deviceScaleFactor: 1 });
-      await page.setContent(`<style>${css}\nbody { margin: 0; }</style>${markup}`);
+      await page.setContent(`<style>${css}</style>${markup}`);
+      await page.evaluate(() => document.fonts.ready);
 
-      const geometry = await page.evaluate(() => {
-        const root = document.body.lastElementChild as HTMLElement | null;
-        const stage = document.querySelector<HTMLElement>('.sr-viewer-stage');
-        const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
-        const metadata = document.querySelector<HTMLElement>('.sr-viewer-metadata-row');
-        const chapters = document.querySelector<HTMLElement>('.sr-viewer-chapters');
-        const composer = rail?.lastElementChild as HTMLElement | null;
-        const scrollArea = Array.from(rail?.children ?? []).find((child) => (
-          getComputedStyle(child).overflowY === 'auto'
-        )) as HTMLElement | undefined;
+      for (const viewport of [
+        { width: 1440, height: 1024 },
+        { width: 1180, height: 850 },
+        { width: 1024, height: 768 },
+      ]) {
+        await page.setViewport({ ...viewport, deviceScaleFactor: 1 });
 
-        if (!root || !stage || !rail || !metadata || !chapters || !composer || !scrollArea) {
-          throw new Error('Viewer geometry fixture did not render the expected regions');
-        }
+        const geometry = await page.evaluate(() => {
+          const root = document.body.lastElementChild as HTMLElement | null;
+          const stage = document.querySelector<HTMLElement>('.sr-viewer-stage');
+          const frame = stage?.firstElementChild as HTMLElement | null;
+          const media = document.querySelector<HTMLElement>('[data-testid="geometry-media"]');
+          const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
+          const metadata = document.querySelector<HTMLElement>('.sr-viewer-metadata-row');
+          const chapters = document.querySelector<HTMLElement>('.sr-viewer-chapters');
+          const chapterTrack = document.querySelector<HTMLElement>('.sr-viewer-chapter-grid');
+          const composer = rail?.lastElementChild as HTMLElement | null;
+          const scrollArea = Array.from(rail?.children ?? []).find((child) => (
+            getComputedStyle(child).overflowY === 'auto'
+          )) as HTMLElement | undefined;
 
-        const rootRect = root.getBoundingClientRect();
-        const stageRect = stage.getBoundingClientRect();
-        const railRect = rail.getBoundingClientRect();
-        const composerRect = composer.getBoundingClientRect();
-        return {
-          documentScrollHeight: document.documentElement.scrollHeight,
-          viewportHeight: window.innerHeight,
-          rootBottom: rootRect.bottom,
-          stageHeight: stageRect.height,
-          railHeight: railRect.height,
-          railBottom: railRect.bottom,
-          composerBottom: composerRect.bottom,
-          metadataBottom: metadata.getBoundingClientRect().bottom,
-          chaptersBottom: chapters.getBoundingClientRect().bottom,
-          railScrollHeight: scrollArea.scrollHeight,
-          railClientHeight: scrollArea.clientHeight,
-        };
-      });
+          if (!root || !stage || !frame || !media || !rail || !metadata || !chapters
+            || !chapterTrack || !composer || !scrollArea) {
+            throw new Error('Viewer geometry fixture did not render the expected regions');
+          }
 
-      expect(geometry.documentScrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
-      expect(geometry.rootBottom).toBeLessThanOrEqual(geometry.viewportHeight);
-      expect(geometry.metadataBottom).toBeLessThanOrEqual(geometry.viewportHeight);
-      expect(geometry.chaptersBottom).toBeLessThanOrEqual(geometry.viewportHeight);
-      expect(Math.abs(geometry.stageHeight - geometry.railHeight)).toBeLessThan(1);
-      expect(Math.abs(geometry.railBottom - geometry.composerBottom)).toBeLessThan(1);
-      expect(geometry.railScrollHeight).toBeGreaterThan(geometry.railClientHeight);
+          const rootRect = root.getBoundingClientRect();
+          const stageRect = stage.getBoundingClientRect();
+          const frameRect = frame.getBoundingClientRect();
+          const railRect = rail.getBoundingClientRect();
+          const composerRect = composer.getBoundingClientRect();
+          const chapterTops = Array.from(chapterTrack.children).map((chapter) => (
+            (chapter as HTMLElement).getBoundingClientRect().top
+          ));
+          return {
+            documentScrollHeight: document.documentElement.scrollHeight,
+            viewportHeight: window.innerHeight,
+            rootBottom: rootRect.bottom,
+            stageHeight: stageRect.height,
+            frameHeight: frameRect.height,
+            frameWidth: frameRect.width,
+            stageWidth: stageRect.width,
+            mediaObjectFit: getComputedStyle(media).objectFit,
+            railHeight: railRect.height,
+            railBottom: railRect.bottom,
+            composerBottom: composerRect.bottom,
+            metadataBottom: metadata.getBoundingClientRect().bottom,
+            chaptersBottom: chapters.getBoundingClientRect().bottom,
+            chapterRowCount: new Set(chapterTops.map(top => Math.round(top))).size,
+            chapterScrollWidth: chapterTrack.scrollWidth,
+            chapterClientWidth: chapterTrack.clientWidth,
+            railScrollHeight: scrollArea.scrollHeight,
+            railClientHeight: scrollArea.clientHeight,
+          };
+        });
+
+        expect(geometry.documentScrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
+        expect(geometry.rootBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+        expect(geometry.metadataBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+        expect(geometry.chaptersBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+        expect(geometry.stageHeight).toBeGreaterThan(0);
+        expect(Math.abs(geometry.stageHeight - geometry.frameHeight)).toBeLessThan(1);
+        expect(Math.abs(geometry.stageWidth - geometry.frameWidth)).toBeLessThan(1);
+        expect(geometry.mediaObjectFit).toBe('contain');
+        expect(Math.abs(geometry.stageHeight - geometry.railHeight)).toBeLessThan(1);
+        // The composer's content edge sits inside the rail's 1px outer border.
+        expect(Math.abs(geometry.railBottom - geometry.composerBottom)).toBeLessThanOrEqual(1);
+        expect(geometry.chapterRowCount).toBe(1);
+        expect(geometry.chapterScrollWidth).toBeGreaterThan(geometry.chapterClientWidth);
+        expect(geometry.railScrollHeight).toBeGreaterThan(geometry.railClientHeight);
+      }
 
       await page.setViewport({ width: 1023, height: 900, deviceScaleFactor: 1 });
       const stackedGeometry = await page.evaluate(() => {
+        const root = document.body.lastElementChild as HTMLElement | null;
         const stage = document.querySelector<HTMLElement>('.sr-viewer-stage');
         const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
-        if (!stage || !rail) throw new Error('Stacked viewer regions were not rendered');
+        if (!root || !stage || !rail) {
+          throw new Error('Stacked viewer regions did not render');
+        }
         return {
           documentScrollHeight: document.documentElement.scrollHeight,
           viewportHeight: window.innerHeight,
-          rootOverflow: getComputedStyle(document.body.lastElementChild as Element).overflow,
+          rootOverflow: getComputedStyle(root).overflow,
           stageHeight: stage.getBoundingClientRect().height,
           railHeight: rail.getBoundingClientRect().height,
           railOverflow: getComputedStyle(rail).overflow,
@@ -277,6 +361,43 @@ describe('desktop rail geometry', () => {
       expect(stackedGeometry.railOverflow).toBe('visible');
       expect(stackedGeometry.documentScrollHeight).toBeGreaterThan(stackedGeometry.viewportHeight);
       expect(stackedGeometry.rootOverflow).not.toBe('hidden');
+    } finally {
+      await browser.close();
+    }
+  }, 15_000);
+
+  it('covers a short tablet viewport without locking natural scrolling', async () => {
+    const css = await viewerFixtureCss();
+    const markup = renderToStaticMarkup(
+      <VideoViewer
+        {...base}
+        capture={{ ...capture, description: undefined }}
+        comments={[]}
+      />,
+    );
+    const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const browser = await puppeteer.launch({
+      headless: true,
+      ...(existsSync(systemChrome) ? { executablePath: systemChrome } : {}),
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 768, height: 1200, deviceScaleFactor: 1 });
+      await page.setContent(`<style>${css}</style>${markup}`);
+      await page.evaluate(() => document.fonts.ready);
+      const geometry = await page.evaluate(() => {
+        const root = document.body.lastElementChild as HTMLElement | null;
+        if (!root) throw new Error('Viewer root did not render');
+        return {
+          viewportHeight: window.innerHeight,
+          rootHeight: root.getBoundingClientRect().height,
+          rootOverflow: getComputedStyle(root).overflow,
+        };
+      });
+
+      expect(geometry.rootHeight).toBeGreaterThanOrEqual(geometry.viewportHeight);
+      expect(geometry.rootOverflow).not.toBe('hidden');
     } finally {
       await browser.close();
     }

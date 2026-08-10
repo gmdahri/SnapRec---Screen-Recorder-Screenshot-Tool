@@ -219,7 +219,7 @@ export function VideoViewer({
                 borderRadius: 0,
               }}
             >
-              {player}
+              <div className="sr-viewer-media">{player}</div>
             </CaptureFrame>
           </div>
 
