@@ -245,7 +245,7 @@ describe('the side rail', () => {
 });
 
 describe('desktop rail geometry', () => {
-  it('keeps a 2000-character description and Chapters reachable inside the desktop content scroller', async () => {
+  it('keeps a 2000-character description and Chapters reachable on one page scroller, with none nested', async () => {
     const css = await viewerFixtureCss();
     const longThread = Array.from({ length: 30 }, (_, index): ShareComment => ({
       ...comments[0],
@@ -294,8 +294,8 @@ describe('desktop rail geometry', () => {
       ]) {
         await page.setViewport({ ...viewport, deviceScaleFactor: 1 });
         await page.evaluate(() => {
-          const content = document.querySelector<HTMLElement>('.sr-viewer-content-column');
-          if (content) content.scrollTop = 0;
+          const pageEl = document.querySelector<HTMLElement>('.sr-viewer-page');
+          if (pageEl) pageEl.scrollTop = 0;
         });
 
         const geometry = await page.evaluate(() => {
@@ -309,13 +309,15 @@ describe('desktop rail geometry', () => {
           const metadataTitle = metadata?.querySelector<HTMLElement>('h1');
           const chapters = document.querySelector<HTMLElement>('.sr-viewer-chapters');
           const chapterTrack = document.querySelector<HTMLElement>('.sr-viewer-chapter-grid');
+          const pageEl = document.querySelector<HTMLElement>('.sr-viewer-page');
           const composer = rail?.lastElementChild as HTMLElement | null;
           const scrollArea = Array.from(rail?.children ?? []).find((child) => (
             getComputedStyle(child).overflowY === 'auto'
           )) as HTMLElement | undefined;
 
           if (!root || !stage || !frame || !media || !rail || !content || !metadata
-            || !metadataTitle || !chapters || !chapterTrack || !composer || !scrollArea) {
+            || !metadataTitle || !chapters || !chapterTrack || !composer || !scrollArea
+            || !pageEl) {
             throw new Error('Viewer geometry fixture did not render the expected regions');
           }
 
@@ -333,6 +335,7 @@ describe('desktop rail geometry', () => {
             documentScrollHeight: document.documentElement.scrollHeight,
             viewportHeight: window.innerHeight,
             rootBottom: rootRect.bottom,
+            stageTop: stageRect.top,
             stageHeight: stageRect.height,
             frameHeight: frameRect.height,
             frameWidth: frameRect.width,
@@ -340,13 +343,15 @@ describe('desktop rail geometry', () => {
             stageWidth: stageRect.width,
             mediaObjectFit: getComputedStyle(media).objectFit,
             railHeight: railRect.height,
+            railTop: railRect.top,
             railBottom: railRect.bottom,
             composerBottom: composerRect.bottom,
             contentTop: contentRect.top,
             contentBottom: contentRect.bottom,
-            contentScrollHeight: content.scrollHeight,
-            contentClientHeight: content.clientHeight,
             contentOverflowY: getComputedStyle(content).overflowY,
+            pageScrollHeight: pageEl.scrollHeight,
+            pageClientHeight: pageEl.clientHeight,
+            pageOverflowY: getComputedStyle(pageEl).overflowY,
             metadataTitleTop: metadataTitleRect.top,
             metadataTitleBottom: metadataTitleRect.bottom,
             chapterRowCount: new Set(chapterTops.map(top => Math.round(top))).size,
@@ -360,18 +365,26 @@ describe('desktop rail geometry', () => {
         expect(geometry.documentScrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
         expect(geometry.rootBottom).toBeLessThanOrEqual(geometry.viewportHeight);
         expect(geometry.stageHeight).toBeGreaterThan(0);
-        expect(geometry.contentClientHeight).toBeGreaterThan(0);
         expect(geometry.contentTop).toBeGreaterThan(0);
-        expect(geometry.contentBottom).toBeLessThanOrEqual(geometry.viewportHeight);
-        expect(geometry.contentOverflowY).toBe('auto');
-        expect(geometry.contentScrollHeight).toBeGreaterThan(geometry.contentClientHeight);
+        /* One scroller, at the page edge. The description and Chapters used to
+           sit in a fixed-height remainder with its own `overflow-y: auto`,
+           which drew a second scrollbar around them inside a page that already
+           had one. */
+        expect(geometry.contentOverflowY).toBe('visible');
+        expect(geometry.pageOverflowY).toBe('auto');
+        expect(geometry.pageScrollHeight).toBeGreaterThan(geometry.pageClientHeight);
         expect(geometry.metadataTitleTop).toBeGreaterThanOrEqual(geometry.contentTop);
-        expect(geometry.metadataTitleBottom).toBeLessThanOrEqual(geometry.contentBottom + 1);
         expect(Math.abs(geometry.stageHeight - geometry.frameHeight)).toBeLessThan(1);
         expect(Math.abs(geometry.stageWidth - geometry.frameWidth)).toBeLessThan(1);
         expect(Math.abs(geometry.frameRatio - (16 / 9))).toBeLessThan(0.01);
         expect(geometry.mediaObjectFit).toBe('contain');
-        expect(Math.abs(geometry.stageHeight - geometry.railHeight)).toBeLessThan(1);
+        /* The rail runs the height of the whole left column — level with the top
+           of the player, down to the bottom edge of Chapters. It used to stop
+           where the video stopped, which left the paper beside the title, the
+           stats and Chapters empty. */
+        expect(Math.abs(geometry.railTop - geometry.stageTop)).toBeLessThan(1);
+        expect(Math.abs(geometry.railBottom - geometry.contentBottom)).toBeLessThan(1);
+        expect(geometry.railHeight).toBeGreaterThan(geometry.stageHeight);
         // The composer's content edge sits inside the rail's 1px outer border.
         expect(Math.abs(geometry.railBottom - geometry.composerBottom)).toBeLessThanOrEqual(1);
         expect(geometry.chapterRowCount).toBe(1);
@@ -379,25 +392,24 @@ describe('desktop rail geometry', () => {
         expect(geometry.railScrollHeight).toBeGreaterThan(geometry.railClientHeight);
 
         const scrolledGeometry = await page.evaluate(() => {
-          const content = document.querySelector<HTMLElement>('.sr-viewer-content-column');
+          const pageEl = document.querySelector<HTMLElement>('.sr-viewer-page');
           const chapters = document.querySelector<HTMLElement>('.sr-viewer-chapters');
-          if (!content || !chapters) throw new Error('Scrollable viewer content did not render');
-          content.scrollTop = content.scrollHeight;
-          const contentRect = content.getBoundingClientRect();
+          if (!pageEl || !chapters) throw new Error('Scrollable viewer content did not render');
+          pageEl.scrollTop = pageEl.scrollHeight;
           const chaptersRect = chapters.getBoundingClientRect();
           return {
-            scrollTop: content.scrollTop,
-            contentTop: contentRect.top,
-            contentBottom: contentRect.bottom,
+            scrollTop: pageEl.scrollTop,
+            viewportHeight: window.innerHeight,
             chaptersTop: chaptersRect.top,
             chaptersBottom: chaptersRect.bottom,
           };
         });
 
+        // Scrolling the page — the only scroller — brings Chapters into view.
         expect(scrolledGeometry.scrollTop).toBeGreaterThan(0);
-        expect(scrolledGeometry.chaptersTop).toBeGreaterThanOrEqual(scrolledGeometry.contentTop);
+        expect(scrolledGeometry.chaptersTop).toBeGreaterThanOrEqual(0);
         expect(scrolledGeometry.chaptersBottom)
-          .toBeLessThanOrEqual(scrolledGeometry.contentBottom + 1);
+          .toBeLessThanOrEqual(scrolledGeometry.viewportHeight + 1);
       }
 
       await page.setViewport({ width: 1023, height: 900, deviceScaleFactor: 1 });
@@ -462,14 +474,21 @@ describe('desktop rail geometry', () => {
         if (!stage || !frame || !rail || !scrollArea) {
           throw new Error('Zero-frame viewer regions did not render');
         }
+        const content = document.querySelector<HTMLElement>('.sr-viewer-content-column');
+        if (!content) throw new Error('Zero-frame viewer content did not render');
         const stageRect = stage.getBoundingClientRect();
         const frameRect = frame.getBoundingClientRect();
         const railRect = rail.getBoundingClientRect();
+        const contentRect = content.getBoundingClientRect();
         return {
           frameRatio: frameRect.width / frameRect.height,
+          stageTop: stageRect.top,
           stageHeight: stageRect.height,
           frameHeight: frameRect.height,
+          railTop: railRect.top,
+          railBottom: railRect.bottom,
           railHeight: railRect.height,
+          contentBottom: contentRect.bottom,
           railScrollHeight: scrollArea.scrollHeight,
           railClientHeight: scrollArea.clientHeight,
         };
@@ -477,7 +496,10 @@ describe('desktop rail geometry', () => {
 
       expect(Math.abs(geometry.frameRatio - (16 / 9))).toBeLessThan(0.01);
       expect(Math.abs(geometry.stageHeight - geometry.frameHeight)).toBeLessThan(1);
-      expect(Math.abs(geometry.stageHeight - geometry.railHeight)).toBeLessThan(1);
+      // Spans the left column even with no Chapters to sit beside.
+      expect(Math.abs(geometry.railTop - geometry.stageTop)).toBeLessThan(1);
+      expect(Math.abs(geometry.railBottom - geometry.contentBottom)).toBeLessThan(1);
+      expect(geometry.railHeight).toBeGreaterThan(geometry.stageHeight);
       expect(geometry.railScrollHeight).toBeGreaterThan(geometry.railClientHeight);
     } finally {
       await browser.close();
