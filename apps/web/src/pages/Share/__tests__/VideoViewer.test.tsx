@@ -189,7 +189,7 @@ describe('the side rail', () => {
 });
 
 describe('desktop rail geometry', () => {
-  it('constrains a long desktop thread but lets the stacked rail grow naturally', async () => {
+  it('keeps the populated desktop viewer inside the viewport with an internally scrolling rail', async () => {
     const css = await readFile(resolve(process.cwd(), 'src/index.css'), 'utf8');
     const longThread = Array.from({ length: 30 }, (_, index): ShareComment => ({
       ...comments[0],
@@ -197,7 +197,14 @@ describe('desktop rail geometry', () => {
       body: `Comment ${index} needs enough room to make the rail overflow.`,
       index,
     }));
-    const markup = renderToStaticMarkup(<VideoViewer {...base} comments={longThread} />);
+    const frames = [0, 41, 138].map((startSec) => ({
+      startSec,
+      sampleSec: startSec + 0.5,
+      dataUrl: null,
+    }));
+    const markup = renderToStaticMarkup(
+      <VideoViewer {...base} comments={longThread} frames={frames} />,
+    );
     const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     const browser = await puppeteer.launch({
       headless: true,
@@ -206,37 +213,50 @@ describe('desktop rail geometry', () => {
 
     try {
       const page = await browser.newPage();
-      await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+      await page.setViewport({ width: 1440, height: 1024, deviceScaleFactor: 1 });
       await page.setContent(`<style>${css}\nbody { margin: 0; }</style>${markup}`);
 
       const geometry = await page.evaluate(() => {
+        const root = document.body.lastElementChild as HTMLElement | null;
         const stage = document.querySelector<HTMLElement>('.sr-viewer-stage');
         const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
+        const metadata = document.querySelector<HTMLElement>('.sr-viewer-metadata-row');
+        const chapters = document.querySelector<HTMLElement>('.sr-viewer-chapters');
         const composer = rail?.lastElementChild as HTMLElement | null;
         const scrollArea = Array.from(rail?.children ?? []).find((child) => (
           getComputedStyle(child).overflowY === 'auto'
         )) as HTMLElement | undefined;
 
-        if (!stage || !rail || !composer || !scrollArea) {
+        if (!root || !stage || !rail || !metadata || !chapters || !composer || !scrollArea) {
           throw new Error('Viewer geometry fixture did not render the expected regions');
         }
 
+        const rootRect = root.getBoundingClientRect();
         const stageRect = stage.getBoundingClientRect();
         const railRect = rail.getBoundingClientRect();
         const composerRect = composer.getBoundingClientRect();
         return {
+          documentScrollHeight: document.documentElement.scrollHeight,
+          viewportHeight: window.innerHeight,
+          rootBottom: rootRect.bottom,
           stageHeight: stageRect.height,
           railHeight: railRect.height,
           railBottom: railRect.bottom,
           composerBottom: composerRect.bottom,
-          scrollHeight: scrollArea.scrollHeight,
-          scrollClientHeight: scrollArea.clientHeight,
+          metadataBottom: metadata.getBoundingClientRect().bottom,
+          chaptersBottom: chapters.getBoundingClientRect().bottom,
+          railScrollHeight: scrollArea.scrollHeight,
+          railClientHeight: scrollArea.clientHeight,
         };
       });
 
+      expect(geometry.documentScrollHeight).toBeLessThanOrEqual(geometry.viewportHeight);
+      expect(geometry.rootBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+      expect(geometry.metadataBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+      expect(geometry.chaptersBottom).toBeLessThanOrEqual(geometry.viewportHeight);
       expect(Math.abs(geometry.stageHeight - geometry.railHeight)).toBeLessThan(1);
       expect(Math.abs(geometry.railBottom - geometry.composerBottom)).toBeLessThan(1);
-      expect(geometry.scrollHeight).toBeGreaterThan(geometry.scrollClientHeight);
+      expect(geometry.railScrollHeight).toBeGreaterThan(geometry.railClientHeight);
 
       await page.setViewport({ width: 1023, height: 900, deviceScaleFactor: 1 });
       const stackedGeometry = await page.evaluate(() => {
@@ -244,6 +264,9 @@ describe('desktop rail geometry', () => {
         const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
         if (!stage || !rail) throw new Error('Stacked viewer regions were not rendered');
         return {
+          documentScrollHeight: document.documentElement.scrollHeight,
+          viewportHeight: window.innerHeight,
+          rootOverflow: getComputedStyle(document.body.lastElementChild as Element).overflow,
           stageHeight: stage.getBoundingClientRect().height,
           railHeight: rail.getBoundingClientRect().height,
           railOverflow: getComputedStyle(rail).overflow,
@@ -252,6 +275,8 @@ describe('desktop rail geometry', () => {
 
       expect(stackedGeometry.railHeight).toBeGreaterThan(stackedGeometry.stageHeight);
       expect(stackedGeometry.railOverflow).toBe('visible');
+      expect(stackedGeometry.documentScrollHeight).toBeGreaterThan(stackedGeometry.viewportHeight);
+      expect(stackedGeometry.rootOverflow).not.toBe('hidden');
     } finally {
       await browser.close();
     }

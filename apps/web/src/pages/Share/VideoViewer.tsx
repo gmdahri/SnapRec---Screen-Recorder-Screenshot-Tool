@@ -143,10 +143,7 @@ export function VideoViewer({
   const metaParts = [capture.owner, date, duration, capture.dimensions].filter(Boolean);
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', minHeight: '100vh',
-      background: 'var(--sr-surface-panel-light)',
-    }}>
+    <div className="sr-viewer-root">
       <header
         data-testid="viewer-topbar"
         style={{

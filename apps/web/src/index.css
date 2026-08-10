@@ -71,6 +71,12 @@
 
 /* Desktop share viewer. Geometry lives here so the two-column workspace can
    become a true stack without fighting inline declarations. */
+.sr-viewer-root {
+  display: flex;
+  flex-direction: column;
+  background: var(--sr-surface-panel-light);
+}
+
 .sr-viewer-page {
   flex: 1;
   overflow-y: auto;
@@ -129,6 +135,31 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+@media (min-width: 1024px) {
+  .sr-viewer-root {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sr-viewer-page {
+    flex: none;
+    height: calc(100dvh - 50px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* The width cap leaves vertical room for the metadata and one chapter row.
+     The stage therefore respects both the page width and the usable viewport
+     height, while the adjacent 312px rail continues to match its height. */
+  .sr-viewer-workspace {
+    width: min(100%, calc((100dvh - 465px) * 16 / 9 + 326px));
+  }
+
+  .sr-viewer-content-column {
+    width: min(calc(100% - 326px), calc((100dvh - 465px) * 16 / 9));
+  }
 }
 
 /* Mobile share viewer. Its filmstrip owns horizontal scrolling so the page
