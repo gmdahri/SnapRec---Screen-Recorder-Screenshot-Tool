@@ -2,13 +2,9 @@ import type { Recording } from '../../hooks/useRecordings';
 import type { Anchor, ShareComment } from './anchors';
 import type { ShareState } from './ShareShell';
 
-/** Server comment shape after the anchor migration. The three anchor fields
- * are optional because every row written before it has none. */
-type ServerComment = Recording['comments'][number] & {
-  timecodeMs?: number | null;
-  anchorX?: number | null;
-  anchorY?: number | null;
-};
+/** The anchor fields live on `Recording` itself now, so this is just the alias
+ * the mapper reads through. */
+type ServerComment = Recording['comments'][number];
 
 type ServerRecording = Recording & {
   isPublic?: boolean;

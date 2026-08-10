@@ -35,6 +35,12 @@ export interface Recording {
         content: string;
         createdAt: string;
         guestId?: string;
+        /** What the comment is about. Null on a remark about the capture as a
+         * whole, and on every row written before the anchor columns existed.
+         * `timecodeMs` for video, normalised `anchorX`/`anchorY` for images. */
+        timecodeMs?: number | null;
+        anchorX?: number | null;
+        anchorY?: number | null;
         /** ISO when settled; absent while the question is still open. */
         resolvedAt?: string | null;
         user?: {
@@ -261,10 +267,14 @@ export function useUpdateRecording() {
                 method: 'PATCH',
                 body: JSON.stringify(data),
             }),
-        onSuccess: (_, { id }) => {
-            queryClient.invalidateQueries({ queryKey: recordingsKeys.all });
-            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
-        },
+        // Returned, so `isPending` covers the refetch too — the description
+        // editor stays in its saving state until the new text is the text the
+        // page holds, rather than closing onto the previous copy of it.
+        //
+        // One invalidation, not two: `all` is the prefix of `detail`, so it
+        // already matches the detail query. Naming both made every edit refetch
+        // that query twice.
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: recordingsKeys.all }),
     });
 }
 
@@ -365,9 +375,13 @@ export function useAddComment() {
                 method: 'POST',
                 body: JSON.stringify({ content, guestId, timecodeMs, anchorX, anchorY }),
             }),
-        onSuccess: (_, { id }) => {
-            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
-        },
+        // Returned, not fired and forgotten: a returned promise keeps the
+        // mutation pending until it settles, so `isPending` covers the refetch
+        // as well as the POST. The share surfaces hold a skeleton row for that
+        // whole window — without this it would clear on the POST and leave a
+        // frame with neither the skeleton nor the real comment on screen.
+        onSuccess: (_, { id }) =>
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) }),
     });
 }
 

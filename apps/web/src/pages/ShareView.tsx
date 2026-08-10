@@ -4,6 +4,7 @@ import { VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../co
 import { FreshCaptureChrome } from './Share/FreshCaptureChrome';
 import type { VideoPlayerHandle } from '../components/VideoPlayer';
 import { ShareShell } from './Share/ShareShell';
+import { PendingComment } from './Share/PendingComment';
 import { VideoViewer } from './Share/VideoViewer';
 import { chooseViewerSurface } from './Share/surface';
 import { toShareComments, toShareKind, toShareState } from './Share/toShareProps';
@@ -791,8 +792,16 @@ const ShareView: React.FC = () => {
                     comments={toShareComments(recording, recording.user?.supabaseId)}
                     currentMs={Math.round(sharePlayheadSec * 1000)}
                     onSeek={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
+                    /* Commenting needs an account. Refusing returns false, so
+                       the composer keeps what was written and it is still there
+                       after signing in. Same gate as reactions and download. */
                     onPost={({ content, timecodeMs, anchorX, anchorY }) => {
-                        if (!recording.id) return;
+                        if (!user) {
+                            setLoginAction('post a comment');
+                            setIsLoginModalOpen(true);
+                            return false;
+                        }
+                        if (!recording.id) return false;
                         addComment.mutate({
                             id: recording.id,
                             content,
@@ -801,6 +810,7 @@ const ShareView: React.FC = () => {
                             anchorY,
                         });
                     }}
+                    postingComment={addComment.isPending}
                     onRequestAccess={() => setIsLoginModalOpen(true)}
                     onBack={() => navigate(-1)}
                     onCopyLink={() => {
@@ -1111,11 +1121,18 @@ const ShareView: React.FC = () => {
                                 </div>
                                 {/* Comment List */}
                                 <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                                    {/* The composer keeps its text until the
+                                        post succeeds, so this stands for the
+                                        row rather than for the words. */}
+                                    {addComment.isPending && <PendingComment />}
+
                                     {(!recordingData?.comments || (recordingData.comments as any[]).length === 0) ? (
+                                        addComment.isPending ? null : (
                                         <div className="flex flex-col items-center justify-center h-full text-[var(--sr-text-faint-on-light)] py-10">
                                             <span className="material-symbols-outlined text-4xl mb-2">chat_bubble_outline</span>
                                             <p className="text-sm">No comments yet</p>
                                         </div>
+                                        )
                                     ) : (
                                         (recordingData.comments as any[]).map((comment: any) => (
                                             <div key={comment.id} className="flex gap-3">

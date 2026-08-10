@@ -1,3 +1,5 @@
+import { Sweep } from './Sweep';
+
 export interface ProcessingCaptureProps {
   capture: {
     title: string;
@@ -51,27 +53,7 @@ export function ProcessingCapture({ capture }: ProcessingCaptureProps) {
           }}>processing</span>
 
           {/* Indeterminate: a sweeping segment, never a fake percentage. */}
-          <span
-            data-testid="sweep"
-            aria-hidden="true"
-            style={{
-              position: 'absolute', left: 0, right: 0, bottom: 0, height: 3,
-              overflow: 'hidden', background: 'var(--sr-border-dark)',
-            }}
-          >
-            <span style={{
-              position: 'absolute', top: 0, bottom: 0, width: '32%',
-              background: 'var(--sr-cyan)',
-              animation: 'sr-share-sweep 1.1s cubic-bezier(.2,.8,.2,1) infinite',
-            }} />
-          </span>
-
-          <style>{`
-            @keyframes sr-share-sweep { from { left: -32% } to { left: 100% } }
-            @media (prefers-reduced-motion: reduce) {
-              [data-testid="sweep"] > span { animation: none; width: 100%; opacity: .4 }
-            }
-          `}</style>
+          <Sweep />
         </div>
 
         {/* Announced once, then the ready state once. The page does not

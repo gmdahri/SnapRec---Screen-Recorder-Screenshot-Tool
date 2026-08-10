@@ -17,7 +17,9 @@ export interface VideoShareProps {
   comments: ShareComment[];
   currentMs?: number;
   onSeek: (ms: number) => void;
-  onPost: (comment: NewComment) => void;
+  /** Returns `false` when the comment is refused — the sign-in gate does
+   * that, and the composer then keeps the draft. */
+  onPost: (comment: NewComment) => void | boolean;
   player?: ReactNode;
   onDownload?: () => void;
 }

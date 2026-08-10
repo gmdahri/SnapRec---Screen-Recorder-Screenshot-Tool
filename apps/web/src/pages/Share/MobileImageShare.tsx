@@ -2,12 +2,17 @@ import { type ReactNode, useState } from 'react';
 import { StatusBadge } from '@snaprec/design-system';
 import type { PointAnchor, ShareComment } from './anchors';
 import { CommentComposer, type NewComment } from './CommentComposer';
+import { PendingComment } from './PendingComment';
 import type { ImageCapture } from './ImageShare';
 
 export interface MobileImageShareProps {
   capture: ImageCapture;
   comments: ShareComment[];
-  onPost: (comment: NewComment) => void;
+  /** Returns `false` when the comment is refused — the sign-in gate does
+   * that, and the composer then keeps the draft. */
+  onPost: (comment: NewComment) => void | boolean;
+  /** A comment is in flight; the list holds a skeleton row for it. */
+  postingComment?: boolean;
   media?: ReactNode;
 }
 
@@ -21,7 +26,9 @@ const PIN_SIZE = 22;
  *
  * Pins stay 22px — they never scale with the image, so they remain legible
  * when the screenshot is zoomed — but their tap area is padded to 44px. */
-export function MobileImageShare({ capture, comments, onPost, media }: MobileImageShareProps) {
+export function MobileImageShare({
+  capture, comments, onPost, postingComment, media,
+}: MobileImageShareProps) {
   const [selected, setSelected] = useState<string | null>(null);
 
   const points = comments.filter(
@@ -118,6 +125,9 @@ export function MobileImageShare({ capture, comments, onPost, media }: MobileIma
             </span>
           </div>
         ))}
+
+        {/* No number and no pin — the server assigns both with the id. */}
+        {postingComment && <PendingComment variant="note" />}
 
         <div style={{ marginTop: 12 }}>
           <CommentComposer touch onPost={onPost} anchorLabel="Tap the image to place a pin" />

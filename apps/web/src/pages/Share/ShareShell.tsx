@@ -34,7 +34,9 @@ export interface ShareShellProps {
   comments: ShareComment[];
   currentMs?: number;
   onSeek: (ms: number) => void;
-  onPost: (comment: NewComment) => void;
+  /** Returns `false` when the comment is refused — the sign-in gate does
+   * that, and the composer then keeps the draft. */
+  onPost: (comment: NewComment) => void | boolean;
   onRequestAccess: () => void;
   onDownload?: () => void;
   player?: ReactNode;
@@ -44,6 +46,8 @@ export interface ShareShellProps {
   onEdit?: () => void;
   onResolve?: (commentId: string, resolved: boolean) => void;
   canResolve?: (comment: ShareComment) => boolean;
+  /** A comment is in flight, so every body holds a skeleton row for it. */
+  postingComment?: boolean;
   onDescriptionChange?: (description: string) => void;
   descriptionSaving?: boolean;
   frames?: VideoFrame[];
@@ -111,6 +115,7 @@ export function ShareShell(props: ShareShellProps) {
         onBack={props.onBack ?? (() => window.history.back())}
         onSeek={props.onSeek}
         onPost={props.onPost}
+        postingComment={props.postingComment}
         onCopyLink={props.onCopyLink ?? (() => {})}
         onDownload={props.onDownload}
         onEdit={props.onEdit}
@@ -140,6 +145,7 @@ export function ShareShell(props: ShareShellProps) {
         capture={imageCapture}
         comments={props.comments}
         onPost={props.onPost}
+        postingComment={props.postingComment}
         media={props.media}
       />
     );
@@ -155,6 +161,7 @@ export function ShareShell(props: ShareShellProps) {
       comments={props.comments}
       marginPx={marginPx}
       onPost={props.onPost}
+      postingComment={props.postingComment}
       media={props.media}
       onDownload={props.onDownload}
     />

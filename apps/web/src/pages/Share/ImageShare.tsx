@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import { CaptureFrame, StatusBadge } from '@snaprec/design-system';
 import { leadersVisible, type PointAnchor, type ShareComment } from './anchors';
 import { CommentComposer, type NewComment } from './CommentComposer';
+import { PendingComment } from './PendingComment';
 
 export interface ImageCapture {
   id: string;
@@ -18,7 +19,11 @@ export interface ImageShareProps {
   comments: ShareComment[];
   /** Width of the notes margin. Leaders are drawn only above 300px. */
   marginPx: number;
-  onPost: (comment: NewComment) => void;
+  /** Returns `false` when the comment is refused — the sign-in gate does
+   * that, and the composer then keeps the draft. */
+  onPost: (comment: NewComment) => void | boolean;
+  /** A comment is in flight; the margin holds a skeleton note for it. */
+  postingComment?: boolean;
   media?: ReactNode;
   onDownload?: () => void;
 }
@@ -32,7 +37,7 @@ const PIN_SIZE = 22;
  * outline awaiting a reply, and resolved pins drop to a faint outline with the
  * note collapsed. Numbers make them distinguishable without colour. */
 export function ImageShare({
-  capture, comments, marginPx, onPost, media, onDownload,
+  capture, comments, marginPx, onPost, postingComment, media, onDownload,
 }: ImageShareProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
@@ -200,6 +205,11 @@ export function ImageShare({
             </div>
           ))}
 
+          {/* Sits with the open notes, which is what it is about to become.
+              It carries no number and no leader: the pin is assigned by the
+              server along with the id, and drawing either would be a guess. */}
+          {postingComment && <PendingComment variant="note" />}
+
           {resolved.length > 0 && (
             <button
               type="button"
@@ -225,7 +235,13 @@ export function ImageShare({
 
           <div style={{ marginTop: 8 }}>
             <CommentComposer
-              onPost={comment => { onPost(comment); setPending(null); }}
+              onPost={comment => {
+                const taken = onPost(comment) !== false;
+                // A viewer sent to sign in comes back to their pin as well as
+                // their words.
+                if (taken) setPending(null);
+                return taken;
+              }}
               anchorX={pending?.x}
               anchorY={pending?.y}
               anchorLabel={pending ? 'Commenting on the marked point' : 'Click the image to place a pin'}

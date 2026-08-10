@@ -5,6 +5,7 @@ import { BottomSheet } from '../../components/BottomSheet';
 import type { VideoFrame } from '../../hooks/useVideoFrames';
 import { formatTimecode, type ShareComment } from './anchors';
 import { CommentComposer, type NewComment } from './CommentComposer';
+import { PendingComment } from './PendingComment';
 import type { ShareCapture } from './VideoShare';
 
 export interface MobileVideoShareProps {
@@ -20,7 +21,11 @@ export interface MobileVideoShareProps {
   comments: ShareComment[];
   currentMs?: number;
   onSeek: (ms: number) => void;
-  onPost: (comment: NewComment) => void;
+  /** Returns `false` when the comment is refused — the sign-in gate does
+   * that, and the composer then keeps the draft. */
+  onPost: (comment: NewComment) => void | boolean;
+  /** A comment is in flight; the list holds a skeleton row for it. */
+  postingComment?: boolean;
   player?: ReactNode;
   frames?: VideoFrame[];
   framesGenerating?: boolean;
@@ -44,7 +49,7 @@ function displayDate(createdAt?: string): string | undefined {
  * into a compact, tabbed sheet. Generated frames remain a timeline: the
  * horizontal filmstrip scrolls independently instead of widening the page. */
 export function MobileVideoShare({
-  capture, comments, currentMs = 0, onSeek, onPost, player,
+  capture, comments, currentMs = 0, onSeek, onPost, postingComment, player,
   frames = [], framesGenerating, framesBlocked,
   onBack, onCopyLink, onEdit, onDownload,
 }: MobileVideoShareProps) {
@@ -166,6 +171,10 @@ export function MobileVideoShare({
               </div>
 
               <ul className="sr-mobile-viewer-comments">
+                {/* At the top, where it is in reach of the composer that just
+                    sent it rather than below the whole thread. */}
+                {postingComment && <li><PendingComment /></li>}
+
                 {comments.map(comment => (
                   <li key={comment.id}>
                     <button
