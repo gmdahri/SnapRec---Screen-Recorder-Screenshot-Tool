@@ -77,10 +77,18 @@ export function ShareShell(props: ShareShellProps) {
   }
 
   if (props.kind === 'recording') {
-    if (mobile) return <MobileVideoShare {...props} capture={props.capture} />;
+    if (mobile) {
+      return (
+        <MobileVideoShare
+          {...props}
+          capture={props.capture}
+          onBack={props.onBack ?? (() => window.history.back())}
+          onCopyLink={props.onCopyLink ?? (() => {})}
+        />
+      );
+    }
 
-    // P7 V1: the desktop video body is the rail viewer. MobileVideoShare keeps
-    // its own layout until V1.6's phone treatment lands.
+    // P7 V1: the desktop video body is the rail viewer.
     return (
       <VideoViewer
         capture={{

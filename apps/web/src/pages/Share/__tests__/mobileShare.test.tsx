@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MobileVideoShare } from '../MobileVideoShare';
 import { MobileImageShare } from '../MobileImageShare';
@@ -20,6 +20,71 @@ const iComments: ShareComment[] = [
 const noop = () => {};
 
 describe('mobile video share (C3)', () => {
+  it('uses the mobile header actions without losing their callbacks', async () => {
+    const onBack = vi.fn();
+    const onDownload = vi.fn();
+    const onEdit = vi.fn();
+    const onCopyLink = vi.fn();
+    const user = userEvent.setup();
+    render(<MobileVideoShare
+      capture={{ ...video, canEdit: true }}
+      comments={vComments}
+      onSeek={noop}
+      onPost={noop}
+      onBack={onBack}
+      onDownload={onDownload}
+      onEdit={onEdit}
+      onCopyLink={onCopyLink}
+    />);
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onBack).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(onEdit).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Capture actions' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(onCopyLink).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(screen.getByRole('button', { name: 'Download' }));
+    expect(onDownload).toHaveBeenCalledOnce();
+  });
+
+  it('hides Edit from viewers without permission', async () => {
+    render(<MobileVideoShare capture={{ ...video, canEdit: false }} comments={vComments}
+      onSeek={noop} onPost={noop} onEdit={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  });
+
+  it('switches between comments and capture details', async () => {
+    render(<MobileVideoShare
+      capture={{
+        ...video,
+        createdAt: '2026-08-09T10:00:00Z',
+        dimensions: '1920 × 1080',
+        description: 'Safari checkout recording.',
+        views: 12,
+      }}
+      comments={vComments}
+      onSeek={noop}
+      onPost={noop}
+    />);
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Details' }));
+    const details = screen.getByRole('tabpanel');
+    expect(within(details).getByText('Dimensions')).toBeInTheDocument();
+    expect(within(details).getByText('1920 × 1080')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Write a comment')).toBeNull();
+
+    await userEvent.click(screen.getByRole('tab', { name: /Comments/ }));
+    expect(screen.getByLabelText('Write a comment')).toBeInTheDocument();
+  });
+
   it('shows watched progress, unavailable transcript, and chapter jump targets', () => {
     const frames = [
       { startSec: 0, sampleSec: 0.5, dataUrl: 'data:image/jpeg;base64,AAA' },
