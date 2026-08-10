@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MobileVideoShare } from '../MobileVideoShare';
@@ -29,9 +29,37 @@ describe('mobile video share (C3)', () => {
       frames={frames} onSeek={noop} onPost={noop} />);
 
     expect(screen.getByText('87%')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Transcript/ }))
+      .toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('tab', { name: /Transcript/ })).toBeDisabled();
     expect(screen.getByTestId('mobile-chapters')).toHaveTextContent('CHAPTERS');
     expect(screen.getAllByRole('button', { name: /Jump to/ })).toHaveLength(2);
+  });
+
+  it('omits watched progress when it is null or absent', () => {
+    const { rerender } = render(<MobileVideoShare
+      capture={{ ...video, watchedPercent: null }} comments={vComments} onSeek={noop} onPost={noop}
+    />);
+    expect(screen.queryByText('WATCHED')).toBeNull();
+    expect(screen.queryByText('87%')).toBeNull();
+
+    rerender(<MobileVideoShare capture={video} comments={vComments} onSeek={noop} onPost={noop} />);
+    expect(screen.queryByText('WATCHED')).toBeNull();
+    expect(screen.queryByText('87%')).toBeNull();
+  });
+
+  it('seeks when a chapter is selected', async () => {
+    const onSeek = vi.fn();
+    const frames = [
+      { startSec: 0, sampleSec: 0.5, dataUrl: 'data:image/jpeg;base64,AAA' },
+      { startSec: 39, sampleSec: 39.5, dataUrl: null },
+    ];
+    const user = userEvent.setup();
+    render(<MobileVideoShare capture={video} comments={vComments} frames={frames}
+      onSeek={onSeek} onPost={noop} />);
+
+    await user.click(screen.getByRole('button', { name: 'Jump to 0:39' }));
+    expect(onSeek).toHaveBeenCalledWith(39_000);
   });
 
   it('pins the player so seeking never scrolls it out of view', () => {
