@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { renderToStaticMarkup } from 'react-dom/server';
+import puppeteer from 'puppeteer';
 import { MobileVideoShare } from '../MobileVideoShare';
 import { MobileImageShare } from '../MobileImageShare';
 import type { ShareComment } from '../anchors';
@@ -131,6 +136,50 @@ describe('mobile video share (C3)', () => {
     render(<MobileVideoShare capture={video} comments={vComments} onSeek={noop} onPost={noop} />);
     expect(screen.getByTestId('sticky-player').dataset.sticky).toBe('true');
   });
+
+  it('keeps the player pinned to the viewport during document scrolling', async () => {
+    const css = await readFile(resolve(process.cwd(), 'src/index.css'), 'utf8');
+    const longThread = Array.from({ length: 24 }, (_, index): ShareComment => ({
+      ...vComments[0],
+      id: `long-${index}`,
+      body: `Comment ${index} makes the mobile document tall enough to scroll.`,
+      index,
+    }));
+    const markup = renderToStaticMarkup(<MobileVideoShare
+      capture={video} comments={longThread} onSeek={noop} onPost={noop}
+    />);
+    const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const browser = await puppeteer.launch({
+      headless: true,
+      ...(existsSync(systemChrome) ? { executablePath: systemChrome } : {}),
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 390, height: 720, deviceScaleFactor: 1 });
+      await page.setContent(`<style>${css}\nbody { margin: 0; }</style>${markup}`);
+
+      const geometry = await page.evaluate(async () => {
+        const player = document.querySelector<HTMLElement>('.sr-mobile-viewer-player');
+        const viewer = document.querySelector<HTMLElement>('.sr-mobile-viewer');
+        if (!player || !viewer) throw new Error('Mobile viewer fixture did not render');
+
+        window.scrollTo(0, 500);
+        await new Promise<void>(resolveFrame => requestAnimationFrame(() => resolveFrame()));
+        return {
+          documentScrollTop: window.scrollY,
+          playerTop: player.getBoundingClientRect().top,
+          viewerScrollTop: viewer.scrollTop,
+        };
+      });
+
+      expect(geometry.documentScrollTop).toBeGreaterThan(0);
+      expect(geometry.viewerScrollTop).toBe(0);
+      expect(Math.abs(geometry.playerTop)).toBeLessThan(1);
+    } finally {
+      await browser.close();
+    }
+  }, 15_000);
 
   it('keeps the timecode column but drops the time-axis layout', () => {
     render(<MobileVideoShare capture={video} comments={vComments} onSeek={noop} onPost={noop} />);
