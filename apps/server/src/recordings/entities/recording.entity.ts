@@ -20,6 +20,30 @@ export class Recording {
     @Column({ type: 'enum', enum: ['video', 'screenshot'] })
     type: 'video' | 'screenshot';
 
+    /* NOTE: sr_recordings also has transcriptStatus, summaryStatus,
+     * transcriptFailReason and transcriptPublic columns, and the sr_transcripts
+     * and sr_summaries tables exist. None of them are mapped, read or written —
+     * transcription was cut in August 2026. See docs/unused-schema.md before
+     * assuming a pipeline exists behind them. */
+
+    /** How long the recording runs, in whole seconds.
+     *
+     * The column has existed since an earlier migration but no entity mapped it
+     * and nothing wrote it, so every client asked for a duration the API could
+     * never return. Nullable because it is unknown for screenshots, for
+     * recordings made before this was written, and for any file whose length
+     * the uploader could not determine. */
+    @Column({ type: 'int', nullable: true })
+    durationSec: number | null;
+
+    /** Frame size. Nullable: recordings made before anything measured this have
+     * no honest value, and the viewer omits the line rather than guessing. */
+    @Column({ type: 'int', nullable: true })
+    widthPx: number | null;
+
+    @Column({ type: 'int', nullable: true })
+    heightPx: number | null;
+
     @Column({ default: 0 })
     views: number;
 

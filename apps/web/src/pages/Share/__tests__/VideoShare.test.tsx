@@ -81,3 +81,22 @@ describe('video share (C1)', () => {
     expect(screen.queryByRole('button', { name: 'Download' })).toBeNull();
   });
 });
+
+/** Nothing stored a duration until recently, so `recording.duration ?? 0`
+ * reached the header as zero and it read "0:00" beside the owner — a confident
+ * claim that the clip is empty, on a page that was visibly playing it. */
+describe('a capture whose length is not known', () => {
+  it('names the owner without asserting a length', () => {
+    render(<VideoShare capture={{ ...capture, durationMs: 0 }} comments={[]}
+      currentMs={0} onSeek={noop} onPost={noop} onDownload={noop} />);
+    // Scoped to the header line: the comment composer legitimately shows the
+    // playhead as 0:00, which is a different claim entirely.
+    expect(screen.getByText('Priya Raman').textContent).toBe('Priya Raman');
+  });
+
+  it('still shows the length when it is known', () => {
+    render(<VideoShare capture={capture} comments={[]}
+      currentMs={0} onSeek={noop} onPost={noop} onDownload={noop} />);
+    expect(screen.getByText('Priya Raman · 0:47')).toBeInTheDocument();
+  });
+});

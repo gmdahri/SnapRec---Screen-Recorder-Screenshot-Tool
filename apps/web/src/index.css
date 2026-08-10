@@ -68,3 +68,28 @@
 .canvas-container-stable {
   contain: layout;
 }
+
+/* P7 V1.6 — the viewer's rail stacks under the media below 1024px rather than
+   overlaying it. An overlay would cover the one thing the page exists to show,
+   and on a phone the comment thread is a destination, not a sidecar. */
+/* Beside the player: the row's height comes from the video's aspect ratio, and
+   `min-height: 0` is what lets the rail be stretched to it instead of its own
+   content setting the row taller. It scrolls inside whatever height that is. */
+.sr-viewer-rail {
+  margin-left: 16px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .sr-viewer-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  /* Stacked under the media, the rail has no player height to match, so the
+     constraints that made that work come off — kept here rather than inline so
+     they can simply be overridden. */
+  .sr-viewer-rail {
+    margin-left: 0;
+    margin-top: 16px;
+    min-height: auto;
+    overflow: visible;
+  }
+}

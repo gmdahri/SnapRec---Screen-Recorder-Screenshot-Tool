@@ -7,8 +7,9 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useDeleteRecording, useRecordings, type Recording } from '../hooks/useRecordings';
-import { AppShell, SEO } from '../components';
+import { AppShell, CapturePreview, SEO } from '../components';
 import { gridColumns, rowColumns, useBreakpoint } from '../hooks/useBreakpoint';
+import { useCaptureDurations } from '../hooks/useCaptureDurations';
 import {
   captureHref, capturePreviewUrl, formatDuration, formatMeta, toCaptureKind, toCaptureStatus,
 } from '../lib/captureAdapter';
@@ -52,6 +53,7 @@ export default function Library() {
   const [view, dispatch] = useReducer(reduce, undefined, initialView);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [actionsFor, setActionsFor] = useState<string | null>(null);
+  const { seen: durations, note: noteDuration } = useCaptureDurations();
 
   const { data: recordings = [], isLoading, isError, error } =
     useRecordings(!!user, authLoading);
@@ -212,7 +214,7 @@ export default function Library() {
               title: item.title,
               kind: item.kind,
               status: item.status,
-              length: formatDuration(r.duration) ?? '—',
+              length: formatDuration(r.duration ?? durations[r.id]) ?? '—',
               created: new Date(item.createdAt).toLocaleDateString(),
               thumbnailUrl: capturePreviewUrl(r),
             };
@@ -236,18 +238,13 @@ export default function Library() {
                 meta={formatMeta(r)}
                 kind={item.kind}
                 status={item.status}
-                duration={formatDuration(r.duration)}
+                duration={formatDuration(r.duration ?? durations[r.id])}
                 selected={view.selected.has(item.id)}
                 onSelectToggle={CAPTURE_STATES[item.status].canSelect
                   ? () => dispatch({ type: 'TOGGLE_SELECT', id: item.id, status: item.status })
                   : undefined}
                 onOpen={() => navigate(captureHref(item.kind, item.id))}
-                media={(() => {
-                  const preview = capturePreviewUrl(r);
-                  return preview
-                    ? <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : undefined;
-                })()}
+                media={<CapturePreview recording={r} onDuration={s => noteDuration(r.id, s)} />}
               />
             );
           })}
@@ -261,7 +258,7 @@ export default function Library() {
                 key={item.id}
                 title={item.title}
                 kind={item.kind}
-                length={formatDuration(r.duration) ?? '—'}
+                length={formatDuration(r.duration ?? durations[r.id]) ?? '—'}
                 created={new Date(item.createdAt).toLocaleDateString()}
                 size="—"
                 collection={item.collection ?? '—'}
@@ -301,7 +298,7 @@ export default function Library() {
               title: item.title,
               kind: item.kind,
               status: item.status,
-              length: formatDuration(r.duration) ?? '—',
+              length: formatDuration(r.duration ?? durations[r.id]) ?? '—',
               created: new Date(item.createdAt).toLocaleDateString(),
               thumbnailUrl: capturePreviewUrl(r),
             }}

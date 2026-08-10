@@ -71,29 +71,54 @@ describe('CapturePlate', () => {
 describe('CapturePlate says what kind of capture it is', () => {
   it('names a screenshot even though it has no duration', () => {
     render(<CapturePlate {...base} kind="screenshot" duration={undefined} status="ready" />);
-    expect(screen.getByText(/Screenshot/)).toBeInTheDocument();
+    expect(screen.getByTestId('kind-chip')).toHaveTextContent('screenshot');
   });
 
   it('keeps the duration alongside the word for a recording', () => {
     render(<CapturePlate {...base} kind="recording" duration="0:47" status="ready" />);
     const chip = screen.getByTestId('kind-chip');
-    expect(chip).toHaveTextContent('Recording');
+    expect(chip).toHaveTextContent('recording');
     expect(chip).toHaveTextContent('0:47');
   });
 
   it('names a full-page capture in words a reader knows', () => {
     render(<CapturePlate {...base} kind="fullpage" duration={undefined} status="ready" />);
-    expect(screen.getByText(/Full page/)).toBeInTheDocument();
+    expect(screen.getByTestId('kind-chip')).toHaveTextContent('full page');
   });
 
   it('still says the kind while the capture is not previewable', () => {
     render(<CapturePlate {...base} kind="screenshot" duration={undefined} status="processing" />);
-    expect(screen.getByTestId('kind-chip')).toHaveTextContent('Screenshot');
+    expect(screen.getByTestId('kind-chip')).toHaveTextContent('screenshot');
   });
 
   it('falls back to dimensions when there is no duration', () => {
     render(<CapturePlate {...base} kind="screenshot" duration={undefined}
       dimensions="1280×720" status="ready" />);
     expect(screen.getByTestId('kind-chip')).toHaveTextContent('1280×720');
+  });
+});
+
+/** The title moved off the caption and onto the thumbnail. The frame carries
+ * arbitrary imagery, so it needs a scrim; and it sits over the hover preview,
+ * so it must not intercept the pointer. */
+describe('CapturePlate puts its title on the thumbnail', () => {
+  it('shows the title once, over the frame', () => {
+    render(<CapturePlate {...base} status="ready" />);
+    expect(screen.getAllByText(base.title)).toHaveLength(1);
+    expect(screen.getByTestId('plate-title')).toBeInTheDocument();
+  });
+
+  it('lets the pointer through, so a hover preview underneath still receives it', () => {
+    render(<CapturePlate {...base} status="ready" />);
+    expect(screen.getByTestId('plate-title')).toHaveStyle({ pointerEvents: 'none' });
+    expect(screen.getByTestId('kind-chip')).toHaveStyle({ pointerEvents: 'none' });
+  });
+
+  it('keeps the open control named by the title now that it holds no text', async () => {
+    const open = vi.fn();
+    const user = userEvent.setup();
+    render(<CapturePlate {...base} status="ready" onOpen={open} />);
+    await user.click(screen.getByRole('button', { name: base.title }));
+    expect(open).toHaveBeenCalledOnce();
   });
 });

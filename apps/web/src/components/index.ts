@@ -8,6 +8,7 @@ export { GatedButton } from './GatedButton';
 export { AppShell, NAV, MOBILE_NAV, type AppShellProps, type NavDestination } from './AppShell';
 export { TopBar, type TopBarProps } from './TopBar';
 export { CapturePopover, type CapturePopoverProps } from './CapturePopover';
+export { CapturePreview, type CapturePreviewProps } from './CapturePreview';
 export { MobileBottomBar, type MobileBottomBarProps } from './MobileBottomBar';
 export { VideoPlayer } from './VideoPlayer';
 export { LandingNavbar, LANDING_LINKS, SITE_LINKS, type NavLinkSpec } from './LandingNavbar';

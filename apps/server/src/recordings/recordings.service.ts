@@ -4,9 +4,12 @@ import { Repository, In } from 'typeorm';
 import { Recording } from './entities/recording.entity';
 import { Reaction } from './entities/reaction.entity';
 import { Comment } from './entities/comment.entity';
+import { RecordingView } from './entities/recording-view.entity';
+import { mergeIntervals } from './intervals';
 import { UsersService } from '../users/users.service';
 import { CreateRecordingDto } from './dto/create-recording.dto';
 import { UpdateRecordingDto } from './dto/update-recording.dto';
+import { PublishRecordingDto } from './dto/publish-recording.dto';
 
 @Injectable()
 export class RecordingsService {
@@ -19,6 +22,8 @@ export class RecordingsService {
         private readonly reactionsRepository: Repository<Reaction>,
         @InjectRepository(Comment)
         private readonly commentsRepository: Repository<Comment>,
+        @InjectRepository(RecordingView)
+        private readonly viewsRepository: Repository<RecordingView>,
         private readonly usersService: UsersService,
     ) { }
 
@@ -30,6 +35,12 @@ export class RecordingsService {
         recording.title = createRecordingDto.title;
         recording.fileUrl = createRecordingDto.fileUrl;
         recording.type = createRecordingDto.type;
+        // Absent means unknown, not zero: a screenshot has no length, and an
+        // uploader that could not measure the file should leave the column null
+        // so the client can fall back rather than render a confident "0:00".
+        recording.durationSec = createRecordingDto.durationSec ?? null;
+        recording.widthPx = createRecordingDto.widthPx ?? null;
+        recording.heightPx = createRecordingDto.heightPx ?? null;
 
         // A guestId is NOT a user id. Passing it to findOrCreateBySupabaseId
         // minted a synthetic sr_users row keyed by the guest id, which made
@@ -124,6 +135,56 @@ export class RecordingsService {
         return this.commentsRepository.save(comment);
     }
 
+    /** Marks a comment answered, or reopens it (P7 V3).
+     *
+     * Who may: the capture's owner, and the comment's own author. The author
+     * matters because closing your own question is the common case, and the
+     * owner matters because they are the one being asked.
+     *
+     * Who may not: guests. A guestId is a value anyone holding a share link can
+     * read and send, so honouring it here would let any recipient close other
+     * people's questions. Anonymous viewers can still ask — only settling is
+     * restricted. */
+    async setCommentResolved(
+        recordingId: string,
+        commentId: string,
+        resolved: boolean,
+        actorSupabaseId?: string,
+        userMeta?: { email?: string; fullName?: string; avatarUrl?: string },
+    ): Promise<Comment> {
+        if (!actorSupabaseId) {
+            throw new ForbiddenException('Sign in to resolve a comment');
+        }
+
+        const comment = await this.commentsRepository.findOne({
+            where: { id: commentId },
+            relations: ['recording', 'recording.user', 'user'],
+        });
+        if (!comment) throw new NotFoundException('Comment not found');
+        // Scoped to the recording in the path so a valid comment id cannot be
+        // resolved through someone else's capture.
+        if (comment.recording?.id !== recordingId) {
+            throw new NotFoundException('Comment not found');
+        }
+
+        const isOwner = comment.recording?.user?.supabaseId === actorSupabaseId;
+        const isAuthor = comment.user?.supabaseId === actorSupabaseId;
+        if (!isOwner && !isAuthor) {
+            throw new ForbiddenException('Only the capture owner or the comment author can resolve it');
+        }
+
+        if (resolved) {
+            const actor = await this.usersService.findOrCreateBySupabaseId(actorSupabaseId, userMeta);
+            comment.resolvedAt = new Date();
+            comment.resolvedByUserId = actor.id;
+        } else {
+            comment.resolvedAt = null;
+            comment.resolvedByUserId = null;
+        }
+
+        return this.commentsRepository.save(comment);
+    }
+
     /** Transfers guest captures to a signed-in user.
      *
      * SECURITY: an ownerless recording used to be claimable by anyone who knew
@@ -171,6 +232,123 @@ export class RecordingsService {
         return { claimed };
     }
 
+    /** Records what a signed-in viewer has watched (P7 V4).
+     *
+     * PRIVACY (plan O2): anonymous callers are accepted and ignored — the page
+     * is public and a guest hitting this must not error, but no per-person row
+     * is created for them. Their view is already counted on the recording.
+     *
+     * Coverage, not a high-water mark (plan O1): incoming ranges are merged
+     * into whatever the viewer had already seen, so rewatching adds nothing and
+     * skipping to the end stays near zero. */
+    async recordWatchProgress(
+        recordingId: string,
+        ranges: Array<{ startSec: number; endSec: number }>,
+        actorSupabaseId?: string,
+        userMeta?: { email?: string; fullName?: string; avatarUrl?: string },
+    ): Promise<{ coveredSec: number; recorded: boolean }> {
+        if (!actorSupabaseId) return { coveredSec: 0, recorded: false };
+
+        const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
+        if (!recording) throw new NotFoundException('Recording not found');
+
+        const user = await this.usersService.findOrCreateBySupabaseId(actorSupabaseId, userMeta);
+
+        let view = await this.viewsRepository.findOne({
+            where: { recording: { id: recordingId }, user: { id: user.id } },
+            relations: ['recording', 'user'],
+        });
+        if (!view) {
+            view = this.viewsRepository.create({
+                recording, user, watchedRangesJson: [], coveredSec: 0,
+            });
+        }
+
+        // Clamped to the clip: a client reporting past the end would otherwise
+        // push coverage above 100%, which is arithmetically impossible and
+        // would hide a real bug behind a clamp at the display layer.
+        const limit = recording.durationSec ?? 0;
+        const incoming = ranges
+            .map((r) => ({
+                startSec: Math.max(0, r.startSec),
+                endSec: limit > 0 ? Math.min(r.endSec, limit) : r.endSec,
+            }))
+            .filter((r) => r.endSec > r.startSec);
+
+        const merged = mergeIntervals([...(view.watchedRangesJson ?? []), ...incoming]);
+        view.watchedRangesJson = merged;
+        view.coveredSec = Math.round(
+            merged.reduce((sum, r) => sum + (r.endSec - r.startSec), 0),
+        );
+
+        await this.viewsRepository.save(view);
+        return { coveredSec: view.coveredSec, recorded: true };
+    }
+
+    /** Mean coverage across signed-in viewers, 0–100, or null when nobody
+     * signed in has watched.
+     *
+     * Null rather than zero on purpose: "0%" on a recording no signed-in viewer
+     * has opened reads as "nobody watched it", when the truth is "we did not
+     * measure". The viewer hides the tile instead. */
+    async watchedPercent(recordingId: string): Promise<number | null> {
+        const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
+        if (!recording?.durationSec) return null;
+
+        const views = await this.viewsRepository.find({
+            where: { recording: { id: recordingId } },
+        });
+        if (views.length === 0) return null;
+
+        const mean = views.reduce((sum, v) => sum + v.coveredSec, 0) / views.length;
+        return Math.min(100, Math.round((mean / recording.durationSec) * 100));
+    }
+
+    /** Replaces the media behind a recording, keeping everything else (P7 E6).
+     *
+     * The link, the id, the view count and every comment survive — that is the
+     * whole point, and it is what the editor's confirmation promises.
+     *
+     * It is destructive in one specific way the caller must surface: the
+     * previous file is no longer reachable at this id. There is no version
+     * history (O4), so the editor asks before calling this.
+     *
+     * Comments anchored past the new end are counted and returned rather than
+     * deleted or silently left pointing into nothing. A comment that referred
+     * to footage the author removed is still a real thing someone said; the
+     * viewer marks it as pointing at removed footage. */
+    async publish(
+        id: string,
+        dto: PublishRecordingDto,
+        userId: string,
+    ): Promise<{ recording: Recording; staleComments: number }> {
+        const recording = await this.recordingsRepository.findOne({
+            where: { id },
+            relations: ['user', 'comments'],
+        });
+        if (!recording) throw new NotFoundException(`Recording with ID "${id}" not found`);
+        if (recording.user?.supabaseId !== userId) {
+            throw new ForbiddenException('You do not have permission to publish over this recording');
+        }
+
+        recording.fileUrl = dto.fileUrl;
+        if (typeof dto.durationSec === 'number') {
+            recording.durationSec = dto.durationSec;
+        }
+
+        // Counted before saving so the number describes the change being made.
+        const endMs = (dto.durationSec ?? recording.durationSec ?? 0) * 1000;
+        const staleComments = endMs > 0
+            ? (recording.comments ?? []).filter(
+                (c) => typeof c.timecodeMs === 'number' && c.timecodeMs > endMs,
+            ).length
+            : 0;
+
+        const saved = await this.recordingsRepository.save(recording);
+        this.logger.log(`Published over recording ${id}; ${staleComments} comment(s) now past the end`);
+        return { recording: saved, staleComments };
+    }
+
     async update(id: string, updateRecordingDto: UpdateRecordingDto, userId: string): Promise<Recording> {
         const recording = await this.recordingsRepository.findOne({
             where: { id },
@@ -191,6 +369,12 @@ export class RecordingsService {
 
         if (updateRecordingDto.fileUrl) {
             recording.fileUrl = updateRecordingDto.fileUrl;
+        }
+
+        // `!== undefined`, not truthiness: an empty string is how a description
+        // is cleared, and a truthy check would make removing one impossible.
+        if (updateRecordingDto.description !== undefined) {
+            recording.description = updateRecordingDto.description;
         }
 
         return this.recordingsRepository.save(recording);

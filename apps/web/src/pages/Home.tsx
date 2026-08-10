@@ -4,11 +4,12 @@ import { CapturePlate } from '@snaprec/design-system';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecordings, type Recording } from '../hooks/useRecordings';
-import { AppShell, SEO } from '../components';
+import { AppShell, CapturePreview, SEO } from '../components';
 import { useBreakpoint, gridColumns } from '../hooks/useBreakpoint';
 import { useExtensionStatus } from '../hooks/useExtensionStatus';
+import { useCaptureDurations } from '../hooks/useCaptureDurations';
 import {
-  captureHref, capturePreviewUrl, formatDuration, formatMeta, needsAttention,
+  captureHref, formatDuration, formatMeta, needsAttention,
   toCaptureKind, toCaptureStatus,
 } from '../lib/captureAdapter';
 import { AttentionBand, type AttentionItem } from './Home/AttentionBand';
@@ -28,6 +29,7 @@ export default function Home() {
   const navigate = useNavigate();
   const breakpoint = useBreakpoint();
   const { status: extensionStatus, version } = useExtensionStatus();
+  const { seen: durations, note: noteDuration } = useCaptureDurations();
 
   const { data: recordings = [], isError, error } = useRecordings(!!user, authLoading);
 
@@ -112,14 +114,9 @@ export default function Home() {
               meta={formatMeta(r)}
               kind={toCaptureKind(r)}
               status={toCaptureStatus(r)}
-              duration={formatDuration(r.duration)}
+              duration={formatDuration(r.duration ?? durations[r.id])}
               onOpen={() => navigate(captureHref(toCaptureKind(r), r.id))}
-              media={(() => {
-                const preview = capturePreviewUrl(r);
-                return preview
-                  ? <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : undefined;
-              })()}
+              media={<CapturePreview recording={r} onDuration={s => noteDuration(r.id, s)} />}
               footnotes={r.views > 0
                 ? <span style={{ fontFamily: 'var(--sr-font-mono)', fontSize: 9.5, color: 'var(--sr-text-faint-on-light)' }}>
                     {r.views} views

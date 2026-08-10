@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 export interface LaneProps {
-  name: 'clip' | 'zoom' | 'audio';
+  name: 'clip' | 'zoom' | 'cuts' | 'audio';
   height: number;
   children: ReactNode;
   style?: CSSProperties;

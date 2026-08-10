@@ -50,10 +50,13 @@ export function VideoShare({
             display: 'block', fontSize: 14, fontWeight: 600,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{capture.title}</span>
+          {/* An unknown length is omitted rather than shown as 0:00. Not every
+              recording has a stored duration, and "0:00" beside a clip that is
+              plainly playing reads as a broken file. */}
           <span style={{
             display: 'block', fontFamily: 'var(--sr-font-mono)', fontSize: 10,
             color: 'var(--sr-text-faint-on-light)',
-          }}>{capture.owner} · {formatTimecode(capture.durationMs)}</span>
+          }}>{capture.owner}{capture.durationMs > 0 ? ` · ${formatTimecode(capture.durationMs)}` : ''}</span>
         </span>
 
         {capture.allowDownload && (

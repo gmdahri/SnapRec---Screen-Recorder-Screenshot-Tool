@@ -14,6 +14,8 @@ export interface TimelineProject {
   zoomRegions: ZoomRegion[];
   /** Auto-zoom candidates the user has not accepted. */
   suggestions: { id: string; atMs: number }[];
+  /** Source ranges the output leaves out (P7 E3). Already normalised. */
+  cuts?: { id: string; startMs: number; endMs: number }[];
   /** 0–1 amplitudes. Optional: the editor has no audio analysis yet, and an
    * empty lane is honest where a fabricated waveform would not be. */
   waveform?: number[];
@@ -29,6 +31,8 @@ export interface EditorTimelineProps {
    * mark's tooltip says "click to accept", and a mark that says that while
    * doing nothing is worse than one that never offered. */
   onAcceptSuggestion: (id: string) => void;
+  /** Absent while cuts cannot be removed; the chip then selects only. */
+  onRemoveCut?: (id: string) => void;
 }
 
 /** Timecodes FLOOR, they do not round. At 14.56s you are still inside the
@@ -45,9 +49,11 @@ const fmt = (ms: number) => {
  * and only on the trim points, because those genuinely drag. The preview above
  * keeps registration marks. */
 export function EditorTimeline({
-  project, selection, onSelect, onTrim, onAcceptSuggestion,
+  project, selection, onSelect, onTrim, onAcceptSuggestion, onRemoveCut,
 }: EditorTimelineProps) {
-  const { durationMs, trim, zoomRegions, suggestions, waveform = [], playheadMs } = project;
+  const {
+    durationMs, trim, zoomRegions, suggestions, cuts = [], waveform = [], playheadMs,
+  } = project;
   const pct = (ms: number) => (durationMs === 0 ? 0 : (ms / durationMs) * 100);
 
   return (
@@ -147,6 +153,40 @@ export function EditorTimeline({
               background: 'var(--sr-border-dark-strong)',
             }}
           />
+        ))}
+      </Lane>
+
+      {/* Cuts are neutral, not coral. Coral means live capture and
+          needs-a-response; a cut is destructive but entirely ordinary, and
+          spending coral on every one of them would drain the colour of the
+          meaning the viewer's "needs a reply" marker depends on. */}
+      <Lane name="cuts" height={22}>
+        {cuts.map(cut => (
+          <button
+            key={cut.id}
+            type="button"
+            aria-label={`Cut from ${fmt(cut.startMs)} to ${fmt(cut.endMs)}`}
+            aria-pressed={selection === cut.id}
+            onClick={() => onSelect(cut.id)}
+            onDoubleClick={() => onRemoveCut?.(cut.id)}
+            title={onRemoveCut ? 'Double-click to restore this footage' : undefined}
+            style={{
+              position: 'absolute', top: 3, bottom: 3,
+              left: `${pct(cut.startMs)}%`,
+              width: `${pct(cut.endMs - cut.startMs)}%`,
+              minWidth: 2,
+              border: `1px solid var(--sr-border-dark-strong)`,
+              background: selection === cut.id
+                ? 'var(--sr-text-muted-on-dark)'
+                : 'var(--sr-border-dark)',
+              color: selection === cut.id
+                ? 'var(--sr-surface-carbon)'
+                : 'var(--sr-text-secondary-on-dark)',
+              fontSize: 8.5, padding: '0 4px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', overflow: 'hidden',
+              whiteSpace: 'nowrap',
+            }}
+          >cut</button>
         ))}
       </Lane>
 

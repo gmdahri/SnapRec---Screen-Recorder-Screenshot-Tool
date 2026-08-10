@@ -4,12 +4,20 @@ import { VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../co
 import { FreshCaptureChrome } from './Share/FreshCaptureChrome';
 import type { VideoPlayerHandle } from '../components/VideoPlayer';
 import { ShareShell } from './Share/ShareShell';
+import { VideoViewer } from './Share/VideoViewer';
+import { chooseViewerSurface } from './Share/surface';
 import { toShareComments, toShareKind, toShareState } from './Share/toShareProps';
 import { parseUTCDate } from '../lib/dateUtils';
-import { useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
+import { useWatchProgress } from '../hooks/useWatchProgress';
+import { useVideoFrames } from '../hooks/useVideoFrames';
+import { useStableMediaUrl } from '../hooks/useStableMediaUrl';
+import { useUpdateRecording, useResolveComment, useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
+import { measureMedia } from '../lib/mediaDuration';
+import { CAPTURE_STATES, type StatusWord } from '@snaprec/design-system';
+import { toCaptureStatus } from '../lib/captureAdapter';
 
 const convertBase64ToBlobUrl = async (dataUrl: string): Promise<string> => {
     try {
@@ -215,6 +223,27 @@ const ShareView: React.FC = () => {
 
     const addReaction = useAddReaction();
     const addComment = useAddComment();
+    const resolveComment = useResolveComment();
+    const updateRecording = useUpdateRecording();
+    // Drawn from the video already on the page — see useVideoFrames.
+    /* One source of truth for what the player and the filmstrip load.
+     *
+     * The local blob when the capture is still in hand — same file, no trip to
+     * R2. Otherwise the recording's fileUrl, held still: the server re-signs it
+     * on every read, and feeding the element a freshly signed URL restarts
+     * playback from 0:00. See useStableMediaUrl. */
+    const mediaSrc = useStableMediaUrl(recording?.fileUrl) ?? undefined;
+    const playerSrc = localVideoBlob || mediaSrc;
+
+    // Held back until the player reports a duration — i.e. it has its own
+    // metadata and is playable. Otherwise the two compete for the same file.
+    const [playerReady, setPlayerReady] = useState(false);
+    const { frames, generating: framesGenerating, blocked: framesBlocked } =
+        useVideoFrames(playerSrc, recording?.duration ?? 0, playerReady);
+    const [sharePlaying, setSharePlaying] = useState(false);
+    // V4 — accumulates watched seconds and flushes them on a timer and on
+    // pagehide. Anonymous viewers are discarded server-side (plan O2).
+    const { observe: observeWatched } = useWatchProgress(id, sharePlaying);
     const claimMutation = useClaimRecordings();
 
     // Drives the C1 timeline: the composer attaches the current position, and
@@ -476,6 +505,15 @@ const ShareView: React.FC = () => {
             contentType: 'video/webm',
         });
         await uploadFile(uploadUrl, blob, 'video/webm');
+        // Measured here because this is the only moment the file is in hand.
+        // A failure to measure must never cost the capture, so an unknown
+        // length is simply omitted and the column stays null.
+        let meta: { durationSec?: number; widthPx?: number; heightPx?: number } = {};
+        try {
+            meta = await measureMedia(blob);
+        } catch {
+            meta = {};
+        }
         const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
         if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
         const createdRecording = await createRecordingMutation.mutateAsync({
@@ -483,6 +521,9 @@ const ShareView: React.FC = () => {
             title: `Video Recording ${new Date().toLocaleString()}`,
             fileUrl,
             type: 'video',
+            durationSec: meta.durationSec,
+            widthPx: meta.widthPx,
+            heightPx: meta.heightPx,
             userId: user?.id,
             guestId: undefined,
         });
@@ -629,6 +670,80 @@ const ShareView: React.FC = () => {
         );
     }
 
+    /* ── Fresh capture, on the redesigned chrome ──────────────────────────
+     *
+     * The same surface a shared recording gets, with different promises: the
+     * primary action generates the link instead of copying one, and the status
+     * says the file is still on this device.
+     *
+     * This swaps the CHROME ONLY. handleUploadToCloud, the claim flow and the
+     * local blob are used exactly as they were — that logic is the one place a
+     * mistake loses somebody's recording, so none of it moved.
+     * ------------------------------------------------------------------- */
+    const surface = chooseViewerSurface({
+        isFresh,
+        hasRecording: !!recording,
+        kind: recordingData?.type === 'video' ? 'video'
+            : recordingData?.type === 'screenshot' ? 'screenshot' : null,
+        hasLocalBlob: !!localVideoBlob,
+    });
+
+    if (surface === 'fresh' && recordingData) {
+        const waitingForVideo = !localVideoBlob && !isUploaded;
+        return (
+            <>
+                <SEO title={recordingData.title} description="Your new recording." noIndex />
+                <VideoViewer
+                    capture={{
+                        id: effectiveId ?? 'fresh',
+                        title: recordingData.title,
+                        owner: user?.user_metadata?.full_name ?? 'You',
+                        createdAt: recordingData.createdAt ?? new Date().toISOString(),
+                        durationMs: (recording?.duration ?? 0) * 1000,
+                        description: recordingData.description || undefined,
+                        status: isUploaded ? 'link ready' : 'on this device',
+                        views: recordingData.views ?? 0,
+                        watchedPercent: null,
+                        allowDownload: isUploaded,
+                        canEdit: true,
+                    }}
+                    comments={[]}
+                    hideComposer
+                    commentsNote={isUploaded
+                        ? 'Comments appear once someone opens the link.'
+                        : 'Generate a shareable link before anyone can comment.'}
+                    currentMs={Math.round(sharePlayheadSec * 1000)}
+                    onBack={() => navigate('/library')}
+                    onSeek={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
+                    onPost={() => {}}
+                    onCopyLink={isUploaded
+                        ? () => {
+                            navigator.clipboard.writeText(window.location.href)
+                                .then(() => showNotification('Link copied', 'success'))
+                                .catch(() => showNotification('Could not copy the link', 'error'));
+                        }
+                        : handleUploadToCloud}
+                    copyLinkLabel={isUploading
+                        ? 'Generating\u2026'
+                        : isUploaded ? 'Copy link'
+                            : waitingForVideo ? 'Waiting for video\u2026' : 'Generate shareable link'}
+                    copyLinkDisabled={isUploading || waitingForVideo}
+                    onDownload={isUploaded ? handleDownload : undefined}
+                    onEdit={handleOpenVideoEditor}
+                    player={
+                        <VideoPlayer
+                            ref={sharePlayerRef}
+                            src={playerSrc}
+                            knownDurationSec={recording?.duration}
+                            isReady
+                            onPlaybackUpdate={(p) => setSharePlayheadSec(p.currentTime)}
+                        />
+                    }
+                />
+            </>
+        );
+    }
+
     /* ── The redesigned viewing surface (C1–C6) ───────────────────────────
      *
      * Only for a persisted recording opened from a share link. The fresh-
@@ -636,9 +751,7 @@ const ShareView: React.FC = () => {
      * is the one flow where getting this wrong loses someone's recording, so
      * it is deliberately left alone rather than folded in.
      * ------------------------------------------------------------------- */
-    const isViewingShared = !isFresh && !!recording && !isUploading && !localVideoBlob;
-
-    if (isViewingShared && recording) {
+    if (surface === 'shared' && recording) {
         const kind = toShareKind(recording);
         const durationSec = recording.duration ?? 0;
 
@@ -663,6 +776,17 @@ const ShareView: React.FC = () => {
                         duration: durationSec
                             ? `${Math.floor(durationSec / 60)}:${String(Math.floor(durationSec % 60)).padStart(2, '0')}`
                             : undefined,
+                        // P7 V1 viewer fields.
+                        createdAt: recording.createdAt,
+                        description: recording.description,
+                        dimensions: recording.widthPx && recording.heightPx
+                            ? `${recording.widthPx}\u00d7${recording.heightPx}`
+                            : undefined,
+                        statusWord: CAPTURE_STATES[toCaptureStatus(recording)].label as StatusWord,
+                        views: recording.views,
+                        watchedPercent: (recording as { watchedPercent?: number | null })
+                            .watchedPercent ?? null,
+                        canEdit: !!user && recording.user?.supabaseId === user.id,
                     }}
                     comments={toShareComments(recording, recording.user?.supabaseId)}
                     currentMs={Math.round(sharePlayheadSec * 1000)}
@@ -678,13 +802,64 @@ const ShareView: React.FC = () => {
                         });
                     }}
                     onRequestAccess={() => setIsLoginModalOpen(true)}
+                    onBack={() => navigate(-1)}
+                    onCopyLink={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/v/${recording.id}`)
+                            .then(() => showNotification('Link copied', 'success'))
+                            .catch(() => showNotification('Could not copy the link', 'error'));
+                    }}
+                    /* Goes through handleOpenVideoEditor, not straight to a
+                       URL: the editor route takes a PROJECT id, and a project
+                       has to be created (or reused) for this recording first.
+                       Navigating with the recording id 404s the editor. */
+                    onEdit={handleOpenVideoEditor}
+                    onDescriptionChange={
+                        user && recording.user?.supabaseId === user.id
+                            ? (description: string) =>
+                                updateRecording.mutate({ id: recording.id, data: { description } })
+                            : undefined
+                    }
+                    descriptionSaving={updateRecording.isPending}
+                    frames={frames}
+                    framesGenerating={framesGenerating}
+                    framesBlocked={framesBlocked}
+                    onResolve={(commentId, resolved) => {
+                        resolveComment.mutate({ id: recording.id, commentId, resolved });
+                    }}
+                    /* Mirrors the server's rule exactly: owner or the comment's
+                       own author, and never a guest. Showing the control to
+                       anyone else would only earn them a 403. */
+                    canResolve={(c) => {
+                        if (!user) return false;
+                        if (recording.user?.supabaseId === user.id) return true;
+                        const source = recording.comments?.find((rc) => rc.id === c.id);
+                        return source?.user?.supabaseId === user.id;
+                    }}
                     onDownload={handleDownload}
                     player={
                         <VideoPlayer
                             ref={sharePlayerRef}
-                            src={recording.fileUrl}
+                            src={playerSrc}
+                            /* Measured at upload. Without it the browser downloads
+                               the whole webm just to learn its length. */
+                            knownDurationSec={recording.duration}
                             isReady={recording.isReady !== false}
-                            onPlaybackUpdate={(p) => setSharePlayheadSec(p.currentTime)}
+                            onPlaybackUpdate={(p) => {
+                                if (p.duration > 0) setPlayerReady(true);
+                                setSharePlayheadSec(p.currentTime);
+                                setSharePlaying(p.playing);
+                                // V4 — only while playing; a paused tab must not
+                                // accumulate coverage it did not watch.
+                                if (p.playing) observeWatched(p.currentTime);
+                            }}
+                            markers={toShareComments(recording, recording.user?.supabaseId)
+                                .filter(c => c.anchor.kind === 'timecode')
+                                .map(c => ({
+                                    id: c.id,
+                                    ms: (c.anchor as { ms: number }).ms,
+                                    needsReply: c.needsReply,
+                                }))}
+                            onMarkerClick={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
                         />
                     }
                     media={
@@ -849,7 +1024,7 @@ const ShareView: React.FC = () => {
                                             <button
                                                 key={type}
                                                 onClick={() => handleReaction(type)}
-                                                className={`flex items-center justify-center gap-2 px-4 py-2 bg-white border ${isActive ? 'border-[var(--sr-cyan-on-light)] text-[var(--sr-cyan-on-light)]' : 'border-[var(--sr-border-light)] text-[var(--sr-text-muted-on-light)]'} rounded-[2px] hover:border-[var(--sr-cyan-on-light)]/50 hover:text-[var(--sr-cyan-on-light)] transition-colors`}
+                                                className={`flex items-center justify-center gap-2 px-4 py-2 bg-[var(--sr-surface-paper)] border ${isActive ? 'border-[var(--sr-cyan-on-light)] text-[var(--sr-cyan-on-light)]' : 'border-[var(--sr-border-light)] text-[var(--sr-text-muted-on-light)]'} rounded-[2px] hover:border-[var(--sr-cyan-on-light)]/50 hover:text-[var(--sr-cyan-on-light)] transition-colors`}
                                             >
                                                 <span className="material-symbols-outlined text-[20px]">{iconMap[type]}</span>
                                                 <span className="text-sm font-bold">{count}</span>
@@ -879,7 +1054,7 @@ const ShareView: React.FC = () => {
                                 </div>
                             </div>
                             {/* Profile Header */}
-                            <div className="flex items-center justify-between p-6 bg-white rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm">
+                            <div className="flex items-center justify-between p-6 bg-[var(--sr-surface-paper)] rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm">
                                 <div className="flex items-center gap-5">
                                     <div
                                         className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 border-2 border-[var(--sr-cyan-on-light)]/20 flex items-center justify-center bg-[var(--sr-surface-panel-light)]"
@@ -915,7 +1090,7 @@ const ShareView: React.FC = () => {
                                 href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-between gap-3 p-4 rounded-[2px] bg-white border border-[var(--sr-border-light-soft)] shadow-sm hover:border-[var(--sr-cyan-on-light)]/30 hover:shadow-md transition-all group"
+                                className="flex items-center justify-between gap-3 p-4 rounded-[2px] bg-[var(--sr-surface-paper)] border border-[var(--sr-border-light-soft)] shadow-sm hover:border-[var(--sr-cyan-on-light)]/30 hover:shadow-md transition-all group"
                             >
                                 <div className="flex items-center gap-3">
                                     <img src="/logo.png" alt="SnapRec" className="size-8 rounded-[2px] shrink-0" />
@@ -929,7 +1104,7 @@ const ShareView: React.FC = () => {
                             )}
 
                             {/* Comments Section */}
-                            <div className="bg-white rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm flex flex-col h-full max-h-[600px]">
+                            <div className="bg-[var(--sr-surface-paper)] rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm flex flex-col h-full max-h-[600px]">
                                 <div className="p-5 border-b border-[var(--sr-border-light-soft)] flex items-center justify-between">
                                     <h3 className="font-bold text-lg text-[var(--sr-text-primary-on-light)]">Comments</h3>
                                     <span className="bg-[var(--sr-surface-panel-light)] px-2 py-0.5 rounded text-xs font-bold">{(recordingData?.comments || []).length}</span>
@@ -1012,7 +1187,7 @@ const ShareView: React.FC = () => {
                     {/* Bottom CTA Banner — see the sidebar card above. */}
                     <section className="mt-16 w-full">
                         {!isFresh && (
-                        <div className="bg-white rounded-[2px] p-8 lg:p-12 border border-[var(--sr-border-light-soft)] shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-8 lg:p-12 border border-[var(--sr-border-light-soft)] shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative">
                             <div className="absolute -top-10 -right-10 size-40 bg-[var(--sr-cyan-on-light)]/5 rounded-full blur-3xl"></div>
                             <div className="absolute -bottom-10 -left-10 size-40 bg-[var(--sr-cyan-on-light)]/5 rounded-full blur-3xl"></div>
                             <div className="max-w-xl text-center md:text-left z-10">

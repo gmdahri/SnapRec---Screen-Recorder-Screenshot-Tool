@@ -9,7 +9,12 @@ export interface Recording {
     thumbnailUrl?: string;
     type: 'video' | 'screenshot';
     createdAt: string;
+    /** Seconds, mapped from the server's `durationSec` at the fetch boundary so
+     * every surface can keep reading `duration`. */
     duration?: number;
+    durationSec?: number;
+    widthPx?: number;
+    heightPx?: number;
     views: number;
     isReady?: boolean;
     description?: string;
@@ -30,6 +35,8 @@ export interface Recording {
         content: string;
         createdAt: string;
         guestId?: string;
+        /** ISO when settled; absent while the question is still open. */
+        resolvedAt?: string | null;
         user?: {
             supabaseId: string;
             fullName?: string;
@@ -43,6 +50,12 @@ interface CreateRecordingInput {
     title: string;
     type: string;
     fileUrl: string;
+    /** Whole seconds. Omitted when unknown — the column is nullable and the
+     * card falls back to reading the length off the media element. */
+    durationSec?: number;
+    /** Frame size, when the uploader could measure it. */
+    widthPx?: number;
+    heightPx?: number;
     thumbnailUrl?: string;
     userId?: string;
     guestId?: string;
@@ -180,7 +193,8 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
             return recordings.map(r => ({
                 ...r,
                 fileUrl: ensureAbsoluteUrl(r.fileUrl),
-                thumbnailUrl: r.thumbnailUrl ? ensureAbsoluteUrl(r.thumbnailUrl) : undefined
+                thumbnailUrl: r.thumbnailUrl ? ensureAbsoluteUrl(r.thumbnailUrl) : undefined,
+                duration: r.duration ?? r.durationSec
             }));
         },
         // Only fetch when user is logged in and auth has finished loading
@@ -202,7 +216,8 @@ export function useRecording(id: string | undefined, refetchInterval?: number | 
             return {
                 ...recording,
                 fileUrl: ensureAbsoluteUrl(recording.fileUrl),
-                thumbnailUrl: recording.thumbnailUrl ? ensureAbsoluteUrl(recording.thumbnailUrl) : undefined
+                thumbnailUrl: recording.thumbnailUrl ? ensureAbsoluteUrl(recording.thumbnailUrl) : undefined,
+                duration: recording.duration ?? recording.durationSec
             };
         },
         enabled: (options.enabled !== undefined ? options.enabled : true) && isValidId,
@@ -238,7 +253,10 @@ export function useUpdateRecording() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: { title?: string; fileUrl?: string } }) =>
+        mutationFn: ({ id, data }: {
+            id: string;
+            data: { title?: string; fileUrl?: string; description?: string };
+        }) =>
             fetchWithAuth<Recording>(`/recordings/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(data),
@@ -349,6 +367,57 @@ export function useAddComment() {
             }),
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+/** Settles or reopens a comment (P7 V3).
+ *
+ * No guestId branch, unlike the other comment mutations: the endpoint requires
+ * a real session, because a guestId travels with the share link and would let
+ * any recipient close other people's questions. */
+export function useResolveComment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, commentId, resolved }: {
+            id: string;
+            commentId: string;
+            resolved: boolean;
+        }) =>
+            fetchWithAuth<any>(`/recordings/${id}/comments/${commentId}/resolve`, {
+                method: 'PATCH',
+                body: JSON.stringify({ resolved }),
+            }),
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+        },
+    });
+}
+
+/** Replaces the media behind an existing recording (P7 E6).
+ *
+ * Destructive: everyone holding the share link sees the new footage, and the
+ * previous file is no longer reachable at this id. Callers confirm first.
+ *
+ * Returns how many comments now point past the end, so the editor can say what
+ * the publish broke rather than leaving people to find out. */
+export function usePublishRecording() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, fileUrl, durationSec }: {
+            id: string;
+            fileUrl: string;
+            durationSec?: number;
+        }) =>
+            fetchWithAuth<{ staleComments: number }>(`/recordings/${id}/publish`, {
+                method: 'POST',
+                body: JSON.stringify({ fileUrl, durationSec }),
+            }),
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.detail(id) });
+            queryClient.invalidateQueries({ queryKey: recordingsKeys.all });
         },
     });
 }

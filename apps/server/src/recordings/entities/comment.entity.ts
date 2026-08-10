@@ -35,6 +35,17 @@ export class Comment {
     @ManyToOne(() => User, { nullable: true })
     user: User;
 
+    /** When the question was settled. A timestamp, not a flag: it also orders
+     * activity and distinguishes a fresh reply from a stale resolve. */
+    @Index()
+    @Column({ type: 'timestamptz', nullable: true })
+    resolvedAt: Date | null;
+
+    /** Who settled it. Nullable — if the account is deleted the comment stays
+     * resolved and only the attribution is lost. */
+    @Column({ type: 'uuid', nullable: true })
+    resolvedByUserId: string | null;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 

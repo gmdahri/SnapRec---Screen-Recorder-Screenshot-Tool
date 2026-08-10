@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { User } from './users/entities/user.entity';
 import { Recording } from './recordings/entities/recording.entity';
+import { RecordingView } from './recordings/entities/recording-view.entity';
 import { Reaction } from './recordings/entities/reaction.entity';
 import { Comment } from './recordings/entities/comment.entity';
 import { VideoProject } from './video-projects/entities/video-project.entity';
@@ -31,7 +32,7 @@ import { DataSource } from 'typeorm';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [User, Recording, Reaction, Comment, VideoProject],
+        entities: [User, Recording, Reaction, Comment, VideoProject, RecordingView],
         synchronize: false, // WARNING: Set to false in production
         ssl: {
           rejectUnauthorized: false, // Required for Supabase

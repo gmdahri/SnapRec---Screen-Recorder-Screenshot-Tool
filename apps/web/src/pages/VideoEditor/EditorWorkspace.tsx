@@ -1,15 +1,19 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { CaptureFrame } from '@snaprec/design-system';
+import { StageZoomOverlay } from './StageZoomOverlay';
 import { getActiveZoom, AUTO_ZOOM_SCALE, ZOOM_DURATION_MS } from './zoomUtils';
 import { useVideoEditor } from './VideoEditorContext';
 import { VideoPlayer, type VideoPlayerHandle, type VideoPlayerPlayback } from '../../components/VideoPlayer';
 import { EditorTimeline } from './EditorTimeline';
+import { TimelineRuler } from './TimelineRuler';
+import { TimelineZoom } from './TimelineZoom';
+import { useWaveform } from './useWaveform';
+import { fadeOpacityAt } from './fades';
 import type { EditorWorkspace as EditorWorkspaceType } from './types';
 import { MediaGalleryTabContent } from './MediaLibraryPanel';
 import { ZoomSidebar, ZoomEntry } from './ZoomSidebar';
 
 const defaultPlayback: VideoPlayerPlayback = { currentTime: 0, duration: 0, playing: false };
-
-const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 function CanvasSlot({
   children,
@@ -19,10 +23,15 @@ function CanvasSlot({
   className?: string;
 }) {
   return (
-    <div
-      className={`w-full max-w-4xl mx-auto aspect-video rounded-[2px] overflow-hidden bg-black shadow-2xl ${className}`}
-    >
-      {children}
+    <div className="w-full max-w-4xl mx-auto p-3 border border-dashed border-[var(--sr-border-dark-strong)] rounded-[2px]">
+      <CaptureFrame
+        treatment="focused"
+        style={{ aspectRatio: '16 / 9', background: 'var(--sr-surface-carbon)' }}
+      >
+        <div className={`w-full h-full overflow-hidden ${className}`}>
+          {children}
+        </div>
+      </CaptureFrame>
     </div>
   );
 }
@@ -37,86 +46,25 @@ function EmptyCanvasPlaceholder({
   actions: React.ReactNode;
 }) {
   return (
-    <CanvasSlot className="flex flex-col items-center justify-center p-6 text-center border border-white/10">
-      <div className="w-14 h-14 rounded-[2px] bg-[var(--sr-surface-panel-dark)]/10 flex items-center justify-center text-white/90 text-2xl mb-3">
+    <CanvasSlot className="flex flex-col items-center justify-center p-6 text-center border border-[var(--sr-border-dark)]">
+      <div className="w-14 h-14 rounded-[2px] bg-[var(--sr-surface-panel-dark)]/10 flex items-center justify-center text-[var(--sr-text-primary-on-dark)] text-2xl mb-3">
         ▶
       </div>
-      <p className="text-white font-semibold text-sm mb-1">{title}</p>
-      <p className="text-white/50 text-xs mb-5 max-w-sm">{subtitle}</p>
+      <p className="text-[var(--sr-text-primary-on-dark)] font-semibold text-sm mb-1">{title}</p>
+      <p className="text-[var(--sr-text-faint-on-dark)] text-xs mb-5 max-w-sm">{subtitle}</p>
       {actions}
     </CanvasSlot>
   );
 }
 
-function PropertiesPanelCore({
-  playbackRate,
-  onPlaybackRateChange,
-}: {
-  playbackRate: number;
-  onPlaybackRateChange: (r: number) => void;
-}) {
-  return (
-    <div className="space-y-3 text-sm">
-      <div>
-        <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Speed</label>
-        <select
-          className="w-full mt-1 rounded-[2px] border-0 bg-[var(--sr-surface-panel-dark)] py-2 px-2"
-          value={playbackRate}
-          onChange={(e) => onPlaybackRateChange(Number(e.target.value))}
-          aria-label="Playback speed"
-        >
-          {SPEED_PRESETS.map((s) => (
-            <option key={s} value={s}>
-              {s}x
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
-
-function PropertiesPanel({
-  playbackRate,
-  onPlaybackRateChange,
-}: {
-  playbackRate: number;
-  onPlaybackRateChange: (r: number) => void;
-}) {
-  return (
-    <div className="p-4 overflow-y-auto min-h-0 flex-1">
-      <div className="space-y-4 text-sm">
-        <div>
-          <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Canvas</label>
-          <p className="mt-1 bg-[var(--sr-surface-panel-dark)] rounded-[2px] p-2 border border-[var(--sr-border-dark)]">1920 × 1080</p>
-        </div>
-        <div>
-          <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Opacity</label>
-          <input type="range" className="w-full accent-[var(--sr-cyan)] mt-1" defaultValue={100} />
-        </div>
-        <PropertiesPanelCore playbackRate={playbackRate} onPlaybackRateChange={onPlaybackRateChange} />
-        <hr className="border-[var(--sr-border-dark)]" />
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-semibold">Auto-captions</span>
-          <span className="text-xs text-[var(--sr-text-faint-on-dark)]">Off</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-semibold">Noise reduction</span>
-          <span className="text-xs text-[var(--sr-cyan)]">On</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+/* The dock's Properties tab used to render a placeholder here: a hardcoded
+   1920x1080 canvas size, an opacity slider with no handler, and static
+   "Auto-captions: Off" / "Noise reduction: On" rows — the last of which
+   asserted something untrue. The real panel is passed in from
+   VideoEditorPage, which owns the waveform analysis it needs. */
 
 /** Left sidebar: Media gallery | Properties (tabs). */
-function LeftDockTabs({
-  playbackRate,
-  setPlaybackRate,
-}: {
-  playbackRate: number;
-  setPlaybackRate: (r: number) => void;
-}) {
+function LeftDockTabs({ properties }: { properties?: React.ReactNode }) {
   const { rightDockTab, setRightDockTab } = useVideoEditor();
   return (
     <aside className="w-72 xl:w-80 shrink-0 border-r border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)] flex flex-col min-h-0 hidden lg:flex">
@@ -148,11 +96,7 @@ function LeftDockTabs({
           Properties
         </button>
       </div>
-      {rightDockTab === 'mediaGallery' ? (
-        <MediaGalleryTabContent />
-      ) : (
-        <PropertiesPanel playbackRate={playbackRate} onPlaybackRateChange={setPlaybackRate} />
-      )}
+      {rightDockTab === 'mediaGallery' ? <MediaGalleryTabContent /> : properties}
     </aside>
   );
 }
@@ -177,7 +121,14 @@ function ToolRail({
   return null;
 }
 
-export function EditorWorkspace() {
+/** `properties` fills the dock's Properties tab.
+ *
+ * It arrives as a node rather than being built here because the panel needs the
+ * decoded waveform — silences, loudness — which VideoEditorPage measures. It
+ * used to be a second sidebar of its own alongside this dock, so Media showed
+ * two panels and set the trim in one of them while the Trim tool owned the
+ * same controls in the other. */
+export function EditorWorkspace({ properties }: { properties?: React.ReactNode }) {
   const playerRef = useRef<VideoPlayerHandle | null>(null);
   const [playback, setPlayback] = useState<VideoPlayerPlayback>(defaultPlayback);
 
@@ -195,6 +146,10 @@ export function EditorWorkspace() {
     autoZoom,
     metadata,
     zoomKeyframes,
+    cuts,
+    removeCut,
+    fadeInSec,
+    fadeOutSec,
     addZoomKeyframe,
     updateZoomKeyframe,
     deleteZoomKeyframe,
@@ -218,6 +173,13 @@ export function EditorWorkspace() {
   // context tracks keyframes, not which one is selected.
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null);
   const selectedZoom = zoomKeyframes.find((k) => k.id === selectedZoomId) ?? null;
+
+  // E2.5 — decoded once per clip and cached; an unreadable file (expired URL,
+  // odd codec, no microphone) leaves the lane empty rather than failing.
+  const { peaks: waveform } = useWaveform(editorVideoSrc);
+
+  // E2.6 — how much wider than the panel the track is drawn.
+  const [timelineZoom, setTimelineZoom] = useState(1);
 
   const suggestionEvents = useMemo(
     () => (autoZoom
@@ -282,14 +244,14 @@ export function EditorWorkspace() {
         onClick={() => {
           addMediaToTimeline();
         }}
-        className="px-4 py-2 bg-[var(--sr-cyan)] text-white rounded-[2px] text-sm font-semibold"
+        className="px-4 py-2 bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] rounded-[2px] text-sm font-semibold"
       >
         + Import
       </button>
       <button
         type="button"
         onClick={() => addMediaToTimeline()}
-        className="px-4 py-2 border border-white/30 text-white rounded-[2px] text-sm font-semibold"
+        className="px-4 py-2 border border-[var(--sr-border-dark-strong)] text-[var(--sr-text-primary-on-dark)] rounded-[2px] text-sm font-semibold"
       >
         Media
       </button>
@@ -361,7 +323,7 @@ export function EditorWorkspace() {
           onRemove={() => selectedZoom && deleteZoomKeyframe(selectedZoom.id)}
         />
       ) : showLeftDock ? (
-        <LeftDockTabs playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} />
+        <LeftDockTabs properties={properties} />
       ) : null}
       <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--sr-surface-panel-dark)]">
         <div className="flex-1 flex items-center justify-center p-6 min-h-[200px] min-w-0 overflow-hidden">
@@ -373,9 +335,32 @@ export function EditorWorkspace() {
                 src={editorVideoSrc}
                 onPlaybackUpdate={onPlaybackUpdate}
                 playbackRange={trimRange}
+                skipRanges={cuts}
                 playbackRate={playbackRate}
                 onPlaybackRateChange={setPlaybackRate}
               />
+              {/* E1.4 — drawn over the stage, never intercepting the pointer,
+                  so scrubbing and play/pause still reach the player beneath. */}
+              <StageZoomOverlay keyframe={selectedZoom} />
+              {/* E4.1 — the same ramp the export will apply, drawn over the
+                  stage. Scrubbing through the head or tail therefore shows the
+                  fade rather than full-brightness footage that will not ship. */}
+              {(fadeInSec > 0 || fadeOutSec > 0) && (
+                <div
+                  data-testid="fade-overlay"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    background: 'var(--sr-surface-well)',
+                    opacity: 1 - fadeOpacityAt(
+                      playback.currentTime || 0,
+                      trimRange?.start ?? 0,
+                      trimRange?.end ?? (playback.duration || 0),
+                      { inSec: fadeInSec, outSec: fadeOutSec },
+                    ),
+                  }}
+                />
+              )}
             </CanvasSlot>
           ) : (
             <EmptyCanvasPlaceholder
@@ -391,6 +376,32 @@ export function EditorWorkspace() {
         </div>
 
         {showEditorTimeline ? (
+          <>
+            {/* E2.6 — the control sits with the timeline it scales, not with
+                the picture zoom on the stage above. */}
+            <div style={{
+              display: 'flex', justifyContent: 'flex-end',
+              padding: '6px 16px 0', background: 'var(--sr-surface-carbon)',
+            }}>
+              <TimelineZoom zoom={timelineZoom} onChange={setTimelineZoom} />
+            </div>
+
+            {/* Zooming widens the track and scrolls it, rather than redrawing
+                at a different scale: every lane already positions by percent,
+                so one container width drives ruler and lanes together and they
+                cannot drift apart. */}
+            <div style={{ overflowX: 'auto', background: 'var(--sr-surface-carbon)' }}>
+              <div style={{ width: `${timelineZoom * 100}%`, minWidth: '100%' }}>
+            {/* E2.1/E2.4 — the ruler is the seek surface; the lanes below stay
+                display-and-drag. Seeks go straight to the element so the
+                playhead does not lag a React round-trip behind the video. */}
+            <div style={{ padding: '0 16px', background: 'var(--sr-surface-carbon)' }}>
+              <TimelineRuler
+                durationSec={playback.duration || 0}
+                playheadSec={playback.currentTime || 0}
+                onSeek={(sec) => playerRef.current?.seek(sec, { unrestricted: true })}
+              />
+            </div>
           <EditorTimeline
             project={{
               durationMs: (playback.duration || 0) * 1000,
@@ -404,6 +415,11 @@ export function EditorWorkspace() {
                 endMs: k.timestamp + k.duration,
                 scale: k.scale,
                 source: k.source ?? 'manual',
+              })),
+              // E2.5 — real peaks, or an empty lane if the audio cannot be read.
+              waveform,
+              cuts: cuts.map((c) => ({
+                id: c.id, startMs: c.startSec * 1000, endMs: c.endSec * 1000,
               })),
               suggestions: suggestionEvents.map((m, i) => ({
                 id: `s${i}`,
@@ -419,7 +435,11 @@ export function EditorWorkspace() {
             }}
             onTrim={(_edge, ms) => playerRef.current?.seek(ms / 1000, { unrestricted: true })}
             onAcceptSuggestion={acceptSuggestion}
+            onRemoveCut={removeCut}
           />
+              </div>
+            </div>
+          </>
         ) : (
           <TimelineFooter empty={emptyOnboarding} />
         )}

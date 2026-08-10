@@ -19,7 +19,7 @@ export function ShareModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[var(--sr-scrim-dark)] backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="share-title"
@@ -46,7 +46,7 @@ export function ShareModal() {
           <button
             type="button"
             onClick={copy}
-            className="bg-[var(--sr-cyan)] text-white font-semibold px-6 py-3 rounded-[2px] hover:opacity-90"
+            className="bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] font-semibold px-6 py-3 rounded-[2px] hover:opacity-90"
           >
             {copied ? 'Copied' : 'Copy'}
           </button>
@@ -70,7 +70,7 @@ export function ShareModal() {
         </div>
         <button
           type="button"
-          className="w-full bg-[var(--sr-surface-carbon)] text-white font-bold py-4 rounded-[2px] hover:bg-black"
+          className="w-full bg-[var(--sr-surface-carbon)] text-[var(--sr-text-primary-on-dark)] font-bold py-4 rounded-[2px] hover:bg-[var(--sr-surface-well)]"
           onClick={() => setShareModal(false)}
         >
           Done

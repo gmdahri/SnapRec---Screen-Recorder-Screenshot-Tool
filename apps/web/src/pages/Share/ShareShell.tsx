@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import type { ShareComment } from './anchors';
-import { VideoShare, type ShareCapture } from './VideoShare';
+import type { VideoFrame } from '../../hooks/useVideoFrames';
+/** VideoShare (C1) is superseded by VideoViewer for desktop video as of P7 V1.
+ * The file is kept for now because its comment-column maths and tests are the
+ * only record of the old layout; delete it once the redesign has settled. */
+import { type ShareCapture } from './VideoShare';
+import { VideoViewer, type ViewerCapture } from './VideoViewer';
 import { ImageShare, type ImageCapture } from './ImageShare';
 import { MobileVideoShare } from './MobileVideoShare';
 import { MobileImageShare } from './MobileImageShare';
@@ -14,7 +19,18 @@ export type ShareState = 'ready' | 'processing' | 'private';
 export interface ShareShellProps {
   state: ShareState;
   kind: 'recording' | 'screenshot';
-  capture: ShareCapture & Partial<ImageCapture> & { duration?: string; dimensions?: string };
+  capture: ShareCapture & Partial<ImageCapture> & {
+    duration?: string;
+    dimensions?: string;
+    /** P7 viewer fields. Optional so the image and mobile bodies, which do not
+     * use them, are unaffected. */
+    createdAt?: string;
+    description?: string;
+    statusWord?: ViewerCapture['status'];
+    views?: number;
+    watchedPercent?: number | null;
+    canEdit?: boolean;
+  };
   comments: ShareComment[];
   currentMs?: number;
   onSeek: (ms: number) => void;
@@ -23,6 +39,16 @@ export interface ShareShellProps {
   onDownload?: () => void;
   player?: ReactNode;
   media?: ReactNode;
+  onBack?: () => void;
+  onCopyLink?: () => void;
+  onEdit?: () => void;
+  onResolve?: (commentId: string, resolved: boolean) => void;
+  canResolve?: (comment: ShareComment) => boolean;
+  onDescriptionChange?: (description: string) => void;
+  descriptionSaving?: boolean;
+  frames?: VideoFrame[];
+  framesGenerating?: boolean;
+  framesBlocked?: boolean;
 }
 
 /** Chooses the body. Six scenes, three questions: is there media, is it a
@@ -51,9 +77,44 @@ export function ShareShell(props: ShareShellProps) {
   }
 
   if (props.kind === 'recording') {
-    return mobile
-      ? <MobileVideoShare {...props} capture={props.capture} />
-      : <VideoShare {...props} capture={props.capture} />;
+    if (mobile) return <MobileVideoShare {...props} capture={props.capture} />;
+
+    // P7 V1: the desktop video body is the rail viewer. MobileVideoShare keeps
+    // its own layout until V1.6's phone treatment lands.
+    return (
+      <VideoViewer
+        capture={{
+          id: props.capture.id,
+          title: props.capture.title,
+          owner: props.capture.owner,
+          createdAt: props.capture.createdAt ?? new Date().toISOString(),
+          durationMs: props.capture.durationMs,
+          dimensions: props.capture.dimensions,
+          description: props.capture.description,
+          status: props.capture.statusWord ?? 'link ready',
+          views: props.capture.views ?? 0,
+          watchedPercent: props.capture.watchedPercent ?? null,
+          allowDownload: props.capture.allowDownload,
+          canEdit: props.capture.canEdit ?? false,
+        }}
+        comments={props.comments}
+        currentMs={props.currentMs}
+        player={props.player}
+        onBack={props.onBack ?? (() => window.history.back())}
+        onSeek={props.onSeek}
+        onPost={props.onPost}
+        onCopyLink={props.onCopyLink ?? (() => {})}
+        onDownload={props.onDownload}
+        onEdit={props.onEdit}
+        onResolve={props.onResolve}
+        canResolve={props.canResolve}
+        onDescriptionChange={props.onDescriptionChange}
+        descriptionSaving={props.descriptionSaving}
+        frames={props.frames}
+        framesGenerating={props.framesGenerating}
+        framesBlocked={props.framesBlocked}
+      />
+    );
   }
 
   const imageCapture: ImageCapture = {

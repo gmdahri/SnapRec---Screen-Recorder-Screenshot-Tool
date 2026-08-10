@@ -36,7 +36,7 @@ export function ProjectsView() {
             <button
               type="button"
               onClick={newProject}
-              className="bg-[var(--sr-cyan)] hover:opacity-90 text-white px-5 py-2.5 rounded-[2px] font-semibold flex items-center gap-2"
+              className="bg-[var(--sr-cyan)] hover:opacity-90 text-[var(--sr-cyan-fg)] px-5 py-2.5 rounded-[2px] font-semibold flex items-center gap-2"
             >
               + New project
             </button>

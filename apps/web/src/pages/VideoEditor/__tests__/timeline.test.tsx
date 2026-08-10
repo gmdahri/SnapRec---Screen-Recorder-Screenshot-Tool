@@ -25,10 +25,14 @@ describe('the timeline (V1)', () => {
     />,
   );
 
-  it('has exactly three lanes', () => {
+  /** Was three lanes. The P7 redesign adds CUTS, which the mockup shows as its
+   * own row — a cut is a distinct kind of edit from a zoom and sharing a lane
+   * would make neither readable. The point of the original assertion stands:
+   * this is a fixed, small set of lanes, not an open-ended track list. */
+  it('has exactly four lanes', () => {
     mount();
     expect(screen.getAllByRole('group').map(g => g.getAttribute('aria-label')))
-      .toEqual(['clip', 'zoom', 'audio']);
+      .toEqual(['clip', 'zoom', 'cuts', 'audio']);
   });
 
   it('dims trimmed heads rather than removing them', () => {

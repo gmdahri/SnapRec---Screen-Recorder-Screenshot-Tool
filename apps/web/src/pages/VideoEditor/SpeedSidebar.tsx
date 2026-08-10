@@ -41,7 +41,7 @@ export function SpeedSidebar() {
                 onClick={() => setPlaybackRate(s)}
                 className={`py-3 rounded-[2px] text-sm font-bold transition-colors ${
                   playbackRate === s
-                    ? 'bg-[var(--sr-cyan)] text-white shadow-md'
+                    ? 'bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] shadow-md'
                     : 'bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)] hover:bg-[var(--sr-border-dark)] disabled:opacity-40 disabled:cursor-not-allowed'
                 }`}
               >
@@ -77,7 +77,7 @@ export function SpeedSidebar() {
               setMediaLibraryOpen(true);
               addMediaToTimeline();
             }}
-            className="w-full py-3 text-sm font-semibold bg-[var(--sr-cyan)] text-white rounded-[2px]"
+            className="w-full py-3 text-sm font-semibold bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] rounded-[2px]"
           >
             Add media first
           </button>

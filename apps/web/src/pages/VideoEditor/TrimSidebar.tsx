@@ -153,7 +153,7 @@ export function TrimSidebar() {
               endClamped - start < 0.2
             }
             onClick={() => void applyLocalTrim()}
-            className="w-full py-2.5 rounded-[2px] text-sm font-bold bg-[var(--sr-cyan)] text-white hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 rounded-[2px] text-sm font-bold bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {localModifyStatus === 'working' ? 'Applying…' : 'Modify'}
           </button>

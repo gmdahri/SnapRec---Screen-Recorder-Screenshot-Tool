@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useVideoEditor } from './VideoEditorContext';
+import { EditorTopBar } from './EditorTopBar';
 import type { EditorTool } from './types';
 import UserMenu from '../../components/UserMenu';
 import LoginModal from '../../components/LoginModal';
+import { outputDurationSec } from './cuts';
 
 const tools: { id: EditorTool; name: string; disabled?: boolean }[] = [
   { id: 'media', name: 'Media' },
   { id: 'trim', name: 'Trim' },
   { id: 'speed', name: 'Speed' },
   { id: 'zoom', name: 'Zoom' },
-  { id: 'text', name: 'Text', disabled: true },
-  { id: 'effects', name: 'Effects', disabled: true },
+  // Text and Effects were listed here permanently disabled. A control that can
+  // never be reached is a dead end, so they are absent until they do something.
 ];
 
 /** Stroke icons aligned with Stitch / editor spec (heroicons-style). */
@@ -72,16 +74,41 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
     setActiveTool,
     setWorkspace,
     setRightDockTab,
-    setExportModal,
-    setShareModal,
+    exportEdit,
     currentProjectId,
     hasUnsavedChanges,
     saveProject,
     saveStatus,
+    trimStartSec,
+    trimEndSec,
+    cuts,
+    videoDurationSec,
+    undoEdit,
+    redoEdit,
+    canUndoEdit,
+    canRedoEdit,
+    sourceRecordingId,
+    publishToRecording,
+    publishStatus,
+    publishError,
+    publishStaleComments,
     stagedExportFile,
   } = useVideoEditor();
 
+  const navigate = useNavigate();
+
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // A publish that fails silently is the worst outcome here: the author walks
+  // away believing recipients have the new cut.
+  const reportedPublishError = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (publishStatus === 'error' && publishError && reportedPublishError.current !== publishError) {
+      reportedPublishError.current = publishError;
+      alert(`Publish failed: ${publishError}\n\nThe existing video is unchanged.`);
+    }
+    if (publishStatus !== 'error') reportedPublishError.current = null;
+  }, [publishStatus, publishError]);
 
   const onTool = (t: EditorTool) => {
     setActiveTool(t);
@@ -103,80 +130,50 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--sr-surface-carbon)] text-[var(--sr-text-primary-on-dark)] overflow-hidden font-[family-name:var(--sr-font-ui)]">
-      <header className="h-12 shrink-0 bg-[var(--sr-surface-carbon)] border-b border-[var(--sr-border-dark-soft)] flex items-center justify-between px-4 gap-4">
-        <div className="flex items-center gap-3 min-w-0 flex-wrap">
-          <Link
-            to="/library"
-            className="flex items-center shrink-0 rounded-[2px] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--sr-cyan)] py-0.5"
-            title="Dashboard"
-          >
-            <img
-              src="/logo.png"
-              alt="SnapRec"
-              className="h-8 w-auto object-contain object-left max-w-[9rem] sm:max-w-none"
-            />
-          </Link>
-          <Link
-            to="/video-editor"
-            className="text-[12.5px] text-[var(--sr-cyan)] shrink-0 hidden sm:inline border-l border-[var(--sr-border-dark)] pl-3"
-          >
-            All video projects
-          </Link>
-          <div className="flex items-center gap-2 min-w-0">
-            <input
-              value={projectTitle}
-              onChange={(e) => setProjectTitle(e.target.value)}
-              className="text-[12.5px] border border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-primary-on-dark)] rounded-[2px] px-3 h-[var(--sr-h-xs)] max-w-[200px]"
-              aria-label="Project title"
-            />
-          </div>
-        </div>
-        <div className="flex-1 max-w-md hidden md:block">
-          <input
-            type="search"
-            placeholder="Search assets, effects…"
-            className="w-full rounded-[2px] bg-[var(--sr-surface-panel-dark)] border border-[var(--sr-border-dark)] text-[var(--sr-text-primary-on-dark)] px-3 h-[var(--sr-h-xs)] text-[12.5px]"
-          />
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {currentProjectId && (
-            <button
-              type="button"
-              disabled={!hasUnsavedChanges || saveStatus === 'saving'}
-              onClick={() => void saveProject()}
-              className={`px-3 h-[var(--sr-h-xs)] text-[12.5px] rounded-[2px] border ${
-                hasUnsavedChanges
-                  ? 'border-[var(--sr-cyan)] text-[var(--sr-cyan)]'
-                  : 'border-[var(--sr-border-dark-soft)] text-[var(--sr-text-faint-on-dark)] cursor-not-allowed'
-              } disabled:opacity-60`}
-              title={
-                hasUnsavedChanges
-                  ? stagedExportFile
-                    ? 'Save uploads staged file, title, trim & playback speed'
-                    : 'Save title, trim & playback speed to server'
-                  : 'No changes to save'
-              }
-            >
-              {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Retry save' : 'Save'}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setShareModal(true)}
-            className="px-3 h-[var(--sr-h-xs)] text-[12.5px] border border-[var(--sr-border-dark)] rounded-[2px] hover:border-[var(--sr-cyan)] hover:text-[var(--sr-cyan)]"
-          >
-            Share
-          </button>
-          <button
-            type="button"
-            onClick={() => setExportModal('settings')}
-            className="px-3 h-[var(--sr-h-xs)] text-[12.5px] font-semibold bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] rounded-[2px] hover:bg-[var(--sr-cyan-hover)]"
-          >
-            Export
-          </button>
-          <UserMenu onSignIn={() => setShowLoginModal(true)} />
-        </div>
-      </header>
+      <EditorTopBar
+        title={projectTitle}
+        onTitleChange={setProjectTitle}
+        onBack={() => navigate('/video-editor')}
+        // The trim less what the cuts remove, not the trim alone. Removing
+        // 11.7s of silence left the header reading "0:42 of 0:42 kept" while
+        // the Output panel beside it correctly showed the shorter length.
+        keptSec={outputDurationSec(trimStartSec, trimEndSec, cuts)}
+        totalSec={videoDurationSec}
+        hasUnsavedChanges={hasUnsavedChanges}
+        saveStatus={saveStatus}
+        onSave={() => void saveProject()}
+        onExport={() => void exportEdit()}
+        canSave={!!currentProjectId && hasUnsavedChanges && saveStatus !== 'saving'}
+        onPublish={sourceRecordingId ? () => {
+          // Follows the codebase's existing confirm() convention (see Library's
+          // delete). Publishing is irreversible — there is no version history
+          // (plan O4) — so the wording says exactly what it replaces.
+          const ok = confirm(
+            'Replace the video at the existing share link?\n\n'
+            + 'Everyone with the link will see this edit instead. '
+            + 'Comments and view counts are kept, but the previous video '
+            + 'cannot be recovered.',
+          );
+          if (!ok) return;
+          void publishToRecording().then(() => {
+            if (publishStaleComments > 0) {
+              alert(
+                `Published. ${publishStaleComments} comment(s) now point past the `
+                + 'end of the shortened video and are marked as referring to '
+                + 'removed footage.',
+              );
+            }
+          });
+        } : undefined}
+        publishStatus={publishStatus}
+        canPublish={!!stagedExportFile}
+        publishBlockedReason="Apply your edit first — there is nothing new to publish"
+        onUndo={undoEdit}
+        onRedo={redoEdit}
+        canUndo={canUndoEdit}
+        canRedo={canRedoEdit}
+        trailing={<UserMenu onSignIn={() => setShowLoginModal(true)} />}
+      />
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <div className="flex flex-1 min-h-0">
         <nav

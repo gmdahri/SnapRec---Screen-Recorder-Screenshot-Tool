@@ -78,9 +78,28 @@ export function CapturePlate({
             dimensions — showed nothing at all about what it was. The word does
             the work; the icon only decorates it, which is why the icon stays
             aria-hidden and the kind is now announced to screen readers. */}
+        {/* The title lives on the thumbnail, not in the caption. It needs a
+            scrim because the frame carries arbitrary imagery, and it must not
+            take the pointer: a hover preview sits underneath and would lose
+            mouseenter the moment the cursor crossed this. */}
+        <span
+          data-testid="plate-title"
+          style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            padding: '20px 9px 30px',
+            background: 'linear-gradient(to top, var(--sr-scrim-dark), transparent)',
+            color: 'var(--sr-text-primary-on-dark)',
+            fontSize: 12.5, fontWeight: 500, lineHeight: 1.3,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        >{title}</span>
+
         <span
           data-testid="kind-chip"
           style={{
+            pointerEvents: 'none',
             position: 'absolute', left: 8, bottom: 8,
             display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '2px 6px', background: 'var(--sr-scrim-dark)',
@@ -128,20 +147,20 @@ export function CapturePlate({
         <StateRule status={status} progress={progress} />
       </CaptureFrame>
 
+      {/* The title used to be this button's only text and therefore its
+          accessible name. It is on the thumbnail now, so the name has to be
+          stated outright — otherwise the control announces as its own meta
+          line, which names no capture at all. */}
       <button
         type="button"
         onClick={onOpen}
+        aria-label={title}
         style={{
           padding: '9px 2px 0', border: 'none', background: 'transparent',
           textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 5,
           cursor: onOpen ? 'pointer' : 'default',
         }}
       >
-        <span style={{
-          fontSize: 13.5, fontWeight: 500, lineHeight: 1.35,
-          color: 'var(--sr-text-primary-on-light)',
-        }}>{title}</span>
-
         <span style={{
           fontFamily: 'var(--sr-font-mono)', fontSize: 10,
           color: 'var(--sr-text-faint-on-light)',

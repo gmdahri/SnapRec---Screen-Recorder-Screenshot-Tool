@@ -86,3 +86,37 @@ describe('share comments', () => {
     expect(list.every(c => !c.needsReply)).toBe(true);
   });
 });
+
+/** P7 V3 — resolution now comes from the database rather than being false. */
+describe('a settled comment', () => {
+  const rec = (comments: unknown[]) => ({
+    id: 'r1', title: 'T', fileUrl: 'f', type: 'video', createdAt: '2026-08-01T00:00:00Z',
+    views: 0, reactions: [], comments,
+    user: { supabaseId: 'sb-owner' },
+  }) as never;
+
+  const comment = (over: Record<string, unknown> = {}) => ({
+    id: 'c1', content: 'q', createdAt: '2026-08-02T00:00:00Z',
+    user: { supabaseId: 'sb-other', fullName: 'Dana' }, ...over,
+  });
+
+  it('reads as resolved once it has been settled', () => {
+    const [out] = toShareComments(rec([comment({ resolvedAt: '2026-08-03T00:00:00Z' })]), 'sb-owner');
+    expect(out.resolved).toBe(true);
+  });
+
+  it('reads as open while it has not', () => {
+    const [out] = toShareComments(rec([comment()]), 'sb-owner');
+    expect(out.resolved).toBe(false);
+  });
+
+  /** Otherwise resolving a question would leave its coral marker burning on
+   * the timeline, still claiming a reply is owed. */
+  it('stops being owed a reply once settled', () => {
+    const open = toShareComments(rec([comment()]), 'sb-owner');
+    expect(open[0].needsReply).toBe(true);
+
+    const settled = toShareComments(rec([comment({ resolvedAt: '2026-08-03T00:00:00Z' })]), 'sb-owner');
+    expect(settled[0].needsReply).toBe(false);
+  });
+});

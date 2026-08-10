@@ -22,7 +22,10 @@ export interface ZoomKeyframe {
   source?: 'auto' | 'manual';
 }
 
-export type ExportModalState = 'closed' | 'settings' | 'progress';
+/** 'settings' is gone: nothing ever rendered it, so the Export button — which
+ * set exactly that — did nothing at all. 'failed' is what ExportModal's second
+ * state has always been built for. */
+export type ExportModalState = 'closed' | 'progress' | 'failed';
 
 export type MediaLibraryTab = 'your' | 'favorites';
 

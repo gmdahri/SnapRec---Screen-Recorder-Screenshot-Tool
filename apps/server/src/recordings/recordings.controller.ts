@@ -19,6 +19,9 @@ import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { ResolveCommentDto } from './dto/resolve-comment.dto';
+import { PublishRecordingDto } from './dto/publish-recording.dto';
+import { WatchProgressDto } from './dto/watch-progress.dto';
 import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto } from './dto';
 
 @Controller('recordings')
@@ -127,6 +130,9 @@ export class RecordingsController {
             fileUrl: isReady
                 ? await this.storageService.getDownloadUrl(recording.fileUrl)
                 : recording.fileUrl,
+            // Null when no signed-in viewer has watched — the viewer hides the
+            // tile rather than showing 0%.
+            watchedPercent: await this.recordingsService.watchedPercent(id),
         };
     }
 
@@ -183,6 +189,57 @@ export class RecordingsController {
             req.user?.id,
             addCommentDto.guestId,
             userMeta,
+        );
+    }
+
+    /** Heartbeat of what a viewer has watched (P7 V4).
+     *
+     * OptionalJwtAuthGuard, not the strict one: this page is public and a guest
+     * hitting it must not see an error. Their call is accepted and discarded —
+     * no per-person row is created for anyone who is not signed in. */
+    @UseGuards(OptionalJwtAuthGuard)
+    @Post(':id/progress')
+    async recordProgress(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: WatchProgressDto,
+        @Req() req: any,
+    ) {
+        const userMeta = req.user
+            ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl }
+            : undefined;
+        return this.recordingsService.recordWatchProgress(id, dto.ranges, req.user?.id, userMeta);
+    }
+
+    /** Replace the media behind a recording, keeping its link and comments.
+     *
+     * Owner only, and never anonymous: this overwrites what everyone holding
+     * the link already has. */
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/publish')
+    async publishRecording(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: PublishRecordingDto,
+        @Req() req: any,
+    ) {
+        return this.recordingsService.publish(id, dto, req.user.id);
+    }
+
+    /** Settle or reopen a comment. JwtAuthGuard, not the optional one: a guestId
+     * is readable by anyone with the share link, so it cannot authorise closing
+     * someone else's question. */
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id/comments/:commentId/resolve')
+    async resolveComment(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Param('commentId', ParseUUIDPipe) commentId: string,
+        @Body() dto: ResolveCommentDto,
+        @Req() req: any,
+    ) {
+        const userMeta = req.user
+            ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl }
+            : undefined;
+        return this.recordingsService.setCommentResolved(
+            id, commentId, dto.resolved ?? true, req.user?.id, userMeta,
         );
     }
 }

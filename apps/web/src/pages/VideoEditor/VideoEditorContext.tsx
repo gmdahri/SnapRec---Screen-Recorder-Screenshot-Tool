@@ -20,12 +20,23 @@ import type {
 } from './types';
 import { fetchWithAuth, uploadFile } from '../../hooks/useRecordings';
 import { recordVideoSegmentToWebm } from './localVideoTrim';
+import { normalizeCuts, outputDurationSec, type Cut } from './cuts';
+import {
+  canRedo, canUndo, createHistory, record, redo, resetHistory, undo,
+} from './history';
+
+interface EditSnapshot {
+  trimStartSec: number;
+  trimEndSec: number;
+  cuts: Cut[];
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snaprec-489525905608.us-central1.run.app';
 
 export interface VideoProjectDto {
   id: string;
   title: string;
+  /** The capture this project edits — the thing Publish overwrites. */
   recordingId: string;
   fileUrl: string;
   videoUrl: string;
@@ -58,6 +69,8 @@ interface VideoEditorContextValue {
   setSelectedClipId: (id: string | null) => void;
   exportModal: ExportModalState;
   setExportModal: (e: ExportModalState) => void;
+  exportProgress: { pct: number; frame: number; frames: number } | null;
+  exportEdit: () => Promise<void>;
   shareModal: boolean;
   setShareModal: (s: boolean) => void;
   hasTimelineContent: boolean;
@@ -106,6 +119,37 @@ interface VideoEditorContextValue {
   confirmUnsavedLeave: () => void;
   autoZoom: boolean;
   metadata: any[];
+  /** Source ranges the output leaves out (P7 E3). Always normalised. */
+  /** P7 E4.1 — seconds, against the kept range. Clamped on use, not on set, so
+   * moving the trim does not silently rewrite a fade the user chose. */
+  fadeInSec: number;
+  fadeOutSec: number;
+  setFadeInSec: (n: number) => void;
+  setFadeOutSec: (n: number) => void;
+  /** P7 E5.2 — apply a loudness correction when baking the export. */
+  normalizeAudio: boolean;
+  setNormalizeAudio: (on: boolean) => void;
+  /** Gain the export should apply; 1 when normalising is off or unmeasurable. */
+  audioGain: number;
+  setAudioGain: (g: number) => void;
+  cuts: Cut[];
+  addCut: (startSec: number, endSec: number) => void;
+  removeCut: (id: string) => void;
+  /** P7 E3.1 — over trim and cuts, the two things an edit is made of. Zoom
+   * keyframes are excluded for now: they are edited through their own panel
+   * with its own affordances, and folding them in would make one Undo press
+   * mean two different things depending on what you touched last. */
+  /** P7 E6 — replace the source capture's media with the current edit. */
+  sourceRecordingId: string | null;
+  publishToRecording: () => Promise<void>;
+  publishStatus: 'idle' | 'publishing' | 'done' | 'error';
+  publishError: string | null;
+  /** Comments left pointing past the new end by the last publish. */
+  publishStaleComments: number;
+  undoEdit: () => void;
+  redoEdit: () => void;
+  canUndoEdit: boolean;
+  canRedoEdit: boolean;
   zoomKeyframes: ZoomKeyframe[];
   addZoomKeyframe: (kf: ZoomKeyframe) => void;
   updateZoomKeyframe: (id: string, patch: Partial<ZoomKeyframe>) => void;
@@ -166,6 +210,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [clips, setClips] = useState<MediaClip[]>([]);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [exportModal, setExportModal] = useState<ExportModalState>('closed');
+  /** Real numbers from the encoder, not a spinner. Null until an export runs. */
+  const [exportProgress, setExportProgress] = useState<
+    { pct: number; frame: number; frames: number } | null
+  >(null);
   const [shareModal, setShareModal] = useState(false);
   const [unsavedLeaveTarget, setUnsavedLeaveTarget] = useState<string | null>(null);
 
@@ -186,8 +234,24 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [hasTimelineContent, setHasTimelineContent] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
+  const [cuts, setCuts] = useState<Cut[]>([]);
+  const [fadeInSec, setFadeInSec] = useState(0);
+  const [fadeOutSec, setFadeOutSec] = useState(0);
+  const [normalizeAudio, setNormalizeAudio] = useState(false);
+  const [audioGain, setAudioGain] = useState(1);
+  const [editHistory, setEditHistory] = useState(
+    () => createHistory<EditSnapshot>({ trimStartSec: 0, trimEndSec: 0, cuts: [] }),
+  );
+  /** Set while an undo is being applied, so the effect that records changes
+   * does not immediately record the undo as a new edit. */
+  const applyingHistory = useRef(false);
   const [editorVideoSrc, setEditorVideoSrc] = useState<string | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [sourceRecordingId, setSourceRecordingId] = useState<string | null>(null);
+  const [publishStatus, setPublishStatus] =
+    useState<'idle' | 'publishing' | 'done' | 'error'>('idle');
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishStaleComments, setPublishStaleComments] = useState(0);
 
   useEffect(() => {
     if (!currentProjectId) return;
@@ -213,6 +277,11 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [savedTrimEnd, setSavedTrimEnd] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [savedPlaybackRate, setSavedPlaybackRate] = useState(1);
+  /** Baseline for dirty detection. Compared as JSON because the list is
+   * rebuilt by normalizeCuts on every change, so identity never matches. */
+  const [savedCutsJson, setSavedCutsJson] = useState('[]');
+  const [savedFadeInSec, setSavedFadeInSec] = useState(0);
+  const [savedFadeOutSec, setSavedFadeOutSec] = useState(0);
   const [stagedExportFile, setStagedExportFile] = useState<File | null>(null);
   const [stagedExportLabel, setStagedExportLabel] = useState<string | null>(null);
   const stagedBlobUrlRef = useRef<string | null>(null);
@@ -222,6 +291,83 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [localEffectsApplied, setLocalEffectsApplied] = useState<string[]>([]);
   const [metadata, setMetadata] = useState<any[]>([]);
   const [zoomKeyframes, setZoomKeyframes] = useState<ZoomKeyframe[]>([]);
+
+  const addCut = useCallback((startSec: number, endSec: number) => {
+    setCuts((prev) => normalizeCuts(
+      [...prev, { id: `cut-${Date.now()}-${Math.round(startSec * 1000)}`, startSec, endSec }],
+      videoDurationSec,
+    ));
+  }, [videoDurationSec]);
+
+  const removeCut = useCallback((id: string) => {
+    setCuts((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
+  // Records trim and cut changes as one snapshot each. Skipped while an undo is
+  // being applied, otherwise stepping back would immediately be recorded as a
+  // new edit and Redo could never be reached.
+  useEffect(() => {
+    if (applyingHistory.current) { applyingHistory.current = false; return; }
+    setEditHistory((h) => {
+      const p = h.present;
+      if (p.trimStartSec === trimStartSec && p.trimEndSec === trimEndSec && p.cuts === cuts) {
+        return h;
+      }
+      return record(h, { trimStartSec, trimEndSec, cuts });
+    });
+  }, [trimStartSec, trimEndSec, cuts]);
+
+  /** A project with no saved trim keeps the whole clip, not none of it.
+   *
+   * timelineJson is null for every freshly created project, so `trimEnd` loads
+   * as 0 — and the duration only arrives later, from the player's metadata.
+   * Nothing bridged the two, so the editor opened believing you had kept
+   * nothing: "0:00 of 0:42 kept", output length zero, and Save draft and
+   * Publish changes both dead. The editor was unusable until you happened to
+   * drag the End slider. */
+  const defaultedTrim = useRef(false);
+  useEffect(() => {
+    if (videoDurationSec <= 0 || defaultedTrim.current) return;
+    // A saved or user-made trim is a real range; only an empty one is defaulted.
+    if (trimEndSec > trimStartSec) { defaultedTrim.current = true; return; }
+    defaultedTrim.current = true;
+
+    // Not an edit. Without this the record effect below would log it, so Undo
+    // would step back to the zero-length selection the user never chose.
+    applyingHistory.current = true;
+    setTrimEndSec(videoDurationSec);
+    // And the baseline moves with it, or the project reads as dirty on open and
+    // Publish lights up before anything has been changed.
+    setSavedTrimEnd(videoDurationSec);
+    setEditHistory((h) => resetHistory(h, {
+      trimStartSec, trimEndSec: videoDurationSec, cuts,
+    }));
+  }, [videoDurationSec, trimStartSec, trimEndSec, cuts]);
+
+  const applySnapshot = useCallback((snap: EditSnapshot) => {
+    applyingHistory.current = true;
+    setTrimStartSec(snap.trimStartSec);
+    setTrimEndSec(snap.trimEndSec);
+    setCuts(snap.cuts);
+  }, []);
+
+  const undoEdit = useCallback(() => {
+    setEditHistory((h) => {
+      if (!canUndo(h)) return h;
+      const next = undo(h);
+      applySnapshot(next.present);
+      return next;
+    });
+  }, [applySnapshot]);
+
+  const redoEdit = useCallback(() => {
+    setEditHistory((h) => {
+      if (!canRedo(h)) return h;
+      const next = redo(h);
+      applySnapshot(next.present);
+      return next;
+    });
+  }, [applySnapshot]);
 
   const addZoomKeyframe = useCallback((kf: ZoomKeyframe) => {
     setZoomKeyframes((prev) => [...prev, kf].sort((a, b) => a.timestamp - b.timestamp));
@@ -318,6 +464,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       try {
         const p = await fetchWithAuth<VideoProjectDto>(`/video-projects/${id}`);
         setCurrentProjectId(p.id);
+        setSourceRecordingId(p.recordingId ?? null);
         setProjectTitle(p.title);
         const src = p.videoUrl.startsWith('http') ? p.videoUrl : `${API_BASE_URL}${p.videoUrl}`;
         setEditorVideoSrc(src);
@@ -343,6 +490,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         ]);
         setSelectedClipId(clipId);
         setVideoDurationSec(0);
+        defaultedTrim.current = false;
         setMediaLibraryTab('your');
         try {
           const raw = sessionStorage.getItem(`video-editor-favorites-${id}`);
@@ -354,6 +502,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
           trimStart?: number;
           trimEnd?: number;
           playbackRate?: number;
+          cuts?: Cut[];
+          fadeInSec?: number;
+          fadeOutSec?: number;
+          normalizeAudio?: boolean;
         } | null;
         let ts = 0;
         let te = 0;
@@ -370,9 +522,19 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         setTrimStartSec(ts);
         setTrimEndSec(te);
         setPlaybackRate(pr);
+        // Re-normalised on load: a project saved by an older build, or edited
+        // by hand, must not put an invalid list into everything downstream.
+        setCuts(normalizeCuts(Array.isArray(tj?.cuts) ? tj.cuts : [], te || 0));
+        setFadeInSec(typeof tj?.fadeInSec === 'number' ? tj.fadeInSec : 0);
+        setFadeOutSec(typeof tj?.fadeOutSec === 'number' ? tj.fadeOutSec : 0);
+        setNormalizeAudio(tj?.normalizeAudio === true);
         setSavedPlaybackRate(pr);
         setSavedTitle(p.title);
         setSavedTrimStart(ts);
+        setEditHistory((h) => resetHistory(h, { trimStartSec: ts, trimEndSec: te, cuts: normalizeCuts(Array.isArray(tj?.cuts) ? tj.cuts : [], te || 0) }));
+        setSavedFadeInSec(typeof tj?.fadeInSec === 'number' ? tj.fadeInSec : 0);
+        setSavedFadeOutSec(typeof tj?.fadeOutSec === 'number' ? tj.fadeOutSec : 0);
+        setSavedCutsJson(JSON.stringify(normalizeCuts(Array.isArray(tj?.cuts) ? tj.cuts : [], te || 0)));
         setSavedTrimEnd(te);
         setSaveStatus('idle');
         setLocalEffectsApplied([]);
@@ -440,6 +602,71 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     revokeWorkingVideoBlob();
   }, [navigate, revokeWorkingVideoBlob]);
 
+  /** Export: encode the current edit and hand back a file.
+   *
+   * The Export button used to call setExportModal('settings'), and the only
+   * state anything rendered was 'progress' — so pressing it did nothing at all.
+   * This runs the same encoder the Apply path uses, so the file carries the
+   * trim, the cuts, the zoom regions and the audio gain, then downloads it and
+   * stages it. Staging is what unblocks Publish, which needs a real file rather
+   * than an edit plan. */
+  const exportEdit = useCallback(async () => {
+    const src = editorVideoSrc;
+    if (!src) return;
+    const d = videoDurationSec > 0 ? videoDurationSec : 120;
+    const end = trimEndSec > trimStartSec ? trimEndSec : d;
+    const start = Math.min(trimStartSec, Math.max(0, end - 0.1));
+
+    setExportProgress({ pct: 0, frame: 0, frames: 0 });
+    setExportModal('progress');
+    try {
+      const blob = await recordVideoSegmentToWebm(src, start, end, {
+        autoZoom,
+        metadata,
+        zoomKeyframes,
+        cuts,
+        audioGain: normalizeAudio ? audioGain : 1,
+        onProgress: setExportProgress,
+      });
+
+      const name = `${(projectTitle || 'export').replace(/[^\w-]+/g, '-').slice(0, 60)}.webm`;
+      const file = new File([blob], name, { type: blob.type || 'video/webm' });
+      // Staged before the download, so Publish is available even if the browser
+      // routes the download somewhere the user does not notice.
+      setStagedExport(file);
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+      // Revoked on a later tick: revoking immediately cancels the download in
+      // Chrome, which is a silent failure — the dialog closes and no file
+      // arrives.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+
+      setExportModal('closed');
+      setExportProgress(null);
+    } catch {
+      // The modal's failed state names the frame it stopped at, so the progress
+      // is deliberately left in place.
+      setExportModal('failed');
+    }
+  }, [
+    editorVideoSrc,
+    videoDurationSec,
+    trimStartSec,
+    trimEndSec,
+    autoZoom,
+    metadata,
+    zoomKeyframes,
+    cuts,
+    normalizeAudio,
+    audioGain,
+    projectTitle,
+    setStagedExport,
+  ]);
+
   const resetTrim = useCallback(() => {
     setTrimStartSec(0);
     setTrimEndSec(videoDurationSec || 99999);
@@ -462,15 +689,25 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
         autoZoom,
         metadata,
         zoomKeyframes,
+        cuts,
+        // 1 unless normalising is on and the level could actually be measured.
+        audioGain: normalizeAudio ? audioGain : 1,
       });
       revokeWorkingVideoBlob();
       const url = URL.createObjectURL(blob);
       workingVideoBlobUrlRef.current = url;
       setEditorVideoSrc(url);
-      const segmentSec = end - start;
+      // The baked clip already has the cuts taken out, so it is shorter than
+      // the trim range by exactly what they removed.
+      const segmentSec = outputDurationSec(start, end, cuts);
       setTrimStartSec(0);
       setTrimEndSec(segmentSec);
       setVideoDurationSec(segmentSec);
+      // And the cuts are now part of the footage, not pending edits. Left in
+      // place they would be re-applied against the new clip at source
+      // timestamps that no longer mean anything — removing a second, unrelated
+      // stretch of video every time Apply was pressed.
+      setCuts([]);
       const file = new File([blob], `trim-local-${Date.now()}.webm`, {
         type: blob.type || 'video/webm',
       });
@@ -490,7 +727,61 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setStagedExport,
     autoZoom,
     metadata,
+    cuts,
+    normalizeAudio,
+    audioGain,
   ]);
+
+  /** P7 E6.1 — replace the source capture's media with the current edit.
+   *
+   * Requires a baked file. Publishing the untouched original would be a no-op
+   * that still counts as a publish, so the caller must Apply first; the editor
+   * surfaces that rather than silently doing nothing.
+   *
+   * Deliberately does NOT confirm here. A context method that opens a dialog
+   * cannot be called from anywhere else, and the decision belongs with the UI
+   * that knows what it is about to overwrite. */
+  const publishToRecording = useCallback(async () => {
+    if (!sourceRecordingId) {
+      setPublishError('This project has no source capture to publish over.');
+      setPublishStatus('error');
+      return;
+    }
+    if (!stagedExportFile) {
+      setPublishError('Apply your edit first — there is nothing new to publish.');
+      setPublishStatus('error');
+      return;
+    }
+
+    setPublishStatus('publishing');
+    setPublishError(null);
+    try {
+      const ext = stagedExportFile.name.split('.').pop() || 'webm';
+      const fileName = `publish-${sourceRecordingId}-${Date.now()}.${ext}`;
+      const contentType = stagedExportFile.type || 'video/webm';
+      const { uploadUrl, fileUrl } = await fetchWithAuth<{ uploadUrl: string; fileUrl: string }>(
+        '/recordings/upload-url',
+        { method: 'POST', body: JSON.stringify({ fileName, contentType }) },
+      );
+      await uploadFile(uploadUrl, stagedExportFile, contentType);
+
+      const result = await fetchWithAuth<{ staleComments: number }>(
+        `/recordings/${sourceRecordingId}/publish`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            fileUrl,
+            durationSec: Math.round(Math.max(0, trimEndSec - trimStartSec)),
+          }),
+        },
+      );
+      setPublishStaleComments(result?.staleComments ?? 0);
+      setPublishStatus('done');
+    } catch (e) {
+      setPublishError(e instanceof Error ? e.message : 'Publish failed');
+      setPublishStatus('error');
+    }
+  }, [sourceRecordingId, stagedExportFile, trimStartSec, trimEndSec]);
 
   const hasUnsavedChanges = useMemo(() => {
     if (!currentProjectId) return false;
@@ -500,7 +791,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       projectTitle.trim() !== savedTitle.trim() ||
       trimStartSec !== savedTrimStart ||
       end !== savedEnd ||
-      playbackRate !== savedPlaybackRate;
+      playbackRate !== savedPlaybackRate ||
+      JSON.stringify(cuts) !== savedCutsJson ||
+      fadeInSec !== savedFadeInSec ||
+      fadeOutSec !== savedFadeOutSec;
     return dirtyEdit || !!stagedExportFile || localEffectsApplied.length > 0;
   }, [
     currentProjectId,
@@ -512,6 +806,12 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     savedTrimEnd,
     playbackRate,
     savedPlaybackRate,
+    cuts,
+    savedCutsJson,
+    fadeInSec,
+    fadeOutSec,
+    savedFadeInSec,
+    savedFadeOutSec,
     stagedExportFile,
     localEffectsApplied.length,
   ]);
@@ -525,6 +825,10 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       trimEnd: end,
       version: 1,
       playbackRate,
+      cuts,
+      fadeInSec,
+      fadeOutSec,
+      normalizeAudio,
     };
     setSaveStatus('saving');
     try {
@@ -561,6 +865,9 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       clearStagingRef(stagedBlobUrlRef, setStagedExportFile, setStagedExportLabel);
       setSavedTitle(title);
       setSavedTrimStart(trimStartSec);
+      setSavedCutsJson(JSON.stringify(cuts));
+      setSavedFadeInSec(fadeInSec);
+      setSavedFadeOutSec(fadeOutSec);
       setSavedTrimEnd(end);
       setSavedPlaybackRate(playbackRate);
       setSaveStatus('saved');
@@ -570,12 +877,21 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     } catch {
       setSaveStatus('error');
     }
+    // Every value the payload above reads has to be here. cuts, the two fades
+    // and normalizeAudio were missing, so this callback kept the identity it
+    // had at mount and saved their initial values: remove six silences, press
+    // Save draft, and the PATCH went out with `cuts: []`. The UI showed the
+    // edit, the save reported success, and the work was gone on reload.
   }, [
     currentProjectId,
     projectTitle,
     trimStartSec,
     trimEndSec,
     playbackRate,
+    cuts,
+    fadeInSec,
+    fadeOutSec,
+    normalizeAudio,
     stagedExportFile,
     refreshProjects,
     revokeWorkingVideoBlob,
@@ -604,6 +920,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       setSelectedClipId,
       exportModal,
       setExportModal,
+      exportProgress,
+      exportEdit,
       shareModal,
       setShareModal,
       hasTimelineContent,
@@ -648,6 +966,26 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       confirmUnsavedLeave,
       autoZoom,
       metadata,
+      fadeInSec,
+      fadeOutSec,
+      setFadeInSec,
+      setFadeOutSec,
+      normalizeAudio,
+      setNormalizeAudio,
+      audioGain,
+      setAudioGain,
+      sourceRecordingId,
+      publishToRecording,
+      publishStatus,
+      publishError,
+      publishStaleComments,
+      cuts,
+      addCut,
+      removeCut,
+      undoEdit,
+      redoEdit,
+      canUndoEdit: canUndo(editHistory),
+      canRedoEdit: canRedo(editHistory),
       zoomKeyframes,
       addZoomKeyframe,
       updateZoomKeyframe,
@@ -666,6 +1004,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       clips,
       selectedClipId,
       exportModal,
+      exportProgress,
+      exportEdit,
       shareModal,
       hasTimelineContent,
       addMediaToTimeline,
@@ -703,6 +1043,25 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       confirmUnsavedLeave,
       autoZoom,
       metadata,
+      fadeInSec,
+      fadeOutSec,
+      setFadeInSec,
+      setFadeOutSec,
+      normalizeAudio,
+      setNormalizeAudio,
+      audioGain,
+      setAudioGain,
+      sourceRecordingId,
+      publishToRecording,
+      publishStatus,
+      publishError,
+      publishStaleComments,
+      cuts,
+      addCut,
+      removeCut,
+      undoEdit,
+      redoEdit,
+      editHistory,
       zoomKeyframes,
       addZoomKeyframe,
       updateZoomKeyframe,

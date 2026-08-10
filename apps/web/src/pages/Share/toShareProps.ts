@@ -59,8 +59,11 @@ export function toShareComments(
     body: comment.content,
     createdAt: comment.createdAt,
     anchor: anchorOf(comment),
-    needsReply: owed && comment.id === newest?.id,
-    resolved: false,
+    // A settled question is no longer owed, however recent it is — otherwise
+    // resolving a comment would leave its coral marker burning on the timeline.
+    needsReply: owed && comment.id === newest?.id && !comment.resolvedAt,
+    // Settled in the database (P7 V3); previously hard-coded false.
+    resolved: !!comment.resolvedAt,
     index: i + 1,
   }));
 }
