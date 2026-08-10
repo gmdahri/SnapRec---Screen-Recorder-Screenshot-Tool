@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { renderToStaticMarkup } from 'react-dom/server';
+import puppeteer from 'puppeteer';
 import { VideoViewer, type ViewerCapture } from '../VideoViewer';
 import type { ShareComment } from '../anchors';
 
@@ -156,15 +161,16 @@ describe('the side rail', () => {
 
   it('shows Transcript as an unavailable tab', () => {
     render(<VideoViewer {...base} />);
-    expect(screen.getByRole('tab', { name: /Transcript/ }))
-      .toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('tab', { name: /Transcript/ })).toBeDisabled();
+    const transcript = screen.getByRole('tab', { name: 'Transcript —' });
+    expect(transcript).toHaveTextContent('Transcript —');
+    expect(transcript).toHaveAttribute('aria-disabled', 'true');
+    expect(transcript).toBeDisabled();
   });
 
   it('keeps the supported tabs alongside the unavailable transcript', () => {
     render(<VideoViewer {...base} />);
     expect(screen.getAllByRole('tab').map(t => t.textContent))
-      .toEqual(['Comments 2', 'Transcript', 'Details']);
+      .toEqual(['Comments 2', 'Transcript —', 'Details']);
   });
 
   it('shows details of the capture on the details tab', async () => {
@@ -180,6 +186,76 @@ describe('the side rail', () => {
     render(<VideoViewer {...base} currentMs={72_000} />);
     expect(screen.getByTestId('viewer-rail')).toHaveTextContent('1:12');
   });
+});
+
+describe('desktop rail geometry', () => {
+  it('constrains a long desktop thread but lets the stacked rail grow naturally', async () => {
+    const css = await readFile(resolve(process.cwd(), 'src/index.css'), 'utf8');
+    const longThread = Array.from({ length: 30 }, (_, index): ShareComment => ({
+      ...comments[0],
+      id: `long-${index}`,
+      body: `Comment ${index} needs enough room to make the rail overflow.`,
+      index,
+    }));
+    const markup = renderToStaticMarkup(<VideoViewer {...base} comments={longThread} />);
+    const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const browser = await puppeteer.launch({
+      headless: true,
+      ...(existsSync(systemChrome) ? { executablePath: systemChrome } : {}),
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+      await page.setContent(`<style>${css}\nbody { margin: 0; }</style>${markup}`);
+
+      const geometry = await page.evaluate(() => {
+        const stage = document.querySelector<HTMLElement>('.sr-viewer-stage');
+        const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
+        const composer = rail?.lastElementChild as HTMLElement | null;
+        const scrollArea = Array.from(rail?.children ?? []).find((child) => (
+          getComputedStyle(child).overflowY === 'auto'
+        )) as HTMLElement | undefined;
+
+        if (!stage || !rail || !composer || !scrollArea) {
+          throw new Error('Viewer geometry fixture did not render the expected regions');
+        }
+
+        const stageRect = stage.getBoundingClientRect();
+        const railRect = rail.getBoundingClientRect();
+        const composerRect = composer.getBoundingClientRect();
+        return {
+          stageHeight: stageRect.height,
+          railHeight: railRect.height,
+          railBottom: railRect.bottom,
+          composerBottom: composerRect.bottom,
+          scrollHeight: scrollArea.scrollHeight,
+          scrollClientHeight: scrollArea.clientHeight,
+        };
+      });
+
+      expect(Math.abs(geometry.stageHeight - geometry.railHeight)).toBeLessThan(1);
+      expect(Math.abs(geometry.railBottom - geometry.composerBottom)).toBeLessThan(1);
+      expect(geometry.scrollHeight).toBeGreaterThan(geometry.scrollClientHeight);
+
+      await page.setViewport({ width: 1023, height: 900, deviceScaleFactor: 1 });
+      const stackedGeometry = await page.evaluate(() => {
+        const stage = document.querySelector<HTMLElement>('.sr-viewer-stage');
+        const rail = document.querySelector<HTMLElement>('.sr-viewer-rail');
+        if (!stage || !rail) throw new Error('Stacked viewer regions were not rendered');
+        return {
+          stageHeight: stage.getBoundingClientRect().height,
+          railHeight: rail.getBoundingClientRect().height,
+          railOverflow: getComputedStyle(rail).overflow,
+        };
+      });
+
+      expect(stackedGeometry.railHeight).toBeGreaterThan(stackedGeometry.stageHeight);
+      expect(stackedGeometry.railOverflow).toBe('visible');
+    } finally {
+      await browser.close();
+    }
+  }, 15_000);
 });
 
 describe('the composer is actually wired to the playhead', () => {

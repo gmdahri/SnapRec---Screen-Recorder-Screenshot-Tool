@@ -203,11 +203,10 @@ export function VideoViewer({
             the window's right edge, which on a wide screen left several hundred
             pixels of empty paper between the two.
 
-            Row height comes from the frame's aspect ratio, and the rail is
-            stretched to match it — hence `minHeight: 0` on the rail, without
-            which its content would set the row height and the two would
-            disagree. Below 1024px the rail stacks under the media rather than
-            becoming an overlay, so nothing covers the video. */}
+            Row height comes from the frame's aspect ratio. The rail contributes
+            no intrinsic desktop height, then stretches to that row while its
+            thread scrolls internally. Below 1024px it returns to natural height
+            and stacks under the media, so nothing covers the video. */}
         <div className="sr-viewer-workspace">
           {/* The player is fluid inside the workspace's main column. The video
               remains object-contain so an off-ratio frame letterboxes instead
@@ -243,8 +242,6 @@ export function VideoViewer({
                   disabled={disabled}
                   aria-disabled={disabled ? 'true' : undefined}
                   aria-selected={selected}
-                  aria-label={disabled ? label : undefined}
-                  className={disabled ? 'sr-viewer-tab-disabled' : undefined}
                   onClick={() => {
                     if (key !== 'transcript') setTab(key);
                   }}
@@ -257,7 +254,7 @@ export function VideoViewer({
                       : 'var(--sr-text-muted-on-light)',
                     boxShadow: selected ? 'inset 0 -2px 0 var(--sr-cyan-on-light)' : 'none',
                   }}
-                >{disabled ? label.replace(' —', '') : label}</button>
+                >{label}</button>
               );
             })}
           </div>
