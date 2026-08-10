@@ -17,9 +17,15 @@ export interface ZoomKeyframe {
   y: number;          // pivot Y as % of video height (0–100)
   scale: number;      // zoom level 1.1–3.0
   duration: number;   // total zoom window in ms
+  /** Where it came from. Optional so timelineJson saved before this field
+   * still loads; absent reads as 'manual'. */
+  source?: 'auto' | 'manual';
 }
 
-export type ExportModalState = 'closed' | 'settings' | 'progress';
+/** 'settings' is gone: nothing ever rendered it, so the Export button — which
+ * set exactly that — did nothing at all. 'failed' is what ExportModal's second
+ * state has always been built for. */
+export type ExportModalState = 'closed' | 'progress' | 'failed';
 
 export type MediaLibraryTab = 'your' | 'favorites';
 

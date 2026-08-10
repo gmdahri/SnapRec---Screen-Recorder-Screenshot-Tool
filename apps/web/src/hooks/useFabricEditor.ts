@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { createArrow } from '../lib/CanvasUtils';
+import { clampZoom, fitZoom } from '../pages/Editor/zoom';
 
 export const useFabricEditor = () => {
     const [activeTool, setActiveTool] = useState('select');
@@ -14,6 +15,10 @@ export const useFabricEditor = () => {
     const [isInitializing, setIsInitializing] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    /** The well the artboard sits in. Held as a ref rather than looked up by
+     * class name: the previous `.canvas-bg` selector outlived the element it
+     * named, and a null lookup silently became "open at 100%". */
+    const canvasWellRef = useRef<HTMLDivElement>(null);
     const fabricCanvas = useRef<fabric.Canvas | null>(null);
     const isDrawing = useRef(false);
     const startPoint = useRef<{ x: number; y: number } | null>(null);
@@ -112,7 +117,7 @@ export const useFabricEditor = () => {
     const handleSetZoom = useCallback((newZoom: number) => {
         const canvas = fabricCanvas.current;
         if (!canvas) return;
-        const zoom = Math.max(0.1, Math.min(5, newZoom));
+        const zoom = clampZoom(newZoom);
         setZoomLevel(zoom);
         canvas.setZoom(zoom);
         const bgImg = canvas.backgroundImage as fabric.Image;
@@ -340,21 +345,11 @@ export const useFabricEditor = () => {
                 });
 
                 canvas.setBackgroundImage(img, () => {
-                    console.log('Background image set, calculating zoom...');
-                    // Calculate initial fit zoom
-                    const container = document.querySelector('.canvas-bg');
-                    if (container && container.clientWidth > 0) {
-                        const padding = 100;
-                        const availableWidth = container.clientWidth - padding;
-                        const availableHeight = container.clientHeight - padding;
-                        const scaleX = availableWidth / imgWidth;
-                        const scaleY = availableHeight / imgHeight;
-                        const fitZoom = Math.min(scaleX, scaleY, 1);
-                        console.log('Setting fit zoom:', fitZoom);
-                        handleSetZoom(fitZoom);
-                    } else {
-                        handleSetZoom(1);
-                    }
+                    const well = canvasWellRef.current;
+                    handleSetZoom(fitZoom(
+                        { width: well?.clientWidth ?? 0, height: well?.clientHeight ?? 0 },
+                        { width: imgWidth, height: imgHeight },
+                    ));
 
                     canvas.renderAll();
                     saveState(); // Save initial state
@@ -369,6 +364,7 @@ export const useFabricEditor = () => {
 
     return {
         canvasRef,
+        canvasWellRef,
         fabricCanvas,
         activeTool,
         strokeColor,

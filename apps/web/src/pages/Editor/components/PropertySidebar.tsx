@@ -1,102 +1,119 @@
-import React from 'react';
-import { useEditor } from '../context/EditorContext';
-import { GoogleAd } from '../../../components';
+export type Selection =
+  | { kind: 'redaction'; w: number; h: number }
+  | { kind: 'step'; index: number }
+  | { kind: 'text'; size: number; weight: number }
+  | { kind: 'shape'; w: number; h: number };
 
-export const PropertySidebar: React.FC = () => {
-    const {
-        activeTool, strokeColor, setStrokeColor, strokeWidth,
-        setStrokeWidth, handleToolChange, capturedImage
-    } = useEditor();
+export interface PropertySidebarProps {
+  selection: Selection | null;
+  onChange: (patch: Record<string, unknown>) => void;
+  onRenumber?: () => void;
+}
 
-    return (
-        <aside className="w-72 min-w-[18rem] shrink-0 grow-0 border-l border-[#ece7f4] dark:border-[#2d2245] bg-white dark:bg-[#1c142b] flex flex-col overflow-y-auto min-h-[400px]" style={{ contain: 'layout', width: '18rem' }}>
-            <div className="p-5 border-b border-[#ece7f4] dark:border-[#2d2245]">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#6c499c]">Properties</h3>
-            </div>
+/** I4 — exists only when something is selected.
+ *
+ * Dimensions appear only while an object is active, never as persistent
+ * chrome: a panel that always shows numbers trains people to stop reading it. */
+export function PropertySidebar({ selection, onChange, onRenumber }: PropertySidebarProps) {
+  if (!selection) return null;
 
-            <div className="p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                        <span className="material-symbols-outlined text-[20px]">draw</span>
-                    </div>
-                    <span className="text-sm font-semibold">Arrow Style</span>
-                </div>
-                <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <label className="text-xs font-medium opacity-60">Stroke Weight</label>
-                            <span className="text-xs font-bold">{strokeWidth}px</span>
-                        </div>
-                        <input
-                            className="w-full h-1.5 bg-[#ece7f4] dark:bg-[#2d2245] rounded-full appearance-none accent-primary"
-                            type="range"
-                            min="1"
-                            max="20"
-                            value={strokeWidth}
-                            onChange={(e) => setStrokeWidth(parseInt(e.target.value))}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-medium opacity-60">Color</label>
-                        <div className="grid grid-cols-6 gap-2">
-                            {['#8B5CF6', '#ef4444', '#10b981', '#f59e0b', '#3b82f6'].map(color => (
-                                <div
-                                    key={color}
-                                    onClick={() => setStrokeColor(color)}
-                                    className={`size-6 rounded-full cursor-pointer transition-all ${strokeColor === color ? 'border-2 border-white dark:border-[#1c142b] ring-2 ring-primary' : ''}`}
-                                    style={{ backgroundColor: color }}
-                                ></div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
+  return (
+    <aside style={{
+      width: 240, flex: 'none', padding: 16,
+      background: 'var(--sr-surface-panel-dark)',
+      color: 'var(--sr-text-primary-on-dark)',
+      borderLeft: '1px solid var(--sr-border-dark-soft)',
+      display: 'flex', flexDirection: 'column', gap: 12,
+    }}>
+      {selection.kind === 'redaction' && (
+        <>
+          <span style={mono}>redacted · {selection.w} × {selection.h}</span>
+          {/* The distinction that matters: one is reversible, the other is not. */}
+          <p style={help}>
+            Redact removes the pixels. Blur can sometimes be reversed, so use
+            redact for anything sensitive.
+          </p>
+        </>
+      )}
 
-            <div className="h-[1px] bg-[#ece7f4] dark:bg-[#2d2245] mx-5"></div>
+      {selection.kind === 'shape' && (
+        <span style={mono}>shape · {selection.w} × {selection.h}</span>
+      )}
 
-            <div className="p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500">
-                        <span className="material-symbols-outlined text-[20px]">privacy_tip</span>
-                    </div>
-                    <span className="text-sm font-semibold">Privacy Tools</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <button
-                        onClick={() => handleToolChange('blur')}
-                        title="Blur sensitive areas"
-                        className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${activeTool === 'blur' ? 'bg-primary/10 border-primary text-primary' : 'border-[#ece7f4] dark:border-[#2d2245] hover:bg-background-light dark:hover:bg-background-dark'}`}
-                    >
-                        <span className="material-symbols-outlined">blur_on</span>
-                        <span className="text-[10px] font-bold">Blur</span>
-                    </button>
-                    <button
-                        onClick={() => handleToolChange('pixelate')}
-                        title="Pixelate sensitive areas"
-                        className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${activeTool === 'pixelate' ? 'bg-primary/10 border-primary text-primary' : 'border-[#ece7f4] dark:border-[#2d2245] hover:bg-background-light dark:hover:bg-background-dark'}`}
-                    >
-                        <span className="material-symbols-outlined">grid_view</span>
-                        <span className="text-[10px] font-bold">Pixelate</span>
-                    </button>
-                </div>
-            </div>
+      {selection.kind === 'step' && (
+        <>
+          <span style={mono}>step {selection.index}</span>
+          {/* Steps are content: they get reordered, and a gap in the numbering
+              reads as a mistake rather than a deletion. */}
+          <p style={help}>
+            Steps renumber themselves in reading order, so deleting one never
+            leaves a gap.
+          </p>
+          <button type="button" onClick={onRenumber} style={action}>Renumber in order</button>
+        </>
+      )}
 
-            <div className="p-4 border-t border-[#ece7f4] dark:border-[#2d2245] h-[200px] min-h-[200px] overflow-hidden shrink-0">
-                <GoogleAd
-                    className="scale-90 origin-top"
-                    style={{ minHeight: '200px', height: '200px' }}
-                    slotId={import.meta.env.VITE_ADSENSE_EDITOR_SLOT}
-                />
-            </div>
+      {selection.kind === 'text' && (
+        <>
+          <label style={field}>
+            <span style={labelText}>Size</span>
+            <input
+              type="number"
+              min={8}
+              max={96}
+              aria-label="Text size"
+              value={selection.size}
+              onChange={e => onChange({ size: Number(e.target.value) })}
+              style={input}
+            />
+          </label>
 
-            <div className="h-[1px] bg-[#ece7f4] dark:bg-[#2d2245] mx-5"></div>
+          <label style={field}>
+            <span style={labelText}>Weight</span>
+            <select
+              aria-label="Text weight"
+              value={selection.weight}
+              onChange={e => onChange({ weight: Number(e.target.value) })}
+              style={input}
+            >
+              <option value={400}>Regular</option>
+              <option value={600}>Semibold</option>
+              <option value={700}>Bold</option>
+            </select>
+          </label>
+        </>
+      )}
+    </aside>
+  );
+}
 
-            <div className="mt-auto p-4 bg-background-light dark:bg-[#1c142b]/50 border-t border-[#ece7f4] dark:border-[#2d2245]">
-                <div className="flex items-center justify-between text-[11px] font-medium opacity-60">
-                    <span>Captured just now</span>
-                    <span>{capturedImage ? `${(capturedImage.length / 1024 / 1.33).toFixed(1)} KB` : '0 KB'}</span>
-                </div>
-            </div>
-        </aside>
-    );
-};
+const mono = {
+  fontFamily: 'var(--sr-font-mono)', fontSize: 10.5,
+  color: 'var(--sr-text-faint-on-dark)',
+} as const;
+
+const help = {
+  margin: 0, fontSize: 11.5, lineHeight: 1.55,
+  color: 'var(--sr-text-secondary-on-dark)',
+} as const;
+
+const field = { display: 'flex', flexDirection: 'column', gap: 5 } as const;
+
+const labelText = {
+  fontFamily: 'var(--sr-font-mono)', fontSize: 9.5,
+  letterSpacing: '.1em', color: 'var(--sr-text-faint-on-dark)',
+} as const;
+
+const input = {
+  height: 'var(--sr-h-xs)', padding: '0 8px',
+  border: '1px solid var(--sr-border-dark)',
+  background: 'var(--sr-surface-carbon)',
+  color: 'var(--sr-text-primary-on-dark)',
+  fontSize: 12, borderRadius: 'var(--sr-radius-control)',
+} as const;
+
+const action = {
+  height: 'var(--sr-h-xs)', border: '1px solid var(--sr-border-dark)',
+  background: 'transparent', color: 'var(--sr-text-primary-on-dark)',
+  fontSize: 12, cursor: 'pointer', borderRadius: 'var(--sr-radius-control)',
+} as const;

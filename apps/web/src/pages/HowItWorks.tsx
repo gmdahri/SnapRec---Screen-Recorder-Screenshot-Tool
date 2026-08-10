@@ -10,8 +10,8 @@ const steps = [
         description:
             'Add SnapRec to Chrome, Edge, or Brave in one click — free, no sign-up required. The extension icon appears in your toolbar instantly.',
         color: 'from-primary to-violet-600',
-        bgColor: 'bg-primary/10',
-        iconColor: 'text-primary',
+        bgColor: 'bg-[var(--sr-cyan)]/10',
+        iconColor: 'text-[var(--sr-cyan-on-light)]',
     },
     {
         number: '02',
@@ -111,7 +111,7 @@ const howToJsonLd = {
 
 const HowItWorks: React.FC = () => {
     return (
-        <div className="min-h-screen bg-white text-slate-900 font-display">
+        <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display">
             <SEO
                 url="/how-it-works"
                 title="How to Record Your Screen & Take Screenshots in Chrome"
@@ -126,7 +126,7 @@ const HowItWorks: React.FC = () => {
                 <section className="relative pt-32 pb-16 overflow-hidden">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
                         <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[60%] bg-blue-400/10 rounded-full blur-[120px]" />
-                        <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[60%] bg-primary/10 rounded-full blur-[120px]" />
+                        <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[60%] bg-[var(--sr-cyan)]/10 rounded-full blur-[120px]" />
                     </div>
 
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -137,7 +137,7 @@ const HowItWorks: React.FC = () => {
                             </span>{' '}
                             Works
                         </h1>
-                        <p className="max-w-2xl mx-auto text-xl text-slate-500 leading-relaxed">
+                        <p className="max-w-2xl mx-auto text-xl text-[var(--sr-text-faint-on-light)] leading-relaxed">
                             From install to share in under 60 seconds. No accounts, no watermarks, no limits.
                         </p>
                     </div>
@@ -146,7 +146,7 @@ const HowItWorks: React.FC = () => {
                 {/* Video */}
                 <section className="py-8">
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 aspect-video">
+                        <div className="relative w-full rounded-[2px] overflow-hidden border border-[var(--sr-border-light-soft)] shadow-xl bg-[var(--sr-surface-carbon)] aspect-video">
                             <iframe
                                 src="https://www.youtube.com/embed/tEY5kA97Zq8?start=2"
                                 title="How to use SnapRec - Screen recorder & screenshot tool"
@@ -156,7 +156,7 @@ const HowItWorks: React.FC = () => {
                                 className="absolute inset-0 w-full h-full"
                             />
                         </div>
-                        <p className="text-center text-slate-500 text-sm mt-4">Watch the full walkthrough, then follow the steps below.</p>
+                        <p className="text-center text-[var(--sr-text-faint-on-light)] text-sm mt-4">Watch the full walkthrough, then follow the steps below.</p>
                     </div>
                 </section>
 
@@ -172,12 +172,12 @@ const HowItWorks: React.FC = () => {
                                 >
                                     {/* Number + Icon */}
                                     <div className="flex-shrink-0 relative">
-                                        <div className={`size-32 md:size-40 rounded-3xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-xl`}>
+                                        <div className={`size-32 md:size-40 rounded-[2px] bg-gradient-to-br ${step.color} flex items-center justify-center shadow-xl`}>
                                             <span className="material-symbols-outlined text-white text-6xl md:text-7xl">
                                                 {step.icon}
                                             </span>
                                         </div>
-                                        <div className="absolute -top-3 -left-3 size-10 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-black shadow-lg">
+                                        <div className="absolute -top-3 -left-3 size-10 rounded-full bg-[var(--sr-surface-carbon)] text-white flex items-center justify-center text-sm font-black shadow-lg">
                                             {step.number}
                                         </div>
                                     </div>
@@ -185,7 +185,7 @@ const HowItWorks: React.FC = () => {
                                     {/* Text */}
                                     <div className="text-center md:text-left flex-1">
                                         <h2 className="text-3xl font-black mb-3">{step.title}</h2>
-                                        <p className="text-slate-500 text-lg leading-relaxed max-w-lg">
+                                        <p className="text-[var(--sr-text-faint-on-light)] text-lg leading-relaxed max-w-lg">
                                             {step.description}
                                         </p>
                                     </div>
@@ -196,24 +196,24 @@ const HowItWorks: React.FC = () => {
                 </section>
 
                 {/* Use Cases */}
-                <section className="py-20 bg-slate-50/50">
+                <section className="py-20 bg-[var(--sr-surface-panel-light)]/50">
                     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-14">
                             <h2 className="text-4xl font-black mb-4">Built for every workflow</h2>
-                            <p className="text-slate-500 font-medium">See how teams use SnapRec every day.</p>
+                            <p className="text-[var(--sr-text-faint-on-light)] font-medium">See how teams use SnapRec every day.</p>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             {useCases.map((uc, idx) => (
                                 <div
                                     key={idx}
-                                    className="bg-white border border-slate-200 rounded-2xl p-8 hover:shadow-lg transition-shadow duration-300 group"
+                                    className="bg-[var(--sr-surface-paper)] border border-[var(--sr-border-light-soft)] rounded-[2px] p-8 hover:shadow-lg transition-shadow duration-300 group"
                                 >
-                                    <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-5 group-hover:scale-110 transition-transform duration-300">
+                                    <div className="size-14 rounded-[2px] bg-[var(--sr-cyan)]/10 flex items-center justify-center text-[var(--sr-cyan-on-light)] mb-5 group-hover:scale-110 transition-transform duration-300">
                                         <span className="material-symbols-outlined text-3xl">{uc.icon}</span>
                                     </div>
                                     <h3 className="text-xl font-black mb-2">{uc.title}</h3>
-                                    <p className="text-slate-500 text-sm leading-relaxed">{uc.description}</p>
+                                    <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{uc.description}</p>
                                 </div>
                             ))}
                         </div>
@@ -224,7 +224,7 @@ const HowItWorks: React.FC = () => {
                 <section className="py-20">
                     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                         <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Common Questions</h2>
-                        <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">Things people ask before they install — answered honestly.</p>
+                        <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">Things people ask before they install — answered honestly.</p>
                         <div className="divide-y divide-slate-100">
                             {[
                                 {
@@ -253,8 +253,8 @@ const HowItWorks: React.FC = () => {
                                 },
                             ].map((faq) => (
                                 <div key={faq.q} className="py-7">
-                                    <h3 className="font-black text-slate-900 mb-3">{faq.q}</h3>
-                                    <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+                                    <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-3">{faq.q}</h3>
+                                    <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{faq.a}</p>
                                 </div>
                             ))}
                         </div>
@@ -265,14 +265,14 @@ const HowItWorks: React.FC = () => {
                 <section className="py-24 text-center">
                     <div className="max-w-3xl mx-auto px-4">
                         <h2 className="text-4xl font-black mb-6">Ready to try it?</h2>
-                        <p className="text-slate-500 text-lg mb-10">
+                        <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-10">
                             Install SnapRec now — it takes less than 10 seconds.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                             <AddToChromeButton size="xl" />
                             <NavLink
                                 to="/login"
-                                className="text-slate-600 hover:text-primary font-bold text-lg px-6 py-4 transition-all"
+                                className="text-[var(--sr-text-muted-on-light)] hover:text-[var(--sr-cyan-on-light)] font-bold text-lg px-6 py-4 transition-all"
                             >
                                 Or sign in to your dashboard →
                             </NavLink>

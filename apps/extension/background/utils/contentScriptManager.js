@@ -3,7 +3,11 @@ const ContentScriptManager = {
     async inject(tabId, options = {}) {
         const {
             waitTime = 250,
-            jsFiles = ['content/content.js'],
+            // webcam.js first: it defines globalThis.SnapRecWebcam, which
+            // content.js reads for the overlay's shape and status rules. Until
+            // now nothing injected it, so that tested module had no consumer
+            // and the rules lived nowhere.
+            jsFiles = ['content/webcam.js', 'content/content.js'],
             cssFiles = ['content/content.css']
         } = options;
 

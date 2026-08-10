@@ -13,20 +13,20 @@ export const AddToChromeButton: React.FC<AddToChromeButtonProps> = ({
     size = 'md',
     className = '',
 }) => {
-    const baseStyles = "flex items-center justify-center gap-3 font-bold transition-all rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md group";
+    const baseStyles = "flex items-center justify-center gap-3 font-bold transition-all rounded-[2px] shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md group";
 
     const variants = {
-        primary: "bg-primary hover:bg-primary/90 text-white shadow-primary/30",
+        primary: "bg-[var(--sr-cyan)] hover:bg-[var(--sr-cyan)]/90 text-white shadow-primary/30",
         secondary: "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/30",
-        outline: "bg-transparent border-2 border-primary text-primary hover:bg-primary/5 shadow-none",
-        white: "bg-white text-slate-900 hover:bg-slate-50 shadow-slate-200/50",
+        outline: "bg-transparent border-2 border-primary text-[var(--sr-cyan-on-light)] hover:bg-[var(--sr-cyan)]/5 shadow-none",
+        white: "bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] hover:bg-[var(--sr-surface-panel-light)] shadow-slate-200/50",
     };
 
     const sizes = {
-        sm: "px-4 py-2 text-sm rounded-xl gap-2",
-        md: "px-6 py-3 text-base rounded-xl gap-2.5",
-        lg: "px-8 py-4 text-lg rounded-2xl gap-3",
-        xl: "px-10 py-5 text-xl rounded-2xl gap-4",
+        sm: "px-4 py-2 text-sm rounded-[2px] gap-2",
+        md: "px-6 py-3 text-base rounded-[2px] gap-2.5",
+        lg: "px-8 py-4 text-lg rounded-[2px] gap-3",
+        xl: "px-10 py-5 text-xl rounded-[2px] gap-4",
     };
 
     return (

@@ -10,6 +10,9 @@ interface AuthContextType {
     guestId: string | null;
     loading: boolean;
     signInWithGoogle: () => Promise<void>;
+    /** Passwordless one-time link. Resolves with an error message, or null on
+     * success — the caller shows it inline rather than a thrown exception. */
+    signInWithMagicLink: (email: string) => Promise<string | null>;
     signOut: () => Promise<void>;
 }
 
@@ -93,6 +96,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     }, []);
 
+    const signInWithMagicLink = useCallback(async (email: string) => {
+        hasClaimedRef.current = false;
+        const currentPath = window.location.pathname + window.location.search;
+        localStorage.setItem('auth_return_path', currentPath);
+
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
+
+        // Returned rather than thrown: the sign-in panel renders it beside the
+        // field, and an uncaught rejection here would blank the page the user
+        // was trying to get back to.
+        return error ? error.message : null;
+    }, []);
+
     const signOut = useCallback(async () => {
         hasClaimedRef.current = false;
         const { error } = await supabase.auth.signOut();
@@ -107,8 +126,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         guestId,
         loading,
         signInWithGoogle,
+        signInWithMagicLink,
         signOut
-    }), [user, session, guestId, loading, signInWithGoogle, signOut]);
+    }), [user, session, guestId, loading, signInWithGoogle, signInWithMagicLink, signOut]);
 
     return (
         <AuthContext.Provider value={value}>

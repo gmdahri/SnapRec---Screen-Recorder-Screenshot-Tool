@@ -111,7 +111,7 @@ const faqs = [
 ];
 
 const ScreenRecorderForTeachers: React.FC = () => (
-    <div className="min-h-screen bg-white text-slate-900 font-display antialiased">
+    <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
         <SEO
             url="/screen-recorder-for-teachers"
             title="Free Screen Recorder for Teachers & Schools — No Watermarks"
@@ -125,11 +125,11 @@ const ScreenRecorderForTeachers: React.FC = () => (
             {/* Hero */}
             <section className="relative pt-36 pb-16 overflow-hidden">
                 <div className="absolute inset-0 -z-10 pointer-events-none">
-                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/6 rounded-full blur-[120px]" />
+                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[var(--sr-cyan)]/6 rounded-full blur-[120px]" />
                     <div className="absolute top-1/4 right-0 w-[400px] h-[400px] bg-blue-400/6 rounded-full blur-[100px]" />
                 </div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-200 text-primary text-sm font-bold px-4 py-2 rounded-full mb-8">
+                    <div className="inline-flex items-center gap-2 bg-[var(--sr-cyan-tint)] border border-[var(--sr-cyan)] text-[var(--sr-cyan-on-light)] text-sm font-bold px-4 py-2 rounded-full mb-8">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         Free for teachers — No account needed
                     </div>
@@ -140,14 +140,14 @@ const ScreenRecorderForTeachers: React.FC = () => (
                             Built for Teachers.
                         </span>
                     </h1>
-                    <p className="text-lg sm:text-xl text-slate-500 mb-10 leading-relaxed max-w-2xl mx-auto">
+                    <p className="text-lg sm:text-xl text-[var(--sr-text-faint-on-light)] mb-10 leading-relaxed max-w-2xl mx-auto">
                         Record lessons, walkthroughs, and student feedback with webcam overlay.{' '}
-                        <span className="font-semibold text-slate-700">No watermarks, no time limits, no $49/year. Works on Chromebook.</span>
+                        <span className="font-semibold text-[var(--sr-text-primary-on-light)]">No watermarks, no time limits, no $49/year. Works on Chromebook.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
                         <AddToChromeButton size="xl" />
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
+                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['No watermarks ever', '∞ Unlimited recording', 'Works on Chromebook', 'No account needed'].map((t) => (
                             <span key={t} className="flex items-center gap-1.5">
                                 <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
@@ -159,16 +159,16 @@ const ScreenRecorderForTeachers: React.FC = () => (
             </section>
 
             {/* Use Cases */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">How Teachers Use SnapRec</h2>
-                    <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">From lesson recordings to student feedback — one free tool for every classroom need.</p>
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">From lesson recordings to student feedback — one free tool for every classroom need.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {useCases.map((u) => (
-                            <div key={u.title} className="bg-white rounded-2xl p-7 border border-slate-100 hover:shadow-md transition-shadow">
+                            <div key={u.title} className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)] hover:shadow-md transition-shadow">
                                 <div className="text-3xl mb-4">{u.icon}</div>
-                                <h3 className="font-black text-slate-900 text-lg mb-2">{u.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{u.desc}</p>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] text-lg mb-2">{u.title}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{u.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -179,22 +179,22 @@ const ScreenRecorderForTeachers: React.FC = () => (
             <section className="py-20">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">SnapRec vs Screencastify for Teachers</h2>
-                    <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">Everything Screencastify charges $49/year for, SnapRec gives teachers free.</p>
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
-                        <table className="w-full text-sm bg-white">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">Everything Screencastify charges $49/year for, SnapRec gives teachers free.</p>
+                    <div className="overflow-x-auto rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm">
+                        <table className="w-full text-sm bg-[var(--sr-surface-paper)]">
                             <thead>
-                                <tr className="border-b border-slate-100">
-                                    <th className="text-left p-5 font-black text-slate-700 w-1/3">Feature</th>
-                                    <th className="p-5 font-black text-primary text-center">SnapRec (Free)</th>
-                                    <th className="p-5 font-black text-slate-500 text-center">Screencastify</th>
+                                <tr className="border-b border-[var(--sr-border-light-soft)]">
+                                    <th className="text-left p-5 font-black text-[var(--sr-text-primary-on-light)] w-1/3">Feature</th>
+                                    <th className="p-5 font-black text-[var(--sr-cyan-on-light)] text-center">SnapRec (Free)</th>
+                                    <th className="p-5 font-black text-[var(--sr-text-faint-on-light)] text-center">Screencastify</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comparison.map((row, i) => (
-                                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                                        <td className="p-5 font-semibold text-slate-700">{row.feature}</td>
+                                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-[var(--sr-surface-paper)]' : 'bg-[var(--sr-surface-panel-light)]/50'}>
+                                        <td className="p-5 font-semibold text-[var(--sr-text-primary-on-light)]">{row.feature}</td>
                                         <td className="p-5 text-center text-emerald-700 font-bold">{row.snaprec}</td>
-                                        <td className="p-5 text-center text-slate-500">{row.screencastify}</td>
+                                        <td className="p-5 text-center text-[var(--sr-text-faint-on-light)]">{row.screencastify}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -204,16 +204,16 @@ const ScreenRecorderForTeachers: React.FC = () => (
             </section>
 
             {/* How It Works */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-3xl md:text-4xl font-black mb-4">Start Recording Lessons in 60 Seconds</h2>
-                    <p className="text-slate-500 mb-14 max-w-xl mx-auto">No IT request, no installation on school machines, no setup time.</p>
+                    <p className="text-[var(--sr-text-faint-on-light)] mb-14 max-w-xl mx-auto">No IT request, no installation on school machines, no setup time.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {steps.map((s) => (
                             <div key={s.n} className="flex flex-col items-center">
-                                <div className="w-12 h-12 rounded-full bg-primary text-white font-black text-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/30">{s.n}</div>
-                                <h3 className="font-black text-slate-900 mb-2">{s.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
+                                <div className="w-12 h-12 rounded-full bg-[var(--sr-cyan)] text-white font-black text-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/30">{s.n}</div>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">{s.title}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{s.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -230,8 +230,8 @@ const ScreenRecorderForTeachers: React.FC = () => (
                     <div className="divide-y divide-slate-100">
                         {faqs.map((f) => (
                             <div key={f.q} className="py-6">
-                                <h3 className="font-black text-slate-900 mb-2">{f.q}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{f.a}</p>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">{f.q}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{f.a}</p>
                             </div>
                         ))}
                     </div>
@@ -241,24 +241,24 @@ const ScreenRecorderForTeachers: React.FC = () => (
             {/* Related Pages */}
             <section className="py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <p className="text-sm text-slate-500 mb-4">Also comparing tools for your classroom?</p>
+                    <p className="text-sm text-[var(--sr-text-faint-on-light)] mb-4">Also comparing tools for your classroom?</p>
                     <div className="flex flex-wrap justify-center gap-4 text-sm">
-                        <NavLink to="/screencastify-alternative" className="text-primary font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
-                        <NavLink to="/loom-alternative" className="text-primary font-semibold hover:underline">Free Loom Alternative →</NavLink>
-                        <NavLink to="/webcam-overlay-presentation" className="text-primary font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
+                        <NavLink to="/screencastify-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
+                        <NavLink to="/loom-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Loom Alternative →</NavLink>
+                        <NavLink to="/webcam-overlay-presentation" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
                     </div>
                 </div>
             </section>
 
             {/* Bottom CTA */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-slate-900 rounded-3xl p-12 md:p-16 text-center relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="bg-[var(--sr-surface-carbon)] rounded-[2px] p-12 md:p-16 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--sr-cyan)]/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
                         <h2 className="text-3xl md:text-4xl font-black text-white mb-4 relative">
                             The free screen recorder every teacher needs.
                         </h2>
-                        <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
+                        <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             No watermarks, no time limits, no credit card. Just install and start recording your lessons today.
                         </p>
                         <AddToChromeButton variant="white" size="xl" />

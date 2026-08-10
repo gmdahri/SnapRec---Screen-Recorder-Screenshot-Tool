@@ -3,6 +3,11 @@ import type { ZoomKeyframe } from './types';
 export const ZOOM_DURATION_MS = 3000;
 export const TRANSITION_MS = 500;
 
+/** The scale auto-zoom settles at. Accepting a suggestion has to produce this
+ * exact value: accepting is meant to keep what you are already watching, and
+ * a region that snapped to some other scale would change the shot. */
+export const AUTO_ZOOM_SCALE = 1.3;
+
 export interface ActiveZoom {
   scale: number;
   originX: number; // % clamped 15–85
@@ -108,11 +113,11 @@ export function findLatestClickBefore(arr: any[], currentMs: number): any | null
 export function computeZoomScale(timeSince: number): number {
   if (timeSince < TRANSITION_MS) {
     const ease = 1 - Math.pow(1 - timeSince / TRANSITION_MS, 3);
-    return 1.0 + 0.3 * ease;
+    return 1.0 + (AUTO_ZOOM_SCALE - 1) * ease;
   }
   if (timeSince > ZOOM_DURATION_MS - TRANSITION_MS) {
     const p = Math.max(0, Math.min(1, (timeSince - (ZOOM_DURATION_MS - TRANSITION_MS)) / TRANSITION_MS));
-    return 1.3 - 0.3 * Math.pow(p, 3);
+    return AUTO_ZOOM_SCALE - (AUTO_ZOOM_SCALE - 1) * Math.pow(p, 3);
   }
   return 1.3;
 }

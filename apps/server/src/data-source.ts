@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { User } from './users/entities/user.entity';
 import { Recording } from './recordings/entities/recording.entity';
+import { RecordingView } from './recordings/entities/recording-view.entity';
 import { Reaction } from './recordings/entities/reaction.entity';
 import { Comment } from './recordings/entities/comment.entity';
 import { VideoProject } from './video-projects/entities/video-project.entity';
@@ -15,7 +16,7 @@ export default new DataSource({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [User, Recording, Reaction, Comment, VideoProject],
+    entities: [User, Recording, Reaction, Comment, VideoProject, RecordingView],
     migrations: ['src/migrations/*.ts'],
     ssl: {
         rejectUnauthorized: false, // Required for Supabase

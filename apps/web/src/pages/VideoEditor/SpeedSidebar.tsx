@@ -17,21 +17,21 @@ export function SpeedSidebar() {
 
   return (
     <aside
-      className={`${EDITOR_LEFT_PANEL_WIDTH} bg-white border-r border-slate-200 flex flex-col min-h-0 z-20`}
+      className={`${EDITOR_LEFT_PANEL_WIDTH} bg-[var(--sr-surface-panel-dark)] border-r border-[var(--sr-border-dark)] flex flex-col min-h-0 z-20`}
     >
-      <div className="p-4 border-b border-slate-200 bg-gradient-to-b from-violet-50/70 to-white">
-        <h2 className="text-xl font-extrabold text-primary tracking-tight">Speed</h2>
-        <p className="text-sm font-medium text-slate-800 truncate mt-1">{projectTitle}</p>
-        <p className="text-xs text-slate-500 mt-2">Save in the top bar when you’re done.</p>
+      <div className="p-4 border-b border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)]">
+        <h2 className="text-xl font-extrabold text-[var(--sr-cyan)] tracking-tight">Speed</h2>
+        <p className="text-sm font-medium text-[var(--sr-text-primary-on-dark)] truncate mt-1">{projectTitle}</p>
+        <p className="text-xs text-[var(--sr-text-faint-on-dark)] mt-2">Save in the top bar when you’re done.</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        <p className="text-xs text-slate-600 leading-relaxed rounded-xl bg-violet-50/80 border border-violet-100 p-3">
+        <p className="text-xs text-[var(--sr-text-muted-on-dark)] leading-relaxed rounded-[2px] bg-[var(--sr-surface-panel-dark-alt)] border border-[var(--sr-border-dark)] p-3">
           Preview only — export uses normal speed. Save stores your choice for next time.
         </p>
 
         <div>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Presets</p>
+          <p className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase tracking-widest mb-2">Presets</p>
           <div className="grid grid-cols-2 gap-2">
             {SPEED_PRESETS.map((s) => (
               <button
@@ -39,10 +39,10 @@ export function SpeedSidebar() {
                 type="button"
                 disabled={!editorVideoSrc}
                 onClick={() => setPlaybackRate(s)}
-                className={`py-3 rounded-xl text-sm font-bold transition-colors ${
+                className={`py-3 rounded-[2px] text-sm font-bold transition-colors ${
                   playbackRate === s
-                    ? 'bg-primary text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
+                    ? 'bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] shadow-md'
+                    : 'bg-[var(--sr-surface-panel-dark)] text-[var(--sr-text-secondary-on-dark)] hover:bg-[var(--sr-border-dark)] disabled:opacity-40 disabled:cursor-not-allowed'
                 }`}
               >
                 {s}×
@@ -52,9 +52,9 @@ export function SpeedSidebar() {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase">Speed (dropdown)</label>
+          <label className="text-xs font-bold text-[var(--sr-text-faint-on-dark)] uppercase">Speed (dropdown)</label>
           <select
-            className="w-full mt-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm font-semibold"
+            className="w-full mt-2 rounded-[2px] border border-[var(--sr-border-dark)] bg-[var(--sr-surface-panel-dark)] py-2.5 px-3 text-sm font-semibold"
             value={playbackRate}
             disabled={!editorVideoSrc}
             onChange={(e) => setPlaybackRate(Number(e.target.value))}
@@ -77,7 +77,7 @@ export function SpeedSidebar() {
               setMediaLibraryOpen(true);
               addMediaToTimeline();
             }}
-            className="w-full py-3 text-sm font-semibold bg-primary text-white rounded-xl"
+            className="w-full py-3 text-sm font-semibold bg-[var(--sr-cyan)] text-[var(--sr-cyan-fg)] rounded-[2px]"
           >
             Add media first
           </button>

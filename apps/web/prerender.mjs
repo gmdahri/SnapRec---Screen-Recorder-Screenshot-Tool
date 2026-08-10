@@ -93,7 +93,15 @@ async function prerender() {
   console.log(`\n[prerender] Starting static server on port ${PORT}...`);
   const server = await startServer(PORT);
 
-  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+  /* `channel: 'chrome'` drives the locally installed Chrome rather than a
+   * puppeteer-managed download, which fails with "Could not find Chrome" when
+   * the cache holds an older build than puppeteer expects. Same workaround as
+   * packages/design-system/scripts/render-icons.mjs. Falls back to the managed
+   * browser, which is what CI uses. */
+  const launchOptions = { headless: true, args: ['--no-sandbox'] };
+  const browser = await puppeteer
+    .launch({ ...launchOptions, channel: 'chrome' })
+    .catch(() => puppeteer.launch(launchOptions));
 
   let rendered = 0;
   for (const route of ROUTES) {

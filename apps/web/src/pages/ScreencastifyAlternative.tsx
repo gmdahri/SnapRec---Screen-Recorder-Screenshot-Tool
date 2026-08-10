@@ -101,7 +101,7 @@ const faqs = [
 ];
 
 const ScreencastifyAlternative: React.FC = () => (
-    <div className="min-h-screen bg-white text-slate-900 font-display antialiased">
+    <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
         <SEO
             url="/screencastify-alternative"
             title="Best Free Screencastify Alternative — No Watermarks, No Limits"
@@ -115,11 +115,11 @@ const ScreencastifyAlternative: React.FC = () => (
             {/* Hero */}
             <section className="relative pt-36 pb-16 overflow-hidden">
                 <div className="absolute inset-0 -z-10 pointer-events-none">
-                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/6 rounded-full blur-[120px]" />
+                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[var(--sr-cyan)]/6 rounded-full blur-[120px]" />
                     <div className="absolute top-1/4 right-0 w-[400px] h-[400px] bg-blue-400/6 rounded-full blur-[100px]" />
                 </div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-200 text-primary text-sm font-bold px-4 py-2 rounded-full mb-8">
+                    <div className="inline-flex items-center gap-2 bg-[var(--sr-cyan-tint)] border border-[var(--sr-cyan)] text-[var(--sr-cyan-on-light)] text-sm font-bold px-4 py-2 rounded-full mb-8">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         Free Screencastify Alternative — No account needed
                     </div>
@@ -130,14 +130,14 @@ const ScreencastifyAlternative: React.FC = () => (
                             Without the Watermarks.
                         </span>
                     </h1>
-                    <p className="text-lg sm:text-xl text-slate-500 mb-10 leading-relaxed max-w-2xl mx-auto">
+                    <p className="text-lg sm:text-xl text-[var(--sr-text-faint-on-light)] mb-10 leading-relaxed max-w-2xl mx-auto">
                         Screencastify watermarks every free recording and caps you at 30 minutes. SnapRec gives you{' '}
-                        <span className="font-semibold text-slate-700">unlimited recording, zero watermarks, 4K quality — 100% free.</span>
+                        <span className="font-semibold text-[var(--sr-text-primary-on-light)]">unlimited recording, zero watermarks, 4K quality — 100% free.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
                         <AddToChromeButton size="xl" />
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
+                    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['No watermarks ever', '∞ Unlimited recording', '4K quality free', 'No account needed'].map((t) => (
                             <span key={t} className="flex items-center gap-1.5">
                                 <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
@@ -149,25 +149,25 @@ const ScreencastifyAlternative: React.FC = () => (
             </section>
 
             {/* Comparison Table */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">SnapRec vs Screencastify</h2>
-                    <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">What Screencastify charges $49/year for, SnapRec gives you free.</p>
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
-                        <table className="w-full text-sm bg-white">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">What Screencastify charges $49/year for, SnapRec gives you free.</p>
+                    <div className="overflow-x-auto rounded-[2px] border border-[var(--sr-border-light-soft)] shadow-sm">
+                        <table className="w-full text-sm bg-[var(--sr-surface-paper)]">
                             <thead>
-                                <tr className="border-b border-slate-100">
-                                    <th className="text-left p-5 font-black text-slate-700 w-1/3">Feature</th>
-                                    <th className="p-5 font-black text-primary text-center">SnapRec (Free)</th>
-                                    <th className="p-5 font-black text-slate-500 text-center">Screencastify</th>
+                                <tr className="border-b border-[var(--sr-border-light-soft)]">
+                                    <th className="text-left p-5 font-black text-[var(--sr-text-primary-on-light)] w-1/3">Feature</th>
+                                    <th className="p-5 font-black text-[var(--sr-cyan-on-light)] text-center">SnapRec (Free)</th>
+                                    <th className="p-5 font-black text-[var(--sr-text-faint-on-light)] text-center">Screencastify</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comparison.map((row, i) => (
-                                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                                        <td className="p-5 font-semibold text-slate-700">{row.feature}</td>
+                                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-[var(--sr-surface-paper)]' : 'bg-[var(--sr-surface-panel-light)]/50'}>
+                                        <td className="p-5 font-semibold text-[var(--sr-text-primary-on-light)]">{row.feature}</td>
                                         <td className="p-5 text-center text-emerald-700 font-bold">{row.snaprec}</td>
-                                        <td className="p-5 text-center text-slate-500">{row.screencastify}</td>
+                                        <td className="p-5 text-center text-[var(--sr-text-faint-on-light)]">{row.screencastify}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -180,13 +180,13 @@ const ScreencastifyAlternative: React.FC = () => (
             <section className="py-20">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">6 Reasons Teachers & Creators Switch</h2>
-                    <p className="text-slate-500 text-center mb-12 max-w-xl mx-auto">SnapRec does more than Screencastify — and costs nothing.</p>
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">SnapRec does more than Screencastify — and costs nothing.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {reasons.map((r) => (
-                            <div key={r.title} className="bg-slate-50 rounded-2xl p-7 border border-slate-100 hover:shadow-md transition-shadow">
+                            <div key={r.title} className="bg-[var(--sr-surface-panel-light)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)] hover:shadow-md transition-shadow">
                                 <div className="text-3xl mb-4">{r.icon}</div>
-                                <h3 className="font-black text-slate-900 text-lg mb-2">{r.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{r.desc}</p>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] text-lg mb-2">{r.title}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{r.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -194,10 +194,10 @@ const ScreencastifyAlternative: React.FC = () => (
             </section>
 
             {/* How It Works */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-3xl md:text-4xl font-black mb-4">Get Started in 30 Seconds</h2>
-                    <p className="text-slate-500 mb-14 max-w-xl mx-auto">Replace Screencastify instantly. No migration needed.</p>
+                    <p className="text-[var(--sr-text-faint-on-light)] mb-14 max-w-xl mx-auto">Replace Screencastify instantly. No migration needed.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
                             { n: '1', title: 'Install for Free', desc: 'Add SnapRec from the Chrome Web Store. No sign-up, no credit card, no watermark ever.' },
@@ -205,9 +205,9 @@ const ScreencastifyAlternative: React.FC = () => (
                             { n: '3', title: 'Share Without Watermarks', desc: 'Download your recording or get a shareable link instantly — no branding, no logo, no restrictions.' },
                         ].map((s) => (
                             <div key={s.n} className="flex flex-col items-center">
-                                <div className="w-12 h-12 rounded-full bg-primary text-white font-black text-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/30">{s.n}</div>
-                                <h3 className="font-black text-slate-900 mb-2">{s.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
+                                <div className="w-12 h-12 rounded-full bg-[var(--sr-cyan)] text-white font-black text-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/30">{s.n}</div>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">{s.title}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{s.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -224,8 +224,8 @@ const ScreencastifyAlternative: React.FC = () => (
                     <div className="divide-y divide-slate-100">
                         {faqs.map((f) => (
                             <div key={f.q} className="py-6">
-                                <h3 className="font-black text-slate-900 mb-2">{f.q}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{f.a}</p>
+                                <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">{f.q}</h3>
+                                <p className="text-[var(--sr-text-faint-on-light)] text-sm leading-relaxed">{f.a}</p>
                             </div>
                         ))}
                     </div>
@@ -233,39 +233,39 @@ const ScreencastifyAlternative: React.FC = () => (
             </section>
 
             {/* When Screencastify Is Still Worth It */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">When Is Screencastify Still Worth It?</h2>
-                    <p className="text-slate-500 text-center mb-10 max-w-xl mx-auto">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-center mb-10 max-w-xl mx-auto">
                         SnapRec wins on price and features for most users — but Screencastify has specific strengths, especially in managed school environments.
                     </p>
                     <div className="space-y-6">
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">Your school district mandates it via IT policy</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">Your school district mandates it via IT policy</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Many K-12 districts deploy Screencastify through Google Workspace for Education admin consoles. If your district IT team has whitelisted Screencastify and locked down extension installs, you'll need IT approval to switch. In that case, Screencastify is the practical choice — not a features choice. If you have the freedom to install your own extensions, SnapRec is the upgrade.
                             </p>
                         </div>
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">You rely on deep Google Classroom integration</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">You rely on deep Google Classroom integration</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Screencastify Submit lets students record and submit directly to a Google Classroom assignment with a single click. Teachers get all submissions in one place without students needing to manage links. SnapRec generates shareable links that students can paste into Classroom — it works, but it's one extra step. If that one-click submission workflow is critical for classroom management, Screencastify's paid plan handles it natively.
                             </p>
                         </div>
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">You need district-wide admin controls and usage reporting</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">You need district-wide admin controls and usage reporting</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Screencastify for Schools gives admins a dashboard to manage licenses across all teachers, track usage, and enforce recording policies. For district-level IT administrators overseeing hundreds of teachers, that centralized control matters. SnapRec is an individual tool — there's no multi-seat admin console. Individual teachers and independent educators get more value from SnapRec's features at no cost.
                             </p>
                         </div>
-                        <div className="bg-white rounded-2xl p-7 border border-slate-200">
-                            <h3 className="font-black text-slate-900 mb-2">You use Screencastify's built-in video quiz feature</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)]">
+                            <h3 className="font-black text-[var(--sr-text-primary-on-light)] mb-2">You use Screencastify's built-in video quiz feature</h3>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Screencastify's paid tier lets teachers embed interactive questions directly inside videos. Students watch and answer without leaving the video player, and responses feed back to the teacher. SnapRec doesn't have an interactive quiz layer. If video-embedded assessment is a core part of your teaching method, that feature is a real differentiator worth evaluating.
                             </p>
                         </div>
                     </div>
-                    <p className="text-slate-500 text-sm text-center mt-8 leading-relaxed">
+                    <p className="text-[var(--sr-text-faint-on-light)] text-sm text-center mt-8 leading-relaxed">
                         For individual teachers, homeschool educators, tutors, and content creators who control their own setup — SnapRec gives you more for free, without the watermarks.
                     </p>
                 </div>
@@ -274,11 +274,11 @@ const ScreencastifyAlternative: React.FC = () => (
             {/* Related Pages */}
             <section className="py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <p className="text-sm text-slate-500 mb-4">Also comparing other tools?</p>
+                    <p className="text-sm text-[var(--sr-text-faint-on-light)] mb-4">Also comparing other tools?</p>
                     <div className="flex flex-wrap justify-center gap-4 text-sm">
-                        <NavLink to="/loom-alternative" className="text-primary font-semibold hover:underline">Free Loom Alternative →</NavLink>
-                        <NavLink to="/screen-recorder-for-teachers" className="text-primary font-semibold hover:underline">Screen Recorder for Teachers →</NavLink>
-                        <NavLink to="/webcam-overlay-presentation" className="text-primary font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
+                        <NavLink to="/loom-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Loom Alternative →</NavLink>
+                        <NavLink to="/screen-recorder-for-teachers" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Screen Recorder for Teachers →</NavLink>
+                        <NavLink to="/webcam-overlay-presentation" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
                     </div>
                 </div>
             </section>
@@ -286,12 +286,12 @@ const ScreencastifyAlternative: React.FC = () => (
             {/* Bottom CTA */}
             <section className="py-20">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-slate-900 rounded-3xl p-12 md:p-16 text-center relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="bg-[var(--sr-surface-carbon)] rounded-[2px] p-12 md:p-16 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--sr-cyan)]/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
                         <h2 className="text-3xl md:text-4xl font-black text-white mb-4 relative">
                             Record without watermarks. Free, forever.
                         </h2>
-                        <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
+                        <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             SnapRec is the free Screencastify alternative with no watermarks, no time limits, and 4K quality — no credit card ever.
                         </p>
                         <AddToChromeButton variant="white" size="xl" />

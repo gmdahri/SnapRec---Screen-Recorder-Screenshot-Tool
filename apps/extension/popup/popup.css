@@ -1,654 +1,736 @@
-/* SnapRec Popup Styles
- * Uses design-system.css as base
- */
+/* SnapRec popup — the plate.
+ *
+ * Reads --sr-* only. A colour literal in this file is a bug: change the token
+ * in packages/design-system/src/tokens.css and copy it into
+ * ../styles/design-system.css, which __tests__/tokens.test.js keeps in sync. */
 
-/* Update Available Banner */
-.update-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  background: linear-gradient(135deg, #7b25f4 0%, #a855f7 100%);
-  color: white;
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  animation: slideDown 0.3s ease;
-}
+* { box-sizing: border-box; }
 
-.update-banner .update-text {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.update-banner .btn-update {
-  padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: var(--radius-sm);
-  color: white;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  white-space: nowrap;
-}
-
-.update-banner .btn-update:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.update-banner.hidden {
-  display: none !important;
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Popup Container */
-.popup-container {
+body {
+  margin: 0;
   width: 360px;
-  min-height: 520px;
-  height: auto;
-  background: rgba(247, 245, 248, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(123, 37, 244, 0.2);
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(123, 37, 244, 0.1);
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
+  background: var(--sr-surface-carbon);
+  color: var(--sr-text-primary-on-dark);
+  font-family: var(--sr-font-ui);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Header */
-.header {
+button { font-family: inherit; cursor: pointer; }
+
+/* The popup opens with a 120ms fade only. Nothing loops. */
+#root { animation: sr-fade var(--sr-dur-fast) var(--sr-ease); }
+@keyframes sr-fade { from { opacity: 0 } to { opacity: 1 } }
+
+/* ---------------------------------------------------------------- header */
+
+.sr-popup-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
-  background: #ffffff;
-  border-bottom: 1px solid #ece7f4;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.logo-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.logo-text {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: #7b25f4;
-}
-
-/* Mode Toggle */
-.mode-toggle {
-  margin: var(--space-md) var(--space-lg);
-}
-
-/* Mode Panels */
-.mode-panel {
-  flex: 1;
-  padding: 0 var(--space-lg);
-  animation: fadeIn var(--transition-normal) ease;
-  overflow-y: auto;
-}
-
-.mode-panel.hidden {
-  display: none;
-}
-
-/* Action List */
-.action-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-/* Source Options */
-.option-group {
-  margin-bottom: var(--space-md);
-}
-
-.option-label {
-  display: block;
-  font-size: var(--font-size-xs);
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--sr-border-dark-soft);
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-sm);
 }
+.sr-brand { display: inline-flex; align-items: center; gap: 8px; }
+.sr-brand-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--sr-text-faint-on-dark);
+}
+.sr-brand-meta button {
+  border: none;
+  background: transparent;
+  color: var(--sr-text-muted-on-dark);
+  display: inline-flex;
+  padding: 0;
+}
+.sr-brand-meta button:hover { color: var(--sr-text-primary-on-dark); }
 
-.source-options {
+/* ------------------------------------------------------------------ mode */
+
+.sr-tabs {
   display: flex;
-  gap: var(--space-sm);
+  height: 32px;
+  border-bottom: 1px solid var(--sr-border-dark-soft);
 }
-
-.source-btn {
+.sr-tabs button {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  border: none;
+  background: transparent;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-md);
-  background: var(--bg-glass);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition-normal);
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--sr-text-muted-on-dark);
+}
+.sr-tabs button:hover { color: var(--sr-text-primary-on-dark); }
+.sr-tabs button[aria-selected="true"] {
+  background: var(--sr-text-primary-on-dark);
+  color: var(--sr-surface-carbon);
+  font-weight: 600;
 }
 
-.source-btn svg {
-  width: 24px;
-  height: 24px;
+/* --------------------------------------------------------------- preview */
+
+.sr-preview { position: relative; margin: 12px 12px 0; background: var(--sr-surface-well); }
+.sr-frame { position: relative; aspect-ratio: 16 / 9; }
+
+/* Focused: registration marks, no handles. The preview cannot be resized, so
+   it must not look draggable. */
+.sr-mark { position: absolute; width: 10px; height: 10px; }
+.sr-mark-tl { left: 5px; top: 5px; border-left: 1px solid var(--sr-cyan); border-top: 1px solid var(--sr-cyan); }
+.sr-mark-tr { right: 5px; top: 5px; border-right: 1px solid var(--sr-cyan); border-top: 1px solid var(--sr-cyan); }
+.sr-mark-bl { left: 5px; bottom: 5px; border-left: 1px solid var(--sr-cyan); border-bottom: 1px solid var(--sr-cyan); }
+.sr-mark-br { right: 5px; bottom: 5px; border-right: 1px solid var(--sr-cyan); border-bottom: 1px solid var(--sr-cyan); }
+
+.sr-preview-url {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 2px 5px;
+  background: var(--sr-scrim-dark);
+  font-size: 9.5px;
+  color: var(--sr-cyan-tint);
 }
 
-.source-btn:hover {
-  background: var(--bg-glass-light);
-  border-color: var(--border-default);
-}
+/* ---------------------------------------------------------------- source */
 
-.source-btn.active {
-  background: var(--accent-gradient);
-  border-color: transparent;
-  color: white;
-}
-
-/* Toggle Options */
-.toggle-options {
+.sr-radiogroup {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+  margin: 10px 12px 0;
+  border: 1px solid var(--sr-border-dark);
+}
+.sr-radiogroup button {
+  flex: 1;
+  height: var(--sr-h-sm);
+  border: none;
+  background: transparent;
+  color: var(--sr-text-secondary-on-dark);
+  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sr-radiogroup button + button { border-left: 1px solid var(--sr-border-dark); }
+.sr-radiogroup button:hover { background: var(--sr-surface-panel-dark); color: var(--sr-text-primary-on-dark); }
+.sr-radiogroup button[aria-checked="true"] {
+  background: var(--sr-cyan);
+  color: var(--sr-cyan-fg);
+  font-weight: 600;
 }
 
-.toggle-option {
+/* ---------------------------------------------------------------- inputs */
+
+.sr-inputs { display: flex; flex-direction: column; gap: 1px; padding: 12px 12px 0; }
+
+.sr-input-row {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background: #ffffff;
-  border: 1px solid #ece7f4;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-normal);
+  gap: 10px;
+  height: var(--sr-h-row);
+  padding: 0 10px;
+  background: var(--sr-surface-panel-dark);
+  color: var(--sr-cyan);
 }
-
-.toggle-option:hover {
-  border-color: #7b25f4;
-  background: #f7f5f8;
+.sr-input-row[data-on="false"] {
+  background: var(--sr-surface-panel-dark-alt);
+  color: var(--sr-text-faint-on-dark);
 }
+.sr-input-label { font-size: 12.5px; flex: 1; color: var(--sr-text-primary-on-dark); }
+.sr-input-row[data-on="false"] .sr-input-label { color: var(--sr-text-faint-on-dark); }
+.sr-input-detail { font-size: 9.5px; color: var(--sr-text-faint-on-dark); }
 
-.toggle-option input {
-  display: none;
-}
-
-.toggle-switch {
-  width: 48px;
-  height: 26px;
-  background: #ece7f4;
-  border: 2px solid #d4c8e8;
-  border-radius: var(--radius-full);
+.sr-input-row [role="switch"] {
+  width: 26px;
+  height: 15px;
+  flex: none;
   position: relative;
-  transition: all var(--transition-normal);
-  flex-shrink: 0;
+  border: none;
+  padding: 0;
+  background: var(--sr-border-dark);
+}
+.sr-input-row [role="switch"][aria-checked="true"] { background: var(--sr-cyan); }
+.sr-input-row [role="switch"] > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  background: var(--sr-text-muted-on-dark);
+  transition: left var(--sr-dur-fast) var(--sr-ease);
+}
+.sr-input-row [role="switch"][aria-checked="true"] > span {
+  left: 13px;
+  background: var(--sr-cyan-fg);
 }
 
-.toggle-switch::after {
+/* --------------------------------------------------------------- options */
+
+.sr-options-toggle {
+  width: calc(100% - 24px);
+  margin: 12px 12px 0;
+  height: var(--sr-h-sm);
+  padding: 0 10px;
+  border: 1px solid var(--sr-border-dark-soft);
+  background: transparent;
+  color: var(--sr-text-secondary-on-dark);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sr-options-toggle:hover { border-color: var(--sr-cyan); color: var(--sr-cyan); }
+.sr-options-summary { margin-left: auto; font-size: 9.5px; color: var(--sr-text-faint-on-dark); }
+
+/* ----------------------------------------------------------------- areas */
+
+.sr-areas { display: flex; flex-direction: column; gap: 1px; padding: 12px 12px 0; }
+.sr-areas button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 12px;
+  border: none;
+  background: var(--sr-surface-panel-dark);
+  text-align: left;
+}
+.sr-areas button:hover { background: var(--sr-border-dark); }
+.sr-areas button[aria-pressed="true"] { box-shadow: inset 2px 0 0 var(--sr-cyan); }
+.sr-area-label { font-size: 12.5px; font-weight: 600; color: var(--sr-text-primary-on-dark); }
+.sr-area-body { font-size: 10.5px; color: var(--sr-text-faint-on-dark); }
+
+/* --------------------------------------------------------------- capture */
+
+.sr-footer { padding: 12px; }
+
+.sr-primary {
+  position: relative;
+  width: 100%;
+  height: var(--sr-h-lg);
+  border: none;
+  border-radius: var(--sr-radius-control);
+  font-size: 14.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+/* Coral means live capture. A screenshot is instantaneous, so its action is
+   carbon — withholding coral here is what makes the countdown's coral mean
+   something. */
+.sr-primary[data-tone="coral"] { background: var(--sr-coral-text); color: var(--sr-coral-text-fg); }
+.sr-primary[data-tone="coral"]:hover { background: var(--sr-coral-hover); }
+.sr-primary[data-tone="carbon"] {
+  background: var(--sr-text-primary-on-dark);
+  color: var(--sr-surface-carbon);
+}
+.sr-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.sr-shortcut {
+  position: absolute;
+  right: 12px;
+  font-family: var(--sr-font-mono);
+  font-size: 10px;
+  opacity: .8;
+}
+.sr-areas .sr-shortcut { position: static; color: var(--sr-text-faint-on-dark); }
+
+.sr-footnote {
+  margin: 8px 0 0;
+  font-size: 9.5px;
+  color: var(--sr-text-faint-on-dark);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- a11y */
+
+:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  #root { animation: none; }
+  .sr-input-row [role="switch"] > span { transition: none; }
+}
+
+/* ================================================================ options */
+
+.sr-options-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--sr-border-dark-soft);
+}
+.sr-options-title { font-size: 12.5px; font-weight: 600; }
+/* Done is the only way back out of this panel, so it takes the carbon primary
+   fill rather than an outline — an outlined control on a near-black header
+   reads as decoration and was being missed. Carbon, not the other two tones:
+   coral stays reserved for live capture, and a cyan fill already means "the
+   selected value" in every row below, so a cyan Done would read as a chip. */
+.sr-done {
+  height: var(--sr-h-xs);
+  padding: 0 12px;
+  border: none;
+  background: var(--sr-text-primary-on-dark);
+  color: var(--sr-surface-carbon);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--sr-radius-control);
+}
+.sr-done:hover { filter: brightness(1.08); }
+
+/* The panel scrolls; header and Done stay put. Every row is a fixed height so
+   the layout holds at 125% browser zoom — nothing depends on viewport height. */
+.sr-options-scroll { max-height: 320px; overflow-y: auto; }
+
+.sr-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: var(--sr-h-row);
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--sr-border-dark-soft);
+}
+.sr-option-label { display: flex; flex-direction: column; font-size: 12px; }
+.sr-option-help { font-size: 9.5px; color: var(--sr-text-faint-on-dark); }
+
+.sr-choice { display: inline-flex; border: 1px solid var(--sr-border-dark); }
+.sr-choice button {
+  border: none;
+  background: transparent;
+  color: var(--sr-text-secondary-on-dark);
+  font-family: var(--sr-font-mono);
+  font-size: 10.5px;
+  padding: 0 8px;
+  height: var(--sr-h-xs);
+}
+.sr-choice button + button { border-left: 1px solid var(--sr-border-dark); }
+.sr-choice button[aria-checked="true"] { background: var(--sr-cyan); color: var(--sr-cyan-fg); }
+
+/* The meter exists here and nowhere else: a device is being chosen. */
+.sr-meter { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+.sr-meter-bar { width: 3px; height: 100%; background: var(--sr-border-dark); }
+.sr-meter-bar[data-lit="true"] { background: var(--sr-cyan); }
+
+/* ================================================================ notices */
+
+.sr-notice { padding: 16px 14px; display: flex; flex-direction: column; gap: 10px; }
+.sr-notice[data-tone="coral"] { border-left: 2px solid var(--sr-coral-text); }
+.sr-notice-title { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.sr-notice-title:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 2px; }
+.sr-notice-body { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--sr-text-secondary-on-dark); }
+.sr-steps { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.7; color: var(--sr-text-secondary-on-dark); }
+.sr-notice-actions { display: flex; flex-direction: column; gap: 8px; }
+
+.sr-status-word {
+  font-family: var(--sr-font-mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--sr-coral-on-dark);
+}
+
+.sr-notice-primary {
+  height: var(--sr-h-md);
+  border: none;
+  border-radius: var(--sr-radius-control);
+  background: var(--sr-cyan);
+  color: var(--sr-cyan-fg);
+  font-size: 13px;
+  font-weight: 600;
+}
+.sr-notice-primary:hover { background: var(--sr-cyan-hover); }
+
+.sr-notice-secondary {
+  height: var(--sr-h-md);
+  border: 1px solid var(--sr-border-dark);
+  border-radius: var(--sr-radius-control);
+  background: transparent;
+  color: var(--sr-text-primary-on-dark);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.sr-notice-secondary:hover { border-color: var(--sr-cyan); color: var(--sr-cyan); }
+
+/* Destructive: separated by a band, never coral-filled, and it names what is
+   lost before it happens. */
+[data-separated] { border-top: 1px solid var(--sr-border-dark-soft); }
+.sr-destructive {
+  width: 100%;
+  height: var(--sr-h-sm);
+  border: 1px solid var(--sr-coral-text);
+  border-radius: var(--sr-radius-control);
+  background: transparent;
+  color: var(--sr-coral-on-dark);
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.sr-destructive:hover { background: var(--sr-coral-wash-dark); }
+
+/* ============================================================== countdown */
+
+.sr-countdown { padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
+.sr-countdown .sr-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sr-surface-well);
+}
+/* Coral marks mean a capture is about to happen — :not(.sr-arming) because
+   while Chrome's picker is open nothing has been chosen yet, let alone
+   captured, and coral is reserved for capture that is really happening. The
+   arming view keeps the default cyan registration marks. */
+.sr-countdown:not(.sr-arming) .sr-mark-tl,
+.sr-countdown:not(.sr-arming) .sr-mark-tr,
+.sr-countdown:not(.sr-arming) .sr-mark-bl,
+.sr-countdown:not(.sr-arming) .sr-mark-br { border-color: var(--sr-coral-mark); }
+/* The countdown sits over a still of the chosen source, so it needs its own
+   ground — a numeral alone is unreadable against an arbitrary screenshot. */
+.sr-numeral[data-over-preview="true"] {
+  padding: 0 14px;
+  border-radius: 2px;
+  background: rgba(4, 7, 8, .62);
+}
+
+.sr-arming-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sr-text-primary-on-dark);
+  text-align: center;
+  padding: 0 18px;
+}
+
+.sr-numeral {
+  font-family: var(--sr-font-mono);
+  font-size: 54px;
+  font-weight: 600;
+  color: var(--sr-coral-on-dark);
+  line-height: 1;
+}
+.sr-countdown-note { margin: 0; font-size: 11.5px; color: var(--sr-text-faint-on-dark); text-align: center; }
+
+/* The signature strike. Fires three times in a capture's life: the countdown,
+   capture completion, and link resolution. Nowhere else, ever. */
+@keyframes sr-strike-tl { from { opacity: 0; transform: translate(-6px, -6px) } to { opacity: 1; transform: none } }
+@keyframes sr-strike-tr { from { opacity: 0; transform: translate(6px, -6px) } to { opacity: 1; transform: none } }
+@keyframes sr-strike-bl { from { opacity: 0; transform: translate(-6px, 6px) } to { opacity: 1; transform: none } }
+@keyframes sr-strike-br { from { opacity: 0; transform: translate(6px, 6px) } to { opacity: 1; transform: none } }
+[data-strike] .sr-mark-tl { animation: sr-strike-tl var(--sr-dur-slow) var(--sr-ease) both; }
+[data-strike] .sr-mark-tr { animation: sr-strike-tr var(--sr-dur-slow) var(--sr-ease) both; }
+[data-strike] .sr-mark-bl { animation: sr-strike-bl var(--sr-dur-slow) var(--sr-ease) both; }
+[data-strike] .sr-mark-br { animation: sr-strike-br var(--sr-dur-slow) var(--sr-ease) both; }
+
+@keyframes sr-count { from { transform: scale(1.25) } to { transform: scale(1) } }
+[data-strike] /* The countdown sits over a still of the chosen source, so it needs its own
+   ground — a numeral alone is unreadable against an arbitrary screenshot. */
+.sr-numeral[data-over-preview="true"] {
+  padding: 0 14px;
+  border-radius: 2px;
+  background: rgba(4, 7, 8, .62);
+}
+
+.sr-arming-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sr-text-primary-on-dark);
+  text-align: center;
+  padding: 0 18px;
+}
+
+.sr-numeral { animation: sr-count 300ms var(--sr-ease); }
+
+/* ============================================================ live states */
+
+.sr-popup-header[data-tone="coral"] {
+  background: var(--sr-coral-text);
+  color: var(--sr-coral-text-fg);
+  border-bottom-color: var(--sr-coral-text);
+}
+/* Filled coral means capturing right now. Paused keeps the boundary and
+   empties the fill, so a glance distinguishes them even in a screenshot. */
+.sr-popup-header[data-tone="coral-outline"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--sr-coral-text);
+  color: var(--sr-coral-on-dark);
+}
+.sr-timer { font-family: var(--sr-font-mono); font-size: 13px; }
+
+/* Only the record dot animates. */
+@keyframes sr-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.sr-popup-header[data-tone="coral"] .sr-dot { animation: sr-pulse 1.6s ease-in-out infinite; }
+
+.sr-live-actions { display: flex; gap: 8px; }
+.sr-live-actions > * { flex: 1; }
+
+/* Indeterminate: a sweeping segment, never a fake percentage. Percentages
+   appear only once bytes are measurable, at upload. */
+@keyframes sr-sweep { from { left: -32% } to { left: 100% } }
+[data-sweep] {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 3px;
+  background: var(--sr-border-dark);
+}
+[data-sweep]::after {
   content: '';
   position: absolute;
-  width: 20px;
-  height: 20px;
-  background: #ffffff;
-  border-radius: 50%;
-  top: 1px;
-  left: 2px;
-  transition: all var(--transition-normal);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  top: 0;
+  bottom: 0;
+  width: 32%;
+  background: var(--sr-cyan);
+  animation: sr-sweep 1.1s var(--sr-ease) infinite;
 }
 
-.toggle-option input:checked+.toggle-switch {
-  background: #7b25f4;
-  border-color: #7b25f4;
+/* Reduced motion: numerals swap without scaling, corners appear at full
+   opacity, the record dot holds solid. Timing is unchanged so the countdown
+   stays truthful. */
+@media (prefers-reduced-motion: reduce) {
+  [data-strike] .sr-mark-tl,
+  [data-strike] .sr-mark-tr,
+  [data-strike] .sr-mark-bl,
+  [data-strike] .sr-mark-br,
+  [data-strike] .sr-numeral,
+  .sr-popup-header[data-tone="coral"] .sr-dot { animation: none; }
+  [data-sweep]::after { animation: none; width: 100%; opacity: .4; }
 }
 
-.toggle-option input:checked+.toggle-switch::after {
-  background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-  transform: translateX(22px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+/* ============================================================ completion */
+
+.sr-completion-title {
+  margin: 14px 12px 0;
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+.sr-completion-body,
+.sr-failure-body {
+  margin: 10px 12px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--sr-text-secondary-on-dark);
 }
 
-.toggle-label {
+.sr-completion { display: flex; margin: 12px 12px 0; background: var(--sr-surface-well); }
+.sr-plate { position: relative; flex: 1; }
+.sr-plate .sr-frame { aspect-ratio: 16 / 9; }
+.sr-plate-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  background: var(--sr-scrim-dark);
+  font-family: var(--sr-font-mono);
+  font-size: 9.5px;
+  color: var(--sr-text-secondary-on-dark);
+}
+
+/* Edge actions describe what is possible now, not a fixed toolbar. */
+.sr-edge-rail {
+  display: flex;
+  flex-direction: column;
+  width: 38px;
+  flex: none;
+  border-left: 1px solid var(--sr-border-dark-soft);
+}
+.sr-edge-rail button {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid var(--sr-border-dark-soft);
+  background: transparent;
+  color: var(--sr-text-secondary-on-dark);
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
+  justify-content: center;
 }
-
-.toggle-label svg {
-  width: 20px;
-  height: 20px;
-  opacity: 0.7;
+.sr-edge-rail button:last-child { border-bottom: none; }
+.sr-edge-rail button:hover { background: var(--sr-surface-panel-dark); color: var(--sr-text-primary-on-dark); }
+.sr-edge-rail button[data-tone="cyan"] { color: var(--sr-cyan); }
+.sr-edge-rail button[data-destructive]:hover {
+  background: var(--sr-coral-wash-dark);
+  color: var(--sr-coral-on-dark);
 }
-
-.toggle-option input:checked~.toggle-label {
-  color: var(--text-primary);
+.sr-edge-rail button[aria-disabled="true"] {
+  color: var(--sr-text-faint-on-dark);
+  cursor: not-allowed;
 }
+.sr-edge-rail button[aria-disabled="true"]:hover { background: transparent; }
 
-.toggle-option input:checked~.toggle-label svg {
-  opacity: 1;
-  color: var(--accent-primary);
+/* ---- the path spine: four nodes, always in the same order --------------- */
+
+.sr-spine {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  margin: 12px 12px 0;
 }
-
-/* Webcam Toggle */
-.webcam-toggle {
+.sr-spine-col { display: flex; flex-direction: column; gap: 6px; }
+.sr-spine-track { position: relative; height: 3px; background: var(--sr-border-dark); }
+.sr-spine-track > [data-spine-segment] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transition: width var(--sr-dur-slow) var(--sr-ease);
+}
+/* Green marks a completed node — the only place green appears. */
+[data-spine-segment][data-treatment="done"] { background: var(--sr-green); }
+[data-spine-segment][data-treatment="active"] { background: var(--sr-cyan); }
+[data-spine-segment][data-treatment="failed"] { background: var(--sr-coral-text); }
+[data-spine-segment][data-treatment="pending"] { background: transparent; }
+/* Offline is dashed grey, never coral: nothing has failed. */
+[data-spine-segment][data-treatment="dashed"] {
   background: transparent;
-  border: 1px dashed var(--border-default);
+  width: 100% !important;
+  background-image: repeating-linear-gradient(
+    90deg, var(--sr-text-faint-on-dark) 0 5px, transparent 5px 10px);
+}
+[data-spine-break] {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 9px;
+  background: var(--sr-coral-text);
+}
+[data-spine-node] {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--sr-border-dark);
+}
+[data-spine-node][data-state="done"] { background: var(--sr-green); border-color: var(--sr-green); }
+[data-spine-node][data-state="current"] { border-color: var(--sr-cyan); }
+.sr-spine-label {
+  font-family: var(--sr-font-mono);
+  font-size: 8.5px;
+  color: var(--sr-text-faint-on-dark);
+  line-height: 1.2;
 }
 
-.webcam-toggle:hover {
-  border-style: solid;
+.sr-upload-label {
+  margin: 10px 12px 0;
+  font-family: var(--sr-font-mono);
+  font-size: 11px;
+  color: var(--sr-text-secondary-on-dark);
 }
 
-/* Start Record Button */
-.start-record-btn {
-  margin-top: var(--space-md);
-  padding: var(--space-md);
-}
+.sr-completion-actions { display: flex; flex-direction: column; gap: 8px; }
+.sr-secondary-pair { display: flex; gap: 8px; }
+.sr-secondary-pair > * { flex: 1; }
+.sr-primary[data-tone="cyan"] { background: var(--sr-cyan); color: var(--sr-cyan-fg); }
+.sr-primary[data-tone="cyan"]:hover { background: var(--sr-cyan-hover); }
 
-/* Recent Section */
-.recent-section {
-  border-top: 1px solid var(--border-subtle);
-  padding: var(--space-md) var(--space-lg);
-  margin-top: auto;
-}
+/* ---- link and permissions ---------------------------------------------- */
 
-.section-header {
+.sr-link-row { display: flex; gap: 8px; margin: 12px 12px 0; }
+.sr-link-row input {
+  flex: 1;
+  min-width: 0;
+  height: var(--sr-h-md);
+  padding: 0 10px;
+  border: 1px solid var(--sr-border-dark);
+  border-radius: var(--sr-radius-control);
+  background: var(--sr-surface-panel-dark);
+  color: var(--sr-text-primary-on-dark);
+  font-family: var(--sr-font-mono);
+  font-size: 11.5px;
+}
+.sr-link-row input:focus-visible { border-color: var(--sr-cyan); outline: none; }
+.sr-link-row .sr-notice-primary { flex: none; padding: 0 16px; }
+
+.sr-permissions { display: flex; flex-direction: column; gap: 1px; margin: 12px 12px 14px; }
+.sr-permission {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-sm);
+  gap: 10px;
+  height: var(--sr-h-row);
+  padding: 0 10px;
+  background: var(--sr-surface-panel-dark);
+  font-size: 12px;
 }
-
-.section-title {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.sr-permission select {
+  height: var(--sr-h-xs);
+  border: 1px solid var(--sr-border-dark);
+  background: var(--sr-surface-carbon);
+  color: var(--sr-text-primary-on-dark);
+  font-family: inherit;
+  font-size: 11.5px;
+  border-radius: var(--sr-radius-control);
 }
-
-.recent-scroll {
-  display: flex;
-  gap: var(--space-sm);
-  overflow-x: auto;
-  padding-bottom: var(--space-xs);
-  scroll-snap-type: x mandatory;
-}
-
-.recent-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-
-.recent-item {
-  flex-shrink: 0;
-  width: 80px;
-  height: 60px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all var(--transition-normal);
-  scroll-snap-align: start;
+.sr-permission [role="switch"] {
+  width: 26px;
+  height: 15px;
   position: relative;
+  border: none;
+  padding: 0;
+  background: var(--sr-border-dark);
+}
+.sr-permission [role="switch"][aria-checked="true"] { background: var(--sr-cyan); }
+.sr-permission [role="switch"] > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  background: var(--sr-text-muted-on-dark);
+}
+.sr-permission [role="switch"][aria-checked="true"] > span { left: 13px; background: var(--sr-cyan-fg); }
+
+.sr-status-word[data-tone="neutral"] { color: var(--sr-text-faint-on-dark); }
+.sr-status-word { display: block; margin: 14px 12px 0; }
+
+/* Switches inside Recording options.
+ *
+ * The track styling was scoped to .sr-input-row, so the option-panel switches
+ * rendered as a bare 26x15 box with no track and no knob — visually a dash. */
+.sr-option-row [role="switch"] {
+  width: 26px;
+  height: 15px;
+  flex: none;
+  position: relative;
+  border: none;
+  padding: 0;
+  background: var(--sr-border-dark);
+}
+.sr-option-row [role="switch"][aria-checked="true"] { background: var(--sr-cyan); }
+.sr-option-row [role="switch"] > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  background: var(--sr-text-muted-on-dark);
+  transition: left var(--sr-dur-fast) var(--sr-ease);
+}
+.sr-option-row [role="switch"][aria-checked="true"] > span {
+  left: 13px;
+  background: var(--sr-cyan-fg);
 }
 
-.recent-item:hover {
-  border-color: var(--accent-primary);
-  transform: scale(1.05);
+@media (prefers-reduced-motion: reduce) {
+  .sr-option-row [role="switch"] > span { transition: none; }
 }
 
-.recent-item img {
+/* The live tab preview fills the frame behind the registration marks. */
+.sr-preview-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.recent-item.video::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.recent-item.video::before {
-  content: '▶';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 16px;
-  z-index: 1;
-}
-
-.recent-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-lg);
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.recent-empty.hidden {
-  display: none;
-}
-
-/* Settings Panel */
-.settings-panel {
-  position: absolute;
-  inset: 0;
-  background: #f7f5f8;
-  display: flex;
-  flex-direction: column;
-  animation: slideLeft var(--transition-normal) ease;
-  z-index: 100;
-}
-
-.settings-panel.hidden {
-  display: none;
-}
-
-@keyframes slideLeft {
-  from {
-    transform: translateX(100%);
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-.settings-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.settings-title {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-}
-
-.settings-content {
-  flex: 1;
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  overflow-y: auto;
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md);
-  background: var(--bg-glass);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-}
-
-.setting-info {
-  flex: 1;
-}
-
-.setting-label {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.setting-hint {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* Switch */
-.switch {
-  position: relative;
-  width: 48px;
-  height: 26px;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-full);
-  transition: all var(--transition-normal);
-}
-
-.slider::before {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  left: 3px;
-  bottom: 3px;
-  background: var(--text-secondary);
-  border-radius: 50%;
-  transition: all var(--transition-normal);
-}
-
-.switch input:checked+.slider {
-  background: var(--accent-gradient);
-}
-
-.switch input:checked+.slider::before {
-  background: white;
-  transform: translateX(22px);
-}
-
-/* Hidden Utility */
-.hidden {
-  display: none !important;
-}
-
-/* Microphone Permission Banner */
-.mic-permission-banner {
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: rgba(244, 67, 54, 0.08);
-  border: 1px solid rgba(244, 67, 54, 0.3);
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  font-size: var(--font-size-xs);
-  color: #b71c1c;
-  animation: fadeIn var(--transition-normal) ease;
-}
-
-.mic-permission-banner strong {
   display: block;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.mic-permission-text {
-  line-height: 1.4;
-}
-
-.mic-permission-btn {
-  align-self: flex-start;
-  padding: 4px 10px;
-  background: #b71c1c;
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition-normal);
-}
-
-.mic-permission-btn:hover {
-  background: #8b1414;
-}
-
-/* Keyboard Shortcuts Section */
-.shortcuts-section {
-  margin-top: var(--space-md);
-  padding: var(--space-md);
-  background: var(--bg-glass);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-}
-
-.shortcuts-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--space-md);
-}
-
-.shortcuts-header svg {
-  color: var(--accent-primary);
-}
-
-.shortcuts-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.shortcut-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-xs) 0;
-}
-
-.shortcut-name {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
-.shortcut-keys {
-  font-family: 'SF Mono', 'Menlo', monospace;
-  font-size: var(--font-size-xs);
-  background: var(--bg-tertiary);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
-}
-
-.customize-shortcuts-btn {
-  width: 100%;
-  margin-top: var(--space-md);
-  justify-content: center;
-  gap: var(--space-xs);
-}
-
-/* Review Banner */
-.review-banner {
-  margin: var(--space-sm) var(--space-md);
-  padding: var(--space-md);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: var(--radius-lg);
-}
-
-.review-banner-content {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
-}
-
-.review-star {
-  font-size: 20px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.review-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-}
-
-.review-text span {
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-}
-
-.review-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.review-rate-btn {
-  text-align: center;
-  text-decoration: none;
-  justify-content: center;
-}
-
-.review-dismiss-btn {
-  justify-content: center;
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
 }

@@ -5,8 +5,11 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
-import DashboardOverview from './pages/DashboardOverview';
+import Library from './pages/Library';
+import Projects from './pages/Projects';
+import Shared from './pages/Shared';
+import ClaimCaptures from './pages/ClaimCaptures';
+import Home from './pages/Home';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import ShareView from './pages/ShareView';
@@ -52,14 +55,34 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/dashboard" element={
+                {/* Auth-adjacent: deliberately absent from prerender.mjs,
+                    sitemap.xml and indexnow.yml — see src/__tests__/routes.test.ts */}
+                <Route path="/claim" element={
                   <ProtectedRoute>
-                    <DashboardOverview />
+                    <ClaimCaptures />
+                  </ProtectedRoute>
+                } />
+                {/* /dashboard was the old Home. Redirect rather than
+                    duplicate — existing links and bookmarks still work. */}
+                <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={
+                  <ProtectedRoute>
+                    <Home />
                   </ProtectedRoute>
                 } />
                 <Route path="/library" element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <Library />
+                  </ProtectedRoute>
+                } />
+                <Route path="/projects" element={
+                  <ProtectedRoute>
+                    <Projects />
+                  </ProtectedRoute>
+                } />
+                <Route path="/shared" element={
+                  <ProtectedRoute>
+                    <Shared />
                   </ProtectedRoute>
                 } />
                 <Route path="/analytics" element={
@@ -75,7 +98,7 @@ function App() {
                 {/* Editor and VideoPreview accessible without login, but with limited features */}
                 <Route path="/editor/:id?" element={
                   <Suspense fallback={
-                    <div className="h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark text-slate-600 dark:text-slate-400">
+                    <div className="h-screen flex flex-col items-center justify-center bg-background-light text-slate-600">
                       <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                       <p className="text-sm font-medium">Loading editor...</p>
                     </div>

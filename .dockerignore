@@ -10,3 +10,5 @@ apps/extension/*
 !apps/extension/package.json
 apps/web/*
 !apps/web/package.json
+packages/*
+!packages/design-system/package.json

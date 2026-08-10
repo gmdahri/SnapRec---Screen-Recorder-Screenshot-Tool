@@ -1,55 +1,115 @@
-import { useEffect } from 'react';
-import { useVideoEditor } from './VideoEditorContext';
+import { useEffect, useRef } from 'react';
 
-export function UnsavedChangesModal() {
-  const { unsavedLeaveTarget, cancelUnsavedLeave, confirmUnsavedLeave } = useVideoEditor();
+export interface UnsavedChangesModalProps {
+  title: string;
+  /** Names exactly what is kept: "draft edit · 1:41 of 3:02 kept · saved 12s ago". */
+  summary: string;
+  onLeave: () => void;
+  onStay: () => void;
+  onDiscard: () => void;
+}
+
+/** V4 — leaving the editor.
+ *
+ * The consequence is named, not implied. "You have unsaved changes" tells the
+ * user nothing they can act on; "1:41 of 3:02 kept, saved 12s ago" tells them
+ * whether they care.
+ *
+ * Presentational on purpose: it reads nothing from context, so the copy and
+ * the button ordering are testable without mounting an editor. */
+export function UnsavedChangesModal({
+  title, summary, onLeave, onStay, onDiscard,
+}: UnsavedChangesModalProps) {
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!unsavedLeaveTarget) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') cancelUnsavedLeave();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [unsavedLeaveTarget, cancelUnsavedLeave]);
-
-  if (!unsavedLeaveTarget) return null;
+    // Escape means stay: it is the reversible choice, and a dialog that
+    // discards work on Escape is a trap.
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onStay(); };
+    document.addEventListener('keydown', onKey);
+    ref.current?.querySelector<HTMLElement>('button')?.focus();
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onStay]);
 
   return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="unsaved-title"
-      onClick={(e) => e.target === e.currentTarget && cancelUnsavedLeave()}
-    >
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="px-6 pt-6 pb-2">
-          <h2 id="unsaved-title" className="text-lg font-bold text-slate-900">
-            Unsaved changes
-          </h2>
-          <p className="text-sm text-slate-600 mt-3 leading-relaxed">
-            You have edits that aren’t saved yet. If you leave now, those changes will be lost unless you{' '}
-            <strong>Save</strong> first from the top bar.
-          </p>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 80,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--sr-scrim-dark)', padding: 20,
+    }}>
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Leave the editor?"
+        style={{
+          width: '100%', maxWidth: 420,
+          background: 'var(--sr-surface-paper)',
+          border: '1px solid var(--sr-border-light)',
+          padding: 22,
+        }}
+      >
+        <h2 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 600, letterSpacing: '-.02em' }}>
+          Leave the editor?
+        </h2>
+
+        <p style={{ margin: '0 0 4px', fontSize: 13.5, fontWeight: 500 }}>{title}</p>
+
+        <p style={{
+          margin: '0 0 18px', fontFamily: 'var(--sr-font-mono)', fontSize: 11,
+          color: 'var(--sr-text-faint-on-light)',
+        }}>{summary}</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button type="button" onClick={onLeave} style={primary}>Leave, keep the draft</button>
+          <button type="button" onClick={onStay} style={secondary}>Stay in the editor</button>
         </div>
-        <div className="px-6 py-4 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end bg-slate-50 border-t border-slate-100">
+
+        {/* Destructive: separated by a band, outlined not filled, and it names
+            what is lost before it happens. */}
+        <div data-separated style={{
+          marginTop: 14, paddingTop: 14,
+          borderTop: '1px solid var(--sr-border-light-soft)',
+        }}>
           <button
             type="button"
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white text-slate-800 hover:bg-slate-100"
-            onClick={cancelUnsavedLeave}
-          >
-            Stay and keep editing
-          </button>
-          <button
-            type="button"
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-95"
-            onClick={confirmUnsavedLeave}
-          >
-            Leave without saving
-          </button>
+            onClick={onDiscard}
+            title="Discard the draft — this cannot be undone"
+            style={destructive}
+          >Discard the draft</button>
         </div>
       </div>
     </div>
   );
 }
+
+const primary = {
+  height: 'var(--sr-h-md)',
+  border: 'none',
+  background: 'var(--sr-text-primary-on-light)',
+  color: 'var(--sr-surface-paper)',
+  fontSize: 13.5,
+  fontWeight: 600,
+  cursor: 'pointer',
+  borderRadius: 'var(--sr-radius-control)',
+} as const;
+
+const secondary = {
+  height: 'var(--sr-h-md)',
+  border: '1px solid var(--sr-border-light)',
+  background: 'transparent',
+  fontSize: 13.5,
+  cursor: 'pointer',
+  borderRadius: 'var(--sr-radius-control)',
+} as const;
+
+const destructive = {
+  width: '100%',
+  height: 'var(--sr-h-sm)',
+  border: '1px solid var(--sr-coral-text)',
+  background: 'transparent',
+  color: 'var(--sr-coral-hover)',
+  fontSize: 12.5,
+  cursor: 'pointer',
+  borderRadius: 'var(--sr-radius-control)',
+} as const;

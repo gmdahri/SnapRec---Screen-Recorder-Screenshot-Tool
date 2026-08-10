@@ -1,31 +1,647 @@
+/* All @import must precede every other at-rule, @plugin included.
+   Fonts are imported from main.tsx, not here — see design-system/src/fonts.ts. */
 @import "tailwindcss";
+@import "@snaprec/design-system/tokens.css";
+
 @plugin "@tailwindcss/typography";
 
-@theme {
-  --color-primary: #8b5cf6;
-  --color-primary-light: #a78bfa;
-  --color-background-light: #f8fafc;
-  --color-background-dark: #0f172a;
-  --color-slate-grey: #475569;
+/* Tailwind utilities generate FROM the tokens. Do not restate hex here. */
+@theme inline {
+  --color-carbon: var(--sr-surface-carbon);
+  --color-well: var(--sr-surface-well);
+  --color-paper: var(--sr-surface-paper);
+  --color-panel: var(--sr-surface-panel-light);
+  --color-line: var(--sr-border-light);
+  --color-line-soft: var(--sr-border-light-soft);
+  --color-ink: var(--sr-text-primary-on-light);
+  --color-ink-2: var(--sr-text-secondary-on-light);
+  --color-ink-3: var(--sr-text-muted-on-light);
+  --color-ink-4: var(--sr-text-faint-on-light);
+  --color-cyan: var(--sr-cyan);
+  --color-cyan-ink: var(--sr-cyan-on-light);
+  --color-cyan-tint: var(--sr-cyan-tint);
+  --color-coral: var(--sr-coral-text);
+  --color-coral-mark: var(--sr-coral-mark);
+  --color-green: var(--sr-green);
 
-  --font-display: "Inter", sans-serif;
+  --font-ui: var(--sr-font-ui);
+  --font-mono: var(--sr-font-mono);
 
-  --radius-default: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-full: 9999px;
+  --radius-none: var(--sr-radius-none);
+  --radius-control: var(--sr-radius-control);
+
+  /* ---- Transitional compatibility layer ----
+     393 call sites across the not-yet-converted surfaces (dashboard, editors,
+     marketing) still use `bg-primary`, `text-primary`, `bg-background-light`
+     and friends. Without these aliases Tailwind emits no rule at all and those
+     elements render with no fill — invisible buttons, not merely wrong colours.
+     They are remapped onto plate values so those surfaces inherit the new
+     palette while they wait for P3/P5. Delete each line once its last call
+     site is converted.
+
+     `primary` is the cyan-on-light value #0A7F94, not #06A6C0, because the
+     existing markup uses it BOTH as text on white and as a fill under white
+     text. #0A7F94 clears WCAG AA in both directions (4.53:1 and 4.69:1);
+     #06A6C0 fails the second at 2.5:1. */
+  --color-primary: var(--sr-cyan-on-light);
+  --color-primary-light: var(--sr-cyan);
+  --color-background-light: var(--sr-surface-paper);
+  --color-background-dark: var(--sr-surface-carbon);
+  --color-slate-grey: var(--sr-text-muted-on-light);
+  --font-display: var(--sr-font-ui);
 }
 
 @layer base {
   body {
-    @apply font-display transition-colors duration-300;
+    font-family: var(--sr-font-ui);
+    background: var(--sr-surface-paper);
+    color: var(--sr-text-primary-on-light);
   }
 }
 
+/* Material Symbols is still loaded for surfaces not yet converted (P3/P5).
+   Remove this rule once the last Material Symbols call site is gone. */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 .canvas-container-stable {
   contain: layout;
+}
+
+/* Desktop share viewer. Geometry lives here so the two-column workspace can
+   become a true stack without fighting inline declarations. */
+.sr-viewer-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--sr-surface-panel-light);
+}
+
+.sr-viewer-page {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 22px 40px;
+}
+
+.sr-viewer-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  /* Row 1 is the video, row 2 is everything under it. Two rows rather than one
+     so the rail can span both: the comment thread now runs from the top of the
+     player to the bottom of Chapters instead of stopping at the video and
+     leaving the paper beside the metadata empty. */
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: stretch;
+}
+
+.sr-viewer-stage {
+  min-width: 0;
+  align-self: start;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.sr-viewer-media {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sr-viewer-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sr-viewer-content-column {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.sr-viewer-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  grid-column: 2;
+  /* Player top to Chapters bottom. */
+  grid-row: 1 / -1;
+  /* Zero height with a 100% floor: the rail fills the rows it spans without
+     its own thread being able to make them taller. */
+  height: 0;
+  min-height: 100%;
+  overflow: hidden;
+  background: var(--sr-surface-paper);
+  border: 1px solid var(--sr-border-light-soft);
+  border-radius: 0;
+}
+
+.sr-viewer-metadata-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.sr-viewer-stats {
+  display: flex;
+  flex: none;
+}
+
+.sr-viewer-chapters {
+  margin-top: 22px;
+}
+
+.sr-viewer-chapter-grid {
+  display: grid;
+  /* Sized to the thumbnail rather than split into thirds, so a wider column
+     shows more frames instead of three ever-larger ones. */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 1024px) {
+  .sr-viewer-root {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .sr-viewer-page {
+    --sr-viewer-usable-height: calc(100dvh - 50px - 22px - 40px);
+    /* The stage has no width of its own: it is 16:9 at whatever width its
+       column gives it, and the column is capped by this height. So this
+       fraction is the width control for the whole left column — raise it and
+       the player, the metadata row and Chapters all get wider together. The
+       remainder of the usable height is what row 2 has to scroll in. */
+    --sr-viewer-stage-max-height: calc(var(--sr-viewer-usable-height) * 0.72);
+
+    display: grid;
+    /* One child: the workspace, which owns the whole two-by-two layout. */
+    grid-template-rows: auto;
+    /* The page is the only scroller. Row 2 used to be a fixed remainder with
+       `overflow-y: auto`, which put a second scrollbar around the description
+       and Chapters — a nested bar inside a page that already had one. Sizing
+       the rows to their content leaves one scrollbar, out at the page edge. */
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* The stage stays 16:9 even when viewport height, rather than width, is the
+     limiting dimension, so its column is capped by that height. Whatever width
+     is left over goes to the rail rather than being left as empty paper down
+     the right-hand side. */
+  .sr-viewer-workspace {
+    width: 100%;
+    min-height: 0;
+    /* Both rows take their content's height; nothing is trapped in a fixed
+       remainder. The rail spans them, so it is as tall as the two together. */
+    grid-template-rows: auto auto;
+    grid-template-columns:
+      minmax(0, calc(var(--sr-viewer-stage-max-height) * 16 / 9))
+      minmax(312px, 1fr);
+  }
+
+  .sr-viewer-content-column {
+    min-height: 0;
+  }
+
+  .sr-viewer-chapter-grid {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .sr-viewer-chapter-grid > li {
+    /* A fixed thumbnail width, not a third of the track. At a third, a wide
+       left column turned three frames into posters; this keeps them the size
+       of a filmstrip and lets the track scroll. */
+    flex: 0 0 180px;
+    min-width: 0;
+  }
+}
+
+/* Mobile share viewer. Its filmstrip owns horizontal scrolling so the page
+   itself remains locked to the viewport width. */
+.sr-mobile-viewer {
+  min-width: 0;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--sr-surface-panel-light);
+}
+
+.sr-mobile-viewer-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 8px;
+  background: var(--sr-surface-carbon);
+  border-bottom: 1px solid var(--sr-border-dark);
+}
+
+.sr-mobile-viewer-icon-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  color: var(--sr-text-primary-on-dark);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sr-mobile-viewer-topbar-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sr-text-primary-on-dark);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-mobile-viewer-topbar-spacer {
+  flex: 1;
+}
+
+.sr-mobile-viewer-player {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--sr-surface-carbon);
+  border-bottom: 1px solid var(--sr-border-dark);
+}
+
+.sr-mobile-viewer-content {
+  min-width: 0;
+  padding: 16px 14px 32px;
+}
+
+.sr-mobile-viewer-metadata h1 {
+  margin: 0;
+  color: var(--sr-text-primary-on-light);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.sr-mobile-viewer-meta-line,
+.sr-mobile-viewer-description {
+  margin: 8px 0 0;
+  color: var(--sr-text-muted-on-light);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sr-mobile-viewer-meta-line {
+  font-family: var(--sr-font-mono);
+}
+
+.sr-mobile-viewer-description {
+  color: var(--sr-text-secondary-on-light);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.sr-mobile-viewer-stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin-top: 16px;
+  background: var(--sr-surface-paper);
+  border: 1px solid var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-stats > div {
+  min-width: 0;
+  padding: 11px 8px 12px;
+  text-align: center;
+  border-left: 1px solid var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-stats > div:first-child {
+  border-left: 0;
+}
+
+.sr-mobile-viewer-stat-label,
+.sr-mobile-viewer-stat-value {
+  display: block;
+}
+
+.sr-mobile-viewer-stat-label,
+.sr-mobile-viewer-comment-summary,
+.sr-mobile-viewer-timecode,
+.sr-mobile-viewer-details dd,
+.sr-mobile-viewer-chapter-heading,
+.sr-mobile-viewer-chapter-time {
+  font-family: var(--sr-font-mono);
+}
+
+.sr-mobile-viewer-stat-label {
+  color: var(--sr-text-faint-on-light);
+  font-size: 10px;
+  letter-spacing: .1em;
+}
+
+.sr-mobile-viewer-stat-value {
+  margin-top: 4px;
+  color: var(--sr-text-primary-on-light);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.sr-mobile-viewer-rail {
+  margin-top: 18px;
+  overflow: hidden;
+  background: var(--sr-surface-paper);
+  border: 1px solid var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-tabs button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--sr-text-muted-on-light);
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sr-mobile-viewer-tabs button[aria-selected="true"] {
+  color: var(--sr-text-primary-on-light);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--sr-cyan-on-light);
+}
+
+.sr-mobile-viewer-tabs button:disabled {
+  color: var(--sr-text-faint-on-light);
+  cursor: not-allowed;
+}
+
+.sr-mobile-viewer-panel {
+  min-width: 0;
+}
+
+.sr-mobile-viewer-comment-summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--sr-text-faint-on-light);
+  font-size: 10px;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-comment-summary span:last-child:not(:first-child) {
+  color: var(--sr-coral-hover);
+}
+
+.sr-mobile-viewer-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sr-mobile-viewer-comment {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  color: var(--sr-text-primary-on-light);
+  text-align: left;
+  background: var(--sr-surface-paper);
+  border: 0;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--sr-border-light-soft);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sr-mobile-viewer-comment.needs-reply {
+  border-left-color: var(--sr-coral-text);
+}
+
+.sr-mobile-viewer-timecode {
+  flex: none;
+  padding-top: 1px;
+  color: var(--sr-cyan-on-light);
+  font-size: 12px;
+}
+
+.sr-mobile-viewer-comment-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sr-mobile-viewer-comment-author,
+.sr-mobile-viewer-comment-body {
+  font-size: 13px;
+}
+
+.sr-mobile-viewer-comment-author {
+  font-weight: 600;
+}
+
+.sr-mobile-viewer-comment-body {
+  color: var(--sr-text-muted-on-light);
+  line-height: 1.5;
+}
+
+.sr-mobile-viewer-composer {
+  padding: 12px;
+}
+
+.sr-mobile-viewer-details {
+  margin: 0;
+  padding: 6px 14px 10px;
+}
+
+.sr-mobile-viewer-details > div {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-details dt,
+.sr-mobile-viewer-details dd {
+  font-size: 12px;
+}
+
+.sr-mobile-viewer-details dt {
+  color: var(--sr-text-muted-on-light);
+}
+
+.sr-mobile-viewer-details dd {
+  margin: 0;
+  color: var(--sr-text-primary-on-light);
+  text-align: right;
+}
+
+.sr-mobile-viewer-chapters {
+  min-width: 0;
+  margin-top: 20px;
+}
+
+.sr-mobile-viewer-chapter-heading {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--sr-text-faint-on-light);
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.sr-mobile-viewer-chapter-heading > span:nth-child(2) {
+  flex: 1;
+  height: 1px;
+  background: var(--sr-border-light-soft);
+}
+
+.sr-mobile-viewer-chapter-track {
+  display: flex;
+  gap: 10px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 0 8px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: var(--sr-border-light) transparent;
+  list-style: none;
+}
+
+.sr-mobile-viewer-chapter-track li {
+  flex: 0 0 164px;
+  scroll-snap-align: start;
+}
+
+.sr-mobile-viewer-chapter-track button {
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  overflow: hidden;
+  color: var(--sr-text-muted-on-light);
+  text-align: left;
+  background: var(--sr-surface-carbon);
+  border: 1px solid var(--sr-border-light-soft);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sr-mobile-viewer-chapter-image {
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--sr-surface-carbon);
+}
+
+.sr-mobile-viewer-chapter-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sr-mobile-viewer-chapter-time {
+  display: block;
+  padding: 7px 8px;
+  color: var(--sr-text-muted-on-light);
+  font-size: 11px;
+  background: var(--sr-surface-paper);
+}
+
+.sr-mobile-viewer-sheet-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 18px;
+  color: var(--sr-text-primary-on-light);
+  font-size: 14px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sr-mobile-viewer button:focus-visible {
+  outline: 2px solid var(--sr-cyan-on-light);
+  outline-offset: -2px;
+}
+
+@media (max-width: 1023px) {
+  .sr-viewer-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    row-gap: 16px;
+  }
+
+  /* Stacked, there are no columns or rows left to span, and the rail has no
+     player height to match — so every placement and height constraint from the
+     side-by-side layout comes back off. */
+  .sr-viewer-stage,
+  .sr-viewer-rail,
+  .sr-viewer-content-column {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .sr-viewer-content-column {
+    width: 100%;
+  }
+
+  .sr-viewer-rail {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .sr-viewer-metadata-row {
+    flex-wrap: wrap;
+  }
+
+  .sr-viewer-stats {
+    width: 100%;
+  }
+
+  .sr-viewer-stats > div {
+    flex: 1;
+  }
 }

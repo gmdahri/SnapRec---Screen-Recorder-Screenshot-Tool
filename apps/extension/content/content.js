@@ -22,6 +22,18 @@
     let recordingSeconds = 0;
     let webcamStream = null;
     let webcamElement = null;
+    /** Guards the await inside startWebcam. getUserMedia can take seconds
+     * while the permission prompt is up, and the toggle can flip in that
+     * window. Without it the camera light comes back on for an overlay the
+     * user has already dismissed. */
+    let webcamWanted = false;
+    /** The in-flight startWebcam, so concurrent callers wait for one camera
+     * instead of each opening their own. */
+    let webcamStarting = null;
+    /** 'rect' | 'circle' — the two the design allows. A shape picker with six
+     * options is a decision nobody wants while setting up a recording. */
+    let webcamShape = 'circle';
+    let micMuted = false;
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -44,6 +56,24 @@
                     sendResponse({ success: true });
                 });
                 return true; // Keep channel open for async response
+            case 'micMutedChanged':
+                // The popup's switch and this overlay are two views of one
+                // setting; whichever moved, both have to show it.
+                micMuted = !!message.muted;
+                renderWebcamState();
+                sendResponse({ success: true });
+                return false;
+            case 'isWebcamPreviewOn':
+                sendResponse({ on: !!webcamElement });
+                return false;
+            case 'showWebcamPreview':
+                startWebcam({ preview: true });
+                sendResponse({ success: true });
+                return false;
+            case 'hideWebcamPreview':
+                stopWebcam();
+                sendResponse({ success: true });
+                return false;
             case 'showRecordingOverlay':
                 showRecordingOverlay(message.startTime, message.webcam);
                 startMetadataTracking();
@@ -493,10 +523,18 @@
 
         recordingOverlay = document.createElement('div');
         recordingOverlay.className = 'snaprec-recording-bar';
+        // A landmark, so a screen-reader user can reach the controls without
+        // hunting through page content.
+        recordingOverlay.setAttribute('role', 'region');
+        recordingOverlay.setAttribute('aria-label', 'SnapRec recording controls');
         recordingOverlay.innerHTML = `
       <div class="snaprec-rec-indicator">
-        <span class="snaprec-rec-dot"></span>
-        <span class="snaprec-timer">${formatTime(recordingSeconds)}</span>
+        <span class="snaprec-rec-dot" aria-hidden="true"></span>
+        <span class="snaprec-status-word">Recording</span>
+        <!-- Announced every 10s, not every second: a per-second live region is
+             unusable with a screen reader running. -->
+        <span class="snaprec-timer" aria-live="polite" data-announce-every="10"
+              >${formatTime(recordingSeconds)}</span>
       </div>
       <div class="snaprec-controls">
         <button class="snaprec-pause-btn" title="Pause">
@@ -530,39 +568,327 @@
         pauseBtn.addEventListener('click', togglePause);
         stopBtn.addEventListener('click', stopRecording);
 
-        // Start webcam if requested
+        // Start webcam if requested. If the preview is already up, this only
+        // promotes it — re-running getUserMedia would put a second video on
+        // the page and hold the camera twice.
         if (showWebcam) {
-            startWebcam();
+            startWebcam({ preview: false });
+        } else {
+            // The take does not include the camera, so neither should the page.
+            stopWebcam();
         }
     }
 
-    async function startWebcam() {
+    /** One camera, two meanings.
+     *
+     * `preview: true` is the popup's toggle — you are framing, nothing is
+     * being captured, so the ring is cyan. `preview: false` is the take, and
+     * the ring goes coral. Calling this twice reuses the existing stream
+     * rather than opening the camera again. */
+    async function startWebcam({ preview = false } = {}) {
+        // Set first, because a re-entrant showRecordingOverlay tears the old
+        // bar down via hideRecordingOverlay — which clears this flag — and
+        // then asks for the camera again on the very next line. Recording the
+        // latest intent up here means an in-flight getUserMedia is kept
+        // rather than cancelled and restarted.
+        webcamWanted = true;
+        if (webcamElement) {
+            webcamElement.dataset.preview = String(preview);
+            return;
+        }
+        // Guarding on webcamElement alone is not enough: it stays null for as
+        // long as getUserMedia takes, so two calls in that window both got
+        // past it and opened a camera each. The second overwrote the first's
+        // element and stream, orphaning a live camera that stopWebcam could
+        // no longer reach — which is how a recording could end with the
+        // camera still on and its overlay still on the page. The background
+        // makes this ordinary: onActivated and onUpdated both inject the
+        // recording overlay for the same tab.
+        if (webcamStarting) {
+            await webcamStarting;
+            if (webcamElement) webcamElement.dataset.preview = String(preview);
+            return;
+        }
+        webcamStarting = (async () => {
         try {
-            console.log('[SnapRec Content] Starting webcam...');
+            console.log('[SnapRec Content] Starting webcam, preview:', preview);
             webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
 
-            webcamElement = document.createElement('video');
-            webcamElement.className = 'snaprec-webcam';
-            webcamElement.autoplay = true;
-            webcamElement.srcObject = webcamStream;
-            webcamElement.muted = true; // Avoid feedback
+            // Between the await and here the user may have toggled off, or the
+            // recording may have ended. Without this the camera light comes
+            // back on for an overlay nobody asked for.
+            if (!webcamWanted) {
+                webcamStream.getTracks().forEach((t) => t.stop());
+                webcamStream = null;
+                return;
+            }
 
+            // A <video> cannot hold children, so the overlay is a container
+            // with the video inside it. Only the video is mirrored — mirrored
+            // controls would put the mic button where your eye says the close
+            // button is.
+            webcamElement = document.createElement('div');
+            webcamElement.className = 'snaprec-webcam';
+            webcamElement.dataset.preview = String(preview);
+            webcamElement.dataset.shape = webcamShape;
+
+            const video = document.createElement('video');
+            video.className = 'snaprec-webcam-video';
+            video.autoplay = true;
+            video.playsInline = true;
+            video.srcObject = webcamStream;
+            video.muted = true; // Avoid feedback
+            webcamElement.appendChild(video);
+
+            webcamElement.appendChild(buildWebcamControls());
+            renderWebcamState();
+
+            makeWebcamDraggable(webcamElement);
             document.body.appendChild(webcamElement);
+            applyWebcamPosition(webcamElement, await loadWebcamPosition());
             console.log('[SnapRec Content] Webcam started');
         } catch (error) {
-            console.error('[SnapRec Content] Failed to start webcam:', error);
+            // Denied, or in use by another app. The overlay is not worth
+            // interrupting the page for — the popup already owns that message.
+            console.warn('[SnapRec Content] Failed to start webcam:', error?.message);
+            webcamStream = null;
+        }
+        })();
+        try {
+            await webcamStarting;
+        } finally {
+            webcamStarting = null;
+        }
+    }
+
+    /** Where the user last put the overlay, in viewport percentages.
+     *
+     * Percentages rather than pixels because the same position has to survive
+     * a different window size — a corner stays a corner, where a stored
+     * 1400px left edge would be off-screen on a narrower window. */
+    const WEBCAM_POS_KEY = 'webcamPosition';
+
+    async function loadWebcamPosition() {
+        try {
+            const { [WEBCAM_POS_KEY]: pos } = await chrome.storage.local.get(WEBCAM_POS_KEY);
+            return pos && typeof pos.xPct === 'number' ? pos : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function applyWebcamPosition(el, pos) {
+        if (!pos) return;
+        const { width, height } = el.getBoundingClientRect();
+        const x = clampWebcam((pos.xPct / 100) * window.innerWidth, width, window.innerWidth);
+        const y = clampWebcam((pos.yPct / 100) * window.innerHeight, height, window.innerHeight);
+        // Overrides the stylesheet's default corner. Once the user has placed
+        // it, bottom/right must stop competing with left/top.
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+    }
+
+    /** Keeps a margin of the overlay on screen. Fully clamping to the viewport
+     * would forbid the half-off-screen placement people use to park it. */
+    function clampWebcam(value, size, limit) {
+        const visible = Math.min(size, 48);
+        return Math.max(visible - size, Math.min(value, limit - visible));
+    }
+
+    /** Drag to move, anywhere on screen.
+     *
+     * Pointer events rather than mouse events so a trackpad, a pen and touch
+     * all work, and setPointerCapture so the drag survives the pointer leaving
+     * the element — without it, moving faster than the render loop drops the
+     * overlay mid-gesture. */
+    function makeWebcamDraggable(el) {
+        let dragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        let moved = false;
+
+        el.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            const rect = el.getBoundingClientRect();
+            dragging = true;
+            moved = false;
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            el.setPointerCapture(e.pointerId);
+            el.dataset.dragging = 'true';
+            // The page below must not also receive this gesture — on a map or
+            // a canvas the drag would pan the page as well as the overlay.
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        el.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            moved = true;
+            const rect = el.getBoundingClientRect();
+            el.style.left = `${clampWebcam(e.clientX - offsetX, rect.width, window.innerWidth)}px`;
+            el.style.top = `${clampWebcam(e.clientY - offsetY, rect.height, window.innerHeight)}px`;
+            el.style.right = 'auto';
+            el.style.bottom = 'auto';
+            e.preventDefault();
+        });
+
+        const end = (e) => {
+            if (!dragging) return;
+            dragging = false;
+            delete el.dataset.dragging;
+            try { el.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+            if (!moved) return;
+            const rect = el.getBoundingClientRect();
+            try {
+                chrome.storage.local.set({ [WEBCAM_POS_KEY]: {
+                    xPct: (rect.left / window.innerWidth) * 100,
+                    yPct: (rect.top / window.innerHeight) * 100,
+                } });
+            } catch { /* the overlay still moved; persistence is a nicety */ }
+        };
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
+
+        // A drag still ends in a click, which bubbles into the page — so
+        // moving the overlay across a link or a canvas activated whatever was
+        // underneath. Swallowed in the capture phase, and only when the
+        // pointer actually moved, so a plain click on the overlay is left
+        // alone. `moved` is reset on the next pointerdown.
+        el.addEventListener('click', (e) => {
+            if (!moved) return;
+            // One shot. The control bar stops pointerdown so the drag handler
+            // never sees it, which means `moved` would otherwise stay true
+            // from the last drag and swallow every later click.
+            moved = false;
+            // Pressing a control is not the tail of a drag. The bar stops its
+            // own clicks from reaching the page, so letting them through here
+            // costs nothing — and swallowing them meant that after moving the
+            // overlay, the next press of mute, shape or close did nothing.
+            if (e.target.closest?.('.snaprec-webcam-controls')) return;
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+
+        // A window that shrinks past the overlay would otherwise strand it
+        // outside the viewport with no way to drag it back.
+        window.addEventListener('resize', () => {
+            if (!webcamElement) return;
+            const rect = webcamElement.getBoundingClientRect();
+            if (webcamElement.style.left) {
+                webcamElement.style.left = `${clampWebcam(rect.left, rect.width, window.innerWidth)}px`;
+                webcamElement.style.top = `${clampWebcam(rect.top, rect.height, window.innerHeight)}px`;
+            }
+        });
+    }
+
+    /** The controls, revealed on hover or keyboard focus.
+     *
+     * Always-visible chrome would sit in every recording; hidden-until-needed
+     * keeps the overlay a picture of you and nothing else. They are real
+     * buttons so they are reachable by keyboard, which a hover-only affordance
+     * never is. */
+    function buildWebcamControls() {
+        const bar = document.createElement('div');
+        bar.className = 'snaprec-webcam-controls';
+
+        const add = (name, label) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'snaprec-webcam-btn';
+            b.dataset.webcam = name;
+            b.title = label;
+            b.setAttribute('aria-label', label);
+            bar.appendChild(b);
+            return b;
+        };
+        add('mic', 'Mute microphone');
+        add('shape', 'Switch between a circle and a rectangle');
+        add('close', 'Turn the camera off');
+
+        // pointerdown, not click: the drag handler lives on the container and
+        // would otherwise pick the gesture up and move the overlay instead.
+        bar.addEventListener('pointerdown', (e) => e.stopPropagation());
+        bar.addEventListener('click', (e) => {
+            const btn = e.target.closest?.('[data-webcam]');
+            if (!btn) return;
+            e.stopPropagation();
+            if (btn.dataset.webcam === 'close') return stopWebcam();
+            if (btn.dataset.webcam === 'shape') {
+                webcamShape = webcamShape === 'circle' ? 'rect' : 'circle';
+            }
+            if (btn.dataset.webcam === 'mic') {
+                micMuted = !micMuted;
+                // The page cannot reach the microphone — it is held by the
+                // offscreen document — so the background owns the change and
+                // this only asks for it.
+                try { chrome.runtime.sendMessage({ action: 'setMicMuted', muted: micMuted }); } catch { /* no-op */ }
+            }
+            renderWebcamState();
+        });
+        return bar;
+    }
+
+    /** Reads the shared rules module rather than re-deciding them here, so the
+     * overlay and its tests cannot drift. */
+    function renderWebcamState() {
+        if (!webcamElement) return;
+        const rules = globalThis.SnapRecWebcam;
+        const state = { micMuted, cameraLost: false, shape: webcamShape, selected: false };
+
+        webcamElement.dataset.shape = rules ? rules.overlayState(state).shape : webcamShape;
+        if (rules) {
+            const { borderRadius } = rules.shapeFor(webcamShape);
+            webcamElement.style.borderRadius =
+                typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius;
+        }
+
+        const micBtn = webcamElement.querySelector('[data-webcam="mic"]');
+        if (micBtn) {
+            micBtn.dataset.on = String(!micMuted);
+            micBtn.title = micMuted ? 'Unmute microphone' : 'Mute microphone';
+            micBtn.setAttribute('aria-label', micBtn.title);
+            micBtn.setAttribute('aria-pressed', String(micMuted));
+        }
+
+        // The word carries the state, so a muted mic is unambiguous in the
+        // recording itself and under reduced motion — not merely the absence
+        // of something.
+        const label = rules ? rules.statusLabel(state) : (micMuted ? 'Microphone muted' : null);
+        let status = webcamElement.querySelector('.snaprec-webcam-status');
+        if (label && !status) {
+            status = document.createElement('span');
+            status.className = 'snaprec-webcam-status';
+            webcamElement.appendChild(status);
+        }
+        if (status) {
+            status.textContent = label ?? '';
+            status.hidden = !label;
         }
     }
 
     function stopWebcam() {
+        webcamWanted = false;
         if (webcamStream) {
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;
         }
-        if (webcamElement) {
-            webcamElement.remove();
-            webcamElement = null;
-        }
+        // Sweep the DOM rather than only the element we are holding. A camera
+        // the page can still see is a camera that is still on, whoever opened
+        // it — an orphan from a race, or one left by an earlier instance of
+        // this script. Stopping the tracks is what turns the light off;
+        // removing the node only hides it.
+        document.querySelectorAll('.snaprec-webcam').forEach((overlay) => {
+            overlay.querySelectorAll('video').forEach((video) => {
+                const stream = video.srcObject;
+                if (stream && stream.getTracks) stream.getTracks().forEach((t) => t.stop());
+                video.srcObject = null;
+            });
+            overlay.remove();
+        });
+        webcamElement = null;
     }
 
     function formatTime(totalSeconds) {

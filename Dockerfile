@@ -6,6 +6,7 @@ COPY package.json package-lock.json ./
 COPY apps/server/package.json apps/server/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY apps/extension/package.json apps/extension/package.json
+COPY packages/design-system/package.json packages/design-system/package.json
 RUN npm ci --workspace=apps/server --include-workspace-root
 
 COPY apps/server apps/server
@@ -20,6 +21,7 @@ COPY package.json package-lock.json ./
 COPY apps/server/package.json apps/server/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY apps/extension/package.json apps/extension/package.json
+COPY packages/design-system/package.json packages/design-system/package.json
 RUN npm ci --omit=dev --workspace=apps/server --include-workspace-root \
     && npm cache clean --force
 

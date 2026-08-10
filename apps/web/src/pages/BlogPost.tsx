@@ -97,7 +97,7 @@ const BlogPost: React.FC = () => {
     const jsonLd = useMemo(() => buildBlogPostJsonLd(post), [post]);
 
     return (
-        <div className="min-h-screen bg-white text-slate-900 font-display">
+        <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display">
             <SEO
                 url={`/blog/${post.slug}`}
                 title={post.title}
@@ -111,21 +111,21 @@ const BlogPost: React.FC = () => {
             <main className="pt-32 pb-20">
                 <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Breadcrumbs */}
-                    <nav className="flex text-sm text-slate-500 mb-8" aria-label="Breadcrumb">
+                    <nav className="flex text-sm text-[var(--sr-text-faint-on-light)] mb-8" aria-label="Breadcrumb">
                         <ol className="inline-flex items-center space-x-1 md:space-x-3">
                             <li className="inline-flex items-center">
-                                <NavLink to="/" className="hover:text-primary transition-colors">Home</NavLink>
+                                <NavLink to="/" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">Home</NavLink>
                             </li>
                             <li>
                                 <div className="flex items-center">
                                     <span className="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
-                                    <NavLink to="/blog" className="hover:text-primary transition-colors">Blog</NavLink>
+                                    <NavLink to="/blog" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">Blog</NavLink>
                                 </div>
                             </li>
                             <li aria-current="page">
                                 <div className="flex items-center">
                                     <span className="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
-                                    <span className="text-slate-400 capitalize">{post.category}</span>
+                                    <span className="text-[var(--sr-text-faint-on-light)] capitalize">{post.category}</span>
                                 </div>
                             </li>
                         </ol>
@@ -134,25 +134,25 @@ const BlogPost: React.FC = () => {
                     {/* Article Header */}
                     <header className="mb-12 text-center md:text-left">
                         <div className="flex justify-center md:justify-start mb-6">
-                            <div className="size-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-primary text-4xl">{post.heroIcon}</span>
+                            <div className="size-20 rounded-[2px] bg-[var(--sr-cyan)]/10 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-4xl">{post.heroIcon}</span>
                             </div>
                         </div>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-tight">
                             {post.title}
                         </h1>
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-slate-500">
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[var(--sr-text-faint-on-light)]">
                             <div className="flex items-center gap-2">
                                 <img
                                     src={authorPhoto}
                                     alt="Ghulam Muhammad"
                                     className="size-8 rounded-full object-cover shrink-0"
                                 />
-                                <span className="font-bold text-slate-700">Ghulam Muhammad</span>
+                                <span className="font-bold text-[var(--sr-text-primary-on-light)]">Ghulam Muhammad</span>
                             </div>
-                            <span className="hidden sm:inline text-slate-300">•</span>
+                            <span className="hidden sm:inline text-[var(--sr-text-faint-on-light)]">•</span>
                             <time dateTime={post.date}>{new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
-                            <span className="hidden sm:inline text-slate-300">•</span>
+                            <span className="hidden sm:inline text-[var(--sr-text-faint-on-light)]">•</span>
                             <span className="flex items-center gap-1">
                                 <span className="material-symbols-outlined text-[18px]">schedule</span>
                                 {post.readTime}
@@ -163,48 +163,48 @@ const BlogPost: React.FC = () => {
                     {/* Article Content */}
                     <div
                         className="prose prose-lg prose-slate max-w-none 
-                                    prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 
-                                    prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-8 prose-h2:pb-4 prose-h2:border-b-2 prose-h2:border-slate-100
+                                    prose-headings:font-black prose-headings:tracking-tight prose-headings:text-[var(--sr-text-primary-on-light)] 
+                                    prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-8 prose-h2:pb-4 prose-h2:border-b-2 prose-h2:border-[var(--sr-border-light-soft)]
                                     prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-6
-                                    prose-p:text-slate-600 prose-p:leading-[1.8] prose-p:mb-8 prose-p:text-[1.125rem]
-                                    prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline
-                                    prose-li:text-slate-600 prose-li:marker:text-primary prose-li:leading-relaxed prose-li:mb-2
+                                    prose-p:text-[var(--sr-text-muted-on-light)] prose-p:leading-[1.8] prose-p:mb-8 prose-p:text-[1.125rem]
+                                    prose-a:text-[var(--sr-cyan-on-light)] prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+                                    prose-li:text-[var(--sr-text-muted-on-light)] prose-li:marker:text-[var(--sr-cyan-on-light)] prose-li:leading-relaxed prose-li:mb-2
                                     prose-ul:mt-6 prose-ul:mb-10 prose-ul:pl-6
                                     prose-ol:mt-6 prose-ol:mb-10 prose-ol:pl-6
-                                    prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:text-primary-900 prose-blockquote:italic prose-blockquote:my-10
-                                    prose-img:rounded-3xl prose-img:shadow-2xl prose-img:border prose-img:border-slate-100 prose-img:my-12
-                                    prose-strong:font-black prose-strong:text-slate-900 prose-strong:bg-yellow-100/50 prose-strong:px-1 prose-strong:rounded
-                                    prose-code:text-primary prose-code:bg-primary/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
-                                    prose-table:border-collapse prose-table:w-full prose-table:text-sm prose-table:my-12 prose-table:shadow-sm prose-table:rounded-xl prose-table:overflow-hidden
-                                    prose-th:bg-slate-50 prose-th:text-slate-800 prose-th:p-5 prose-th:text-left prose-th:border prose-th:border-slate-200 prose-th:font-black
-                                    prose-td:p-5 prose-td:border prose-td:border-slate-200 prose-td:text-slate-600"
+                                    prose-blockquote:border-l-4 prose-blockquote:border-[var(--sr-cyan)] prose-blockquote:bg-[var(--sr-cyan)]/5 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:text-primary-900 prose-blockquote:italic prose-blockquote:my-10
+                                    prose-img:rounded-[2px] prose-img:shadow-2xl prose-img:border prose-img:border-[var(--sr-border-light-soft)] prose-img:my-12
+                                    prose-strong:font-black prose-strong:text-[var(--sr-text-primary-on-light)] prose-strong:bg-yellow-100/50 prose-strong:px-1 prose-strong:rounded
+                                    prose-code:text-[var(--sr-cyan-on-light)] prose-code:bg-[var(--sr-cyan)]/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-[2px] prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
+                                    prose-table:border-collapse prose-table:w-full prose-table:text-sm prose-table:my-12 prose-table:shadow-sm prose-table:rounded-[2px] prose-table:overflow-hidden
+                                    prose-th:bg-[var(--sr-surface-panel-light)] prose-th:text-[var(--sr-text-primary-on-light)] prose-th:p-5 prose-th:text-left prose-th:border prose-th:border-[var(--sr-border-light-soft)] prose-th:font-black
+                                    prose-td:p-5 prose-td:border prose-td:border-[var(--sr-border-light-soft)] prose-td:text-[var(--sr-text-muted-on-light)]"
                         dangerouslySetInnerHTML={{ __html: post.content }}
                     />
 
                     {/* Author Bio */}
-                    <div className="mt-16 flex items-start gap-6 border border-slate-200 rounded-3xl p-6 md:p-8 bg-slate-50">
+                    <div className="mt-16 flex items-start gap-6 border border-[var(--sr-border-light-soft)] rounded-[2px] p-6 md:p-8 bg-[var(--sr-surface-panel-light)]">
                         <img
                             src={authorPhoto}
                             alt="Ghulam Muhammad"
-                            className="size-16 md:size-20 rounded-2xl object-cover shrink-0"
+                            className="size-16 md:size-20 rounded-[2px] object-cover shrink-0"
                         />
                         <div>
-                            <p className="text-xs uppercase tracking-widest font-bold text-primary mb-1">Written by</p>
-                            <h4 className="text-lg font-black text-slate-900 mb-0.5">Ghulam Muhammad</h4>
-                            <p className="text-sm text-primary font-semibold mb-3">Software Engineer &amp; Founder, SnapRec</p>
-                            <p className="text-slate-600 text-sm leading-relaxed">
+                            <p className="text-xs uppercase tracking-widest font-bold text-[var(--sr-cyan-on-light)] mb-1">Written by</p>
+                            <h4 className="text-lg font-black text-[var(--sr-text-primary-on-light)] mb-0.5">Ghulam Muhammad</h4>
+                            <p className="text-sm text-[var(--sr-cyan-on-light)] font-semibold mb-3">Software Engineer &amp; Founder, SnapRec</p>
+                            <p className="text-[var(--sr-text-muted-on-light)] text-sm leading-relaxed">
                                 Ghulam built SnapRec after getting frustrated with watermarks on free screen recorders. He's been building Chrome extensions since 2024.
                             </p>
                         </div>
                     </div>
 
                     {/* Article Footer CTA */}
-                    <div className="mt-8 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-3xl p-8 md:p-12 text-center">
-                        <div className="bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-6 px-4 py-3">
+                    <div className="mt-8 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-[2px] p-8 md:p-12 text-center">
+                        <div className="bg-[var(--sr-surface-paper)] rounded-[2px] shadow-sm flex items-center justify-center mx-auto mb-6 px-4 py-3">
                             <img src="/logo.png" alt="SnapRec" className="h-9 w-auto object-contain" />
                         </div>
                         <h3 className="text-2xl font-black mb-4">Start Recording for Free</h3>
-                        <p className="text-slate-600 mb-8 max-w-xl mx-auto">
+                        <p className="text-[var(--sr-text-muted-on-light)] mb-8 max-w-xl mx-auto">
                             Join thousands of creators, educators, and teams who use SnapRec to capture their screens effortlessly. No watermarks, no time limits.
                         </p>
                         <div className="flex justify-center">
@@ -224,19 +224,19 @@ const BlogPost: React.FC = () => {
                                     to={`/blog/${related.slug}`}
                                     className="group block"
                                 >
-                                    <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+                                    <div className="bg-[var(--sr-surface-paper)] rounded-[2px] border border-[var(--sr-border-light-soft)] p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
                                         <div className="flex items-start gap-4 mb-4">
-                                            <div className="flex-shrink-0 size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                                <span className="material-symbols-outlined text-primary text-2xl">{related.heroIcon}</span>
+                                            <div className="flex-shrink-0 size-12 rounded-[2px] bg-[var(--sr-cyan)]/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                                <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-2xl">{related.heroIcon}</span>
                                             </div>
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] uppercase font-bold text-primary tracking-wider">
+                                                <span className="text-[10px] uppercase font-bold text-[var(--sr-cyan-on-light)] tracking-wider">
                                                     {related.category}
                                                 </span>
-                                                <span className="text-slate-400 text-xs">{related.readTime}</span>
+                                                <span className="text-[var(--sr-text-faint-on-light)] text-xs">{related.readTime}</span>
                                             </div>
                                         </div>
-                                        <h4 className="text-lg font-bold mb-3 group-hover:text-primary transition-colors leading-tight">
+                                        <h4 className="text-lg font-bold mb-3 group-hover:text-[var(--sr-cyan-on-light)] transition-colors leading-tight">
                                             {related.title}
                                         </h4>
                                     </div>

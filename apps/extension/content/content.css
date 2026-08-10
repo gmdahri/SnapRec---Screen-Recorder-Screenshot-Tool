@@ -18,13 +18,13 @@
     left: 50%;
     transform: translateX(-50%);
     background: #ffffff;
-    color: #130d1c;
+    color: #0C1011;
     padding: 12px 24px;
     border-radius: 12px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 14px;
     font-weight: 500;
-    border: 1px solid #ece7f4;
+    border: 1px solid #EEF1F1;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 2147483647;
 }
@@ -32,8 +32,8 @@
 .snaprec-selection-box {
     position: fixed;
     display: none;
-    border: 2px solid #8B5CF6;
-    background: rgba(123, 37, 244, 0.1);
+    border: 2px solid #06A6C0;
+    background: rgba(6, 166, 192, .12);
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     z-index: 2147483647;
     pointer-events: none;
@@ -46,7 +46,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background: #ffffff;
-    color: #130d1c;
+    color: #0C1011;
     padding: 20px 32px;
     border-radius: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -55,7 +55,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid #ece7f4;
+    border: 1px solid #EEF1F1;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
     z-index: 2147483647;
 }
@@ -63,8 +63,8 @@
 .snaprec-loading-spinner {
     width: 20px;
     height: 20px;
-    border: 2px solid rgba(123, 37, 244, 0.3);
-    border-top-color: #8B5CF6;
+    border: 2px solid rgba(6, 166, 192, .3);
+    border-top-color: #06A6C0;
     border-radius: 50%;
     animation: snaprec-spin 0.8s linear infinite;
 }
@@ -75,7 +75,15 @@
     }
 }
 
-/* Recording Bar */
+/* Recording bar — the plate.
+ *
+ * content.css is injected into arbitrary pages and cannot read --sr-*, so the
+ * hex literals here are deliberate. Each one names the token it mirrors; keep
+ * them in sync by hand when tokens.css changes.
+ *
+ * The bar is not site content: a fixed 42px height, carbon body, 1px light
+ * border and a strong outer shadow keep it legible on any page, and it never
+ * inherits page fonts. */
 .snaprec-recording-bar {
     position: fixed;
     bottom: 40px;
@@ -83,53 +91,60 @@
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 20px;
-    background: #ffffff;
-    padding: 12px 24px;
-    border-radius: 50px;
-    border: 1px solid #ece7f4;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    gap: 10px;
+    height: 42px;
+    padding: 0 12px;
+    background: #0C1011;            /* --sr-surface-carbon */
+    border: 1px solid #C7CFD0;      /* --sr-border-light */
+    border-radius: 0;               /* radius is 0 on rails */
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .42);
     z-index: 2147483647;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Schibsted Grotesk Variable', system-ui, -apple-system, sans-serif;
+    color: #F3F6F6;                 /* --sr-text-primary-on-dark */
+}
+
+/* Filled coral means capturing right now; paused empties the fill. */
+.snaprec-recording-bar.paused {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px #D8331F, 0 8px 28px rgba(0, 0, 0, .42);
 }
 
 .snaprec-rec-indicator {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .snaprec-rec-dot {
-    width: 12px;
-    height: 12px;
-    background: #EF4444;
+    width: 9px;
+    height: 9px;
+    background: #FF3B2E;            /* --sr-coral-mark */
     border-radius: 50%;
-    animation: snaprec-pulse 1s infinite;
+    animation: snaprec-pulse 1.6s ease-in-out infinite;
 }
 
+/* Under reduced motion the dot holds solid and the word carries the state. */
 .snaprec-recording-bar.paused .snaprec-rec-dot {
     animation: none;
-    opacity: 0.5;
+    background: transparent;
+    box-shadow: inset 0 0 0 1px #FF7A6E;   /* --sr-coral-on-dark */
 }
 
 @keyframes snaprec-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+}
 
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
+@media (prefers-reduced-motion: reduce) {
+    .snaprec-rec-dot { animation: none; }
 }
 
 .snaprec-timer {
-    color: #130d1c;
-    font-size: 16px;
-    font-weight: 600;
+    color: #F3F6F6;                 /* --sr-text-primary-on-dark */
+    font-family: 'Azeret Mono Variable', ui-monospace, monospace;
+    font-size: 13px;
     font-variant-numeric: tabular-nums;
-    min-width: 50px;
+    min-width: 46px;
 }
 
 .snaprec-controls {
@@ -161,12 +176,12 @@
 }
 
 .snaprec-stop-btn {
-    background: #EF4444;
+    background: #D8331F;
     color: white;
 }
 
 .snaprec-stop-btn:hover {
-    background: #DC2626;
+    background: #B82A18;
     transform: scale(1.05);
 }
 
@@ -177,18 +192,151 @@
 }
 
 /* Webcam Overlay */
+/* Values are literal here, not var(--sr-*): this stylesheet is injected into
+   the host page, where the design system is not. The tokens it mirrors are
+   --sr-cyan, --sr-coral-mark and --sr-scrim-dark. */
 .snaprec-webcam {
     position: fixed;
     bottom: 120px;
     right: 40px;
     width: 180px;
     height: 180px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid rgba(123, 37, 244, 0.6);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    /* Cyan is focus: you are framing, nothing is being captured yet. The ring
+       is the only thing separating the two states, so it is a 3px edge rather
+       than a tint. Was the pre-plate purple, as this whole file was. */
+    border: 3px solid #06A6C0;
+    box-shadow: 0 8px 32px rgba(4, 7, 8, .45);
     z-index: 2147483646;
+    /* It moves, so it says so before it is touched. */
+    cursor: grab;
+    /* The browser's own drag and text selection would otherwise fight the
+       pointer handlers and start a native drag image mid-gesture. */
+    user-select: none;
+    -webkit-user-drag: none;
+    touch-action: none;
+    font-family: 'Schibsted Grotesk Variable', system-ui, -apple-system, sans-serif;
 }
+
+/* Two shapes, no more — the values come from webcam.core.js. */
+.snaprec-webcam[data-shape="circle"] { border-radius: 50%; }
+.snaprec-webcam[data-shape="rect"]   { border-radius: 6px; }
+
+.snaprec-webcam-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    /* Only the picture is mirrored, so you can frame yourself. Mirroring the
+       whole overlay would put the mic button where your eye says close is.
+       The recorded stream is untouched either way. */
+    transform: scaleX(-1);
+}
+
+.snaprec-webcam[data-dragging] {
+    cursor: grabbing;
+    /* Lifted while held, so it is clearly above the page rather than part of
+       it — the only moment this overlay is being manipulated. */
+    box-shadow: 0 16px 48px rgba(4, 7, 8, .6);
+}
+
+/* Coral is reserved for live capture, and this is the moment it means it. */
+.snaprec-webcam[data-preview="false"] {
+    border-color: #FF3B2E;
+}
+
+/* Controls: hidden until wanted, so the overlay is a picture of you and not a
+   panel. They sit over the foot of the frame on a scrim, because a control
+   bar outside it would change the overlay's footprint as it appears. */
+.snaprec-webcam-controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0 10px;
+    background: linear-gradient(to top, rgba(4, 7, 8, .75), transparent);
+    opacity: 0;
+    transition: opacity .12s ease;
+}
+
+.snaprec-webcam:hover .snaprec-webcam-controls,
+.snaprec-webcam:focus-within .snaprec-webcam-controls {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .snaprec-webcam-controls { transition: none; }
+}
+
+.snaprec-webcam-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 2px;              /* radius is 2 on controls */
+    background: rgba(243, 246, 246, .16);
+    color: #F3F6F6;                  /* --sr-text-primary-on-dark */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+}
+
+.snaprec-webcam-btn:hover { background-color: rgba(243, 246, 246, .3); }
+.snaprec-webcam-btn:focus-visible { outline: 2px solid #06A6C0; outline-offset: 1px; }
+
+/* Icons are inline data URIs: an MV3 content script cannot pull an icon font
+   into an arbitrary page, and the page's own fonts must never be inherited. */
+.snaprec-webcam-btn[data-webcam="mic"][data-on="true"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F6F6' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='2' width='6' height='11' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4'/%3E%3C/svg%3E");
+}
+
+/* Muted is coral and struck through: the absence of a mic icon would not be
+   noticed, and this has to be readable in the recording. */
+.snaprec-webcam-btn[data-webcam="mic"][data-on="false"] {
+    background-color: rgba(255, 59, 46, .28);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF7A6E' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='2' width='6' height='11' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4M3 3l18 18'/%3E%3C/svg%3E");
+}
+
+.snaprec-webcam-btn[data-webcam="shape"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F6F6' stroke-width='2'%3E%3Ccircle cx='9' cy='12' r='6'/%3E%3Crect x='11' y='6' width='12' height='12' rx='2'/%3E%3C/svg%3E");
+}
+
+.snaprec-webcam-btn[data-webcam="close"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F3F6F6' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 5l14 14M19 5L5 19'/%3E%3C/svg%3E");
+}
+
+/* The word carries the state, not only the struck icon — it has to survive
+   being watched back in the recording. */
+.snaprec-webcam-status {
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    transform: translateX(-50%);
+    max-width: 88%;
+    padding: 2px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Azeret Mono Variable', ui-monospace, monospace;
+    font-size: 9px;
+    letter-spacing: .04em;
+    color: #FF7A6E;                  /* --sr-coral-on-dark */
+    /* A chip, not bare text: this sits on whatever the camera happens to be
+       pointing at, and a text-shadow alone disappears against a bright or
+       busy frame. It has to stay readable when watched back. */
+    background: rgba(4, 7, 8, .82);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.snaprec-webcam-status[hidden] { display: none; }
 
 /* Countdown Timer Overlay */
 .snaprec-countdown-overlay {
@@ -210,7 +358,9 @@
     font-size: 200px;
     font-weight: 700;
     color: white;
-    text-shadow: 0 0 60px rgba(123, 37, 244, 0.8), 0 0 120px rgba(123, 37, 244, 0.4);
+    /* The countdown is the run-up to a live capture, so its glow is coral —
+       the same signal as the recording ring, not a decorative bloom. */
+    text-shadow: 0 0 60px rgba(255, 59, 46, .8), 0 0 120px rgba(255, 59, 46, .4);
     animation: snaprec-countdown-pop 1s ease-out forwards;
 }
 
@@ -284,7 +434,7 @@
 .snaprec-preview-img-container {
     width: 100%;
     aspect-ratio: 16/9;
-    background: #f8fafc;
+    background: #FAFBFB;
     border-radius: 16px;
     overflow: hidden;
     display: flex;
@@ -342,17 +492,17 @@
     margin: 0;
     font-size: 14px;
     font-weight: 700;
-    color: #130d1c;
+    color: #0C1011;
 }
 
 .snaprec-footer-title p {
     margin: 4px 0 0 0;
     font-size: 11px;
-    color: rgba(19, 13, 28, 0.5);
+    color: rgba(12, 16, 17, .5);
 }
 
 .snaprec-share-btn {
-    background: #7b25f4;
+    background: #06A6C0;
     color: white;
     border-radius: 12px;
     padding: 10px 24px;
@@ -361,20 +511,20 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(123, 37, 244, 0.3);
+    box-shadow: 0 4px 12px rgba(6, 166, 192, .3);
 }
 
 .snaprec-share-btn:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(123, 37, 244, 0.4);
+    box-shadow: 0 6px 16px rgba(6, 166, 192, .4);
 }
 
 .snaprec-actions-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
-    border-top: 1px solid rgba(19, 13, 28, 0.05);
+    border-top: 1px solid rgba(12, 16, 17, .06);
     padding-top: 12px;
 }
 
@@ -394,7 +544,7 @@
 }
 
 .snaprec-action-item:hover {
-    background: rgba(19, 13, 28, 0.05);
+    background: rgba(12, 16, 17, .06);
     opacity: 1;
 }
 
@@ -406,21 +556,21 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    color: #475569;
+    color: #4B5457;
 }
 
 .snaprec-action-item.discard .snaprec-action-icon {
-    color: #ef4444;
+    color: #D8331F;
 }
 
 .snaprec-action-label {
     font-size: 11px;
     font-weight: 500;
-    color: #475569;
+    color: #4B5457;
 }
 
 .snaprec-action-item.discard .snaprec-action-label {
-    color: #ef4444;
+    color: #D8331F;
 }
 
 .snaprec-review-cta {
@@ -431,16 +581,25 @@
     margin-top: 6px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
     font-size: 12px;
-    color: #64748b;
+    color: #656E71;
     font-family: 'Inter', -apple-system, sans-serif;
 }
 
 .snaprec-review-cta a {
-    color: #6366f1;
+    color: #0A7F94;
     text-decoration: none;
     font-weight: 600;
 }
 
 .snaprec-review-cta a:hover {
     text-decoration: underline;
+}
+/* The word carries the state, so a paused bar is unambiguous in a screenshot
+   and under reduced motion. */
+.snaprec-status-word {
+    font-family: 'Azeret Mono Variable', ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: #FF7A6E;                 /* --sr-coral-on-dark */
+    text-transform: lowercase;
 }

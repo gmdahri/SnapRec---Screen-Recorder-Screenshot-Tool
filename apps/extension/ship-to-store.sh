@@ -56,12 +56,21 @@ ZIP_PATH="../${ZIP_NAME}"
 
 rm -f "$ZIP_PATH"
 
+# Development files must not reach the store. Chrome also REJECTS any path
+# starting with "_" — that is reserved — so a stray __tests__ directory breaks
+# both `load unpacked` and the upload.
 zip -r "$ZIP_PATH" . \
   --exclude "*.md" \
   --exclude "store_assets/*" \
   --exclude "package.json" \
   --exclude ".DS_Store" \
-  --exclude "ship-to-store.sh"
+  --exclude "ship-to-store.sh" \
+  --exclude "tests/*" \
+  --exclude "vitest.config.js" \
+  --exclude "scripts/*" \
+  --exclude "node_modules/*" \
+  --exclude "dist/*" \
+  --exclude "*.zip"
 
 echo "✔ Zip created: apps/${ZIP_NAME}"
 echo ""

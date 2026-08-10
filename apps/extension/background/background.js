@@ -1,5 +1,6 @@
 // SnapRec Background Service Worker
 importScripts('config.js');
+importScripts('queue.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
@@ -49,6 +50,71 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Keep channel open for async
     }
 
+    /** The overlay is a DOM element, so it is per-tab, and the toggle has to
+     * match the tab in front of the user. The answer comes from that page —
+     * never from a stored preference. Silence means no content script, which
+     * means no overlay, so silence is `false`: a stored value would light the
+     * toggle on a tab showing no camera, and the first click would then read
+     * as turning it off. */
+    /** What the popup should show on open.
+     *
+     * It asked for this from the day it was written and nothing ever replied,
+     * so reopening during a recording showed `ready` — the one thing the
+     * popup's own comment says must never happen. */
+    if (message.action === 'getCaptureState') {
+        chrome.storage.local.get(['isRecording', 'recordingStartTime'])
+            .then(({ isRecording, recordingStartTime }) => sendResponse(
+                isRecording
+                    ? { view: 'recording', startTime: recordingStartTime ?? null }
+                    : null,
+            ))
+            .catch(() => sendResponse(null));
+        return true;
+    }
+
+    /** The popup asking what the recorded source looks like right now. */
+    if (message.action === 'getSourceFrame') {
+        (async () => {
+            try {
+                if (!(await hasOffscreenDocument())) return sendResponse({ dataUrl: null });
+                const reply = await chrome.runtime.sendMessage({
+                    action: 'offscreen_grabFrame',
+                    maxWidth: message.maxWidth ?? 320,
+                });
+                sendResponse({ dataUrl: reply?.dataUrl ?? null });
+            } catch {
+                sendResponse({ dataUrl: null });
+            }
+        })();
+        return true;
+    }
+
+    if (message.action === 'getMicMuted') {
+        chrome.storage.local.get('micMuted')
+            .then(({ micMuted }) => sendResponse({ muted: !!micMuted }))
+            .catch(() => sendResponse({ muted: false }));
+        return true;
+    }
+
+    if (message.action === 'getWebcamPreview') {
+        (async () => {
+            try {
+                const tab = await TabUtils.getActiveTab();
+                if (!tab?.id) return sendResponse({ on: false });
+                const reply = await new Promise((resolve) => {
+                    chrome.tabs.sendMessage(tab.id, { action: 'isWebcamPreviewOn' }, (r) => {
+                        void chrome.runtime.lastError;
+                        resolve(r);
+                    });
+                });
+                sendResponse({ on: reply?.on === true });
+            } catch {
+                sendResponse({ on: false });
+            }
+        })();
+        return true;
+    }
+
     // Handle getDriveAuthStatus with async response
     if (message.action === 'getDriveAuthStatus') {
         checkDriveAuth()
@@ -90,6 +156,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false; // No response needed
         case 'resumeRecording':
             resumeRecording();
+            return false; // No response needed
+        case 'setMicMuted':
+            setMicMuted(message.muted);
+            return false; // No response needed
+        case 'setWebcamPreview':
+            setWebcamPreview(message.enabled);
             return false; // No response needed
         case 'openCapture':
             openCapture(message.capture);
@@ -369,6 +441,51 @@ async function captureVisibleTab() {
     }
 }
 
+/** The microphone, from wherever it is asked about.
+ *
+ * Stored because the popup's switch and the overlay's button are two views of
+ * one setting, and the popup is rebuilt from scratch every time it opens. The
+ * live track only exists while recording, so muting mid-take is forwarded to
+ * the offscreen document as well; before a take, storing it is the whole job.
+ * Every tab's overlay is told, so a second one does not contradict the first. */
+async function setMicMuted(muted) {
+    await chrome.storage.local.set({ micMuted: !!muted });
+
+    if (await hasOffscreenDocument()) {
+        chrome.runtime.sendMessage({ action: 'offscreen_setMicMuted', muted: !!muted })
+            .catch(() => { /* offscreen closed between the check and the send */ });
+    }
+
+    const tabs = await chrome.tabs.query({});
+    await Promise.allSettled(
+        tabs
+            .filter(tab => !TabUtils.isRestrictedUrl(tab.url))
+            .map(tab => chrome.tabs.sendMessage(tab.id, { action: 'micMutedChanged', muted: !!muted })
+                .catch(() => { /* no content script in this tab */ }))
+    );
+}
+
+/** Live camera preview, independent of recording.
+ *
+ * Nothing is stored. The overlay lives in the page, so the page is the only
+ * honest record of whether it is up — see getWebcamPreview. */
+async function setWebcamPreview(enabled) {
+    try {
+        const tab = await TabUtils.getActiveTab();
+        if (!tab?.id) return;
+        await ContentScriptManager.inject(tab.id);
+        chrome.tabs.sendMessage(
+            tab.id,
+            { action: enabled ? 'showWebcamPreview' : 'hideWebcamPreview' },
+            () => void chrome.runtime.lastError,
+        );
+    } catch (error) {
+        // Restricted pages (chrome://, the Web Store) cannot host the overlay.
+        // The toggle still holds, and the recording path applies it later.
+        console.warn('[SnapRec] Webcam preview unavailable here:', error?.message);
+    }
+}
+
 // Capture Full Page
 async function captureFullPage() {
     try {
@@ -639,10 +756,19 @@ async function startRecording(options) {
                 console.error('[SnapRec] Failed to get stream:', streamResponse?.error);
                 recordingTabId = null;
                 await closeOffscreenDocument();
+                // Dismissing the picker is a normal thing to do, and the popup
+                // has to come back to ready rather than sit on a dead view.
+                notifyPopup({ action: 'startFailed', reason: streamResponse?.error ?? 'cancelled' });
                 return;
             }
 
             console.log('[SnapRec] Stream acquired, showing countdown...');
+
+            // The picker has been answered. Until this point the popup was
+            // waiting, not counting down — it used to run its own countdown
+            // and then a timer while the picker was still open, which told
+            // people they were recording when nothing was.
+            notifyPopup({ action: 'sourcePicked' });
 
             // Step 2: Inject content script for countdown
             await ContentScriptManager.inject(tab.id);
@@ -672,6 +798,12 @@ async function startRecording(options) {
                     isRecording: true,
                     recordingStartTime: recorderResponse.startTime || Date.now(),
                     recordingOptions: options
+                });
+
+                await broadcastRecordingState('recordingStarted');
+                notifyPopup({
+                    action: 'recordingStarted',
+                    startTime: recorderResponse.startTime || Date.now(),
                 });
 
                 // Show recording overlay in the content script
@@ -752,6 +884,24 @@ async function stopRecording() {
     }
 }
 
+/** Tells every tab's floating button whether a recording is running.
+ *
+ * fab.js has always listened for recordingStarted/recordingStopped — nothing
+ * ever sent them. Its record button therefore stayed on "Start Recording" for
+ * the whole take, and pressing it fired a second startRecording instead of
+ * stopping the first. */
+async function broadcastRecordingState(action) {
+    const tabs = await chrome.tabs.query({});
+    await Promise.allSettled(
+        tabs
+            .filter(tab => !TabUtils.isRestrictedUrl(tab.url))
+            .map(tab =>
+                chrome.tabs.sendMessage(tab.id, { action })
+                    .catch(() => { /* no content script in this tab */ })
+            )
+    );
+}
+
 // Broadcast hide overlay to ALL tabs immediately and in parallel
 async function broadcastHideOverlay() {
     console.log('[SnapRec] Broadcasting hide overlay to all tabs');
@@ -768,6 +918,11 @@ async function broadcastHideOverlay() {
                     .catch(() => { /* ignore tabs without content script */ })
             )
     );
+    await broadcastRecordingState('recordingStopped');
+    // And the popup, if it happens to be open. Stopping from the in-page bar
+    // or Chrome's own "Stop sharing" banner otherwise left it sitting on a
+    // running timer for a recording that had already ended.
+    notifyPopup({ action: 'recordingStopped' });
 }
 
 async function finalizeCleanup() {
@@ -1075,4 +1230,103 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     } catch (error) {
         console.warn('[SnapRec] Could not inject overlay on tab update (likely restricted page):', error.message);
     }
+});
+
+
+/* ==========================================================================
+ * Offline upload queue
+ *
+ * A capture that cannot upload right now is queued, not failed. The promise
+ * this keeps is "closing the window does not stop the upload" — which is why
+ * the queue lives in the service worker and is persisted, not held in the
+ * popup.
+ * ======================================================================== */
+
+const QUEUE_KEY = 'snaprecUploadQueue';
+const DRAIN_ALARM = 'snaprec-drain-queue';
+const RETENTION_MS = 86_400_000; // 24h, for completed items only
+
+async function readQueue() {
+  const { [QUEUE_KEY]: q = [] } = await chrome.storage.local.get(QUEUE_KEY);
+  return q;
+}
+
+async function writeQueue(q) {
+  await chrome.storage.local.set({ [QUEUE_KEY]: q });
+}
+
+async function queueCapture(item) {
+  await writeQueue(SnapRecQueue.enqueue(await readQueue(), item));
+  chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0.5 });
+}
+
+/** Best-effort notify: the popup is usually closed, and that is fine. */
+/** Speaks to the popup, which is a runtime listener rather than a tab.
+ *
+ * The popup is usually closed and sendMessage then rejects with "Receiving end
+ * does not exist" — the normal case here, not an error. */
+function notifyPopup(message) {
+  chrome.runtime.sendMessage(message).catch(() => {});
+}
+
+async function drainQueue() {
+  let q = SnapRecQueue.prune(await readQueue(), Date.now(), RETENTION_MS);
+
+  const next = SnapRecQueue.nextPending(q);
+  if (!next) {
+    await writeQueue(q);
+    return;
+  }
+
+  if (!navigator.onLine) {
+    await writeQueue(q);
+    chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 1 });
+    return;
+  }
+
+  q = SnapRecQueue.markUploading(q, next.id, next.offsetPct);
+  await writeQueue(q);
+
+  try {
+    const url = await uploadQueuedCapture(next, (pct, bytes) =>
+      notifyPopup({ action: 'uploadProgress', id: next.id, pct, bytes }));
+
+    await writeQueue(SnapRecQueue.markDone(await readQueue(), next.id, url));
+    notifyPopup({ action: 'linkReady', id: next.id, url });
+
+    // Keep draining while there is work; the short delay yields to other tasks.
+    chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0.05 });
+  } catch (err) {
+    const failed = SnapRecQueue.markFailed(
+      await readQueue(), next.id, String(err), next.offsetPct);
+    await writeQueue(failed);
+
+    const { attempts } = failed.find((i) => i.id === next.id);
+    notifyPopup({
+      action: 'uploadFailed', id: next.id, reason: String(err), at: next.offsetPct,
+    });
+    chrome.alarms.create(DRAIN_ALARM, {
+      delayInMinutes: SnapRecQueue.backoffMs(attempts) / 60_000,
+    });
+  }
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === DRAIN_ALARM) drainQueue();
+});
+
+self.addEventListener('online', () => {
+  chrome.alarms.create(DRAIN_ALARM, { delayInMinutes: 0 });
+});
+
+
+/** Answers the web app's connectivity ping (scene H5).
+ *
+ * Only origins in manifest.externally_connectable can reach this, and the reply
+ * carries the version only — no capture data crosses the boundary. */
+chrome.runtime.onMessageExternal.addListener((message, _sender, respond) => {
+    if (message?.type === 'PING') {
+        respond({ version: chrome.runtime.getManifest().version });
+    }
+    return false;
 });
