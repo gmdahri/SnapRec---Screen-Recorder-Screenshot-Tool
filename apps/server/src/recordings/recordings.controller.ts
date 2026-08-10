@@ -189,6 +189,12 @@ export class RecordingsController {
             req.user?.id,
             addCommentDto.guestId,
             userMeta,
+            // The anchor the DTO has always validated. It used to stop here.
+            {
+                timecodeMs: addCommentDto.timecodeMs,
+                anchorX: addCommentDto.anchorX,
+                anchorY: addCommentDto.anchorY,
+            },
         );
     }
 

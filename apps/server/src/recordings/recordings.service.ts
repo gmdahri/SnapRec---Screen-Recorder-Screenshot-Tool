@@ -118,13 +118,40 @@ export class RecordingsService {
         return this.reactionsRepository.save(reaction);
     }
 
-    async addComment(recordingId: string, content: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Comment> {
+    /** `anchor` is what the comment is *about*: a moment for a video, a
+     * normalised point for a screenshot, or nothing for a remark about the
+     * capture as a whole.
+     *
+     * It has to be written here. The columns, the DTO and the viewer's rendering
+     * all shipped with the anchor migration, but this method took no anchor and
+     * saved none, so every video comment came back with a null timecode and the
+     * viewer's `timecodeMs ?? 0` fallback drew it at 0:00 — a comment pinned at
+     * 0:10 reopened at the start of the recording.
+     *
+     * Explicit nulls, not undefined: TypeORM leaves an undefined property out of
+     * the INSERT, which is indistinguishable here but silently keeps whatever a
+     * future default might be. */
+    async addComment(
+        recordingId: string,
+        content: string,
+        userId?: string,
+        guestId?: string,
+        userMeta?: { email?: string; fullName?: string; avatarUrl?: string },
+        anchor?: { timecodeMs?: number; anchorX?: number; anchorY?: number },
+    ): Promise<Comment> {
         const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
         if (!recording) throw new NotFoundException('Recording not found');
 
         const comment = new Comment();
         comment.recording = recording;
         comment.content = content;
+
+        comment.timecodeMs = anchor?.timecodeMs ?? null;
+        // A point is only a point with both halves of it — half an anchor would
+        // place a pin on the left edge of the image rather than nowhere.
+        const hasPoint = anchor?.anchorX != null && anchor?.anchorY != null;
+        comment.anchorX = hasPoint ? anchor!.anchorX! : null;
+        comment.anchorY = hasPoint ? anchor!.anchorY! : null;
 
         if (userId) {
             comment.user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
