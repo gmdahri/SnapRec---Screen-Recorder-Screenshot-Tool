@@ -234,11 +234,13 @@ export function VideoViewer({
               return (
                 <button
                   key={key}
+                  id={`viewer-${key}-tab`}
                   type="button"
                   role="tab"
                   disabled={disabled}
                   aria-disabled={disabled ? 'true' : undefined}
                   aria-selected={selected}
+                  aria-controls={disabled ? undefined : `viewer-${key}-panel`}
                   onClick={() => {
                     if (key !== 'transcript') setTab(key);
                   }}
@@ -275,7 +277,13 @@ export function VideoViewer({
 
           {/* The thread takes the available rail height and scrolls internally,
               keeping the composer pinned to the stage's lower edge. */}
-          <div style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
+          <div
+            id={`viewer-${tab}-panel`}
+            role="tabpanel"
+            aria-labelledby={`viewer-${tab}-tab`}
+            tabIndex={0}
+            style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}
+          >
             {tab === 'comments' && (
               comments.length === 0
                 ? <Empty note={commentsNote ?? 'No comments yet.'} />

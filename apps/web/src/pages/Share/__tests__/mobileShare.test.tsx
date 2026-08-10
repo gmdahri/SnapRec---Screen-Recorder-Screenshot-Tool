@@ -80,8 +80,21 @@ describe('mobile video share (C3)', () => {
       onPost={noop}
     />);
 
-    await userEvent.click(screen.getByRole('tab', { name: 'Details' }));
-    const details = screen.getByRole('tabpanel');
+    const commentsTab = screen.getByRole('tab', { name: /Comments/ });
+    const transcriptTab = screen.getByRole('tab', { name: /Transcript/ });
+    const detailsTab = screen.getByRole('tab', { name: 'Details' });
+    expect(commentsTab).toHaveAttribute('id', 'mobile-comments-tab');
+    expect(commentsTab).toHaveAttribute('aria-controls', 'mobile-comments-panel');
+    expect(screen.getByRole('tabpanel', { name: /Comments/ }))
+      .toHaveAttribute('id', 'mobile-comments-panel');
+    expect(transcriptTab).toHaveAttribute('id', 'mobile-transcript-tab');
+    expect(transcriptTab).not.toHaveAttribute('aria-controls');
+
+    await userEvent.click(detailsTab);
+    const details = screen.getByRole('tabpanel', { name: 'Details' });
+    expect(detailsTab).toHaveAttribute('id', 'mobile-details-tab');
+    expect(detailsTab).toHaveAttribute('aria-controls', 'mobile-details-panel');
+    expect(details).toHaveAttribute('id', 'mobile-details-panel');
     expect(within(details).getByText('Dimensions')).toBeInTheDocument();
     expect(within(details).getByText('1920 × 1080')).toBeInTheDocument();
     expect(screen.queryByLabelText('Write a comment')).toBeNull();
@@ -130,6 +143,21 @@ describe('mobile video share (C3)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Jump to 0:39' }));
     expect(onSeek).toHaveBeenCalledWith(39_000);
+  });
+
+  it('says when mobile chapter previews are still generating', () => {
+    const frames = [{ startSec: 0, sampleSec: 0.5, dataUrl: null }];
+    render(<MobileVideoShare capture={video} comments={vComments} frames={frames}
+      framesGenerating onSeek={noop} onPost={noop} />);
+    expect(screen.getByTestId('mobile-chapters')).toHaveTextContent('generating…');
+  });
+
+  it('says when mobile chapter previews are blocked for the file', () => {
+    const frames = [{ startSec: 0, sampleSec: 0.5, dataUrl: null }];
+    render(<MobileVideoShare capture={video} comments={vComments} frames={frames}
+      framesBlocked onSeek={noop} onPost={noop} />);
+    expect(screen.getByTestId('mobile-chapters'))
+      .toHaveTextContent('previews unavailable for this file');
   });
 
   it('pins the player so seeking never scrolls it out of view', () => {
@@ -192,12 +220,48 @@ describe('mobile video share (C3)', () => {
     expect(screen.getByText(/1 needs a reply/)).toBeInTheDocument();
   });
 
-  it('pads every control to 44px, including the player icons', () => {
-    render(<MobileVideoShare capture={video} comments={vComments} onSeek={noop} onPost={noop} />);
-    for (const b of screen.getAllByRole('button')) {
-      expect(Number(b.dataset.minTarget)).toBeGreaterThanOrEqual(44);
+  it('renders every mobile viewer button at least 44px in both dimensions', async () => {
+    const css = await readFile(resolve(process.cwd(), 'src/index.css'), 'utf8');
+    const frames = [
+      { startSec: 0, sampleSec: 0.5, dataUrl: null },
+      { startSec: 39, sampleSec: 39.5, dataUrl: null },
+    ];
+    const markup = renderToStaticMarkup(<MobileVideoShare
+      capture={video} comments={vComments} frames={frames} onSeek={noop} onPost={noop}
+    />);
+    const systemChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const browser = await puppeteer.launch({
+      headless: true,
+      ...(existsSync(systemChrome) ? { executablePath: systemChrome } : {}),
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+      await page.setContent([
+        `<style>${css}`,
+        '*, *::before, *::after { box-sizing: border-box; }',
+        'body { margin: 0; }',
+        `</style>${markup}`,
+      ].join('\n'));
+      const buttons = await page.$$eval('.sr-mobile-viewer button', elements => elements.map(button => {
+        const rect = button.getBoundingClientRect();
+        return {
+          name: button.getAttribute('aria-label') || button.textContent?.trim() || 'unnamed',
+          width: rect.width,
+          height: rect.height,
+        };
+      }));
+
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const button of buttons) {
+        expect(button.width, `${button.name} width`).toBeGreaterThanOrEqual(44);
+        expect(button.height, `${button.name} height`).toBeGreaterThanOrEqual(44);
+      }
+    } finally {
+      await browser.close();
     }
-  });
+  }, 15_000);
 
   it('moves download into an overflow sheet, away from playback', async () => {
     render(<MobileVideoShare capture={video} comments={vComments} onSeek={noop} onPost={noop} />);

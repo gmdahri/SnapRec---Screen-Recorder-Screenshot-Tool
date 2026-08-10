@@ -124,6 +124,7 @@ export function MobileVideoShare({
         <section className="sr-mobile-viewer-rail" aria-label="Capture panels">
           <div role="tablist" aria-label="Capture panels" className="sr-mobile-viewer-tabs">
             <button
+              id="mobile-comments-tab"
               type="button"
               role="tab"
               data-min-target="44"
@@ -132,6 +133,7 @@ export function MobileVideoShare({
               onClick={() => setTab('comments')}
             >Comments {comments.length}</button>
             <button
+              id="mobile-transcript-tab"
               type="button"
               role="tab"
               data-min-target="44"
@@ -140,6 +142,7 @@ export function MobileVideoShare({
               aria-selected="false"
             >Transcript —</button>
             <button
+              id="mobile-details-tab"
               type="button"
               role="tab"
               data-min-target="44"
@@ -150,7 +153,13 @@ export function MobileVideoShare({
           </div>
 
           {tab === 'comments' ? (
-            <div id="mobile-comments-panel" role="tabpanel" className="sr-mobile-viewer-panel">
+            <div
+              id="mobile-comments-panel"
+              role="tabpanel"
+              aria-labelledby="mobile-comments-tab"
+              tabIndex={0}
+              className="sr-mobile-viewer-panel"
+            >
               <div className="sr-mobile-viewer-comment-summary">
                 <span>{comments.length} comments</span>
                 {awaiting > 0 && <span>· {awaiting} needs a reply</span>}
@@ -189,7 +198,13 @@ export function MobileVideoShare({
               </div>
             </div>
           ) : (
-            <div id="mobile-details-panel" role="tabpanel" className="sr-mobile-viewer-panel">
+            <div
+              id="mobile-details-panel"
+              role="tabpanel"
+              aria-labelledby="mobile-details-tab"
+              tabIndex={0}
+              className="sr-mobile-viewer-panel"
+            >
               <dl className="sr-mobile-viewer-details">
                 {([
                   ['Owner', capture.owner],

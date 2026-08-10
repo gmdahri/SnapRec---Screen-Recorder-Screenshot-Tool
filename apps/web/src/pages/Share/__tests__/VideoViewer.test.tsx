@@ -209,6 +209,26 @@ describe('the side rail', () => {
       .toEqual(['Comments 2', 'Transcript —', 'Details']);
   });
 
+  it('associates each available tab with its named panel', async () => {
+    render(<VideoViewer {...base} />);
+    const commentsTab = screen.getByRole('tab', { name: 'Comments 2' });
+    const transcriptTab = screen.getByRole('tab', { name: 'Transcript —' });
+    const detailsTab = screen.getByRole('tab', { name: 'Details' });
+
+    expect(commentsTab).toHaveAttribute('id', 'viewer-comments-tab');
+    expect(commentsTab).toHaveAttribute('aria-controls', 'viewer-comments-panel');
+    expect(screen.getByRole('tabpanel', { name: 'Comments 2' }))
+      .toHaveAttribute('id', 'viewer-comments-panel');
+    expect(transcriptTab).toHaveAttribute('id', 'viewer-transcript-tab');
+    expect(transcriptTab).not.toHaveAttribute('aria-controls');
+
+    await userEvent.click(detailsTab);
+    expect(detailsTab).toHaveAttribute('id', 'viewer-details-tab');
+    expect(detailsTab).toHaveAttribute('aria-controls', 'viewer-details-panel');
+    expect(screen.getByRole('tabpanel', { name: 'Details' }))
+      .toHaveAttribute('id', 'viewer-details-panel');
+  });
+
   it('shows details of the capture on the details tab', async () => {
     const user = userEvent.setup();
     render(<VideoViewer {...base} />);
