@@ -69,27 +69,95 @@
   contain: layout;
 }
 
-/* P7 V1.6 — the viewer's rail stacks under the media below 1024px rather than
-   overlaying it. An overlay would cover the one thing the page exists to show,
-   and on a phone the comment thread is a destination, not a sidecar. */
-/* Beside the player: the row's height comes from the video's aspect ratio, and
-   `min-height: 0` is what lets the rail be stretched to it instead of its own
-   content setting the row taller. It scrolls inside whatever height that is. */
+/* Desktop share viewer. Geometry lives here so the two-column workspace can
+   become a true stack without fighting inline declarations. */
+.sr-viewer-page {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 22px 40px;
+}
+
+.sr-viewer-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  column-gap: 14px;
+  align-items: stretch;
+}
+
+.sr-viewer-stage {
+  min-width: 0;
+  align-self: start;
+}
+
+.sr-viewer-content-column {
+  width: calc(100% - 326px);
+  min-width: 0;
+}
+
 .sr-viewer-rail {
-  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
+  background: var(--sr-surface-paper);
+  border: 1px solid var(--sr-border-light-soft);
+  border-radius: 0;
+}
+
+.sr-viewer-tab-disabled::after {
+  content: " —";
+}
+
+.sr-viewer-metadata-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.sr-viewer-stats {
+  display: flex;
+  flex: none;
+}
+
+.sr-viewer-chapters {
+  margin-top: 22px;
+}
+
+.sr-viewer-chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 @media (max-width: 1023px) {
-  .sr-viewer-grid { grid-template-columns: minmax(0, 1fr) !important; }
-  /* Stacked under the media, the rail has no player height to match, so the
-     constraints that made that work come off — kept here rather than inline so
-     they can simply be overridden. */
+  .sr-viewer-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 16px;
+  }
+
+  .sr-viewer-content-column {
+    width: 100%;
+  }
+
   .sr-viewer-rail {
-    margin-left: 0;
-    margin-top: 16px;
     min-height: auto;
     overflow: visible;
+  }
+
+  .sr-viewer-metadata-row {
+    flex-wrap: wrap;
+  }
+
+  .sr-viewer-stats {
+    width: 100%;
+  }
+
+  .sr-viewer-stats > div {
+    flex: 1;
   }
 }

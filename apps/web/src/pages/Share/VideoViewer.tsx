@@ -16,11 +16,8 @@ import { CommentComposer, type NewComment } from './CommentComposer';
  * never individually tracked — so the tile says so rather than implying it
  * covers everyone who opened the link.
  *
- * Deliberately absent:
- *
- *  - A Transcript tab. Transcription was cut from the product (plan O8), so
- *    the tab is gone rather than permanently empty — see docs/unused-schema.md
- *    for the tables that decision leaves stranded. */
+ * Transcript stays visible as a disabled rail tab so the desktop layout
+ * matches the product reference without implying that the cut feature works. */
 
 export interface ViewerCapture {
   id: string;
@@ -77,20 +74,12 @@ export interface VideoViewerProps {
 
 type RailTab = 'comments' | 'details';
 
-/** How wide the video stage is allowed to get.
- *
- * Capped so the player, the title and the stats land in one view — unbounded, a
- * 16:9 frame on a wide column ate 848px of a 900px viewport. The meta row below
- * uses the same value so the stats finish where the video finishes instead of
- * drifting out to the column's far edge. */
-const STAGE_MAX_WIDTH = 'calc(min(58vh, 620px) * 16 / 9)';
-
 const barAction: CSSProperties = {
-  height: 'var(--sr-h-sm)', padding: '0 12px',
-  display: 'inline-flex', alignItems: 'center', gap: 7,
+  width: 30, height: 30, padding: 0,
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   border: '1px solid var(--sr-border-dark)', background: 'transparent',
   color: 'var(--sr-text-primary-on-dark)', fontSize: 12.5, fontWeight: 600,
-  borderRadius: 'var(--sr-radius-control)', cursor: 'pointer',
+  borderRadius: 0, cursor: 'pointer',
 };
 
 const mono: CSSProperties = {
@@ -133,6 +122,12 @@ export function VideoViewer({
   const [tab, setTab] = useState<RailTab>('comments');
   const [showResolved, setShowResolved] = useState(true);
 
+  const railTabs = [
+    { key: 'comments' as const, label: `Comments ${comments.length}` },
+    { key: 'transcript' as const, label: 'Transcript —', disabled: true },
+    { key: 'details' as const, label: 'Details' },
+  ];
+
   const resolvedCount = comments.filter(c => c.resolved).length;
   // Open questions first; within each group the original order is kept, so the
   // list does not reshuffle every time someone settles one.
@@ -155,13 +150,12 @@ export function VideoViewer({
       <header
         data-testid="viewer-topbar"
         style={{
-          height: 52, flex: 'none', display: 'flex', alignItems: 'center', gap: 12,
-          padding: '0 16px', background: 'var(--sr-surface-carbon)',
+          height: 50, flex: 'none', display: 'flex', alignItems: 'center', gap: 8,
+          padding: '0 14px', background: 'var(--sr-surface-carbon)',
         }}
       >
         <button type="button" onClick={onBack} aria-label="Back" style={{
-          border: 'none', background: 'transparent', padding: 4, cursor: 'pointer',
-          color: 'var(--sr-text-primary-on-dark)', display: 'inline-flex',
+          ...barAction, background: 'transparent', cursor: 'pointer',
         }}>
           <Icon icon="ant-design:arrow-left-outlined" width={17} aria-hidden="true" />
         </button>
@@ -176,15 +170,13 @@ export function VideoViewer({
         <span style={{ flex: 1 }} />
 
         {capture.allowDownload && (
-          <button type="button" onClick={onDownload} aria-label="Download" style={barAction}>
-            <Icon icon="ant-design:download-outlined" width={13} aria-hidden="true" />
-            Download
+          <button type="button" onClick={onDownload} aria-label="Download" title="Download" style={barAction}>
+            <Icon icon="ant-design:download-outlined" width={14} aria-hidden="true" />
           </button>
         )}
         {capture.canEdit && (
-          <button type="button" onClick={onEdit} aria-label="Edit" style={barAction}>
-            <Icon icon="ant-design:scissor-outlined" width={13} aria-hidden="true" />
-            Edit
+          <button type="button" onClick={onEdit} aria-label="Edit" title="Edit" style={barAction}>
+            <Icon icon="ant-design:scissor-outlined" width={14} aria-hidden="true" />
           </button>
         )}
         <button
@@ -194,7 +186,7 @@ export function VideoViewer({
           aria-label={copyLinkLabel ?? 'Copy link'}
           style={{
             ...barAction,
-            border: 'none',
+            width: 'auto', padding: '0 12px', gap: 7, border: 'none',
             background: copyLinkDisabled ? 'var(--sr-border-dark)' : 'var(--sr-cyan)',
             color: copyLinkDisabled ? 'var(--sr-text-faint-on-dark)' : 'var(--sr-cyan-fg)',
             cursor: copyLinkDisabled ? 'not-allowed' : 'pointer',
@@ -205,7 +197,7 @@ export function VideoViewer({
         </button>
       </header>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 40px' }}>
+      <main className="sr-viewer-page">
         {/* The stage: the video with the rail beside it, close enough to read as
             one object. The rail used to be a full-height page column pinned to
             the window's right edge, which on a wide screen left several hundred
@@ -216,73 +208,58 @@ export function VideoViewer({
             which its content would set the row height and the two would
             disagree. Below 1024px the rail stacks under the media rather than
             becoming an overlay, so nothing covers the video. */}
-        <div
-          className="sr-viewer-grid"
-          style={{
-            display: 'grid', gap: 0, alignItems: 'stretch',
-            gridTemplateColumns: `minmax(0, ${STAGE_MAX_WIDTH}) min(30%, 380px)`,
-          }}
-        >
-          {/* Capped so the title, meta and stats sit in the same view as the
-              video. Unbounded, a 16:9 frame ate 848px of a 900px viewport and
-              pushed everything else to the very bottom. The video inside is
-              object-contain, so a frame slightly off ratio letterboxes rather
-              than crops. */}
-          <CaptureFrame
-            treatment="focused"
-            style={{
-              background: 'var(--sr-surface-carbon)',
-              aspectRatio: '16 / 9',
-              width: '100%',
-              // Its own height, not the row's: stretching it would fight the
-              // aspect ratio, and the ratio is what the row is measured from.
-              alignSelf: 'flex-start',
-            }}
-          >
-            {player}
-          </CaptureFrame>
+        <div className="sr-viewer-workspace">
+          {/* The player is fluid inside the workspace's main column. The video
+              remains object-contain so an off-ratio frame letterboxes instead
+              of being cropped. */}
+          <div className="sr-viewer-stage">
+            <CaptureFrame
+              treatment="focused"
+              style={{
+                background: 'var(--sr-surface-carbon)',
+                aspectRatio: '16 / 9',
+                width: '100%',
+                border: '1px solid var(--sr-border-dark)',
+                borderRadius: 0,
+              }}
+            >
+              {player}
+            </CaptureFrame>
+          </div>
 
-
-
-        {/* Spacing, overflow and the height constraint live in `.sr-viewer-rail`
-            rather than here: they are the parts the stacked layout has to undo,
-            and a media query cannot override an inline style without an
-            !important shouting match. */}
-        <aside
-          data-testid="viewer-rail"
-          className="sr-viewer-rail"
-          style={{
-            display: 'flex', flexDirection: 'column', minWidth: 0,
-            background: 'var(--sr-surface-paper)',
-            border: '1px solid var(--sr-border-light-soft)',
-            borderRadius: 'var(--sr-radius-control)',
-          }}
-        >
+        <aside data-testid="viewer-rail" className="sr-viewer-rail">
           <div role="tablist" aria-label="Capture panels" style={{
             display: 'flex', flex: 'none',
             borderBottom: '1px solid var(--sr-border-light-soft)',
           }}>
-            {([
-              ['comments', `Comments ${comments.length}`],
-              ['details', 'Details'],
-            ] as const).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={tab === key}
-                onClick={() => setTab(key)}
-                style={{
-                  flex: 1, height: 40, border: 'none', background: 'transparent',
-                  cursor: 'pointer', fontSize: 12.5,
-                  fontWeight: tab === key ? 600 : 500,
-                  color: tab === key
-                    ? 'var(--sr-text-primary-on-light)'
-                    : 'var(--sr-text-muted-on-light)',
-                  boxShadow: tab === key ? 'inset 0 -2px 0 var(--sr-cyan-on-light)' : 'none',
-                }}
-              >{label}</button>
-            ))}
+            {railTabs.map(({ key, label, ...item }) => {
+              const disabled = 'disabled' in item && item.disabled;
+              const selected = !disabled && tab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  disabled={disabled}
+                  aria-disabled={disabled ? 'true' : undefined}
+                  aria-selected={selected}
+                  aria-label={disabled ? label : undefined}
+                  className={disabled ? 'sr-viewer-tab-disabled' : undefined}
+                  onClick={() => {
+                    if (key !== 'transcript') setTab(key);
+                  }}
+                  style={{
+                    flex: 1, height: 40, border: 'none', background: 'transparent',
+                    cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 12,
+                    fontWeight: selected ? 600 : 500,
+                    color: selected
+                      ? 'var(--sr-text-primary-on-light)'
+                      : 'var(--sr-text-muted-on-light)',
+                    boxShadow: selected ? 'inset 0 -2px 0 var(--sr-cyan-on-light)' : 'none',
+                  }}
+                >{disabled ? label.replace(' —', '') : label}</button>
+              );
+            })}
           </div>
 
           {tab === 'comments' && resolvedCount > 0 && (
@@ -302,13 +279,9 @@ export function VideoViewer({
             </label>
           )}
 
-          {/* Sized to its contents, not to the viewport.
-              With `flex: 1` this pane stretched to the bottom of the window and
-              pushed the composer down with it, leaving a field of empty paper
-              between the tabs and the box you type in. `0 1 auto` keeps the
-              comments and the composer together under the tabs, next to the
-              player, and still scrolls once there are enough of them. */}
-          <div style={{ flex: '0 1 auto', overflowY: 'auto', minHeight: 0 }}>
+          {/* The thread takes the available rail height and scrolls internally,
+              keeping the composer pinned to the stage's lower edge. */}
+          <div style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
             {tab === 'comments' && (
               comments.length === 0
                 ? <Empty note={commentsNote ?? 'No comments yet.'} />
@@ -448,11 +421,8 @@ export function VideoViewer({
 
         {/* Everything below the stage keeps the player's width, so the
             title, the stats and the filmstrip all line up with its edges. */}
-        <div style={{ maxWidth: STAGE_MAX_WIDTH }}>
-          <div style={{
-            display: 'flex', gap: 20, marginTop: 20, alignItems: 'flex-start',
-            maxWidth: STAGE_MAX_WIDTH,
-          }}>
+        <div className="sr-viewer-content-column">
+          <div className="sr-viewer-metadata-row">
             <div style={{ flex: 1, minWidth: 0 }}>
               <h1 style={{
                 margin: 0, fontSize: 20, fontWeight: 700, lineHeight: 1.25,
@@ -537,7 +507,7 @@ export function VideoViewer({
               ) : null}
             </div>
 
-            <div data-testid="viewer-stats" style={{ display: 'flex', flex: 'none' }}>
+            <div data-testid="viewer-stats" className="sr-viewer-stats">
               {([
                 ['views', String(capture.views)] as const,
                 ...(typeof capture.watchedPercent === 'number'
@@ -576,18 +546,15 @@ export function VideoViewer({
               works on recordings made long before the feature and costs no
               upload or storage. */}
           {frames.length > 0 && (
-            <section data-testid="viewer-frames" style={{ marginTop: 22 }}>
+            <section data-testid="viewer-frames" className="sr-viewer-chapters">
               <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ ...mono, letterSpacing: '.12em' }}>FRAMES</span>
+                <span style={{ ...mono, letterSpacing: '.12em' }}>CHAPTERS</span>
                 <span style={{ flex: 1, height: 1, background: 'var(--sr-border-light-soft)' }} />
                 {framesGenerating && <span style={mono}>generating…</span>}
                 {framesBlocked && <span style={mono}>previews unavailable for this file</span>}
               </span>
 
-              <ol style={{
-                listStyle: 'none', margin: 0, padding: 0, display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10,
-              }}>
+              <ol className="sr-viewer-chapter-grid">
                 {frames.map((frame) => {
                   const active = activeFrameStart === frame.startSec;
                   return (
@@ -630,7 +597,7 @@ export function VideoViewer({
             </section>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
