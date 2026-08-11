@@ -19,7 +19,7 @@ The Patreon link goes **last**, after the avatar menu — the quietest slot, fur
 
 - A plain `<a target="_blank" rel="noopener">`, styled inline with the same `--sr-*` design tokens TopBar already uses for its other controls (TopBar doesn't use the design-system `Button` component, so this stays consistent with its raw-button/token convention rather than introducing `Button` just for one control).
 - Neutral/outline weight — visually quieter than "New capture" (black-filled) and never coral (`capture` variant is reserved for live-capture/needs-response UI per project convention).
-- Icon: Patreon mark via `@iconify/react`'s `simple-icons:patreon` (already a dependency in this monorepo; no new package).
+- Icon: Patreon mark via `@iconify/react`'s `simple-icons:patreon` string identifier; `@iconify/react` is an existing dependency, and icon data is resolved from Iconify's CDN at runtime (same as other icons already in TopBar like `ant-design:search-outlined`).
 - Label: "Support us", shown next to the icon at normal widths.
 
 ## Responsive behavior

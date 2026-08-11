@@ -134,6 +134,7 @@ export function TopBar({
           <Icon icon="ant-design:down-outlined" width={9}
             style={{ color: 'var(--sr-text-faint-on-light)' }} aria-hidden="true" />
         </button>
+
         <a
           href={PATREON_URL}
           target="_blank"
@@ -145,7 +146,7 @@ export function TopBar({
             padding: mobile ? '0 8px' : '0 12px',
             display: 'inline-flex', alignItems: 'center', gap: 7,
             color: 'var(--sr-text-muted-on-light)', textDecoration: 'none',
-            fontSize: 13, fontWeight: 600,
+            fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
           }}
         >
           <Icon icon="simple-icons:patreon" width={14} aria-hidden="true" />
