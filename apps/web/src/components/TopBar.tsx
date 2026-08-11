@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 export interface TopBarProps {
   title: string;
@@ -21,11 +22,15 @@ const control = {
   cursor: 'pointer',
 } as const;
 
+const PATREON_URL = 'https://www.patreon.com/cw/SnapRec';
+
 export function TopBar({
   title, meta, unreadActivity = 0, user,
   onNewCapture, onActivity, onUserMenu, onSearch, searchDefault = '',
 }: TopBarProps) {
   const searchRef = useRef<HTMLInputElement>(null);
+  const breakpoint = useBreakpoint();
+  const mobile = breakpoint === 'mobile';
 
   /** `/` focuses search — but never while the user is already typing, or the
    * shortcut eats a character out of whatever field they are in. */
@@ -129,6 +134,23 @@ export function TopBar({
           <Icon icon="ant-design:down-outlined" width={9}
             style={{ color: 'var(--sr-text-faint-on-light)' }} aria-hidden="true" />
         </button>
+        <a
+          href={PATREON_URL}
+          target="_blank"
+          rel="noopener"
+          aria-label="Support us on Patreon"
+          title="Support us on Patreon"
+          style={{
+            ...control,
+            padding: mobile ? '0 8px' : '0 12px',
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            color: 'var(--sr-text-muted-on-light)', textDecoration: 'none',
+            fontSize: 13, fontWeight: 600,
+          }}
+        >
+          <Icon icon="simple-icons:patreon" width={14} aria-hidden="true" />
+          {!mobile && 'Support us'}
+        </a>
       </span>
     </div>
   );
