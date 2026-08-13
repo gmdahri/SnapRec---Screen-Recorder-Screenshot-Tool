@@ -28,11 +28,13 @@ describe('sign-in failure (A4)', () => {
     expect(screen.getByText(/nothing was sent/)).toBeInTheDocument();
   });
 
-  it('gives an admin-blocked user two real routes', () => {
+  it('sends an admin-blocked user to the approval link, not to disabled email sign-in', () => {
     failed('adminBlocked');
     expect(screen.getByText(/Your workspace admin has not approved SnapRec/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /email sign-in/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /approval link/i })).toBeInTheDocument();
+    // Email sign-in is switched off, so offering it here would be a dead end
+    // into the one method that cannot work.
+    expect(screen.queryByRole('button', { name: /email sign-in/i })).toBeNull();
   });
 
   it('always offers a way forward', () => {

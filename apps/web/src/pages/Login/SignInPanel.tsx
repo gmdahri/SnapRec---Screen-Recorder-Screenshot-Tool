@@ -9,25 +9,27 @@ export interface SignInPanelProps {
   subheading?: string;
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /** A1 — sign in.
  *
  * The copy says what an account adds, not what it gates. And it promises
  * explicitly that existing recordings survive, because the fear that signing in
- * will lose the thing you just recorded is the actual reason people bounce. */
-export function SignInPanel({ onGoogle, onMagicLink, heading, subheading }: SignInPanelProps) {
+ * will lose the thing you just recorded is the actual reason people bounce.
+ *
+ * Email sign-in is switched off for now, so Google is the only working route.
+ * The field stays visible rather than being removed, because a sign-in page that
+ * silently loses a method looks broken to anyone who used it before — and
+ * `onMagicLink` stays in the props contract so re-enabling is a small revert. */
+// `onMagicLink` is deliberately not destructured: it stays in the props contract
+// for callers and for the eventual revert, but nothing may call it while email
+// sign-in is off.
+export function SignInPanel({ onGoogle, heading, subheading }: SignInPanelProps) {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
+  /** The controls below are disabled, so this normally cannot fire — but a form
+   * still submits on Enter and can be submitted programmatically, so the refusal
+   * lives here too rather than resting on the disabled attributes alone. */
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!EMAIL.test(email.trim())) {
-      setError('Enter a valid email address.');
-      return;
-    }
-    setError(null);
-    onMagicLink(email.trim());
   };
 
   return (
@@ -75,33 +77,28 @@ export function SignInPanel({ onGoogle, onMagicLink, heading, subheading }: Sign
           <input
             type="email"
             aria-label="Email"
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? 'signin-email-error' : undefined}
+            disabled
             value={email}
             onChange={e => setEmail(e.target.value)}
             style={{
               height: 'var(--sr-h-md)', padding: '0 12px',
-              border: `1px solid ${error ? 'var(--sr-coral-text)' : 'var(--sr-border-light)'}`,
-              background: '#fff', fontSize: 13.5,
+              border: '1px solid var(--sr-border-light)',
+              background: 'var(--sr-surface-panel-light)', fontSize: 13.5,
+              color: 'var(--sr-text-faint-on-light)',
               borderRadius: 'var(--sr-radius-control)',
             }}
           />
         </label>
 
-        {error && (
-          <span id="signin-email-error" role="alert" style={{ fontSize: 12, color: 'var(--sr-coral-hover)' }}>
-            {error}
-          </span>
-        )}
-
         <span style={{ fontSize: 12, color: 'var(--sr-text-muted-on-light)' }}>
-          No password. We send a one-time link.
+          Email sign-in is coming soon. Use Google for now.
         </span>
 
-        <button type="submit" style={{
+        <button type="submit" disabled style={{
           height: 'var(--sr-h-md)', border: 'none',
-          background: 'var(--sr-text-primary-on-light)', color: '#fff',
-          fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+          background: 'var(--sr-border-light)',
+          color: 'var(--sr-text-faint-on-light)',
+          fontSize: 13.5, fontWeight: 600, cursor: 'not-allowed',
           borderRadius: 'var(--sr-radius-control)',
         }}>Send a sign-in link</button>
       </form>

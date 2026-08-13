@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { SignInPanel } from '../Login/SignInPanel';
 import { ReturnToTask } from '../Login/ReturnToTask';
@@ -24,27 +23,26 @@ describe('sign in (A1)', () => {
       .toBeInTheDocument();
   });
 
-  it('offers Google and a one-time link, and says the link is passwordless', () => {
+  it('offers Google and explains that email sign-in is not ready', () => {
     panel();
     expect(screen.getByRole('button', { name: /Continue with Google/ })).toBeInTheDocument();
-    expect(screen.getByText('No password. We send a one-time link.')).toBeInTheDocument();
+    expect(screen.getByText(/Email sign-in is coming soon/i)).toBeInTheDocument();
   });
 
-  it('validates the email before sending', async () => {
+  it('disables the email field and its button', () => {
+    panel();
+    expect(screen.getByLabelText('Email')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Send a sign-in link/ })).toBeDisabled();
+  });
+
+  it('never sends a link, even if the form is submitted directly', () => {
     const onMagicLink = vi.fn();
-    panel({ onMagicLink });
-    await userEvent.type(screen.getByRole('textbox', { name: /email/i }), 'not-an-email');
-    await userEvent.click(screen.getByRole('button', { name: /Send a sign-in link/ }));
+    const { container } = panel({ onMagicLink });
+    // Disabled controls cannot be clicked, but a form still submits on Enter and
+    // can be submitted programmatically — so the refusal lives in the handler
+    // rather than resting on the disabled attributes alone.
+    fireEvent.submit(container.querySelector('form')!);
     expect(onMagicLink).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert')).toHaveTextContent(/valid email/i);
-  });
-
-  it('sends the link for a valid address', async () => {
-    const onMagicLink = vi.fn();
-    panel({ onMagicLink });
-    await userEvent.type(screen.getByRole('textbox', { name: /email/i }), 'maya@northlight.co');
-    await userEvent.click(screen.getByRole('button', { name: /Send a sign-in link/ }));
-    expect(onMagicLink).toHaveBeenCalledWith('maya@northlight.co');
   });
 
   it('links the terms rather than burying them', () => {
