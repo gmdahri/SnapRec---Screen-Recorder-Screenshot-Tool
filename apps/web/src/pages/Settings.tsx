@@ -17,7 +17,9 @@ export default function Settings() {
   const { status } = useExtensionStatus();
   const [active, setActive] = useState(SECTIONS[0].title);
 
-  const extensionAbsent = status !== 'connected';
+  // Disabling fields while the ping is in flight would grey them out and then
+  // re-enable them a second later.
+  const extensionAbsent = status !== 'connected' && status !== 'checking';
   const section = SECTIONS.find(s => s.title === active) ?? SECTIONS[0];
 
   return (
@@ -114,7 +116,7 @@ function SectionPanel({
           field={field}
           disabledReason={disabledReason}
           destructive={section.destructive}
-          onAction={field.key === 'deleteAccount' ? onSignOut : undefined}
+          onAction={field.key === 'signOut' ? onSignOut : undefined}
         />
       ))}
     </section>

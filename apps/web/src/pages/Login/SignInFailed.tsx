@@ -29,12 +29,17 @@ const COPY: Record<SignInFailure, { title: string; body: string }> = {
   },
   adminBlocked: {
     title: 'Your workspace has not approved SnapRec',
-    body: 'Your workspace admin has not approved SnapRec. Use email sign-in, or send them the approval link.',
+    // Pointed at the approval link alone while email sign-in is disabled —
+    // telling someone to use the one method that no longer works is a dead end.
+    body: 'Your workspace admin has not approved SnapRec yet. Send them the approval link — email sign-in is not available yet.',
   },
 };
 
+// `onEmailInstead` is intentionally left undestructured: it stays in the props
+// contract (no caller passes it today) so restoring the email recovery route is
+// a small revert rather than an API change.
 export function SignInFailed({
-  kind, email, onRetry, onGoogle, onEmailInstead, onApprovalLink,
+  kind, email, onRetry, onGoogle, onApprovalLink,
 }: SignInFailedProps) {
   const copy = COPY[kind];
 
@@ -45,14 +50,9 @@ export function SignInFailed({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
         {kind === 'adminBlocked' ? (
-          <>
-            <button type="button" onClick={onEmailInstead ?? onRetry} style={primary}>
-              Use email sign-in
-            </button>
-            <button type="button" onClick={onApprovalLink ?? onRetry} style={secondary}>
-              Send the approval link
-            </button>
-          </>
+          <button type="button" onClick={onApprovalLink ?? onRetry} style={primary}>
+            Send the approval link
+          </button>
         ) : (
           <>
             <button type="button" onClick={onRetry} style={primary}>

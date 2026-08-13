@@ -10,7 +10,7 @@ describe('Settings', () => {
       'Notifications',
       'Storage and downloads',
       'Connected apps',
-      'Delete account',
+      'Account',
     ]);
   });
 
@@ -35,10 +35,17 @@ describe('Settings', () => {
     expect(zoom.help).toContain('remove them in the editor');
   });
 
-  it('puts account deletion last and marks it destructive', () => {
+  it('offers sign out under its own name, not as account deletion', () => {
+    // The old control was labelled "Delete my account and everything in it",
+    // marked destructive, and wired to signOut. Whichever the user wanted, they
+    // got the other one. Real deletion lands separately; until then nothing
+    // here may claim to delete.
     const last = SECTIONS.at(-1)!;
-    expect(last.title).toBe('Delete account');
-    expect(last.destructive).toBe(true);
+    expect(last.title).toBe('Account');
+    expect(last.destructive).toBeUndefined();
+    expect(last.fields.map(f => f.key)).toContain('signOut');
+    expect(SECTIONS.flatMap(s => s.fields).map(f => f.label))
+      .not.toContain('Delete my account and everything in it');
   });
 
   it('gives every field a stable key so state can be persisted', () => {

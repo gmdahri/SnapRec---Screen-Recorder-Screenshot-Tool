@@ -291,3 +291,30 @@ describe('mobile image share (C4)', () => {
     expect(Number(pin.dataset.minTarget)).toBe(44);
   });
 });
+
+describe('the support ask on mobile', () => {
+  /** The mobile video top bar already carries Back, the title, a status badge
+   * and More on a 390px screen, so the ask lives in the sheet those actions
+   * already open rather than competing for bar width. */
+  it('sits in the video overflow sheet beside the other actions', async () => {
+    render(<MobileVideoShare capture={video} comments={vComments}
+      onSeek={noop} onPost={noop} />);
+
+    expect(screen.queryByRole('link', { name: /Patreon/i })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = screen.getByRole('dialog', { name: 'Capture actions' });
+    const link = within(sheet).getByRole('link', { name: /Support us on Patreon/i });
+    expect(link).toHaveAttribute('href', 'https://www.patreon.com/cw/SnapRec');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener');
+    expect(link).toHaveAttribute('data-min-target', '44');
+  });
+
+  it('is a compact icon in the image header, which has no room for a label', () => {
+    render(<MobileImageShare capture={image} comments={iComments} onPost={noop} />);
+    const link = screen.getByRole('link', { name: /Support us on Patreon/i });
+    expect(link).toHaveAttribute('href', 'https://www.patreon.com/cw/SnapRec');
+    expect(link).not.toHaveTextContent('Support us');
+  });
+});

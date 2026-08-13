@@ -13,10 +13,15 @@ export interface NavLinkSpec {
 
 /** The landing page's own three anchors. Only valid on `/` — they point at
  * sections that exist nowhere else. */
+/** Blog is a route rather than an anchor, so it goes last — after the three
+ * in-page jumps, because it is the one item that leaves the page. Without it the
+ * landing page was the only marketing surface with no route to the blog, while
+ * every page using SITE_LINKS had one. */
 export const LANDING_LINKS: NavLinkSpec[] = [
   { label: 'How it works', to: '#how' },
   { label: 'Compare', to: '#compare' },
   { label: 'FAQ', to: '#faq' },
+  { label: 'Blog', to: '/blog' },
 ];
 
 /** Everywhere else. The prototype shows the landing set, but dropping these

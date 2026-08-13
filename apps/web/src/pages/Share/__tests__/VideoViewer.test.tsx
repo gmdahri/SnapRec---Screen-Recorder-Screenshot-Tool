@@ -107,6 +107,29 @@ describe('viewer top bar', () => {
     render(<VideoViewer {...base} capture={{ ...capture, allowDownload: false }} />);
     expect(screen.queryByRole('button', { name: 'Download' })).toBeNull();
   });
+
+  /** This is a public page, so the ask reaches recipients rather than the owner.
+   * It stays outlined and sits leftmost in the right-hand group, so it never
+   * comes between the viewer and Copy link or Download. */
+  it('offers a Patreon link without competing with the primary actions', () => {
+    render(<VideoViewer {...base} />);
+    const bar = screen.getByTestId('viewer-topbar');
+    const link = within(bar).getByRole('link', { name: /Support us on Patreon/i });
+    expect(link).toHaveAttribute('href', 'https://www.patreon.com/cw/SnapRec');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener');
+
+    // Copy link stays the only filled control in the bar.
+    expect(link).not.toHaveStyle({ background: 'var(--sr-cyan)' });
+  });
+
+  it('keeps the support link for a viewer who can neither edit nor download', () => {
+    render(
+      <VideoViewer {...base}
+        capture={{ ...capture, canEdit: false, allowDownload: false }} />,
+    );
+    expect(screen.getByRole('link', { name: /Support us on Patreon/i })).toBeInTheDocument();
+  });
 });
 
 describe('metadata block', () => {

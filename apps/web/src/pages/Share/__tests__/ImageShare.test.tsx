@@ -84,3 +84,25 @@ describe('image share (C2)', () => {
     expect(onPost).toHaveBeenCalledWith(expect.objectContaining({ anchorX: 0.25, anchorY: 0.5 }));
   });
 });
+
+describe('the support ask on a shared screenshot', () => {
+  /** The viewers are public pages, so this reaches recipients rather than the
+   * owner. It stays outlined and secondary for that reason — it must not compete
+   * with Download on someone else's content. */
+  it('offers a Patreon link in the header', () => {
+    render(<ImageShare capture={capture} comments={comments} marginPx={360} onPost={noop} />);
+    const link = screen.getByRole('link', { name: /Support us on Patreon/i });
+    expect(link).toHaveAttribute('href', 'https://www.patreon.com/cw/SnapRec');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener');
+  });
+
+  it('keeps it available even when downloads are switched off', () => {
+    render(
+      <ImageShare capture={{ ...capture, allowDownload: false }} comments={comments}
+        marginPx={360} onPost={noop} />,
+    );
+    expect(screen.getByRole('link', { name: /Support us on Patreon/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Download' })).toBeNull();
+  });
+});

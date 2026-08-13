@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import { CaptureFrame, StatusBadge, type StatusWord } from '@snaprec/design-system';
+// Imported from the file, not the components barrel: the barrel pulls in
+// AppShell and the whole dashboard graph, which a share page has no need for.
+import { SupportButton } from '../../components/SupportButton';
 import { formatTimecode, type ShareComment } from './anchors';
 import type { VideoFrame } from '../../hooks/useVideoFrames';
 import { CommentComposer, type NewComment } from './CommentComposer';
@@ -203,6 +206,10 @@ export function VideoViewer({
         <StatusBadge status={capture.status} surface="dark" />
 
         <span style={{ flex: 1 }} />
+
+        {/* Leftmost of the right group, so it never sits between the viewer and
+            the two things they came here to do. */}
+        <SupportButton surface="dark" />
 
         {/* The visible word is each button's accessible name — no aria-label,
             which would only compete with it. */}

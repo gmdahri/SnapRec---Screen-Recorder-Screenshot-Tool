@@ -4,6 +4,7 @@ import { AppRail, type RailItem } from '@snaprec/design-system';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useExtensionStatus } from '../hooks/useExtensionStatus';
 import { TopBar } from './TopBar';
+import { AccountMenu } from './AccountMenu';
 import { CapturePopover } from './CapturePopover';
 import { MobileBottomBar } from './MobileBottomBar';
 
@@ -39,6 +40,7 @@ export interface AppShellProps {
 }
 
 const EXTENSION_TONE = {
+  checking: 'unknown',
   connected: 'on',
   notInstalled: 'off',
   notResponding: 'off',
@@ -49,6 +51,7 @@ export function AppShell({
   title, meta, user, unreadActivity = 0, onSearch, searchDefault, children,
 }: AppShellProps) {
   const [capturePopover, setCapturePopover] = useState(false);
+  const [accountMenu, setAccountMenu] = useState(false);
   const breakpoint = useBreakpoint();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -81,7 +84,7 @@ export function AppShell({
           extension={EXTENSION_TONE[status]}
           user={user}
           onExtensionClick={() => navigate('/home')}
-          onUserClick={() => navigate('/settings')}
+          onUserClick={() => setAccountMenu(open => !open)}
         />
       )}
 
@@ -95,7 +98,8 @@ export function AppShell({
           searchDefault={searchDefault}
           onNewCapture={() => setCapturePopover(open => !open)}
           onActivity={() => navigate('/home')}
-          onUserMenu={() => navigate('/settings')}
+          onUserMenu={() => setAccountMenu(open => !open)}
+          userMenuOpen={accountMenu}
         />
 
         {capturePopover && (
@@ -103,6 +107,18 @@ export function AppShell({
             <CapturePopover
               onClose={() => setCapturePopover(false)}
               onTroubleshoot={() => { setCapturePopover(false); navigate('/home'); }}
+            />
+          </div>
+        )}
+
+        {/* The wrapper anchors the desktop popover. The mobile variant is a
+            fixed-position sheet, so it is unaffected by sitting inside it. */}
+        {accountMenu && (
+          <div style={{ position: 'relative', height: 0 }}>
+            <AccountMenu
+              user={user}
+              onClose={() => setAccountMenu(false)}
+              onNavigate={to => navigate(to)}
             />
           </div>
         )}

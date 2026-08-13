@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ExtensionStatus } from '../../hooks/useExtensionStatus';
+import { PATREON_URL } from '../../lib/patreon';
 
 const EXTENSIONS_URL = 'chrome://extensions';
 
@@ -8,12 +9,15 @@ export interface ExtensionNoticeProps {
   version?: string;
 }
 
-/** The four cases from H5. Connected renders nothing at all — a banner saying
- * "everything is fine" is noise. */
+/** The cases from H5. A banner saying "everything is fine" would be noise, so
+ * `connected` does not get a status card — it gets the support ask instead,
+ * which is the one thing worth saying to someone whose setup already works. */
 export function ExtensionNotice({ status }: ExtensionNoticeProps) {
   const [copied, setCopied] = useState(false);
 
-  if (status === 'connected') return null;
+  // Nothing is known yet, so say nothing.
+  if (status === 'checking') return null;
+  if (status === 'connected') return <SupportCard />;
 
   const copyExtensionsUrl = async () => {
     try {
@@ -73,6 +77,30 @@ export function ExtensionNotice({ status }: ExtensionNoticeProps) {
           </p>
         </>
       )}
+    </section>
+  );
+}
+
+/** The slot the install prompt used to own. Once the extension is in place
+ * there is nothing to instruct, so the space asks for support instead — the
+ * quiet version of the ask, not a coral call to action. */
+function SupportCard() {
+  return (
+    <section style={{
+      display: 'flex', flexDirection: 'column', gap: 8,
+      background: 'var(--sr-surface-paper)',
+      border: '1px solid var(--sr-border-light-soft)',
+      padding: '14px 16px',
+    }}>
+      <h2 style={h2}>Help keep SnapRec free</h2>
+      <p style={body}>
+        Recording, hosting and sharing all cost something to run. There is no
+        paid tier and no watermark — a few pounds a month from people who use it
+        is what keeps it that way.
+      </p>
+      <a href={PATREON_URL} target="_blank" rel="noopener" style={primaryLink}>
+        Support us on Patreon
+      </a>
     </section>
   );
 }

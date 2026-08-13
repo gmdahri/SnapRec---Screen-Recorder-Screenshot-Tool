@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
+import { useBreakpoint } from '../hooks/useBreakpoint';
+import { useTypewriterCycle } from '../hooks/useTypewriterCycle';
+import { PATREON_URL } from '../lib/patreon';
 
 export interface TopBarProps {
   title: string;
@@ -11,6 +14,9 @@ export interface TopBarProps {
   onUserMenu?: () => void;
   onSearch?: (query: string) => void;
   searchDefault?: string;
+  /** Drives `aria-expanded` on the avatar. The menu itself lives in AppShell,
+   * which owns the open state. */
+  userMenuOpen?: boolean;
 }
 
 const control = {
@@ -21,11 +27,39 @@ const control = {
   cursor: 'pointer',
 } as const;
 
+const PATREON_PHRASES = ['Keep SnapRec free', 'Support us'];
+
+/** Sized for "Keep SnapRec free" at 13px/600 plus the cursor, so the label's
+ * box never changes as characters come and go. Without this the search box and
+ * every control between it and the link twitch on every keystroke of the
+ * animation. */
+const PATREON_LABEL_WIDTH = 124;
+
+function PatreonLabel() {
+  const text = useTypewriterCycle(PATREON_PHRASES);
+  return (
+    <span
+      data-testid="patreon-label"
+      aria-hidden="true"
+      style={{
+        display: 'inline-flex', alignItems: 'center',
+        width: PATREON_LABEL_WIDTH, flex: 'none',
+      }}
+    >
+      {text}
+      <span className="sr-caret" aria-hidden="true" style={{ marginLeft: 1 }}>|</span>
+    </span>
+  );
+}
+
 export function TopBar({
   title, meta, unreadActivity = 0, user,
   onNewCapture, onActivity, onUserMenu, onSearch, searchDefault = '',
+  userMenuOpen = false,
 }: TopBarProps) {
   const searchRef = useRef<HTMLInputElement>(null);
+  const breakpoint = useBreakpoint();
+  const mobile = breakpoint === 'mobile';
 
   /** `/` focuses search — but never while the user is already typing, or the
    * shortcut eats a character out of whatever field they are in. */
@@ -119,6 +153,8 @@ export function TopBar({
           type="button"
           onClick={onUserMenu}
           aria-label={user.name}
+          aria-haspopup="menu"
+          aria-expanded={userMenuOpen}
           style={{ ...control, padding: '0 8px 0 6px', display: 'inline-flex', alignItems: 'center', gap: 7 }}
         >
           <span style={{
@@ -129,6 +165,24 @@ export function TopBar({
           <Icon icon="ant-design:down-outlined" width={9}
             style={{ color: 'var(--sr-text-faint-on-light)' }} aria-hidden="true" />
         </button>
+
+        <a
+          href={PATREON_URL}
+          target="_blank"
+          rel="noopener"
+          aria-label="Support us on Patreon"
+          title="Support us on Patreon"
+          style={{
+            ...control,
+            padding: mobile ? '0 8px' : '0 12px',
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            color: 'var(--sr-text-muted-on-light)', textDecoration: 'none',
+            fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
+          }}
+        >
+          <Icon icon="simple-icons:patreon" width={14} aria-hidden="true" />
+          {!mobile && <PatreonLabel />}
+        </a>
       </span>
     </div>
   );

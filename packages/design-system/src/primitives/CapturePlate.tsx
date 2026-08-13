@@ -56,7 +56,14 @@ export function CapturePlate({
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <CaptureFrame
         treatment={def.canPreview ? 'focused' : 'passive'}
-        style={{ background: 'var(--sr-surface-carbon)', aspectRatio: '16 / 9' }}
+        // `minHeight: 0` opts out of the flex automatic minimum size, so
+        // `aspect-ratio` is the only thing deciding this box's height.
+        // `overflow: hidden` is what lets `object-fit: cover` actually crop.
+        // Together they stop any in-flow child growing the plate past 16/9.
+        style={{
+          background: 'var(--sr-surface-carbon)', aspectRatio: '16 / 9',
+          overflow: 'hidden', minHeight: 0,
+        }}
       >
         {def.canPreview && media}
 

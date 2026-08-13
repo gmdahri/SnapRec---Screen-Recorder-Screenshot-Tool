@@ -108,12 +108,19 @@ export const SECTIONS: SettingSection[] = [
     ],
   },
   {
-    title: 'Delete account',
-    destructive: true,
+    /** Signing out is not destructive, so this section is not flagged as such.
+     *
+     * It replaces a "Delete account" section whose only control — labelled
+     * "Delete my account and everything in it", with help text promising the
+     * action could not be undone — was wired to signOut and deleted nothing.
+     * Whichever of the two the user wanted, they got the other. Real deletion
+     * needs a server-side endpoint and lands separately; until it exists,
+     * nothing here may claim to delete. */
+    title: 'Account',
     fields: [
       {
-        key: 'deleteAccount', label: 'Delete my account and everything in it', kind: 'action',
-        help: 'Removes every capture, link and comment. This cannot be undone.',
+        key: 'signOut', label: 'Sign out', kind: 'action',
+        help: 'Ends this session on this device. Your captures stay where they are.',
       },
     ],
   },

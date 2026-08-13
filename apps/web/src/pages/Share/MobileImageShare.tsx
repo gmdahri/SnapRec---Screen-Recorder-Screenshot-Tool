@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { StatusBadge } from '@snaprec/design-system';
+import { SupportButton } from '../../components/SupportButton';
 import type { PointAnchor, ShareComment } from './anchors';
 import { CommentComposer, type NewComment } from './CommentComposer';
 import { PendingComment } from './PendingComment';
@@ -48,6 +49,12 @@ export function MobileImageShare({
             display: 'block', fontFamily: 'var(--sr-font-mono)', fontSize: 10,
             color: 'var(--sr-text-faint-on-light)',
           }}>{capture.owner} · {capture.width}×{capture.height}</span>
+        </span>
+
+        {/* Compact: this header is 52px on a phone and the title beside it can
+            run long. */}
+        <span style={{ marginLeft: 'auto' }}>
+          <SupportButton surface="light" compact />
         </span>
       </header>
 

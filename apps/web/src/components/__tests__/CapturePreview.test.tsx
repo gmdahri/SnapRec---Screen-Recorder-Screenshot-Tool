@@ -128,3 +128,14 @@ describe('the duration it discovers from the file', () => {
     expect(withDuration(0)).not.toHaveBeenCalled();
   });
 });
+
+describe('the geometry a screenshot contributes', () => {
+  /** A statically positioned <img> is a flex item's content, and a flex item's
+   * automatic minimum size beats `aspect-ratio`. That is what let a tall
+   * screenshot stretch its plate and, through the grid's default `stretch`,
+   * every other plate in its row. */
+  it('takes the screenshot out of flow so it cannot outvote the frame ratio', () => {
+    render(<CapturePreview recording={rec({ type: 'screenshot', fileUrl: 'https://r2/s.png' })} />);
+    expect(screen.getByTestId('capture-image')).toHaveStyle({ position: 'absolute' });
+  });
+});

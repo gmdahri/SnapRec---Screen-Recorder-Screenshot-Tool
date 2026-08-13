@@ -132,8 +132,19 @@ export function CapturePreview({ recording, onDuration }: CapturePreviewProps) {
 
   if (toCaptureKind(recording) !== 'recording') {
     const still = capturePreviewUrl(recording);
+    // Absolute, like every child of the recording branch below: an in-flow
+    // image contributes its intrinsic height as the flex item's automatic
+    // minimum size, which overrides the frame's `aspect-ratio` for anything
+    // taller than 16/9 — and a full-page screenshot is far taller. That grew
+    // the plate and, through the grid's default `stretch`, its whole row.
+    // `CaptureFrame` is the `position: relative` ancestor this resolves against.
     return still
-      ? <img data-testid="capture-image" src={still} alt="" style={fill} />
+      ? <img
+          data-testid="capture-image"
+          src={still}
+          alt=""
+          style={{ ...fill, position: 'absolute', inset: 0 }}
+        />
       : null;
   }
 
