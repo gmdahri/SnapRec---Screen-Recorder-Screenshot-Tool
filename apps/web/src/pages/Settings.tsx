@@ -116,7 +116,7 @@ function SectionPanel({
           field={field}
           disabledReason={disabledReason}
           destructive={section.destructive}
-          onAction={field.key === 'deleteAccount' ? onSignOut : undefined}
+          onAction={field.key === 'signOut' ? onSignOut : undefined}
         />
       ))}
     </section>
