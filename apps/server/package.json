@@ -26,7 +26,10 @@
     "script:email-video-editor-launch": "ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts",
     "script:email-video-editor-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-video-editor-launch.ts",
     "script:email-auto-zoom-launch": "ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts",
-    "script:email-auto-zoom-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts"
+    "script:email-auto-zoom-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts",
+    "script:email-patreon-support": "ts-node -r dotenv/config src/scripts/send-patreon-support.ts",
+    "script:email-patreon-support:dry": "DRY_RUN=1 ts-node -r dotenv/config src/scripts/send-patreon-support.ts",
+    "script:email-patreon-support:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-patreon-support.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
