@@ -126,7 +126,9 @@ A new account menu owned by `AppShell`, following the popover pattern `AppShell`
 
 ### Settings page correction
 
-Confirmed in conversation: replace the mis-wired `deleteAccount` field in `pages/Settings/sections.ts:110-118` with a real **Sign out** field, and stop advertising account deletion that does not exist. Rather than leaving a destructive-styled control wired to a non-destructive action, the section becomes a plain sign-out row (not `destructive`), and `Settings.tsx:117` keys `onAction` off the new field key. Genuine account deletion is a separate feature with a server-side component and is not in scope.
+Confirmed in conversation: the mis-wired `deleteAccount` field in `pages/Settings/sections.ts:110-118` must stop signing the user out under a delete label. A distinct, plain **Sign out** field is added (not `destructive`), and `Settings.tsx:117` keys `onAction` off the new field key rather than off `deleteAccount`.
+
+Genuine account deletion is **also** being implemented, specified separately in [`2026-08-13-account-deletion-design.md`](./2026-08-13-account-deletion-design.md) — it is a server-side feature requiring a new secret and a migration. The two must not share a control: after both land, Settings has a plain sign-out row *and* a real destructive delete action behind typed confirmation.
 
 ### Out of scope
 
