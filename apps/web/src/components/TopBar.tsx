@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { useTypewriterCycle } from '../hooks/useTypewriterCycle';
 
 export interface TopBarProps {
   title: string;
@@ -23,6 +24,31 @@ const control = {
 } as const;
 
 const PATREON_URL = 'https://www.patreon.com/cw/SnapRec';
+
+const PATREON_PHRASES = ['Keep SnapRec free', 'Support us'];
+
+/** Sized for "Keep SnapRec free" at 13px/600 plus the cursor, so the label's
+ * box never changes as characters come and go. Without this the search box and
+ * every control between it and the link twitch on every keystroke of the
+ * animation. */
+const PATREON_LABEL_WIDTH = 124;
+
+function PatreonLabel() {
+  const text = useTypewriterCycle(PATREON_PHRASES);
+  return (
+    <span
+      data-testid="patreon-label"
+      aria-hidden="true"
+      style={{
+        display: 'inline-flex', alignItems: 'center',
+        width: PATREON_LABEL_WIDTH, flex: 'none',
+      }}
+    >
+      {text}
+      <span className="sr-caret" aria-hidden="true" style={{ marginLeft: 1 }}>|</span>
+    </span>
+  );
+}
 
 export function TopBar({
   title, meta, unreadActivity = 0, user,
@@ -150,7 +176,7 @@ export function TopBar({
           }}
         >
           <Icon icon="simple-icons:patreon" width={14} aria-hidden="true" />
-          {!mobile && 'Support us'}
+          {!mobile && <PatreonLabel />}
         </a>
       </span>
     </div>

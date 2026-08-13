@@ -645,3 +645,20 @@
     flex: 1;
   }
 }
+
+/* The caret blinks on its own clock rather than off the typing timer, so the
+   text stays legible while it is being typed. `steps(1)` gives a hard on/off
+   blink instead of a fade, which reads as a terminal caret. */
+@keyframes sr-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.sr-caret {
+  animation: sr-caret-blink 1s steps(1) infinite;
+  color: var(--sr-text-faint-on-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-caret { display: none; }
+}

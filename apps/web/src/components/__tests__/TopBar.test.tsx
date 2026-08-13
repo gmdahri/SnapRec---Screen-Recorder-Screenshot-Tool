@@ -26,15 +26,19 @@ describe('TopBar Patreon link', () => {
     expect(link).toHaveAttribute('rel', 'noopener');
   });
 
-  it('shows the "Support us" label at desktop width', () => {
+  it('animates the label at desktop width, starting from the first phrase', () => {
     mount();
-    expect(screen.getByText('Support us')).toBeInTheDocument();
+    const label = screen.getByTestId('patreon-label');
+    expect(label).toBeInTheDocument();
+    // aria-hidden so the typing text is never announced character-by-character;
+    // the accessible name comes from the link's aria-label instead.
+    expect(label).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('collapses to icon-only on mobile, keeping an accessible name', () => {
     vi.mocked(useBreakpoint).mockReturnValue('mobile');
     mount();
-    expect(screen.queryByText('Support us')).toBeNull();
+    expect(screen.queryByTestId('patreon-label')).toBeNull();
     expect(screen.getByRole('link', { name: /Support us on Patreon/ })).toBeInTheDocument();
   });
 });
