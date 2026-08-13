@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { InProgress } from '../Home/InProgress';
 import { AttentionBand } from '../Home/AttentionBand';
 import { ExtensionNotice } from '../Home/ExtensionNotice';
@@ -87,9 +87,29 @@ describe('Home — attention required (H4)', () => {
 });
 
 describe('Home — extension unavailable (H5)', () => {
-  it('says nothing at all when the extension is connected', () => {
-    const { container } = render(<ExtensionNotice status="connected" version="2.4" />);
+  it('says nothing at all while detection is still in flight', () => {
+    const { container } = render(<ExtensionNotice status="checking" />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('asks for support instead of a status card once the extension is connected', () => {
+    // A working setup needs no instruction, so the slot the install prompt used
+    // to own carries the support ask rather than "everything is fine".
+    render(<ExtensionNotice status="connected" version="2.4" />);
+    const link = screen.getByRole('link', { name: /Patreon/i });
+    expect(link).toHaveAttribute('href', 'https://www.patreon.com/cw/SnapRec');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener');
+  });
+
+  it('does not ask for support while the extension is missing or broken', () => {
+    // Asking someone to fund the thing that is currently failing them reads as
+    // tone-deaf, so the ask is gated on a working setup.
+    for (const status of ['notInstalled', 'notResponding', 'unsupported'] as const) {
+      cleanup();
+      render(<ExtensionNotice status={status} />);
+      expect(screen.queryByRole('link', { name: /Patreon/i })).toBeNull();
+    }
   });
 
   it('reassures that the library works without the extension', () => {

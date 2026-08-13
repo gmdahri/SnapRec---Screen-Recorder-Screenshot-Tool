@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useTypewriterCycle } from '../hooks/useTypewriterCycle';
+import { PATREON_URL } from '../lib/patreon';
 
 export interface TopBarProps {
   title: string;
@@ -22,8 +23,6 @@ const control = {
   borderRadius: 'var(--sr-radius-control)',
   cursor: 'pointer',
 } as const;
-
-const PATREON_URL = 'https://www.patreon.com/cw/SnapRec';
 
 const PATREON_PHRASES = ['Keep SnapRec free', 'Support us'];
 
