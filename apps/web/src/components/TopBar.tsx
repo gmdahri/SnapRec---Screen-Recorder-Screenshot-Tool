@@ -14,6 +14,9 @@ export interface TopBarProps {
   onUserMenu?: () => void;
   onSearch?: (query: string) => void;
   searchDefault?: string;
+  /** Drives `aria-expanded` on the avatar. The menu itself lives in AppShell,
+   * which owns the open state. */
+  userMenuOpen?: boolean;
 }
 
 const control = {
@@ -52,6 +55,7 @@ function PatreonLabel() {
 export function TopBar({
   title, meta, unreadActivity = 0, user,
   onNewCapture, onActivity, onUserMenu, onSearch, searchDefault = '',
+  userMenuOpen = false,
 }: TopBarProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   const breakpoint = useBreakpoint();
@@ -149,6 +153,8 @@ export function TopBar({
           type="button"
           onClick={onUserMenu}
           aria-label={user.name}
+          aria-haspopup="menu"
+          aria-expanded={userMenuOpen}
           style={{ ...control, padding: '0 8px 0 6px', display: 'inline-flex', alignItems: 'center', gap: 7 }}
         >
           <span style={{

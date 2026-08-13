@@ -7,6 +7,7 @@ export { LoginModal } from './LoginModal';
 export { GatedButton } from './GatedButton';
 export { AppShell, NAV, MOBILE_NAV, type AppShellProps, type NavDestination } from './AppShell';
 export { TopBar, type TopBarProps } from './TopBar';
+export { AccountMenu, type AccountMenuProps } from './AccountMenu';
 export { CapturePopover, type CapturePopoverProps } from './CapturePopover';
 export { CapturePreview, type CapturePreviewProps } from './CapturePreview';
 export { MobileBottomBar, type MobileBottomBarProps } from './MobileBottomBar';
