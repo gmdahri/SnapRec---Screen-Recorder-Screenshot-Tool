@@ -13,7 +13,8 @@ export interface ExtensionNoticeProps {
 export function ExtensionNotice({ status }: ExtensionNoticeProps) {
   const [copied, setCopied] = useState(false);
 
-  if (status === 'connected') return null;
+  // Nothing is known yet, so say nothing.
+  if (status === 'checking' || status === 'connected') return null;
 
   const copyExtensionsUrl = async () => {
     try {

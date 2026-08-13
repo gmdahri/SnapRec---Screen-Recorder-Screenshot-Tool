@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 
-/** The four cases from scene H5.
+/** The four cases from scene H5, plus the one the prototype did not have.
  *
  * The distinction that matters to the user is between "install it" and "it is
  * installed but something is wrong" — those take different actions, so they are
- * different states rather than one error. */
-export type ExtensionStatus = 'connected' | 'notInstalled' | 'notResponding' | 'unsupported';
+ * different states rather than one error.
+ *
+ * `checking` exists because the honest answer before the ping resolves is "we
+ * do not know yet". Initialising to a failure state made every consumer assert
+ * a problem for up to the full timeout, and then take it back. */
+export type ExtensionStatus =
+  | 'checking' | 'connected' | 'notInstalled' | 'notResponding' | 'unsupported';
 
 export interface ExtensionDetectDeps {
   isChromium: boolean;
@@ -25,8 +30,9 @@ export async function detectExtension(
 ): Promise<ExtensionState> {
   if (!isChromium) return { status: 'unsupported' };
 
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<'timeout'>(resolve => {
-    setTimeout(() => resolve('timeout'), timeoutMs);
+    timer = setTimeout(() => resolve('timeout'), timeoutMs);
   });
 
   try {
@@ -36,6 +42,8 @@ export async function detectExtension(
     return { status: 'connected', version: result.version };
   } catch {
     return { status: 'notResponding' };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -64,7 +72,7 @@ function ping(): Promise<{ version: string } | null> {
 }
 
 export function useExtensionStatus(): ExtensionState {
-  const [state, setState] = useState<ExtensionState>({ status: 'notResponding' });
+  const [state, setState] = useState<ExtensionState>({ status: 'checking' });
 
   useEffect(() => {
     let live = true;

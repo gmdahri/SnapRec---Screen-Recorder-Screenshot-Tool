@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { detectExtension } from '../useExtensionStatus';
+import { renderHook, waitFor } from '@testing-library/react';
+import { detectExtension, useExtensionStatus } from '../useExtensionStatus';
 
 describe('extension detection', () => {
   it('reports connected with a version when the ping answers', async () => {
@@ -31,5 +32,25 @@ describe('extension detection', () => {
       isChromium: true, ping: async () => { throw new Error('boom'); },
     });
     expect(r.status).toBe('notResponding');
+  });
+
+  it('starts in checking, not in a failure state', async () => {
+    // A hook that initialises to notResponding tells the user the extension is
+    // broken before it has asked. That was the flash this state exists to stop.
+    const { result } = renderHook(() => useExtensionStatus());
+    expect(result.current.status).toBe('checking');
+    await waitFor(() => expect(result.current.status).not.toBe('checking'));
+  });
+
+  it('clears its timeout when the ping answers first', async () => {
+    vi.useFakeTimers();
+    try {
+      const ping = () => Promise.resolve({ version: '1.3.3' });
+      await detectExtension({ isChromium: true, ping, timeoutMs: 1200 });
+      // A pending timer per call leaks, and in tests it fires after teardown.
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

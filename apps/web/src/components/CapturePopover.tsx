@@ -92,7 +92,9 @@ export function CapturePopover({ onClose, onTroubleshoot }: CapturePopoverProps)
         marginTop: 10, fontFamily: 'var(--sr-font-mono)', fontSize: 9.5,
         color: 'var(--sr-text-faint-on-dark)',
       }}>
-        {status === 'connected' ? `Extension ${version} connected · ` : 'Extension not detected · '}
+        {status === 'connected' ? `Extension ${version} connected · `
+          : status === 'checking' ? 'Checking for the extension · '
+          : 'Extension not detected · '}
         <button type="button" onClick={onTroubleshoot} style={{
           border: 'none', background: 'transparent', padding: 0, font: 'inherit',
           color: 'var(--sr-cyan)', cursor: 'pointer', textDecoration: 'underline',

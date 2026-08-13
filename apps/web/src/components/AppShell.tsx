@@ -39,6 +39,7 @@ export interface AppShellProps {
 }
 
 const EXTENSION_TONE = {
+  checking: 'unknown',
   connected: 'on',
   notInstalled: 'off',
   notResponding: 'off',
