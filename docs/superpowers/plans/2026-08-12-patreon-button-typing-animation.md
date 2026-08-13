@@ -50,13 +50,14 @@ const HOLD_MS = 1400;
 /** Advance fake timers inside act() so React flushes the resulting state. */
 const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
-/** The machine spends one extra tick at each end of a phrase: the tick that
- * notices the phrase is full (and starts the hold) emits no character, and so
- * does the tick that notices it is empty (and advances the phrase). So a
- * phrase of length L costs L+1 typing ticks and L+1 erasing ticks, and this is
- * the elapsed time from a phrase's first typing tick being scheduled to the
- * tick that hands over to the next phrase. */
-const cycle = (len: number) => TYPE_MS * (len + 1) + HOLD_MS + ERASE_MS * (len + 1);
+/** Elapsed time from a phrase's typing being scheduled to the tick that hands
+ * over to the next phrase.
+ *
+ * A phrase of length L takes L typing ticks to fill, then one more no-op tick
+ * that notices it is full and starts the hold — hence `L + 1`. Erasing is not
+ * symmetric: L erase ticks bring it back to empty, and the handover tick is
+ * itself the next tick after that, so erasing contributes only `L`. */
+const cycle = (len: number) => TYPE_MS * (len + 1) + HOLD_MS + ERASE_MS * len;
 
 describe('useTypewriterCycle', () => {
   beforeEach(() => {
