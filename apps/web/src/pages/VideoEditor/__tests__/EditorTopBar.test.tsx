@@ -156,3 +156,19 @@ describe('publishing (E6)', () => {
     expect(screen.queryByRole('button', { name: /publish/i })).toBeNull();
   });
 });
+
+describe('the trailing slot', () => {
+  /** VideoEditorChrome hangs the account menu and the Patreon support link here.
+   * The slot itself was untested, so nothing caught a caller's content being
+   * dropped — and it renders last, after Export and Publish, so it must not
+   * displace them. */
+  it('renders whatever the caller hangs after the primary actions', () => {
+    render(<EditorTopBar {...base} trailing={<button type="button">Support us</button>} />);
+    const bar = screen.getByTestId('editor-topbar');
+    expect(screen.getByRole('button', { name: 'Support us' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export/ })).toBeInTheDocument();
+
+    const order = [...bar.querySelectorAll('button')].map(b => b.textContent?.trim());
+    expect(order.indexOf('Support us')).toBeGreaterThan(order.findIndex(t => /Export/.test(t ?? '')));
+  });
+});

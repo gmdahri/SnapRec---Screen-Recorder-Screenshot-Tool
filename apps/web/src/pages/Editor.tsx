@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { GatedButton, LoginModal, SEO } from '../components';
+import { GatedButton, LoginModal, SEO, SupportButton } from '../components';
 import { EditorChrome } from './Editor/components/EditorChrome';
 import { Toolbar, PropertySidebar, CanvasArea } from './Editor/components';
 import { EditorProvider, useEditor } from './Editor/context/EditorContext';
@@ -81,6 +81,7 @@ const EditorContent: React.FC = () => {
                 </button>
             </div>
             <div className="h-5 w-px bg-[var(--sr-border-dark)]"></div>
+            <SupportButton surface="dark" />
             <GatedButton
                 onClick={() => handleActionClick('export')}
                 icon="download"

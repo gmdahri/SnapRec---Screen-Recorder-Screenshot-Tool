@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { StatusBadge, type StatusWord } from '@snaprec/design-system';
 import { BottomSheet } from '../../components/BottomSheet';
+import { PATREON_URL } from '../../lib/patreon';
 import type { VideoFrame } from '../../hooks/useVideoFrames';
 import { formatTimecode, type ShareComment } from './anchors';
 import { CommentComposer, type NewComment } from './CommentComposer';
@@ -288,6 +289,16 @@ export function MobileVideoShare({
             onClick={() => { onCopyLink?.(); setOverflow(false); }}
             className="sr-mobile-viewer-sheet-row"
           >Copy link</button>
+          {/* In the sheet rather than the top bar: that bar already carries
+              Back, the title, a status badge and More on a 390px screen. */}
+          <a
+            href={PATREON_URL}
+            target="_blank"
+            rel="noopener"
+            data-min-target="44"
+            onClick={() => setOverflow(false)}
+            className="sr-mobile-viewer-sheet-row"
+          >Support us on Patreon</a>
         </BottomSheet>
       )}
     </div>

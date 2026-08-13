@@ -31,6 +31,35 @@ TopBar has no existing breakpoint logic and is already tight at narrow/tablet wi
 - Opens the Patreon page in a new tab (`target="_blank" rel="noopener"`).
 - No tracking/analytics beyond what the app already captures globally (none added specifically for this).
 
+## Additional surfaces (added 2026-08-13)
+
+The dashboard is not the only place a user spends time, so the ask is extended to the viewers and both editors. Confirmed in conversation: all four surfaces, static (no typewriter animation — these are dense working toolbars where a looping animation competes with the task).
+
+A shared `SupportButton` component carries it, rather than six hand-rolled links:
+
+```tsx
+export interface SupportButtonProps {
+  surface: 'dark' | 'light';
+  /** Icon only, for dense bars and mobile. */
+  compact?: boolean;
+}
+```
+
+`surface` is explicit rather than inferred, because these pages do not share a theme and there is no context to read it from. Per `CLAUDE.md`, editors and the video viewer are dark "Technical" workspaces with explicit dark tokens; the image viewer is a light surface. No `dark:` utilities.
+
+| Surface | File | Theme | Placement |
+| --- | --- | --- | --- |
+| Video viewer | `pages/Share/VideoViewer.tsx` | dark | Right group, before Download |
+| Image viewer | `pages/Share/ImageShare.tsx` | light | Header, before Download |
+| Screenshot editor | `pages/Editor.tsx` (`EditorActions`) | dark | After the undo/redo divider |
+| Video editor | `pages/VideoEditor/VideoEditorChrome.tsx` | dark | Alongside `UserMenu` in the existing `trailing` slot |
+| Mobile video viewer | `pages/Share/MobileVideoShare.tsx` | dark | A row in the existing overflow `BottomSheet` — the top bar is already full |
+| Mobile image viewer | `pages/Share/MobileImageShare.tsx` | light | Header, compact |
+
+Note on audience: the two viewers are public share pages, so the ask reaches recipients who may not use SnapRec rather than the owner. This was raised and accepted deliberately — every shared link becomes an impression. The button stays visually quiet (outlined, never coral, never the primary action) so it does not compete with Copy link or Download on someone else's content.
+
+`Editor.tsx` uses Material Symbols glyphs while the Share pages use `@iconify/react`. `SupportButton` brings its own Iconify import, so it stays consistent with itself across surfaces rather than matching each file's local icon convention.
+
 ## Out of scope / explicitly not doing
 
 - No Patreon widget/embed, no OAuth or Patreon API integration — this is a static outbound link.

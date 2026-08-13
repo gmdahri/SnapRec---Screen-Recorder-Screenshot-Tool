@@ -1,6 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { CaptureFrame, StatusBadge } from '@snaprec/design-system';
+import { SupportButton } from '../../components/SupportButton';
 import { leadersVisible, type PointAnchor, type ShareComment } from './anchors';
 import { CommentComposer, type NewComment } from './CommentComposer';
 import { PendingComment } from './PendingComment';
@@ -82,6 +83,8 @@ export function ImageShare({
             color: 'var(--sr-text-faint-on-light)',
           }}>{capture.owner} · {capture.width}×{capture.height}</span>
         </span>
+
+        <SupportButton surface="light" />
 
         {capture.allowDownload && (
           <button type="button" onClick={onDownload} aria-label="Download" style={headerAction}>

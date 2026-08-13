@@ -4,6 +4,7 @@ import { useVideoEditor } from './VideoEditorContext';
 import { EditorTopBar } from './EditorTopBar';
 import type { EditorTool } from './types';
 import UserMenu from '../../components/UserMenu';
+import { SupportButton } from '../../components/SupportButton';
 import LoginModal from '../../components/LoginModal';
 import { outputDurationSec } from './cuts';
 
@@ -172,7 +173,12 @@ export function VideoEditorChrome({ children }: { children: React.ReactNode }) {
         onRedo={redoEdit}
         canUndo={canUndoEdit}
         canRedo={canRedoEdit}
-        trailing={<UserMenu onSignIn={() => setShowLoginModal(true)} />}
+        trailing={(
+          <>
+            <SupportButton surface="dark" />
+            <UserMenu onSignIn={() => setShowLoginModal(true)} />
+          </>
+        )}
       />
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <div className="flex flex-1 min-h-0">
