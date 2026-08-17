@@ -18,5 +18,14 @@ export { LandingFooter } from './LandingFooter';
 export { AddToChromeButton } from './AddToChromeButton';
 export { default as GoogleAd } from './GoogleAd';
 export { default as ProtectedRoute } from './ProtectedRoute';
-export { default as SEO } from './SEO';
+export {
+    default as SEO,
+    // SEO C1/W4: callers that build their own JSON-LD cite the same card asset.
+    DEFAULT_OG_IMAGE,
+    DEFAULT_OG_IMAGE_WIDTH,
+    DEFAULT_OG_IMAGE_HEIGHT,
+    SITE_URL,
+} from './SEO';
 export { CookieConsent } from './CookieConsent';
+// SEO W7
+export { AdSenseLoader } from './AdSenseLoader';

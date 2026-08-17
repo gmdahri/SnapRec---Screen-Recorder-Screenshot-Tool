@@ -11,24 +11,28 @@
   <meta name="google-adsense-account" content="ca-pub-2862976014228405">
   <meta name="application-name" content="SnapRec" />
   <meta name="author" content="Ghulam Muhammad" />
-  <meta name="robots" content="index, follow" />
+  <!-- SEO W3: the hardcoded robots meta was removed from here.
+       components/SEO.tsx owns robots per route via Helmet; keeping a static
+       "index, follow" here put two conflicting robots tags on every noindex page. -->
 
   <!-- Preconnect to Google Fonts (Material Symbols only — UI fonts are self-hosted) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <!-- Preload OG image for social sharing performance -->
-  <link rel="preload" as="image" href="/og-image.png" />
+  <!-- SEO C1: the og-image preload hint was removed from here.
+       It fetched a 6.4 MB image at highest priority on every route for something no
+       page ever renders — it only competed with the real LCP element. The OG image is
+       now a 129 KB 1200x630 JPEG, referenced from components/SEO.tsx only. -->
 
   <!-- Material Symbols (non-render-blocking) -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" /></noscript>
   <!-- Schibsted Grotesk and Azeret Mono are self-hosted via @snaprec/design-system. -->
 
-
-  <!-- AdSense Verification Code -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2862976014228405"
-    crossorigin="anonymous"></script>
+  <!-- SEO W7: the unconditional AdSense tag was removed from this head.
+       components/AdSenseLoader.tsx now injects it, and only after the visitor has
+       accepted cookies. The google-adsense-account meta above is enough for
+       ownership verification and costs nothing at runtime. -->
 </head>
 
 <body>

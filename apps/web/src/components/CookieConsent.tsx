@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-
-const CONSENT_KEY = 'snaprec_cookie_consent';
+/* SEO W7: the key and the write both moved to lib/consent.ts so AdSenseLoader can
+ * observe the answer. This component is still the only thing that asks. */
+import { getConsent, setConsent } from '../lib/consent';
 
 export const CookieConsent: React.FC = () => {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        const consent = localStorage.getItem(CONSENT_KEY);
+        const consent = getConsent();
         if (!consent) {
             const timer = setTimeout(() => setVisible(true), 1000);
             return () => clearTimeout(timer);
@@ -15,12 +16,12 @@ export const CookieConsent: React.FC = () => {
     }, []);
 
     const accept = () => {
-        localStorage.setItem(CONSENT_KEY, 'accepted');
+        setConsent('accepted');
         setVisible(false);
     };
 
     const decline = () => {
-        localStorage.setItem(CONSENT_KEY, 'declined');
+        setConsent('declined');
         setVisible(false);
     };
 

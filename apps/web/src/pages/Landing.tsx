@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { LandingFooter, LandingNavbar, LANDING_LINKS, SEO } from '../components';
+// SEO C1: DEFAULT_OG_IMAGE / SITE_URL so the JSON-LD card cannot drift from SEO.tsx.
+import { LandingFooter, LandingNavbar, LANDING_LINKS, SEO, DEFAULT_OG_IMAGE, SITE_URL } from '../components';
 import { HeroMedia } from './Landing/HeroMedia';
 import { ProductDemo } from './Landing/ProductDemo';
 import { ComparisonTable } from './Landing/ComparisonTable';
@@ -36,18 +37,18 @@ const jsonLd = {
             browserRequirements: 'Requires a Chromium-based browser (Chrome, Edge, Brave)',
             softwareVersion: '1.2.8',
             url: 'https://www.snaprecorder.org/',
-            image: 'https://www.snaprecorder.org/og-image.png',
+            // SEO C1: the 6.4 MB PNG became a 129 KB 1200x630 JPEG.
+            image: `${SITE_URL}${DEFAULT_OG_IMAGE}`,
             downloadUrl: 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg',
             description: 'Free screen recorder & screenshot tool for Chrome. Record your screen in 4K with audio & webcam, capture full-page screenshots, annotate, and share via link instantly. No watermarks, no time limits.',
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
             featureList: ['Free screen recorder with 4K support', 'Screen recording with webcam overlay and audio', 'Full-page screenshot capture', 'Visible area and region screenshot capture', 'Built-in screenshot annotation editor', 'Cloud sharing via instant link', 'No watermarks or time limits', 'Auto-zoom on mouse clicks', 'Works on Chrome, Edge, and Brave browsers'],
-            aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: '5.0',
-                ratingCount: '2',
-                bestRating: '5',
-                worstRating: '1',
-            },
+            /* SEO C3: `aggregateRating` (5.0 from ratingCount 2) was removed.
+             * Google's structured-data policy forbids self-serving review markup —
+             * ratings the page's own owner supplies about itself — and two ratings
+             * is below the threshold it would render anyway. If real ratings are
+             * wanted here they have to come from the Chrome Web Store via a
+             * third-party review platform, not from this file. */
         },
         { '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
         {
@@ -217,9 +218,12 @@ const Landing: React.FC = () => {
                 <section id="how" className="pb-20 px-10">
                     <div className="max-w-[1320px] mx-auto flex flex-col gap-3.5">
                         <div className="flex items-center gap-3.5">
-                            <h2 className="font-mono text-[10px] tracking-[0.14em] text-[var(--sr-text-faint-on-light)] font-normal">
+                            {/* SEO I8: was an <h2>. A 10px mono rule label is a section
+                                marker, not an outline level — it sat at the same rank as
+                                the real section headings below and diluted them. */}
+                            <span className="font-mono text-[10px] tracking-[0.14em] text-[var(--sr-text-faint-on-light)] font-normal">
                                 How it works
-                            </h2>
+                            </span>
                             <span className="flex-1 h-px bg-[var(--sr-border-light-soft)]" />
                             <span className="font-mono text-[10px] text-[var(--sr-text-faint-on-light)]">
                                 click a step

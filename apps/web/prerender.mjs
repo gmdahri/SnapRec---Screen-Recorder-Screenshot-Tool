@@ -3,60 +3,15 @@ import { createServer } from 'http';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+/* SEO W5: the 48 routes — including all 35 blog slugs — used to be a literal array
+ * here, duplicated in sitemap.xml and indexnow.yml. They now come from routes.mjs,
+ * which reads the post list out of src/data/blogData.ts. Adding a post is one edit. */
+import { getAllRoutes } from './routes.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, 'dist');
 
-const ROUTES = [
-  '/',
-  '/how-it-works',
-  '/changelog',
-  '/privacy',
-  '/about',
-  '/terms',
-  '/contact',
-  '/blog',
-  '/blog/how-to-record-screen-chrome-free',
-  '/blog/best-free-screen-recorders-no-watermark',
-  '/blog/how-to-take-full-page-screenshot-chrome',
-  '/blog/snaprec-vs-loom-free-alternative',
-  '/blog/record-screen-with-audio-webcam-chrome',
-  '/blog/how-to-screenshot-on-chromebook',
-  '/blog/screen-record-google-meet-free',
-  '/blog/best-screenshot-chrome-extensions-2026',
-  '/blog/how-to-blur-sensitive-info-screenshot',
-  '/blog/screen-recording-tips-remote-work',
-  '/blog/how-to-annotate-screenshots-chrome',
-  '/blog/screencastify-vs-snaprec-free-alternative',
-  '/blog/how-to-record-presentation-with-webcam',
-  '/blog/how-to-capture-scrolling-screenshot',
-  '/blog/obs-vs-browser-screen-recorder',
-  '/blog/screen-recorder-for-teachers-free',
-  '/blog/how-to-record-google-slides-presentation',
-  '/blog/screen-record-chrome-without-installing',
-  '/blog/best-free-loom-alternatives-2026',
-  '/blog/how-to-record-zoom-meeting-free',
-  '/blog/screen-recording-for-online-classes',
-  '/blog/how-to-create-video-bug-report',
-  '/blog/how-to-record-microsoft-teams-meeting-free',
-  '/blog/screenshot-vs-screen-recording-when-to-use',
-  '/blog/how-to-record-product-demo-sales',
-  '/blog/how-to-record-screen-mac-free',
-  '/blog/how-to-record-screen-windows-10-free',
-  '/blog/how-to-make-tutorial-video-free',
-  '/blog/best-free-chrome-screen-recorder-extension',
-  '/blog/how-to-record-meetings-free-chrome',
-  '/blog/screen-recording-for-work-teams-guide',
-  '/blog/screen-recorder-no-account-no-sign-up',
-  '/blog/screen-recording-for-customer-support',
-  '/blog/snaprec-vs-screenity-chrome-recorder',
-  '/blog/async-video-messaging-vs-meetings',
-  '/about/ghulam-muhammad',
-  '/loom-alternative',
-  '/screencastify-alternative',
-  '/webcam-overlay-presentation',
-  '/screen-recorder-for-teachers',
-];
+const ROUTES = getAllRoutes().map(r => r.route);
 
 function startServer(port) {
   const fallback = readFileSync(resolve(DIST, 'index.html'));
@@ -72,7 +27,7 @@ function startServer(port) {
       try {
         content = readFileSync(filePath);
         const ext = filePath.split('.').pop();
-        const types = { html: 'text/html', js: 'application/javascript', css: 'text/css', json: 'application/json', png: 'image/png', svg: 'image/svg+xml', ico: 'image/x-icon', woff2: 'font/woff2', woff: 'font/woff' };
+        const types = { html: 'text/html', js: 'application/javascript', css: 'text/css', json: 'application/json', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml', ico: 'image/x-icon', woff2: 'font/woff2', woff: 'font/woff' };
         contentType = types[ext] || 'application/octet-stream';
       } catch {
         // SPA fallback: serve index.html for any path that doesn't match a file
@@ -104,6 +59,8 @@ async function prerender() {
     .catch(() => puppeteer.launch(launchOptions));
 
   let rendered = 0;
+  const failed = [];
+
   for (const route of ROUTES) {
     const page = await browser.newPage();
     const url = `http://localhost:${PORT}${route}`;
@@ -115,6 +72,12 @@ async function prerender() {
 
       const html = await page.content();
 
+      /* SEO C2/W2: a prerender that silently produced the 404 page would ship a
+       * noindex marketing page. Catch it here rather than in Search Console. */
+      if (html.includes('name="robots" content="noindex')) {
+        throw new Error('rendered as noindex — the catch-all route matched');
+      }
+
       // Write to dist/<route>/index.html
       const outDir = resolve(DIST, '.' + route);
       mkdirSync(outDir, { recursive: true });
@@ -122,6 +85,7 @@ async function prerender() {
       rendered++;
       console.log(`[prerender] ${rendered}/${ROUTES.length} ${route}`);
     } catch (err) {
+      failed.push({ route, message: err.message });
       console.error(`[prerender] FAILED ${route}: ${err.message}`);
     } finally {
       await page.close();
@@ -131,9 +95,24 @@ async function prerender() {
   await browser.close();
   server.close();
   console.log(`[prerender] Done. ${rendered}/${ROUTES.length} routes prerendered.\n`);
+
+  /* SEO W2: a partial prerender is the failure mode that hides best — the build
+   * goes green and the missing routes just serve the generic shell. Fail loudly. */
+  if (failed.length > 0) {
+    console.error(`[prerender] ${failed.length} route(s) did not render:`);
+    for (const f of failed) console.error(`  ${f.route} — ${f.message}`);
+    process.exit(1);
+  }
 }
 
-prerender().catch((err) => {
-  console.error('[prerender] Fatal error:', err);
-  process.exit(1);
-});
+/* SEO W5: only auto-run as a CLI entry point, so routes.mjs consumers and any
+ * future importer can pull ROUTES from here without launching a browser. */
+const isEntryPoint = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isEntryPoint) {
+  prerender().catch((err) => {
+    console.error('[prerender] Fatal error:', err);
+    process.exit(1);
+  });
+}
+
+export { ROUTES, prerender };

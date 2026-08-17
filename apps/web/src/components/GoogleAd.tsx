@@ -1,4 +1,8 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
+/* SEO W7: a placement must not inject the AdSense tag before the visitor has
+ * accepted. AdSenseLoader handles the sitewide script; this keeps the per-unit
+ * path honest for the case where a placement mounts first. */
+import { CONSENT_EVENT, hasAdConsent } from '../lib/consent';
 
 interface GoogleAdProps {
     className?: string;
@@ -11,7 +15,7 @@ interface GoogleAdProps {
 
 /**
  * GoogleAd Component
- * 
+ *
  * Renders a Google AdSense display ad unit.
  * Each placement must provide its own slotId from the AdSense dashboard.
  */
@@ -22,6 +26,14 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
     const pushAttempted = useRef(false);
 
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    /* SEO W7 */
+    const [consented, setConsented] = useState(hasAdConsent);
+    useEffect(() => {
+        const onConsent = () => setConsented(hasAdConsent());
+        window.addEventListener(CONSENT_EVENT, onConsent);
+        return () => window.removeEventListener(CONSENT_EVENT, onConsent);
+    }, []);
 
     const pushAd = useCallback(() => {
         try {
@@ -44,6 +56,8 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
 
     useEffect(() => {
         if (!CLIENT_ID || !SLOT_ID || isLocalhost) return;
+        /* SEO W7: no script, no push, until an explicit accept. */
+        if (!consented) return;
 
         const existingScript = document.querySelector('script[src*="adsbygoogle"]') as HTMLScriptElement | null;
 
@@ -72,7 +86,7 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
         return () => {
             pushAttempted.current = false;
         };
-    }, [CLIENT_ID, SLOT_ID, isLocalhost, pushAd]);
+    }, [CLIENT_ID, SLOT_ID, isLocalhost, consented, pushAd]);
 
     if (!CLIENT_ID || !SLOT_ID) {
         return (
@@ -97,6 +111,18 @@ const GoogleAd: React.FC<GoogleAdProps> = ({ className = "", style = {}, slotId,
                 </div>
                 <p className="text-xs text-slate-500 font-medium">Ads suppressed on localhost</p>
             </div>
+        );
+    }
+
+    /* SEO W7: before consent there is no <ins> either — an empty reserved box is
+     * honest, and it keeps the slot from collapsing and shifting layout later. */
+    if (!consented) {
+        return (
+            <div
+                className={`google-ad-container overflow-hidden rounded-xl ${className}`}
+                style={{ minHeight: '250px', ...style }}
+                aria-hidden="true"
+            />
         );
     }
 

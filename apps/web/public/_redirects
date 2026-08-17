@@ -1,4 +1,5 @@
 # Trailing slash — explicit 301 (overrides Cloudflare Pages' default 308)
+# Must stay above the SPA rewrites below, or /blog gets rewritten instead of redirected.
 /blog/:slug  /blog/:slug/  301
 /about/ghulam-muhammad  /about/ghulam-muhammad/  301
 /blog  /blog/  301
@@ -16,5 +17,55 @@
 # Redirect pages.dev traffic to production
 https://snaprecorder.pages.dev/*  https://www.snaprecorder.org/:splat  301
 
-# SPA fallback
-/*  /index.html  200
+# ── SEO C2: known routes rewrite with 200, everything else 404s ─────────────
+#
+# The old config was a single `/*  /index.html  200`, which meant every typo,
+# stale link and crawler probe got HTTP 200 with an empty body — an unbounded
+# soft-404 surface. The fix is a real 404 status, but a bare `/*  404` would
+# also 404 every client-only route (the signed-in app, /editor, and every /v/
+# share link), because those have no prerendered file on disk. Slack, X and
+# LinkedIn refuse to unfurl a 404, so that would have broken share previews.
+#
+# So: enumerate the routes that legitimately need the SPA shell, then 404 the
+# rest. Every route here matches one in src/App.tsx.
+
+# Public marketing routes. Prerendered files normally serve these directly;
+# these lines are the safety net for when prerender has not run.
+/  /index.html  200
+/how-it-works/  /index.html  200
+/changelog/  /index.html  200
+/privacy/  /index.html  200
+/terms/  /index.html  200
+/about/  /index.html  200
+/about/ghulam-muhammad/  /index.html  200
+/contact/  /index.html  200
+/blog/  /index.html  200
+/blog/*  /index.html  200
+/loom-alternative/  /index.html  200
+/screencastify-alternative/  /index.html  200
+/webcam-overlay-presentation/  /index.html  200
+/screen-recorder-for-teachers/  /index.html  200
+
+# Auth, the signed-in app, the editors and share links. Never prerendered, all
+# noindex or robots-disallowed, so a 200 here costs nothing in search.
+/login  /index.html  200
+/auth/*  /index.html  200
+/claim  /index.html  200
+/dashboard  /index.html  200
+/home  /index.html  200
+/library  /index.html  200
+/projects  /index.html  200
+/shared  /index.html  200
+/analytics  /index.html  200
+/settings  /index.html  200
+/editor  /index.html  200
+/editor/*  /index.html  200
+/video-editor  /index.html  200
+/video-editor/*  /index.html  200
+/video-preview/*  /index.html  200
+/v/*  /index.html  200
+
+# Anything else is a bad URL. src/pages/NotFound.tsx renders in the body; this
+# is the status code Googlebot needs to see so it drops the URL instead of
+# indexing a blank page.
+/*  /index.html  404

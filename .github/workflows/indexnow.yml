@@ -4,41 +4,66 @@ on:
   push:
     branches: [main]
 
+# SEO W6: this workflow used to POST a hand-written urlList of 23 URLs — 10 of the
+# 35 blog posts. New pages were only submitted if someone remembered to edit this
+# file, and nothing tested it. It now reads every <loc> out of the committed
+# sitemap.xml, which is itself generated from routes.mjs + blogData.ts, so one
+# route list feeds prerender, the sitemap and IndexNow alike.
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the URL list from sitemap.xml
+        id: urls
+        run: |
+          set -euo pipefail
+          SITEMAP=apps/web/public/sitemap.xml
+
+          if [ ! -f "$SITEMAP" ]; then
+            echo "::error::$SITEMAP not found — run 'npm run web sitemap' and commit it."
+            exit 1
+          fi
+
+          # One <loc> per line, then JSON-encode into a compact array.
+          grep -o '<loc>[^<]*</loc>' "$SITEMAP" \
+            | sed 's|<loc>||; s|</loc>||' \
+            > urls.txt
+
+          COUNT=$(wc -l < urls.txt | tr -d ' ')
+          if [ "$COUNT" -lt 1 ]; then
+            echo "::error::no URLs parsed out of $SITEMAP"
+            exit 1
+          fi
+
+          # IndexNow accepts up to 10,000 URLs per request; 48 is well inside that.
+          jq -R -s -c 'split("\n") | map(select(length > 0))' urls.txt > urls.json
+
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Submitting $COUNT URLs"
+
       - name: Submit URLs to IndexNow
         run: |
-          curl -s -o /dev/null -w "%{http_code}" -X POST "https://api.indexnow.org/indexnow" \
+          set -euo pipefail
+          jq -n \
+            --arg host "www.snaprecorder.org" \
+            --arg key "4f1ea6214a4a428c95723d779b73b3c4" \
+            --arg keyLocation "https://www.snaprecorder.org/4f1ea6214a4a428c95723d779b73b3c4.txt" \
+            --slurpfile urlList urls.json \
+            '{host: $host, key: $key, keyLocation: $keyLocation, urlList: $urlList[0]}' \
+            > payload.json
+
+          STATUS=$(curl -s -o response.txt -w "%{http_code}" -X POST "https://api.indexnow.org/indexnow" \
             -H "Content-Type: application/json; charset=utf-8" \
-            -d '{
-              "host": "www.snaprecorder.org",
-              "key": "4f1ea6214a4a428c95723d779b73b3c4",
-              "keyLocation": "https://www.snaprecorder.org/4f1ea6214a4a428c95723d779b73b3c4.txt",
-              "urlList": [
-                "https://www.snaprecorder.org/",
-                "https://www.snaprecorder.org/blog/",
-                "https://www.snaprecorder.org/how-it-works/",
-                "https://www.snaprecorder.org/loom-alternative/",
-                "https://www.snaprecorder.org/screencastify-alternative/",
-                "https://www.snaprecorder.org/screen-recorder-for-teachers/",
-                "https://www.snaprecorder.org/webcam-overlay-presentation/",
-                "https://www.snaprecorder.org/changelog/",
-                "https://www.snaprecorder.org/about/",
-                "https://www.snaprecorder.org/contact/",
-                "https://www.snaprecorder.org/privacy/",
-                "https://www.snaprecorder.org/terms/",
-                "https://www.snaprecorder.org/about/ghulam-muhammad/",
-                "https://www.snaprecorder.org/blog/best-free-chrome-screen-recorder-extension/",
-                "https://www.snaprecorder.org/blog/how-to-record-meetings-free-chrome/",
-                "https://www.snaprecorder.org/blog/screen-recording-for-work-teams-guide/",
-                "https://www.snaprecorder.org/blog/screen-recorder-no-account-no-sign-up/",
-                "https://www.snaprecorder.org/blog/screen-recording-for-customer-support/",
-                "https://www.snaprecorder.org/blog/snaprec-vs-screenity-chrome-recorder/",
-                "https://www.snaprecorder.org/blog/async-video-messaging-vs-meetings/",
-                "https://www.snaprecorder.org/blog/screen-recording-for-online-classes/",
-                "https://www.snaprecorder.org/blog/how-to-create-video-bug-report/",
-                "https://www.snaprecorder.org/blog/how-to-record-product-demo-sales/"
-              ]
-            }'
+            --data @payload.json)
+
+          echo "IndexNow responded $STATUS for ${{ steps.urls.outputs.count }} URLs"
+          cat response.txt || true
+
+          # 200 accepted, 202 accepted-pending-key-validation. Anything else is a
+          # real failure worth failing the run over.
+          case "$STATUS" in
+            200|202) ;;
+            *) echo "::error::IndexNow returned $STATUS"; exit 1 ;;
+          esac

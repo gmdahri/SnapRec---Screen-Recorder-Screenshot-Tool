@@ -32,9 +32,12 @@ import ScreencastifyAlternative from './pages/ScreencastifyAlternative';
 import WebcamOverlayPresentation from './pages/WebcamOverlayPresentation';
 import ScreenRecorderForTeachers from './pages/ScreenRecorderForTeachers';
 import AuthorPage from './pages/AuthorPage';
+// SEO C2: the catch-all, so an unmatched URL is a real page instead of a blank body.
+import NotFound from './pages/NotFound';
 
 import { HelmetProvider } from 'react-helmet-async';
-import { CookieConsent } from './components';
+// SEO W7: AdSense is mounted here and injects its script only after consent.
+import { CookieConsent, AdSenseLoader } from './components';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -154,8 +157,13 @@ function App() {
                 <Route path="/screen-recorder-for-teachers" element={<ScreenRecorderForTeachers />} />
                 <Route path="/about/ghulam-muhammad" element={<AuthorPage />} />
                 <Route path="/" element={<Landing />} />
+                {/* SEO C2: must stay last. Anything that reaches here is a bad URL —
+                    it renders a real 404 page with noindex, and public/_redirects
+                    returns an HTTP 404 status to match. */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
               <CookieConsent />
+              <AdSenseLoader />
             </Router>
           </AuthProvider>
         </NotificationProvider>

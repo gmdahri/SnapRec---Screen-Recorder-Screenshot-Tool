@@ -133,9 +133,42 @@ const SECTIONS: LegalSection[] = [
     }
 ];
 
+/* SEO I3: the page had no structured data at all. WebPage + BreadcrumbList is what
+ * every other marketing route already carries, and it is what puts the breadcrumb
+ * trail in the SERP result rather than a bare URL. */
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'WebPage',
+            name: 'SnapRec Privacy Policy',
+            url: 'https://www.snaprecorder.org/privacy/',
+            description: 'How SnapRec handles recordings, screenshots and account data.',
+            inLanguage: 'en',
+            isPartOf: { '@type': 'WebSite', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
+                { '@type': 'ListItem', position: 2, name: 'Privacy Policy', item: 'https://www.snaprecorder.org/privacy/' },
+            ],
+        },
+    ],
+};
+
 const Privacy: React.FC = () => (
     <>
-        <SEO url='/privacy' title='Privacy Policy — SnapRec' description='What SnapRec records, what it stores, and what it never sees.' />
+        {/* SEO I3: the description was 43 characters — Google had almost nothing to
+            build a snippet from and rewrote it. This one states what the page
+            actually answers, at a length that survives into the SERP. */}
+        <SEO
+            url='/privacy'
+            title='Privacy Policy — SnapRec'
+            description='How SnapRec handles your data: recordings stay on your device until you upload one, what we store when you do, what we never see, and the third parties involved. Free Chrome screen recorder.'
+            jsonLd={jsonLd}
+        />
         <LegalDocument
             title='Privacy Policy'
             intro='What SnapRec records, what it sends, and what it never sees. Recordings stay on your device until you choose to upload one.'

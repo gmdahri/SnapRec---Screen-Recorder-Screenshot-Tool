@@ -180,9 +180,38 @@ const SECTIONS: LegalSection[] = [
     }
 ];
 
+/* SEO I3: see the matching block in Privacy.tsx. */
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'WebPage',
+            name: 'SnapRec Terms of Service',
+            url: 'https://www.snaprecorder.org/terms/',
+            description: 'The agreement covering your use of SnapRec.',
+            inLanguage: 'en',
+            isPartOf: { '@type': 'WebSite', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.snaprecorder.org/' },
+                { '@type': 'ListItem', position: 2, name: 'Terms of Service', item: 'https://www.snaprecorder.org/terms/' },
+            ],
+        },
+    ],
+};
+
 const Terms: React.FC = () => (
     <>
-        <SEO url='/terms' title='Terms of Service — SnapRec' description='The terms covering your use of SnapRec.' />
+        {/* SEO I3: was 38 characters. */}
+        <SEO
+            url='/terms'
+            title='Terms of Service — SnapRec'
+            description='The agreement between you and SnapRec, in plain terms for a free tool: use it lawfully, you own everything you capture, sharing is your choice, and the service comes with no warranty.'
+            jsonLd={jsonLd}
+        />
         <LegalDocument
             title='Terms of Service'
             intro='The agreement between you and SnapRec. Plain terms for a free tool: use it for lawful things, own what you capture, and expect no warranty.'

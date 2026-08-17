@@ -1,3 +1,5 @@
+# SEO I5: max-image-preview / max-snippet are robots *meta* directives, not
+# robots.txt ones — they are emitted per page by src/components/SEO.tsx.
 User-agent: *
 Allow: /
 Disallow: /dashboard

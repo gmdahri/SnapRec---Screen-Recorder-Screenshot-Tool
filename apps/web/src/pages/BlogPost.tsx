@@ -1,12 +1,17 @@
 import React, { useEffect, useMemo } from 'react';
 import { useParams, Navigate, NavLink } from 'react-router-dom';
-import { LandingNavbar, LandingFooter, SEO, AddToChromeButton } from '../components';
+import {
+    LandingNavbar, LandingFooter, SEO, AddToChromeButton,
+    // SEO W4: the shared card and its dimensions, so BlogPosting.image and the
+    // og:image tags can never disagree about which asset a post uses.
+    DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT, SITE_URL,
+} from '../components';
 import { getPostBySlug, getRelatedPosts } from '../data/blogData';
 import authorPhoto from '../assets/author.jpeg';
 
 function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
     if (!post) return undefined;
-    const siteUrl = 'https://www.snaprecorder.org';
+    const siteUrl = SITE_URL;
     const postUrl = `${siteUrl}/blog/${post.slug}/`;
     const publisher = {
         '@type': 'Organization',
@@ -22,7 +27,16 @@ function buildBlogPostJsonLd(post: ReturnType<typeof getPostBySlug>) {
             url: postUrl,
             inLanguage: 'en',
             mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
-            image: { '@type': 'ImageObject', url: `${siteUrl}/og-image.png`, width: 2848, height: 1504 },
+            /* SEO W4: honours post.ogImage; the dimensions are only asserted for the
+             * known default asset, since a per-post card's size is not knowable here. */
+            image: post.ogImage
+                ? { '@type': 'ImageObject', url: post.ogImage.startsWith('http') ? post.ogImage : `${siteUrl}${post.ogImage}` }
+                : {
+                    '@type': 'ImageObject',
+                    url: `${siteUrl}${DEFAULT_OG_IMAGE}`,
+                    width: DEFAULT_OG_IMAGE_WIDTH,
+                    height: DEFAULT_OG_IMAGE_HEIGHT,
+                },
             datePublished: new Date(post.date).toISOString(),
             dateModified: new Date(post.updatedDate ?? post.date).toISOString(),
             author: [{ '@type': 'Person', name: 'Ghulam Muhammad', url: `${siteUrl}/about/` }],
@@ -104,6 +118,9 @@ const BlogPost: React.FC = () => {
                 description={post.description}
                 keywords={post.keywords}
                 type="article"
+                // SEO W4: undefined falls through to the sitewide card in SEO.tsx.
+                image={post.ogImage}
+                imageAlt={post.ogImageAlt}
                 jsonLd={jsonLd}
             />
             <LandingNavbar />
@@ -143,9 +160,14 @@ const BlogPost: React.FC = () => {
                         </h1>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[var(--sr-text-faint-on-light)]">
                             <div className="flex items-center gap-2">
+                                {/* SEO I1 */}
                                 <img
                                     src={authorPhoto}
                                     alt="Ghulam Muhammad"
+                                    width={32}
+                                    height={32}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="size-8 rounded-full object-cover shrink-0"
                                 />
                                 <span className="font-bold text-[var(--sr-text-primary-on-light)]">Ghulam Muhammad</span>
@@ -183,9 +205,14 @@ const BlogPost: React.FC = () => {
 
                     {/* Author Bio */}
                     <div className="mt-16 flex items-start gap-6 border border-[var(--sr-border-light-soft)] rounded-[2px] p-6 md:p-8 bg-[var(--sr-surface-panel-light)]">
+                        {/* SEO I1 */}
                         <img
                             src={authorPhoto}
                             alt="Ghulam Muhammad"
+                            width={80}
+                            height={80}
+                            loading="lazy"
+                            decoding="async"
                             className="size-16 md:size-20 rounded-[2px] object-cover shrink-0"
                         />
                         <div>

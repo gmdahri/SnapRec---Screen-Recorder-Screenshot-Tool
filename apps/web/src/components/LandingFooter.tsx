@@ -78,11 +78,14 @@ export function LandingFooter() {
 
         {COLUMNS.map(column => (
           <div key={column.title} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <h2 style={{
+            {/* SEO I8: was an <h2>. Three footer <h2>s shipped on every page and
+                competed with each page's real section headings. h3 keeps the group
+                label discoverable to a screen reader without claiming that rank. */}
+            <h3 style={{
               margin: 0,
               fontFamily: 'var(--sr-font-mono)', fontSize: 10, fontWeight: 400,
               letterSpacing: '.12em', color: 'var(--sr-text-faint-on-light)',
-            }}>{column.title}</h2>
+            }}>{column.title}</h3>
 
             <ul style={{
               listStyle: 'none', margin: 0, padding: 0,
