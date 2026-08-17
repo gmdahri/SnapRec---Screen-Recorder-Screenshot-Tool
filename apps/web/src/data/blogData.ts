@@ -477,6 +477,8 @@ export const blogPosts: BlogPost[] = [
 <li><strong>Use OBS</strong> if you need studio-grade control or live streaming</li>
 <li><strong>Use ShareX</strong> if you're a Windows power user who wants everything in one tool</li>
 </ul>
+<p>If you arrived here specifically because Loom's free plan stopped being enough, we compare the two directly in our <a href="https://www.snaprecorder.org/loom-alternative/">free Loom alternative breakdown</a> — including the cases where Loom is still the right call.</p>
+<p>Comparing against Screencastify instead? See the <a href="https://www.snaprecorder.org/screencastify-alternative/">free Screencastify alternative comparison</a>.</p>
         `,
         listItems: [
             { name: 'SnapRec', position: 1 },
@@ -594,125 +596,6 @@ export const blogPosts: BlogPost[] = [
             { q: 'Does full-page screenshot work on pages behind a login?', a: 'Yes — it captures whatever Chrome is rendering in your active session. Make sure you are logged in before capturing.' },
             { q: 'What is the difference between full-page screenshot and screen recording?', a: 'A full-page screenshot is a static image ideal for design review and documentation. A screen recording captures real-time interaction, ideal for bug reports and tutorials. SnapRec handles both from the same extension popup.' },
         ],
-    },
-    {
-        slug: 'snaprec-vs-loom-free-alternative',
-        title: 'SnapRec vs Loom — The Best Free Screen Recorder Alternative (2026)',
-        description: 'SnapRec is the free Loom alternative with no time limits, no watermarks, and 4K recording. See how they compare feature by feature.',
-        keywords: 'loom alternative free, snaprec vs loom, free loom alternative, screen recorder vs loom, loom free alternative, loom competitor, screen recorder like loom',
-        date: '2026-02-10',
-        readTime: '6 min read',
-        category: 'comparison',
-        heroIcon: 'balance',
-        content: `
-<h2 id="intro">Looking for a Free Loom Alternative?</h2>
-<p>Loom is one of the most popular screen recording tools for async video communication — and for good reason. Its clean interface and instant sharing make it genuinely useful for remote teams. But there's a problem: Loom's free plan is heavily restricted. You're capped at <strong>5 minutes per recording</strong> and <strong>25 total stored videos</strong>. For anyone who records regularly, those limits appear fast.</p>
-<p>In 2023, Atlassian acquired Loom for $975 million, and since then the free plan has only gotten tighter. In 2024, Loom's standalone free accounts were migrated into Atlassian accounts — adding friction for users who just want to record something quickly.</p>
-<p>If you're hitting those limits or simply want a tool without the restrictions, <strong>SnapRec</strong> is the best free Loom alternative. It's a Chrome extension with unlimited recording, up to 4K quality, no watermarks, and no account required to start recording.</p>
-
-<img src="/blog/snaprec-dashboard.png" alt="SnapRec dashboard showing recorded videos and screenshots library" width="1280" height="800" loading="lazy" decoding="async" />
-
-<h2 id="comparison">Feature-by-Feature Comparison: SnapRec vs Loom</h2>
-<table>
-<thead><tr><th>Feature</th><th>SnapRec (Free)</th><th>Loom Free</th><th>Loom Business ($12.50/mo)</th></tr></thead>
-<tbody>
-<tr><td>Recording Length</td><td>∞ Unlimited</td><td>5 minutes</td><td>∞ Unlimited</td></tr>
-<tr><td>Number of Videos</td><td>∞ Unlimited</td><td>25 videos</td><td>∞ Unlimited</td></tr>
-<tr><td>Watermarks</td><td>None</td><td>None</td><td>None</td></tr>
-<tr><td>Resolution</td><td>Up to 4K</td><td>720p</td><td>4K</td></tr>
-<tr><td>Webcam Overlay</td><td>✅</td><td>✅</td><td>✅</td></tr>
-<tr><td>System Audio</td><td>✅</td><td>✅</td><td>✅</td></tr>
-<tr><td>Cloud Sharing</td><td>✅ Free</td><td>✅</td><td>✅</td></tr>
-<tr><td>Full-page Screenshots</td><td>✅ + annotation</td><td>❌</td><td>❌</td></tr>
-<tr><td>Auto-zoom on clicks</td><td>✅</td><td>❌</td><td>❌</td></tr>
-<tr><td>Account required</td><td>No</td><td>Yes</td><td>Yes</td></tr>
-<tr><td>Price</td><td><strong>$0 — no limits</strong></td><td>$0 (5 min / 25 videos)</td><td>$12.50/mo/user</td></tr>
-</tbody>
-</table>
-
-<h2 id="loom-limits">Why Loom's Free Limits Matter in Practice</h2>
-<p>The 5-minute recording limit sounds manageable until you're mid-walkthrough and the recording just stops. The 25-video cap means anyone who records regularly runs out within weeks.</p>
-<p>Common scenarios where Loom's free tier breaks down:</p>
-<ul>
-<li><strong>Customer onboarding walkthroughs</strong> — a thorough product walkthrough easily runs 8–15 minutes</li>
-<li><strong>Code reviews</strong> — explaining a complex pull request takes time</li>
-<li><strong>Tutorial creation</strong> — instructional content is often longer than 5 minutes by definition</li>
-<li><strong>Weekly team updates</strong> — 25 videos disappears quickly when recording weekly updates for a team</li>
-</ul>
-<p>When you hit these limits, Loom prompts you to upgrade to Business at $12.50 per user per month. For a team of 5, that's $750/year for something that should be free.</p>
-
-<h2 id="what-snaprec-does-better">What SnapRec Does Better</h2>
-
-<h3>No time limits — ever</h3>
-<p>SnapRec has no per-recording time limit. Record for 2 minutes or 2 hours. There's no cap, no prompt to upgrade, no recording that stops mid-sentence.</p>
-
-<h3>No video storage caps</h3>
-<p>Record as many videos as you need. There's no 25-video limit. Your recordings stay accessible in your library without expiring or being auto-deleted.</p>
-
-<h3>4K recording, free</h3>
-<p>Loom's free plan caps recording quality at 720p. SnapRec records at up to 4K resolution on the free plan — no upgrade required. For screen recordings where text readability matters (code, documents, spreadsheets), the quality difference is significant.</p>
-
-<h3>Full-page screenshots + annotation editor</h3>
-<p>This is the biggest functional difference. Loom is a video-only tool — there's no screenshot mode, no full-page capture, no annotation editor. SnapRec includes:</p>
-<ul>
-<li>Full-page scrolling screenshots</li>
-<li>Visible area and region capture</li>
-<li>Built-in annotation editor with arrows, text, shapes, and blur</li>
-<li>Instant shareable links for screenshots, not just videos</li>
-</ul>
-<p>If you regularly screenshot and annotate — designs, bugs, documents — Loom simply doesn't do this. SnapRec replaces two separate tools.</p>
-
-<h3>Auto-zoom on clicks</h3>
-<p>SnapRec automatically zooms in on your mouse clicks during playback. This makes recordings look professionally edited without touching a timeline. Loom doesn't have this feature at any price tier.</p>
-
-<h3>No account required</h3>
-<p>Loom requires you to create an account before recording anything. SnapRec lets you record and download immediately with zero sign-up. You only need an account if you want cloud sharing — and even then it's optional.</p>
-
-<h2 id="when-loom">When Loom Is Still Worth Using</h2>
-<p>Loom isn't a bad product — it's a restricted one. If the following apply to you, Loom Business might justify the cost:</p>
-<ul>
-<li><strong>Large enterprise teams</strong> that need workspace management, SSO, and admin controls</li>
-<li><strong>CRM integrations</strong> (Salesforce, HubSpot, LinkedIn) built into Loom Business</li>
-<li><strong>Viewer engagement analytics</strong> — Loom Business shows exactly who watched, how much, and where they stopped</li>
-<li><strong>Custom branding</strong> on your recording viewer page</li>
-</ul>
-<p>If none of those enterprise features matter to you, you're paying for restrictions to be lifted — not for capabilities you actually need.</p>
-
-<h2 id="migration">Migrating from Loom to SnapRec</h2>
-<p>Switching is straightforward:</p>
-<ol>
-<li><strong>Install SnapRec</strong> — visit the Chrome Web Store and add the extension. Takes 10 seconds.</li>
-<li><strong>Export Loom videos you want to keep</strong> — Loom allows video downloads. Save important recordings before canceling.</li>
-<li><strong>Start recording with SnapRec</strong> — the workflow is similar: click the icon, choose your recording source, hit record, share the link.</li>
-<li><strong>Share your SnapRec library link</strong> with colleagues — they can access recordings without creating an account</li>
-</ol>
-
-<h2 id="advanced-tips">Advanced Tips for SnapRec Users Coming from Loom</h2>
-<ul>
-<li><strong>Keyboard shortcuts</strong> — use <code>Ctrl+Shift+4</code> to start/stop recording without opening the popup. Much faster than Loom's workflow.</li>
-<li><strong>Tab recording for meeting calls</strong> — record Google Meet, Zoom, or Teams calls by selecting the browser tab. Clean audio without system noise.</li>
-<li><strong>Annotation before sharing</strong> — open any recording in the viewer, annotate key moments, then share. Useful for async design reviews where you'd otherwise write long descriptions.</li>
-<li><strong>Screenshot + recording combo</strong> — for bug reports, take a full-page screenshot to document the state, then record a video showing the steps to reproduce. Both shareable from one tool.</li>
-</ul>
-
-<h2 id="troubleshooting">Troubleshooting Common SnapRec Issues</h2>
-
-<h3>Recording doesn't start after clicking record</h3>
-<p>This usually happens when Chrome hasn't been granted screen capture permissions. Check your Chrome extension permissions: go to <code>chrome://extensions</code>, find SnapRec, and verify it has the "Screen capture" permission enabled.</p>
-
-<h3>Audio isn't being captured</h3>
-<p>Two common causes: (1) Your microphone permissions weren't granted when prompted — go to Chrome Settings → Privacy → Microphone and allow SnapRec. (2) For system audio, make sure you selected "Tab" recording and granted the tab audio permission when Chrome prompted you.</p>
-
-<h3>Recording quality is lower than expected</h3>
-<p>SnapRec matches your display resolution by default. If you're on a low-resolution display, the recording will reflect that. For the best quality, record at your display's native resolution and avoid scaling the browser window during recording.</p>
-
-<h3>Shareable link isn't working</h3>
-<p>Shareable links require the recording to be uploaded to the cloud. If you recorded without signing in, the video is local only. Sign in with Google to enable cloud sharing and generate a shareable link.</p>
-
-<h2 id="bottom-line">The Bottom Line</h2>
-<p>Loom is a polished product with a genuinely restrictive free plan. The 5-minute cap and 25-video limit aren't accidents — they're designed to push you toward the paid tier. If you're a solo creator, freelancer, educator, developer, or small team that just wants to record without restrictions, <strong>SnapRec is the direct Loom replacement you need</strong>.</p>
-<p>Same core workflow. Unlimited recordings. 4K quality. Screenshots included. No account required to start. All at $0. <a href="https://www.snaprecorder.org/loom-alternative">See the full SnapRec vs Loom comparison</a> or <a href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">install SnapRec from the Chrome Web Store</a> and try it yourself.</p>
-        `,
     },
     {
         slug: 'record-screen-with-audio-webcam-chrome',
@@ -1564,55 +1447,6 @@ export const blogPosts: BlogPost[] = [
         ],
     },
     {
-        slug: 'screencastify-vs-snaprec-free-alternative',
-        title: 'Screencastify vs SnapRec — Free Screen Recorder Comparison (2026)',
-        description: 'Screencastify adds watermarks and limits recording time on its free plan. See how SnapRec compares as a 100% free alternative with no restrictions.',
-        keywords: 'screencastify alternative, screencastify free alternative, screencastify vs snaprec, free screencastify replacement, screencastify without watermark, screen recorder no watermark free, screencastify alternative free 2026',
-        date: '2026-03-02',
-        readTime: '5 min read',
-        category: 'comparison',
-        heroIcon: 'swap_horiz',
-        content: `
-<h2 id="intro">Looking for a Screencastify Alternative?</h2>
-<p>Screencastify is one of the most popular screen recording extensions, especially in education. But its free plan comes with significant limitations: <strong>watermarks on every recording</strong>, a <strong>30-minute time limit</strong>, and no cloud sharing. Many users look for a free alternative that removes these restrictions.</p>
-
-<h2 id="comparison">Side-by-Side Comparison</h2>
-<table>
-<thead><tr><th>Feature</th><th>SnapRec (Free)</th><th>Screencastify Free</th><th>Screencastify Paid ($49/yr)</th></tr></thead>
-<tbody>
-<tr><td>Recording Length</td><td>Unlimited</td><td>30 minutes</td><td>Unlimited</td></tr>
-<tr><td>Watermark</td><td>None</td><td>Yes</td><td>None</td></tr>
-<tr><td>Resolution</td><td>Up to 4K</td><td>Up to 720p</td><td>Up to 1080p</td></tr>
-<tr><td>Webcam Overlay</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-<tr><td>System Audio</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-<tr><td>Cloud Sharing</td><td>Free (instant link)</td><td>No</td><td>Google Drive</td></tr>
-<tr><td>Screenshots</td><td>Full-page + annotation</td><td>No</td><td>No</td></tr>
-<tr><td>Price</td><td><strong>$0 forever</strong></td><td>$0 (limited)</td><td>$49/year</td></tr>
-</tbody>
-</table>
-
-<h2 id="when-snaprec">When to Choose SnapRec</h2>
-<ul>
-<li>You don't want <strong>watermarks</strong> on your recordings</li>
-<li>You need recordings <strong>longer than 30 minutes</strong></li>
-<li>You want <strong>4K resolution</strong> without paying</li>
-<li>You also need a <strong>screenshot tool</strong> with annotation</li>
-<li>You want to <strong>share via link</strong> without uploading to Google Drive manually</li>
-</ul>
-
-<h2 id="when-screencastify">When to Choose Screencastify</h2>
-<ul>
-<li>Your school provides <strong>Screencastify licenses</strong></li>
-<li>You need <strong>Google Classroom integration</strong> for assignments</li>
-<li>You're already embedded in the Screencastify ecosystem</li>
-</ul>
-
-<h2 id="bottom-line">The Bottom Line</h2>
-<p>Screencastify's free plan is too restrictive for serious use. The watermark alone makes it unsuitable for professional or public content. <a href="https://www.snaprecorder.org/screencastify-alternative">SnapRec is the best free Screencastify alternative</a> — giving you everything Screencastify charges for, completely free.</p>
-<p>Switch to the <a href="https://www.snaprecorder.org">free Chrome screen recorder</a> that never adds watermarks, never limits your recording time, and never asks for a credit card.</p>
-        `,
-    },
-    {
         slug: 'how-to-record-presentation-with-webcam',
         title: 'How to Record a Presentation with Webcam Overlay (Free Guide)',
         description: 'Record yourself presenting slides with a webcam overlay using SnapRec. Free, no watermarks, no time limits — perfect for teachers and professionals.',
@@ -1931,17 +1765,18 @@ export const blogPosts: BlogPost[] = [
     },
     {
         slug: 'best-free-loom-alternatives-2026',
-        title: '5 Best Free Loom Alternatives in 2026 — No Watermarks, No Limits',
-        description: 'Loom limits free recordings to 5 minutes and adds watermarks. Compare the best free Loom alternatives: SnapRec, OBS, Vidyard, Tella, and Screenpal.',
-        keywords: 'loom alternative free, best loom alternative 2026, free screen recorder no watermark, loom free alternative no limits, screen recorder like loom, loom competitor free, best free screen recording tool',
+        title: '5 Loom Alternatives Compared: OBS, Vidyard, Tella',
+        description: 'Loom caps free recordings at 5 minutes and 25 videos. We compare SnapRec, OBS Studio, Vidyard, Tella and Screenpal on limits, quality and who each suits.',
+        keywords: 'loom alternatives compared, vidyard vs loom, tella vs loom, screenpal vs loom, obs vs loom, loom alternatives for sales teams, async video tools compared, loom competitors list',
         date: '2026-03-05',
         readTime: '8 min read',
         category: 'comparison',
         heroIcon: 'compare',
         content: `
 <h2 id="intro">Why People Look for Loom Alternatives</h2>
-<p>Loom has long been a go-to tool for async video messaging, but its free plan has become increasingly restrictive. In 2024, Loom limited free recordings to <strong>5 minutes</strong> per video and began adding <strong>watermarks</strong> to free-tier recordings. You also need an account to get started, and cloud storage on the free tier is capped — making it frustrating for anyone who needs longer recordings or a truly unlimited experience.</p>
-<p>If you're tired of hitting the 5-minute wall or don't want your videos branded with a watermark, here are the 5 best free Loom alternatives in 2026 that deliver no watermarks and no artificial limits.</p>
+<p>Loom has long been a go-to tool for async video messaging, but its free plan has become increasingly restrictive. Free recordings are capped at <strong>5 minutes</strong> each and <strong>25 videos</strong> total, resolution is limited to 720p, and you need an account before you can record anything. For anyone who needs longer recordings or more of them, that ceiling arrives quickly.</p>
+<p>This is a roundup of five tools that handle those limits differently. Each section covers what the free tier actually allows, where the tool is strongest, and who it suits — so you can match one to your workflow rather than take a single recommendation on faith.</p>
+<div class="callout"><p><strong>Looking for a direct replacement rather than a roundup?</strong> Our <a href="https://www.snaprecorder.org/loom-alternative/">free Loom alternative comparison</a> puts SnapRec and Loom side by side feature for feature, including where Loom is still the better choice.</p></div>
 
 <h2 id="comparison">Quick Comparison Table</h2>
 <table>
@@ -2058,7 +1893,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2 id="faq">Frequently Asked Questions</h2>
 <h3>What happened to Loom's free plan?</h3>
-<p>In 2024, Loom restricted free recordings to 5 minutes per video and began adding watermarks to free-tier recordings. The free plan also limits total storage and the number of videos you can keep. These changes pushed many users to look for alternatives.</p>
+<p>Loom tightened its free tier in 2024: recordings are capped at 5 minutes each, the library is capped at 25 videos, and free recording resolution tops out at 720p. Loom does not brand free recordings with a watermark — the pressure comes from the length, count and quality ceilings, and from needing an account before you can record at all.</p>
 
 <h3>Can I import my Loom recordings into another tool?</h3>
 <p>You can download your recordings from Loom and re-upload them to another platform, but there's no direct import or migration tool. Your videos remain in Loom's library until you manually download and move them.</p>
@@ -2067,7 +1902,7 @@ export const blogPosts: BlogPost[] = [
 <p>SnapRec works on any Chromium-based browser, including Chrome on Chromebook. Install it from the Chrome Web Store and you can record and share without any desktop app. OBS and most desktop tools don't run natively on Chromebook.</p>
         `,
         faqs: [
-            { q: "What happened to Loom's free plan?", a: 'In 2024, Loom restricted free recordings to 5 minutes per video and began adding watermarks to free-tier recordings. The free plan also limits total storage and the number of videos you can keep.' },
+            { q: "What happened to Loom's free plan?", a: 'Loom tightened its free tier in 2024: recordings are capped at 5 minutes each, the library is capped at 25 videos, and free recording resolution tops out at 720p. Loom does not brand free recordings with a watermark — the pressure comes from the length, count and quality ceilings, and from needing an account before you can record at all.' },
             { q: 'Can I import my Loom recordings into another tool?', a: "You can download your recordings from Loom and re-upload them to another platform, but there's no direct import or migration tool." },
             { q: 'Which Loom alternative works on Chromebook?', a: 'SnapRec works on any Chromium-based browser, including Chrome on Chromebook. Install it from the Chrome Web Store and you can record and share without any desktop app.' },
         ],
@@ -3060,6 +2895,8 @@ export const blogPosts: BlogPost[] = [
 <li><strong>You're technical and want self-hosted open source:</strong> <strong>Cap</strong> is worth evaluating.</li>
 <li><strong>You need heavy video editing and production output:</strong> <strong>Veed</strong> — budget for the subscription, the watermark makes the free tier unusable professionally.</li>
 </ul>
+<p>Weighing SnapRec against Loom in particular? Our <a href="https://www.snaprecorder.org/loom-alternative/">SnapRec vs Loom comparison</a> goes feature by feature on limits, resolution and sharing.</p>
+<p>For the Screencastify comparison — watermarks, the 30-minute cap and the $49/year plan — see our <a href="https://www.snaprecorder.org/screencastify-alternative/">free Screencastify alternative page</a>.</p>
         `,
         faqs: [
             { q: 'What is the best free Chrome screen recorder with no watermark?', a: 'SnapRec and Screenity are the best genuinely free Chrome screen recorders with no watermarks. SnapRec adds cloud sharing links; Screenity is open source and local-only.' },
@@ -3310,6 +3147,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2 id="privacy">Privacy Considerations for No-Account Recording</h2>
 <p>Recording without an account doesn't mean recording with zero data handling. When SnapRec generates a shareable link, the recording is temporarily hosted on Cloudflare's infrastructure to make the link work. If you need recordings to never leave your device, download the file and don't use the link feature — or use Screenity, which is entirely local. Either option keeps your recordings off external servers.</p>
+<p>Loom is the tool most people are escaping when they search for this — it requires an account before you can record anything. Our <a href="https://www.snaprecorder.org/loom-alternative/">free Loom alternative comparison</a> covers that difference and the rest of the free-plan limits.</p>
         `,
         faqs: [
             { q: 'Can I record my screen without creating an account?', a: "Yes. SnapRec and Screenity are free Chrome screen recorders that require no account. Install from the Chrome Web Store and start recording immediately." },
@@ -3529,6 +3367,7 @@ export const blogPosts: BlogPost[] = [
 <li><strong>Set expectations for response time.</strong> "I need your input on this by Thursday" removes ambiguity. Async doesn't mean reply whenever — it means reply on a reasonable schedule that you explicitly communicate.</li>
 <li><strong>Use good recording tools.</strong> A recording with choppy audio, poor video quality, or a confusing structure reflects poorly on the communicator. <a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">SnapRec</a> makes it easy to record a clean, shareable video in Chrome with no account or setup required.</li>
 </ul>
+<p>Most teams doing async video are already paying for Loom or bumping into its free limits. If that is you, see how the two compare in our <a href="https://www.snaprecorder.org/loom-alternative/">free Loom alternative guide</a>.</p>
         `,
         faqs: [
             { q: 'When should I send a video message instead of scheduling a meeting?', a: "Use async video for status updates, demos, feedback, and explanations — any communication where you\'re sharing information rather than negotiating a decision. Keep meetings for joint decisions, high-stakes conversations, and urgent coordination." },

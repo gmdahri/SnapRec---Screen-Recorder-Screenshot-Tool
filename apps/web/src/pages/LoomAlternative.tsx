@@ -11,6 +11,36 @@ const jsonLd = {
             description: 'SnapRec is the best free Loom alternative. No 5-minute limit, no 25-video cap, no watermarks. Record in 4K for free forever.',
             url: 'https://www.snaprecorder.org/loom-alternative/',
         },
+        /* SEO: page-specific SoftwareApplication. The homepage declares one too, but
+         * this is the page competing for "free loom alternative" — the product entity
+         * needs to exist here rather than only on `/`. Deliberately no
+         * aggregateRating: self-serving review markup is against Google's guidelines
+         * and the fabricated one was removed from the homepage for that reason. */
+        {
+            '@type': 'SoftwareApplication',
+            name: 'SnapRec',
+            applicationCategory: 'MultimediaApplication',
+            applicationSubCategory: 'Screen Recorder',
+            operatingSystem: 'Chrome',
+            browserRequirements: 'Requires a Chromium-based browser (Chrome, Edge, Brave)',
+            url: 'https://www.snaprecorder.org/loom-alternative/',
+            downloadUrl: 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg',
+            description: 'Free Loom alternative for Chrome. Unlimited recording length, no video cap, no watermarks, and up to 4K quality with no account required.',
+            offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+            featureList: [
+                'Unlimited recording length',
+                'Unlimited number of recordings',
+                'Up to 4K screen recording',
+                'No watermarks',
+                'Webcam overlay picture-in-picture',
+                'System audio and microphone capture',
+                'Full-page screenshots with annotation',
+                'Auto-zoom on mouse clicks',
+                'Instant shareable links',
+                'Records locally — upload is optional',
+            ],
+            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+        },
         {
             '@type': 'FAQPage',
             mainEntity: [
@@ -46,18 +76,29 @@ const jsonLd = {
     ],
 };
 
+/* SEO: the comparison table. Two rows were added (Chrome extension, Local
+ * recording) because they are true, verifiable and were missing — local recording
+ * is the privacy differentiator, confirmed in Privacy.tsx and the offscreen
+ * recorder, which keeps captures on-device until an explicit upload.
+ *
+ * Two values were deliberately NOT changed to what a draft of this table proposed:
+ * Loom does not watermark free recordings, so "Watermarks: None" stays for both —
+ * claiming otherwise would be inaccurate and would contradict the FAQ below. And
+ * Loom's free tier is 720p, not 1080p, so the more precise existing figure stays. */
 const comparison = [
-    { feature: 'Price',                snaprec: 'Free forever',   loom: '$0 (limited) / $12.50/mo' },
+    { feature: 'Price',                snaprec: 'Free forever',   loom: '$0 (limited) / from $12.50/mo' },
     { feature: 'Recording length',     snaprec: '∞ Unlimited',    loom: '5 min (free) / Unlimited (paid)' },
     { feature: 'Number of videos',     snaprec: '∞ Unlimited',    loom: '25 (free) / Unlimited (paid)' },
-    { feature: 'Resolution',           snaprec: 'Up to 4K',       loom: '720p (free) / 4K (paid)' },
+    { feature: 'Resolution',           snaprec: 'Up to 4K',       loom: '720p (free) / up to 4K (paid)' },
     { feature: 'Watermarks',           snaprec: 'None',           loom: 'None' },
+    { feature: 'Account required',     snaprec: 'No',             loom: 'Yes' },
+    { feature: 'Chrome extension',     snaprec: '✅',             loom: '✅' },
     { feature: 'Webcam overlay',       snaprec: '✅',             loom: '✅' },
     { feature: 'System audio',         snaprec: '✅',             loom: '✅' },
     { feature: 'Cloud sharing',        snaprec: '✅ Free',        loom: '✅' },
+    { feature: 'Records locally',      snaprec: '✅ Upload optional', loom: '❌ Cloud-first' },
     { feature: 'Screenshot tool',      snaprec: '✅ Full-page + annotation', loom: '❌' },
     { feature: 'Auto-zoom on clicks',  snaprec: '✅',             loom: '❌' },
-    { feature: 'Account required',     snaprec: 'No',             loom: 'Yes' },
 ];
 
 const reasons = [
@@ -103,11 +144,16 @@ const faqs = [
 
 const LoomAlternative: React.FC = () => (
     <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
+        {/* SEO: leads with the exact head term "Free Loom Alternative", which the two
+            competing blog posts no longer target. SEO.tsx appends " | SnapRec", so the
+            title prop is kept at 49 chars to land the full tag at 59 — inside the ~60
+            Google renders. "4K Screen Recorder" was shortened to "4K Recording" for
+            exactly that reason; the longer variant pushed the rendered tag to 66. */}
         <SEO
             url="/loom-alternative"
-            title="Best Free Loom Alternative — No Limits, No Watermarks, 4K"
-            description="SnapRec is the best free Loom alternative for Chrome. No 5-minute recording limit, no 25-video cap, no watermarks, and 4K quality — all free forever. No account needed."
-            keywords="loom alternative, free loom alternative, loom alternative free, best loom alternative, loom replacement, loom competitor, screen recorder like loom, loom vs snaprec, free screen recorder no time limit, screen recorder no watermark free, loom free plan alternative"
+            title="Free Loom Alternative — 4K Recording, No Watermark"
+            description="Record your screen in 4K with no watermarks, no sign-up and no time limits. SnapRec is the free Loom alternative for Chrome, Edge and Brave — free forever."
+            keywords="free loom alternative, loom alternative free, loom alternative, best loom alternative, loom replacement, loom competitor, screen recorder no watermark, 4k screen recorder, free screen recorder chrome extension, screen recorder like loom, loom vs snaprec, free screen recorder no time limit, loom free plan alternative"
             jsonLd={jsonLd}
         />
         <LandingNavbar />
@@ -124,11 +170,14 @@ const LoomAlternative: React.FC = () => (
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         Free Loom Alternative — No account needed
                     </div>
+                    {/* SEO: the H1 already carried "The Free Loom Alternative"; the second
+                        line now carries "4K Screen Recording" instead of a generic phrase,
+                        so the H1 covers both the head term and the primary modifier. */}
                     <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
                         The Free Loom Alternative
                         <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">
-                            That Doesn't Limit You.
+                            for 4K Screen Recording
                         </span>
                     </h1>
                     <p className="text-lg sm:text-xl text-[var(--sr-text-faint-on-light)] mb-10 leading-relaxed max-w-2xl mx-auto">
@@ -180,8 +229,42 @@ const LoomAlternative: React.FC = () => (
             {/* Why Switch */}
             <section className="py-20">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-3xl md:text-4xl font-black text-center mb-4">6 Reasons to Switch from Loom</h2>
+                    {/* SEO: H2 now carries "Switch from Loom to SnapRec" rather than a bare
+                        count, and the prose block below it covers the four switching
+                        arguments in sentences — cards alone gave crawlers no connected text
+                        on cost, quality, friction or privacy. */}
+                    <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Why Teams Switch from Loom to SnapRec</h2>
                     <p className="text-[var(--sr-text-faint-on-light)] text-center mb-12 max-w-xl mx-auto">SnapRec isn't just free — it does things Loom can't, at any price.</p>
+
+                    <div className="max-w-3xl mx-auto mb-14 flex flex-col gap-5 text-[15px] leading-[1.75] text-[var(--sr-text-muted-on-light)]">
+                        <p>
+                            <strong className="text-[var(--sr-text-primary-on-light)]">It costs nothing, permanently.</strong>{' '}
+                            Loom's free tier is a trial shaped like a product: 5 minutes per recording, 25 videos
+                            total, 720p. Getting past any of those means $12.50 per user per month. SnapRec has no
+                            paid tier to upgrade to, so there is no ceiling to hit and no renewal to budget for.
+                        </p>
+                        <p>
+                            <strong className="text-[var(--sr-text-primary-on-light)]">The recording quality is better on the free plan.</strong>{' '}
+                            SnapRec captures at your display's native resolution, so a 4K monitor produces a 4K
+                            recording. On Loom you would need a Business seat to exceed 720p. For anything where
+                            text has to stay legible — code, spreadsheets, dense UI — that difference decides
+                            whether the recording is usable.
+                        </p>
+                        <p>
+                            <strong className="text-[var(--sr-text-primary-on-light)]">There is no sign-up between you and a recording.</strong>{' '}
+                            Loom requires an account before it will record anything. SnapRec records immediately
+                            after install — no email, no Google login, no onboarding. An account is optional and
+                            only adds a cloud library. That matters most when you are sending a recording to
+                            someone who needs to reply with one of their own.
+                        </p>
+                        <p>
+                            <strong className="text-[var(--sr-text-primary-on-light)]">Recordings stay on your device unless you upload them.</strong>{' '}
+                            SnapRec captures locally and only sends a file when you choose to create a share link.
+                            Loom is cloud-first: recordings go to its servers as part of the normal flow. If you
+                            handle customer data, internal systems or anything under an NDA, keeping the default
+                            local is a materially different privacy position.
+                        </p>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {reasons.map((r) => (
                             <div key={r.title} className="bg-[var(--sr-surface-panel-light)] rounded-[2px] p-7 border border-[var(--sr-border-light-soft)] hover:shadow-md transition-shadow">
@@ -197,7 +280,9 @@ const LoomAlternative: React.FC = () => (
             {/* How It Works */}
             <section className="py-20 bg-[var(--sr-surface-panel-light)]">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h2 className="text-3xl md:text-4xl font-black mb-4">Switch from Loom in 30 Seconds</h2>
+                    {/* SEO: keeps the "Switch from Loom" phrasing while adding the
+                        "How to Get Started" heading users and crawlers scan for. */}
+                    <h2 className="text-3xl md:text-4xl font-black mb-4">How to Get Started — Switch from Loom in 30 Seconds</h2>
                     <p className="text-[var(--sr-text-faint-on-light)] mb-14 max-w-xl mx-auto">No migration, no setup, no account required.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[

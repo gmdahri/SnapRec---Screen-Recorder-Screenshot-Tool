@@ -1,3 +1,16 @@
+# ── Consolidated posts — 301 to the landing page that now owns the keyword ──
+#
+# These two posts competed head-on with their own landing pages for the same
+# commercial-intent queries, splitting authority three ways. Both were removed
+# from blogData.ts, which also drops them from the generated sitemap and the
+# prerender list. They must sit ABOVE the trailing-slash rule below, or that rule
+# claims them first and they end up at /blog/ via the client-side redirect.
+# Both the bare and trailing-slash forms are listed because either can be linked.
+/blog/snaprec-vs-loom-free-alternative   /loom-alternative/           301
+/blog/snaprec-vs-loom-free-alternative/  /loom-alternative/           301
+/blog/screencastify-vs-snaprec-free-alternative   /screencastify-alternative/  301
+/blog/screencastify-vs-snaprec-free-alternative/  /screencastify-alternative/  301
+
 # Trailing slash — explicit 301 (overrides Cloudflare Pages' default 308)
 # Must stay above the SPA rewrites below, or /blog gets rewritten instead of redirected.
 /blog/:slug  /blog/:slug/  301

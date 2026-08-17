@@ -248,6 +248,19 @@ const Landing: React.FC = () => {
                             Choosing between SnapRec, Loom and Screencastify
                         </h2>
                         <ComparisonTable rows={COMPARISON} />
+                        {/* SEO: the homepage only linked the comparison pages from the footer.
+                            A contextual link from the section that names these tools carries
+                            far more weight than a sitewide footer link. */}
+                        <p className="text-[13.5px] text-[var(--sr-text-muted-on-light)] m-0">
+                            Want the detail?{' '}
+                            <Link to="/loom-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                                SnapRec vs Loom, feature by feature
+                            </Link>
+                            {' '}·{' '}
+                            <Link to="/screencastify-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                                SnapRec vs Screencastify
+                            </Link>
+                        </p>
                     </div>
                 </section>
 

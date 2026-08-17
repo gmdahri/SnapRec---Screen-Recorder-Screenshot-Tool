@@ -36,6 +36,21 @@ const jsonLd = {
                 },
             ],
         },
+        /* SEO: page-specific SoftwareApplication, matching /loom-alternative. No
+         * aggregateRating — self-serving review markup is against Google's guidelines. */
+        {
+            '@type': 'SoftwareApplication',
+            name: 'SnapRec',
+            applicationCategory: 'MultimediaApplication',
+            applicationSubCategory: 'Screen Recorder',
+            operatingSystem: 'Chrome',
+            browserRequirements: 'Requires a Chromium-based browser (Chrome, Edge, Brave)',
+            url: 'https://www.snaprecorder.org/screencastify-alternative/',
+            downloadUrl: 'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg',
+            description: 'Free Screencastify alternative for Chrome. No watermarks on any plan, no 30-minute recording cap, and no annual subscription.',
+            offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+            publisher: { '@type': 'Organization', name: 'SnapRec', url: 'https://www.snaprecorder.org/' },
+        },
         {
             '@type': 'BreadcrumbList',
             itemListElement: [
@@ -102,11 +117,15 @@ const faqs = [
 
 const ScreencastifyAlternative: React.FC = () => (
     <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
+        {/* SEO: same treatment as /loom-alternative — the head term leads, and the
+            rendered tag stays inside ~60 chars once SEO.tsx appends " | SnapRec"
+            (48 + 10 = 58). The competing blog post was 301'd here, so this page is now
+            the only surface targeting "screencastify alternative". */}
         <SEO
             url="/screencastify-alternative"
-            title="Best Free Screencastify Alternative — No Watermarks, No Limits"
-            description="SnapRec is the best free Screencastify alternative. No watermarks on any plan, no 30-minute recording limit, no $49/year required. Record in 4K free forever. Perfect for teachers."
-            keywords="screencastify alternative, free screencastify alternative, screencastify alternative free, screencastify replacement, screencastify vs snaprec, screencastify without watermark, free screen recorder no watermark, screen recorder for teachers free, screencastify competitor, best screencastify alternative 2026"
+            title="Free Screencastify Alternative — No Watermark, 4K"
+            description="No watermarks on any plan, no 30-minute cap and no $49/year. SnapRec is the free Screencastify alternative for Chrome — unlimited recording, for teachers."
+            keywords="free screencastify alternative, screencastify alternative, screencastify alternative free, screencastify replacement, screencastify without watermark, screen recorder no watermark, free screen recorder chrome extension, screen recorder for teachers free, screencastify competitor, best screencastify alternative 2026"
             jsonLd={jsonLd}
         />
         <LandingNavbar />
