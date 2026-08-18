@@ -109,9 +109,11 @@ New `src/loops/` module, mirroring the structure of `src/mail/`:
 - **`loops.contacts.spec.ts`** — unit tests; matches the existing Jest config
   (`rootDir=src`, `*.spec.ts`).
 
-**Client:** the official `loops` npm package, for its 429 handling and typed
-errors. Plain `fetch` is an acceptable fallback if avoiding the dependency is
-preferred.
+**Client:** plain `fetch` (Node 22 global), in `loops.client.ts` — a Nest-free
+class so the backfill script can use it without bootstrapping the app. Chosen over
+the official `loops` npm package because every HTTP contract was verified live
+against the API, so the SDK would add an unverified layer plus a dependency for
+four endpoints; injecting a `fetch` double also keeps the client unit-testable.
 
 ### Signup hook
 
@@ -144,9 +146,16 @@ Registered as `script:sync-loops-contacts` (plus a `:dry` variant) in
 | `firstName` / `lastName` | `user.fullName` split on first space |
 | `userId` | `user.supabaseId` (nullable), falling back to `user.id` (always present) |
 | `source` | `"snaprec-app"` |
-| `signedUpAt` (custom, date) | `user.createdAt` as ms timestamp |
+| `signedUpDate` (custom, date) | `user.createdAt` as ms timestamp |
 | `subscribed` | **never sent** |
 | `mailingLists` | **only on create** |
+
+A probe on 2026-08-18 auto-created a property named `signedUpAt` typed
+`number` (Loops infers the type from the first value sent). Loops cannot retype a
+property and exposes no delete-property endpoint, so the sync uses a deliberately
+created `signedUpDate` of type `date` instead. Create it explicitly with
+`POST /v1/contacts/properties` before the first sync — never let a custom property
+auto-create.
 
 ### The opt-out rule (critical)
 
