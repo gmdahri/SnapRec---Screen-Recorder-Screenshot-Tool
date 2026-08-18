@@ -66,20 +66,33 @@ campaigns can be composed and sent from the Loops dashboard against the
 2. **Mailing list** — "Snaprec Loops List", `isPublic: true` so contacts can
    self-manage from the hosted preferences page. Stored as
    `LOOPS_MAILING_LIST_ID`.
-3. **Sending domain** — authenticate a **dedicated bulk subdomain** (e.g.
-   `news.snaprecorder.org`) under Settings → Domain, rather than the root domain.
-   Two reasons:
-   - Promotional mail carries the highest complaint rate. On a shared domain those
-     complaints degrade the reputation that delivers welcome mail via Resend.
-   - Loops requires an MX record. The root domain already carries Cloudflare Email
-     Routing MX records, which is how `founder@snaprecorder.org` receives replies.
-     Loops' SPF sits at `envelope.<domain>` so it will not collide with Resend's,
-     but the MX placement must be confirmed before touching root DNS. A subdomain
-     removes the question.
+3. **Sending domain** — bulk sends go from the **root domain**
+   (`snaprecorder.org`), by decision. Verified state as of 2026-08-18:
 
-   This is a dashboard/DNS task and does not block implementation — the code needs
-   only the API key and list ID. The `from` address is configured per-campaign in
-   Loops.
+   | Record | Owner |
+   |---|---|
+   | `snaprecorder.org` MX → `route{1,2,3}.mx.cloudflare.net` | Cloudflare Email Routing (receiving) — untouched |
+   | `send.snaprecorder.org` MX/SPF → SES eu-west-1 | Resend envelope |
+   | `envelope.snaprecorder.org` MX/SPF → SES us-east-1 | Loops envelope |
+   | `_dmarc.snaprecorder.org` | `v=DMARC1; p=none;` — no `rua=` |
+
+   Each provider keeps its MX and SPF on its own envelope subdomain, so the root
+   MX is untouched and `founder@snaprecorder.org` still receives replies. SPF is
+   evaluated against the envelope domain and DKIM signs as `snaprecorder.org`, so
+   DMARC passes under relaxed alignment for both senders. No collision.
+
+   **Accepted tradeoff:** both providers send `From: …@snaprecorder.org`, and
+   inbox providers key reputation largely on the From/DKIM `d=` domain. Promotional
+   complaint signals therefore touch the same domain reputation that delivers
+   welcome mail. Moving bulk to a dedicated subdomain remains available if
+   transactional engagement degrades.
+
+   **Recommended, not blocking:** add `rua=mailto:…` to the DMARC record. With
+   `p=none` and no reporting address there is no visibility into alignment
+   failures, which matters more now that a second sender shares the domain.
+
+   None of this blocks implementation — the code needs only the API key and list
+   ID. The `from` address is configured per-campaign in Loops.
 
 ## Architecture
 
