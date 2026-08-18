@@ -29,7 +29,9 @@
     "script:email-auto-zoom-launch:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-auto-zoom-launch.ts",
     "script:email-patreon-support": "ts-node -r dotenv/config src/scripts/send-patreon-support.ts",
     "script:email-patreon-support:dry": "DRY_RUN=1 ts-node -r dotenv/config src/scripts/send-patreon-support.ts",
-    "script:email-patreon-support:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-patreon-support.ts"
+    "script:email-patreon-support:test": "TEST_EMAIL=ghulammuhammadddahri@gmail.com ts-node -r dotenv/config src/scripts/send-patreon-support.ts",
+    "script:sync-loops-contacts": "ts-node -r dotenv/config src/scripts/sync-loops-contacts.ts",
+    "script:sync-loops-contacts:dry": "DRY_RUN=1 ts-node -r dotenv/config src/scripts/sync-loops-contacts.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
