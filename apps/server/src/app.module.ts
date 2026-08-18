@@ -15,6 +15,7 @@ import { UsersModule } from './users/users.module';
 import { RecordingsModule } from './recordings/recordings.module';
 import { VideoProjectsModule } from './video-projects/video-projects.module';
 import { MailModule } from './mail/mail.module';
+import { LoopsModule } from './loops/loops.module';
 import { DataSource } from 'typeorm';
 
 @Module({
@@ -46,6 +47,7 @@ import { DataSource } from 'typeorm';
     RecordingsModule,
     VideoProjectsModule,
     MailModule,
+    LoopsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
