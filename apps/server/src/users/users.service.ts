@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { MailService } from '../mail/mail.service';
+import { LoopsService } from '../loops/loops.service';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,7 @@ export class UsersService {
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
         private readonly mailService: MailService,
+        private readonly loopsService: LoopsService,
     ) { }
 
     /**
@@ -39,6 +41,11 @@ export class UsersService {
                 if (user.email) {
                     this.mailService.sendWelcomeEmail(user.email, user.fullName)
                         .catch(err => this.logger.error('Failed to queue welcome email', err));
+
+                    // Fire-and-forget: mirror the contact into the Loops audience so
+                    // bulk campaigns can reach them. A Loops outage must not fail signup.
+                    this.loopsService.upsertContact(user)
+                        .catch(err => this.logger.error('Failed to sync Loops contact', err));
                 }
             } catch (error: any) {
                 // Handle race condition - user might have been created by another request
