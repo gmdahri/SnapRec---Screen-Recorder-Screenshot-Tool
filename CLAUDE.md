@@ -77,7 +77,13 @@ Anonymous users get a client-generated `guestId`. Recordings, reactions, and com
 `StorageService` is the AWS S3 SDK pointed at R2 (`region: 'auto'`, `forcePathStyle: true`, endpoint derived from `R2_ACCOUNT_ID`). Presigned URLs expire in 1 hour.
 
 ### Server modules (`apps/server/src`)
-`auth/` (guards + JWKS strategy) · `users/` · `recordings/` (CRUD, presigned URLs, reactions, comments, claim) · `video-projects/` (multi-clip editor projects) · `storage/` (R2) · `mail/` (Resend, templates in `mail/templates/`) · `scripts/` (one-off broadcast emails, run via `npm run script:*`) · `migrations/`.
+`auth/` (guards + JWKS strategy) · `users/` · `recordings/` (CRUD, presigned URLs, reactions, comments, claim) · `video-projects/` (multi-clip editor projects) · `storage/` (R2) · `mail/` (Resend — transactional only, templates in `mail/templates/`) · `loops/` (Loops.so audience sync for bulk email) · `scripts/` (one-off jobs, run via `npm run script:*`) · `migrations/`.
+
+**Email is split across two providers by use case.** Resend sends transactional mail (welcome, founder-welcome) from raw HTML templates in `mail/templates/`. Loops.so owns bulk promotional mail — and Loops accepts **no raw HTML** (bodies are LMX; MJML is rejected with a 409), so campaign copy is authored in the Loops editor, not in this repo. The server's only job is keeping the audience accurate: `LoopsService` fire-and-forgets a contact upsert on signup beside the welcome email, and `npm run script:sync-loops-contacts` backfills.
+
+Two rules in `loops/loops.contacts.ts` are load-bearing and unit-tested: **never send `subscribed`** to the Loops API, and send **`mailingLists` only on create**. `subscribed: true` resubscribes a contact who opted out; re-asserting `mailingLists` re-adds someone who left the list. The upsert creates, then falls back to `PUT /contacts/update` on the 409 Loops returns for an existing contact.
+
+`script:sync-loops-contacts` is guarded by `LOOPS_MIN_CONTACTS` (default 10) and accepts `LOOPS_LIMIT` for canarying a batch. The guard measures the full syncable audience, not the `LOOPS_LIMIT` slice — but note it only protects against pointing at an *empty* database, not the wrong populated one, so confirm the printed DB host before a live run.
 
 Entities are registered explicitly in **two** places — `app.module.ts` and `data-source.ts`. Adding an entity means updating both. `synchronize: false` everywhere: schema changes require a generated migration; never edit an applied one. Postgres `timestamp` (OID 1114) is parsed as UTC by a `pg` type parser in `main.ts`.
 
