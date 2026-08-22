@@ -138,11 +138,19 @@ async function startRecording(options) {
             // Build display media constraints
             // Note: Setting audio: false explicitly can cause issues in some browsers
             // So we only include the audio constraint when it should be enabled
-            const displayMediaConstraints = {
-                video: {
-                    cursor: 'always'
-                }
-            };
+            //
+            // The video half comes from resolution.js, which turns the popup's
+            // resolution label into width/height maxima. This block used to
+            // hardcode `{ cursor: 'always' }`, so the picker never had any
+            // effect on the recording. Falls back to an uncapped constraint if
+            // the helper somehow is not loaded, because a recording with the
+            // wrong resolution beats no recording at all.
+            const displayMediaConstraints = globalThis.SnapRecResolution
+                ? globalThis.SnapRecResolution.displayConstraints(options.resolution)
+                : { video: { cursor: 'always' } };
+
+            console.log('[Offscreen] Resolution:', options.resolution ?? '(unset)',
+                '-> constraints:', JSON.stringify(displayMediaConstraints.video));
 
             // Only add audio constraint if system audio is requested
             if (options.systemAudio) {

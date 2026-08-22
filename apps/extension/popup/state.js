@@ -26,7 +26,11 @@ export function initialState() {
     source: 'tab',
     area: 'visible',
     inputs: { mic: true, tabAudio: true, camera: false },
-    options: { resolution: '1080p', countdown: 3, autoZoom: true, cursor: true },
+    /* `resolution: 'Max'` — no cap, which is what the recorder has always
+     * actually done. It read '1080p' before, but nothing consumed the value, so
+     * defaulting to 1080p now that it IS consumed would quietly downgrade every
+     * 1440p and 4K user. See offscreen/resolution.core.js. */
+    options: { resolution: 'Max', countdown: 3, autoZoom: true, cursor: true },
     count: 0,
     elapsed: 0,
     /** The recorder's own start time, once it is running. Null until then. */
@@ -45,6 +49,27 @@ export function initialState() {
      * a guessed one, because the user can rebind these in chrome://extensions
      * and a stale hint is worse than none. */
     shortcuts: null,
+  };
+}
+
+/** The recorder payload for a START.
+ *
+ * This exists because the payload used to be built inline in popup.js from
+ * `state.source` and `state.inputs` only — `state.options` was never read, so
+ * the resolution picker wrote to a field that never left the popup. Keeping the
+ * shape here makes it testable and makes the omission visible next time a
+ * capture option is added.
+ *
+ * `resolution` is passed as the picker's own label. offscreen/resolution.js owns
+ * the label -> constraint mapping, so there is one place that knows the pixel
+ * dimensions rather than two that can disagree. */
+export function recordingOptions(state) {
+  return {
+    source: state.source,
+    microphone: state.inputs.mic,
+    systemAudio: state.inputs.tabAudio,
+    webcam: state.inputs.camera,
+    resolution: state.options.resolution,
   };
 }
 

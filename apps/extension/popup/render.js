@@ -152,7 +152,10 @@ function viewScreenshot(state, d) {
 
 /* -------------------------------------------------------------- options */
 
-const RESOLUTIONS = ['720p', '1080p', '1440p'];
+/* Must stay in step with RESOLUTION_CAPS in offscreen/resolution.core.js —
+ * anything not in that table records uncapped. 'Max' leads because it is the
+ * default and the honest description of unconstrained capture. */
+const RESOLUTIONS = ['Max', '4K', '1440p', '1080p', '720p'];
 const FRAME_RATES = ['24', '30', '60'];
 const COUNTDOWNS = ['0', '3', '5'];
 

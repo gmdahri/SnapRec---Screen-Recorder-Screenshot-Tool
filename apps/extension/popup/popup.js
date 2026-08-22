@@ -1,4 +1,4 @@
-import { derive, initialState, transition } from './state.js';
+import { derive, initialState, recordingOptions, transition } from './state.js';
 import { render } from './render.js';
 
 /** Wires the pure state machine to Chrome.
@@ -57,15 +57,10 @@ const AREA_ACTION = {
 function runSideEffects(event, previous) {
   switch (event.type) {
     case 'START':
-      send({
-        action: 'startRecording',
-        options: {
-          source: state.source,
-          microphone: state.inputs.mic,
-          systemAudio: state.inputs.tabAudio,
-          webcam: state.inputs.camera,
-        },
-      });
+      // The payload was built inline here and omitted state.options entirely,
+      // which is why the resolution picker had no effect. state.js owns the
+      // shape now so it is covered by tests/resolution.test.js.
+      send({ action: 'startRecording', options: recordingOptions(state) });
       break;
 
     case 'STOP':
