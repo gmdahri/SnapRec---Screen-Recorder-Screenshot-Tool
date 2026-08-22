@@ -154,7 +154,7 @@ const ScreencastifyAlternative: React.FC = () => (
                         <span className="font-semibold text-[var(--sr-text-primary-on-light)]">unlimited recording, zero watermarks, 4K quality — 100% free.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="screencastify_alternative" />
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['No watermarks ever', '∞ Unlimited recording', '4K quality free', 'No account needed'].map((t) => (
@@ -231,7 +231,7 @@ const ScreencastifyAlternative: React.FC = () => (
                         ))}
                     </div>
                     <div className="mt-12">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="screencastify_alternative" />
                     </div>
                 </div>
             </section>
@@ -313,7 +313,7 @@ const ScreencastifyAlternative: React.FC = () => (
                         <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             SnapRec is the free Screencastify alternative with no watermarks, no time limits, and 4K quality — no credit card ever.
                         </p>
-                        <AddToChromeButton variant="white" size="xl" />
+                        <AddToChromeButton variant="white" size="xl" location="screencastify_alternative" />
                     </div>
                 </div>
             </section>

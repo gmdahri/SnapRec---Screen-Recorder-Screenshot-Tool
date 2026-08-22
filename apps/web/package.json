@@ -22,6 +22,7 @@
     "@tanstack/react-query-devtools": "^5.91.3",
     "eslint-plugin-prettier": "2.7.0",
     "fabric": "^5.5.2",
+    "posthog-js": "^1.418.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-helmet-async": "^2.0.5"

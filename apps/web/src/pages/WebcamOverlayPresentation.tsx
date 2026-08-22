@@ -128,7 +128,7 @@ const WebcamOverlayPresentation: React.FC = () => (
                         <span className="font-semibold text-[var(--sr-text-primary-on-light)]">No watermarks, no time limits, no account required.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="webcam_overlay" />
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['Webcam overlay free', '4K quality', 'Mic + system audio', 'Instant share link'].map((t) => (
@@ -173,7 +173,7 @@ const WebcamOverlayPresentation: React.FC = () => (
                         ))}
                     </div>
                     <div className="mt-12">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="webcam_overlay" />
                     </div>
                 </div>
             </section>
@@ -216,7 +216,7 @@ const WebcamOverlayPresentation: React.FC = () => (
                         <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             No watermarks, no time limits, no account needed. Just install and record.
                         </p>
-                        <AddToChromeButton variant="white" size="xl" />
+                        <AddToChromeButton variant="white" size="xl" location="webcam_overlay" />
                     </div>
                 </div>
             </section>

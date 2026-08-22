@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
+// Analytics: the share page owns the real download and share actions.
+import { capture } from '../lib/analytics';
 import { FreshCaptureChrome } from './Share/FreshCaptureChrome';
 import type { VideoPlayerHandle } from '../components/VideoPlayer';
 import { ShareShell } from './Share/ShareShell';
@@ -492,6 +494,10 @@ const ShareView: React.FC = () => {
             const a = document.createElement('a');
             a.href = downloadUrl + '?download=true';
             a.click();
+            capture('recording_downloaded', {
+                capture_type: recordingData?.type ?? 'unknown',
+                surface: 'share_page',
+            });
         }
     };
 
@@ -563,6 +569,7 @@ const ShareView: React.FC = () => {
                 return;
             }
             const shareUrl = `${window.location.origin}/v/${recordingId}`;
+            capture('recording_shared', { method: 'generate_link', surface: 'share_page' });
             try {
                 await navigator.clipboard.writeText(shareUrl);
                 showNotification('Shareable link generated and copied to clipboard!', 'success');
@@ -814,7 +821,8 @@ const ShareView: React.FC = () => {
                     onRequestAccess={() => setIsLoginModalOpen(true)}
                     onBack={() => navigate(-1)}
                     onCopyLink={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/v/${recording.id}`)
+                        (capture('recording_shared', { method: 'copy_link', surface: 'share_page' }),
+                            navigator.clipboard.writeText(`${window.location.origin}/v/${recording.id}`))
                             .then(() => showNotification('Link copied', 'success'))
                             .catch(() => showNotification('Could not copy the link', 'error'));
                     }}
@@ -1214,7 +1222,7 @@ const ShareView: React.FC = () => {
                                 </p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 z-10">
-                                <AddToChromeButton size="lg" />
+                                <AddToChromeButton size="lg" location="share_view" />
                             </div>
                         </div>
                         )}

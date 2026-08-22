@@ -26,7 +26,12 @@ export function initialState() {
     source: 'tab',
     area: 'visible',
     inputs: { mic: true, tabAudio: true, camera: false },
-    options: { resolution: '1080p', countdown: 3, autoZoom: true, cursor: true },
+    /* `analytics` is the user-facing sense of the flag: true means "share
+     * anonymous usage data". The background stores the inverse
+     * (analyticsOptOut) because opt-out is the thing that has to survive a
+     * missing value — absent means not opted out. popup.js translates at the
+     * boundary; nothing else needs to know. Seeded from storage in boot(). */
+    options: { resolution: '1080p', countdown: 3, autoZoom: true, cursor: true, analytics: true },
     count: 0,
     elapsed: 0,
     /** The recorder's own start time, once it is running. Null until then. */

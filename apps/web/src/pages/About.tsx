@@ -213,7 +213,7 @@ const About = () => {
                                 Install in seconds. No account required. No watermarks. No limits.
                             </p>
                             <div className="flex justify-center">
-                                <AddToChromeButton variant="white" size="lg" />
+                                <AddToChromeButton variant="white" size="lg" location="about" />
                             </div>
                         </div>
                     </section>

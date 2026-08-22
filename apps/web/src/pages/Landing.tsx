@@ -8,6 +8,9 @@ import { ProductDemo } from './Landing/ProductDemo';
 import { ComparisonTable } from './Landing/ComparisonTable';
 import { Faq } from './Landing/Faq';
 import { COMPARISON } from './Landing/copy';
+// Analytics: store CTAs report placement so they can be compared.
+import { capture } from '../lib/analytics';
+import { useSectionViewed } from '../hooks/useAnalytics';
 
 const CHROME_STORE =
     'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg';
@@ -142,6 +145,12 @@ function ModeGroup({ title, modes }: { title: string; modes: readonly (readonly 
 }
 
 const Landing: React.FC = () => {
+    /* Analytics: the three anchored marketing sections. Each fires
+       `page_section_viewed` once, the first time it scrolls into view. */
+    const howRef = useSectionViewed<HTMLElement>('how_it_works');
+    const compareRef = useSectionViewed<HTMLElement>('comparison');
+    const faqRef = useSectionViewed<HTMLElement>('faq');
+
     return (
         <div className="min-h-screen bg-[var(--sr-surface-panel-light)] text-[var(--sr-text-primary-on-light)] font-display antialiased">
             <SEO
@@ -178,6 +187,7 @@ const Landing: React.FC = () => {
                                     href={CHROME_STORE}
                                     target="_blank"
                                     rel="noopener"
+                                    onClick={() => { capture('cta_clicked', { location: 'landing_hero' }); capture('chrome_store_link_clicked', { location: 'landing_hero' }); }}
                                     className="h-[46px] px-5 inline-flex items-center gap-2.5 bg-[var(--sr-text-primary-on-light)] text-white text-[15px] font-semibold rounded-[2px] hover:bg-[var(--sr-text-secondary-on-light)] transition-colors"
                                 >
                                     <Icon icon="ant-design:chrome-outlined" width={17} aria-hidden="true" />
@@ -215,7 +225,7 @@ const Landing: React.FC = () => {
                 </section>
 
                 {/* ── How it works ─────────────────────────────────────── */}
-                <section id="how" className="pb-20 px-10">
+                <section ref={howRef} id="how" className="pb-20 px-10">
                     <div className="max-w-[1320px] mx-auto flex flex-col gap-3.5">
                         <div className="flex items-center gap-3.5">
                             {/* SEO I8: was an <h2>. A 10px mono rule label is a section
@@ -242,7 +252,7 @@ const Landing: React.FC = () => {
                 </section>
 
                 {/* ── Comparison ───────────────────────────────────────── */}
-                <section id="compare" className="py-20 px-6 lg:px-10 bg-[var(--sr-surface-panel-light)]">
+                <section ref={compareRef} id="compare" className="py-20 px-6 lg:px-10 bg-[var(--sr-surface-panel-light)]">
                     <div className="max-w-[1180px] mx-auto flex flex-col gap-8">
                         <h2 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold tracking-[-0.03em]">
                             Choosing between SnapRec, Loom and Screencastify
@@ -265,7 +275,7 @@ const Landing: React.FC = () => {
                 </section>
 
                 {/* ── FAQ ──────────────────────────────────────────────── */}
-                <section id="faq" className="py-20 px-6 lg:px-10">
+                <section ref={faqRef} id="faq" className="py-20 px-6 lg:px-10">
                     <div className="max-w-[820px] mx-auto flex flex-col gap-8">
                         <h2 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold tracking-[-0.03em]">
                             Questions people ask first
@@ -288,6 +298,7 @@ const Landing: React.FC = () => {
                             href={CHROME_STORE}
                             target="_blank"
                             rel="noopener"
+                            onClick={() => { capture('cta_clicked', { location: 'landing_footer_cta' }); capture('chrome_store_link_clicked', { location: 'landing_footer_cta' }); }}
                             className="h-[46px] px-6 inline-flex items-center bg-[var(--sr-text-primary-on-light)] text-white text-[15px] font-semibold rounded-[2px] hover:bg-[var(--sr-text-secondary-on-light)] transition-colors"
                         >
                             Add to Chrome — free

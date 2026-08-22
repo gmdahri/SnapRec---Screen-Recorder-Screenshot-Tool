@@ -1,5 +1,6 @@
 // SnapRec Background Service Worker
 importScripts('config.js');
+importScripts('analytics.js');   // must follow config.js — reads CONFIG.POSTHOG
 importScripts('queue.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
@@ -14,6 +15,31 @@ let recordingMetadata = []; // Store metadata chunks during recording
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const version = chrome.runtime.getManifest().version;
     console.log(`[SnapRec v${version}] Background received message:`, message.action);
+
+    // Analytics from the popup and content scripts. They deliberately do not
+    // own a PostHog client: identity and opt-out live in one place, and a
+    // service worker is the only context here that persists across pages.
+    if (message.action === 'trackEvent') {
+        Analytics.track(message.event, message.properties || {});
+        // Fire-and-forget: answer immediately rather than making the caller
+        // wait on a network round trip.
+        sendResponse({ ok: true });
+        return false;
+    }
+
+    if (message.action === 'setAnalyticsOptOut') {
+        (message.optOut ? Analytics.optOut() : Analytics.optIn())
+            .then(() => sendResponse({ ok: true }))
+            .catch(() => sendResponse({ ok: false }));
+        return true;
+    }
+
+    if (message.action === 'getAnalyticsOptOut') {
+        Analytics.hasOptedOut()
+            .then((optedOut) => sendResponse({ optedOut }))
+            .catch(() => sendResponse({ optedOut: true }));
+        return true;
+    }
 
     // Handle ping for service worker wake-up
     if (message.action === 'ping') {
@@ -575,6 +601,13 @@ async function processScreenshot(dataUrl, type) {
         const { captureCount = 0 } = await chrome.storage.local.get('captureCount');
         await chrome.storage.local.set({ captureCount: captureCount + 1 });
 
+        // Analytics: every capture mode funnels through here. Size is derived
+        // from the data URL, which is base64 — hence the 0.75 factor.
+        Analytics.track('screenshot_taken', {
+            capture_type: type ?? null,
+            file_size_mb: Math.round(((dataUrl.length * 0.75) / (1024 * 1024)) * 100) / 100,
+        });
+
         await showPreview(dataUrl, type);
 
         // Add to recent captures if small enough
@@ -758,6 +791,10 @@ async function startRecording(options) {
                 await closeOffscreenDocument();
                 // Dismissing the picker is a normal thing to do, and the popup
                 // has to come back to ready rather than sit on a dead view.
+                Analytics.track('recording_cancelled', {
+                    stage: 'picker',
+                    reason: streamResponse?.error ? 'stream_failed' : 'dismissed',
+                });
                 notifyPopup({ action: 'startFailed', reason: streamResponse?.error ?? 'cancelled' });
                 return;
             }
@@ -792,6 +829,19 @@ async function startRecording(options) {
 
             if (recorderResponse?.success) {
                 console.log('[SnapRec] Recording started at:', recorderResponse.startTime);
+
+                // Analytics: not awaited — the recorder is live and the overlay
+                // must not wait on a network call. `format` is the container the
+                // MediaRecorder actually negotiated; tab_url_domain is the host
+                // only, never the path (see Analytics.domainOf).
+                Analytics.track('recording_started', {
+                    format: recorderResponse.mimeType || 'video/webm',
+                    tab_url_domain: Analytics.domainOf(tab.url),
+                    source: options?.source ?? null,
+                    webcam: Boolean(options?.webcam),
+                    microphone: Boolean(options?.microphone),
+                    system_audio: Boolean(options?.systemAudio),
+                });
 
                 // Store recording state in local storage
                 await chrome.storage.local.set({
@@ -871,6 +921,20 @@ async function stopRecording() {
 
         if (response?.success) {
             console.log('[SnapRec] Recording stopped, size:', response.size);
+
+            // Analytics: duration from the recorder's own start timestamp, so it
+            // matches the file rather than counting from whenever the popup
+            // noticed. Rounded — sub-second precision is noise here.
+            const { recordingStartTime } = await chrome.storage.local.get('recordingStartTime');
+            Analytics.track('recording_completed', {
+                duration_seconds: recordingStartTime
+                    ? Math.max(0, Math.round((Date.now() - recordingStartTime) / 1000))
+                    : null,
+                file_size_mb: typeof response.size === 'number'
+                    ? Math.round((response.size / (1024 * 1024)) * 100) / 100
+                    : null,
+            });
+
             await handleRecordingComplete();
             console.log('[SnapRec] handleRecordingComplete finished');
         } else {
@@ -1166,7 +1230,13 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 
 
 // Context menu
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+    // Analytics: first install only. 'update' and 'chrome_update' fire here too,
+    // and counting those as installs would inflate the number on every release.
+    if (details?.reason === 'install') {
+        Analytics.track('extension_installed');
+    }
+
     chrome.contextMenus.create({
         id: 'snaprec-capture',
         title: 'Capture with SnapRec',

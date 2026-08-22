@@ -1,6 +1,8 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { Logo } from '@snaprec/design-system';
+// Analytics: store CTAs report placement so they can be compared.
+import { capture } from '../lib/analytics';
 
 const CHROME_STORE =
   'https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg';
@@ -102,6 +104,7 @@ export function LandingNavbar({ links = SITE_LINKS }: LandingNavbarProps) {
           href={CHROME_STORE}
           target="_blank"
           rel="noopener"
+          onClick={() => { capture('cta_clicked', { location: 'navbar' }); capture('chrome_store_link_clicked', { location: 'navbar' }); }}
           style={{
             height: 34, padding: '0 15px',
             display: 'inline-flex', alignItems: 'center', gap: 8,

@@ -36,8 +36,17 @@ import AuthorPage from './pages/AuthorPage';
 import NotFound from './pages/NotFound';
 
 import { HelmetProvider } from 'react-helmet-async';
+// Analytics: $pageview per client-side navigation. Must live inside <Router>.
+import { usePageviews } from './hooks/useAnalytics';
 // SEO W7: AdSense is mounted here and injects its script only after consent.
 import { CookieConsent, AdSenseLoader } from './components';
+
+/** Sends a $pageview on route change. Renders nothing; exists only because
+ * useLocation requires a component inside the Router. */
+function AnalyticsPageviews() {
+  usePageviews();
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +64,7 @@ function App() {
         <NotificationProvider>
           <AuthProvider>
             <Router>
+              <AnalyticsPageviews />
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />

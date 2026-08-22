@@ -25,7 +25,10 @@ describe('the page shown after recording', () => {
     const store = VIEW.indexOf('chromewebstore.google.com');
     expect(store).toBeGreaterThan(-1);
     expect(VIEW.lastIndexOf('{!isFresh && (', store)).toBeGreaterThan(-1);
-    const cta = VIEW.indexOf('<AddToChromeButton size="lg" />');
+    // Matched by tag rather than by an exact attribute string: the component
+    // now also takes an analytics `location` prop, and this guard is about
+    // WHERE the CTA renders, not which props it carries.
+    const cta = VIEW.search(/<AddToChromeButton\b[^>]*size="lg"/);
     expect(cta).toBeGreaterThan(-1);
     expect(VIEW.lastIndexOf('{!isFresh && (', cta)).toBeGreaterThan(-1);
   });

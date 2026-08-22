@@ -28,6 +28,11 @@ export default defineConfig({
           if (id.includes('@supabase')) return 'supabase'
           if (id.includes('@tanstack')) return 'query'
           if (id.includes('@iconify')) return 'icons'
+          /* Analytics: dynamically imported in lib/analytics.ts, so this only
+           * names the chunk — it stays lazy and off the critical path. Without
+           * it the file ships as `module-<hash>.js`, which is impossible to
+           * recognise in a network waterfall or a bundle audit. */
+          if (id.includes('posthog-js')) return 'posthog'
           if (
             id.includes('react-router') ||
             id.includes('/react-dom/') ||

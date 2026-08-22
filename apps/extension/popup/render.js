@@ -201,6 +201,9 @@ function viewOptions(state) {
       ${optionRow('Show the cursor', '', `
         <button type="button" role="switch" aria-checked="${state.options.cursor}"
                 aria-label="Show the cursor" data-option-toggle="cursor"><span></span></button>`)}
+      ${optionRow('Share anonymous usage data', 'Counts and timings only — never URLs, page content or recordings.', `
+        <button type="button" role="switch" aria-checked="${state.options.analytics}"
+                aria-label="Share anonymous usage data" data-option-toggle="analytics"><span></span></button>`)}
     </div>`;
 }
 

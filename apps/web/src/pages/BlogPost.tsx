@@ -235,7 +235,7 @@ const BlogPost: React.FC = () => {
                             Join thousands of creators, educators, and teams who use SnapRec to capture their screens effortlessly. No watermarks, no time limits.
                         </p>
                         <div className="flex justify-center">
-                            <AddToChromeButton size="lg" />
+                            <AddToChromeButton size="lg" location="blog_post" />
                         </div>
                     </div>
                 </article>

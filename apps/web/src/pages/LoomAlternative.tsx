@@ -185,7 +185,7 @@ const LoomAlternative: React.FC = () => (
                         <span className="font-semibold text-[var(--sr-text-primary-on-light)]">no time limits, no video caps, no watermarks, and 4K quality.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="loom_alternative" />
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['∞ Unlimited recordings', '4K quality free', 'No account needed', 'No watermarks'].map((t) => (
@@ -298,7 +298,7 @@ const LoomAlternative: React.FC = () => (
                         ))}
                     </div>
                     <div className="mt-12">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="loom_alternative" />
                     </div>
                 </div>
             </section>
@@ -380,7 +380,7 @@ const LoomAlternative: React.FC = () => (
                         <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             SnapRec is the free Chrome screen recorder with no limits — no 5-minute cap, no 25-video limit, no credit card ever.
                         </p>
-                        <AddToChromeButton variant="white" size="xl" />
+                        <AddToChromeButton variant="white" size="xl" location="loom_alternative" />
                     </div>
                 </div>
             </section>

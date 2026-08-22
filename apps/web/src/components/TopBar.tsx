@@ -3,6 +3,10 @@ import { Icon } from '@iconify/react';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useTypewriterCycle } from '../hooks/useTypewriterCycle';
 import { PATREON_URL } from '../lib/patreon';
+// Analytics: the app's only Patreon link. `tier` is intentionally not sent —
+// there is no tier concept in the product (lib/patreon.ts is one static URL),
+// so the property stays optional in lib/analytics.ts until tiers exist.
+import { capture } from '../lib/analytics';
 
 export interface TopBarProps {
   title: string;
@@ -170,6 +174,7 @@ export function TopBar({
           href={PATREON_URL}
           target="_blank"
           rel="noopener"
+          onClick={() => capture('patreon_link_clicked', { location: 'top_bar' })}
           aria-label="Support us on Patreon"
           title="Support us on Patreon"
           style={{

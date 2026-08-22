@@ -185,7 +185,7 @@ const Blog: React.FC = () => {
                                 Capture your screen with SnapRec — 100% free, no watermarks, no limits.
                             </p>
                             <div className="flex justify-center">
-                                <AddToChromeButton variant="white" size="lg" />
+                                <AddToChromeButton variant="white" size="lg" location="blog_index" />
                             </div>
                         </div>
                     </section>

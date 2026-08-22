@@ -269,7 +269,7 @@ const HowItWorks: React.FC = () => {
                             Install SnapRec now — it takes less than 10 seconds.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                            <AddToChromeButton size="xl" />
+                            <AddToChromeButton size="xl" location="how_it_works" />
                             <NavLink
                                 to="/login"
                                 className="text-[var(--sr-text-muted-on-light)] hover:text-[var(--sr-cyan-on-light)] font-bold text-lg px-6 py-4 transition-all"

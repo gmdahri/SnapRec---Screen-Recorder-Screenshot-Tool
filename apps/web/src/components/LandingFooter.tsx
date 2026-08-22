@@ -1,5 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Logo } from '@snaprec/design-system';
+// Analytics: store CTAs report placement so they can be compared.
+import { capture } from '../lib/analytics';
 
 const GITHUB = 'https://github.com/gmdahri/SnapRec---Screen-Recorder-Screenshot-Tool';
 const CHROME_STORE =
@@ -94,7 +96,19 @@ export function LandingFooter() {
               {column.links.map(link => (
                 <li key={link.label}>
                   {link.external
-                    ? <a href={link.to} target="_blank" rel="noopener" style={linkStyle}>{link.label}</a>
+                    ? <a
+                        href={link.to}
+                        target="_blank"
+                        rel="noopener"
+                        style={linkStyle}
+                        onClick={() => {
+                          // The only external footer link is the store listing.
+                          if (link.to === CHROME_STORE) {
+                            capture('cta_clicked', { location: 'footer' });
+                            capture('chrome_store_link_clicked', { location: 'footer' });
+                          }
+                        }}
+                      >{link.label}</a>
                     : <NavLink to={link.to} style={linkStyle}>{link.label}</NavLink>}
                 </li>
               ))}

@@ -1,9 +1,15 @@
 import React from 'react';
+// Analytics: this button is the site's primary conversion, so it reports both
+// the generic CTA event and the store-specific one.
+import { capture } from '../lib/analytics';
 
 interface AddToChromeButtonProps {
     variant?: 'primary' | 'secondary' | 'outline' | 'white';
     size?: 'sm' | 'md' | 'lg' | 'xl';
     className?: string;
+    /** Where this instance sits, e.g. 'landing_hero'. Reported as the CTA
+     * `location` so the same button can be compared across placements. */
+    location?: string;
 }
 
 const EXTENSION_URL = "https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg?authuser=0&hl=en";
@@ -12,7 +18,15 @@ export const AddToChromeButton: React.FC<AddToChromeButtonProps> = ({
     variant = 'primary',
     size = 'md',
     className = '',
+    location = 'unspecified',
 }) => {
+    // Fire-and-forget: capture never throws and never blocks navigation, so the
+    // link behaves identically whether or not PostHog is configured or online.
+    const onClick = () => {
+        capture('cta_clicked', { location });
+        capture('chrome_store_link_clicked', { location });
+    };
+
     const baseStyles = "flex items-center justify-center gap-3 font-bold transition-all rounded-[2px] shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md group";
 
     const variants = {
@@ -34,6 +48,7 @@ export const AddToChromeButton: React.FC<AddToChromeButtonProps> = ({
             href={EXTENSION_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={onClick}
             className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
         >
             <img

@@ -145,7 +145,7 @@ const ScreenRecorderForTeachers: React.FC = () => (
                         <span className="font-semibold text-[var(--sr-text-primary-on-light)]">No watermarks, no time limits, no $49/year. Works on Chromebook.</span>
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="teachers" />
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--sr-text-faint-on-light)]">
                         {['No watermarks ever', '∞ Unlimited recording', 'Works on Chromebook', 'No account needed'].map((t) => (
@@ -218,7 +218,7 @@ const ScreenRecorderForTeachers: React.FC = () => (
                         ))}
                     </div>
                     <div className="mt-12">
-                        <AddToChromeButton size="xl" />
+                        <AddToChromeButton size="xl" location="teachers" />
                     </div>
                 </div>
             </section>
@@ -261,7 +261,7 @@ const ScreenRecorderForTeachers: React.FC = () => (
                         <p className="text-[var(--sr-text-faint-on-light)] text-lg mb-8 max-w-xl mx-auto">
                             No watermarks, no time limits, no credit card. Just install and start recording your lessons today.
                         </p>
-                        <AddToChromeButton variant="white" size="xl" />
+                        <AddToChromeButton variant="white" size="xl" location="teachers" />
                     </div>
                 </div>
             </section>

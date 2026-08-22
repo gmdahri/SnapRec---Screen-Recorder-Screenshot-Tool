@@ -1,5 +1,7 @@
 import { derive, initialState, transition } from './state.js';
 import { render } from './render.js';
+// Analytics: the popup never owns a PostHog client — see popup/analytics.js.
+import { getOptOut, setOptOut } from './analytics.js';
 
 /** Wires the pure state machine to Chrome.
  *
@@ -113,6 +115,13 @@ function runSideEffects(event, previous) {
     // out whether the camera worked, and where it sat, only after the
     // recording had already started. It now puts a live overlay on the page
     // immediately, so framing happens before the take.
+    // The analytics switch is the only option that persists outside the popup:
+    // the background reads it before every event. state.options.analytics is
+    // already the NEW value here, and the stored flag is its inverse.
+    case 'TOGGLE_OPTION':
+      if (event.key === 'analytics') setOptOut(!state.options.analytics);
+      break;
+
     case 'TOGGLE_INPUT':
       if (event.input === 'camera') {
         send({ action: 'setWebcamPreview', enabled: state.inputs.camera });
@@ -257,8 +266,16 @@ async function loadShortcuts() {
   state = { ...state, shortcuts };
 }
 
+/** Read the stored analytics preference so the switch shows the real state
+ * rather than the default the moment the options view is opened. */
+async function loadAnalyticsPreference() {
+  const optedOut = await getOptOut();
+  state = { ...state, options: { ...state.options, analytics: !optedOut } };
+}
+
 async function boot() {
   await loadShortcuts();
+  await loadAnalyticsPreference();
 
   // The popup is closed and reopened constantly and must never show `ready`
   // while a recording is running.

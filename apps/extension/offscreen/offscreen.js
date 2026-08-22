@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'offscreen_startMediaRecorder':
             // Actually start recording after countdown
             startMediaRecorder()
-                .then((result) => sendResponse({ success: true, startTime: result.startTime }))
+                .then((result) => sendResponse({ success: true, startTime: result.startTime, mimeType: result.mimeType }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true; // Async response
 
@@ -300,7 +300,9 @@ async function startMediaRecorder() {
     pendingStream = null;
     pendingVideoTracks = null;
 
-    return { startTime };
+    // mimeType is reported for analytics `format`. Read from the recorder rather
+    // than recorderOptions so it reflects what the browser actually negotiated.
+    return { startTime, mimeType: mediaRecorder.mimeType || recorderOptions.mimeType };
 }
 
 let currentRecordingBlob = null;
