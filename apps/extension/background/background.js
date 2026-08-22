@@ -1258,6 +1258,29 @@ chrome.runtime.onInstalled.addListener((details) => {
         Analytics.track('extension_installed');
     }
 
+    /* The page Chrome opens when SnapRec is removed.
+     *
+     * Set on every onInstalled reason, not just 'install': the URL is stored by
+     * the browser rather than read at uninstall time, so an install that never
+     * updates and an update that changes the URL both have to (re)register it.
+     * Chrome keeps only the most recent value, so calling it repeatedly is
+     * idempotent.
+     *
+     * Guarded and wrapped: setUninstallURL rejects a malformed or non-HTTPS URL
+     * by throwing, and losing the context menu below over a survey link would be
+     * a bad trade. */
+    if (chrome.runtime.setUninstallURL) {
+        try {
+            chrome.runtime.setUninstallURL(`${CONFIG.WEB_BASE_URL}/uninstall-survey`, () => {
+                // Reading lastError stops an unchecked-error warning in the
+                // service worker console when the URL is rejected.
+                void chrome.runtime.lastError;
+            });
+        } catch (e) {
+            console.warn('[SnapRec] Could not set uninstall URL:', e);
+        }
+    }
+
     chrome.contextMenus.create({
         id: 'snaprec-capture',
         title: 'Capture with SnapRec',

@@ -32,6 +32,9 @@ import ScreencastifyAlternative from './pages/ScreencastifyAlternative';
 import WebcamOverlayPresentation from './pages/WebcamOverlayPresentation';
 import ScreenRecorderForTeachers from './pages/ScreenRecorderForTeachers';
 import AuthorPage from './pages/AuthorPage';
+// Opened by chrome.runtime.setUninstallURL. Deliberately unlinked: absent from
+// the navbar, routes.mjs, the sitemap and IndexNow, and disallowed in robots.txt.
+import UninstallSurvey from './pages/UninstallSurvey';
 // SEO C2: the catch-all, so an unmatched URL is a real page instead of a blank body.
 import NotFound from './pages/NotFound';
 
@@ -166,6 +169,7 @@ function App() {
                 <Route path="/webcam-overlay-presentation" element={<WebcamOverlayPresentation />} />
                 <Route path="/screen-recorder-for-teachers" element={<ScreenRecorderForTeachers />} />
                 <Route path="/about/ghulam-muhammad" element={<AuthorPage />} />
+                <Route path="/uninstall-survey" element={<UninstallSurvey />} />
                 <Route path="/" element={<Landing />} />
                 {/* SEO C2: must stay last. Anything that reaches here is a bad URL —
                     it renders a real 404 page with noindex, and public/_redirects

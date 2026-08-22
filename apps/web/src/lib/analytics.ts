@@ -83,6 +83,21 @@ export interface AnalyticsEvents {
     screenshot_tool_used: { tool: string };
     video_editor_opened: { has_project: boolean };
     video_export_started: { format?: string; duration_seconds?: number | null };
+
+    /* ── Uninstall survey ─────────────────────────────────────────────────── */
+
+    /** The form on /uninstall-survey, opened by chrome.runtime.setUninstallURL.
+     *
+     * Every field is optional because the form is: someone who has just
+     * uninstalled owes us nothing, and Submit works with nothing ticked. The
+     * follow-up strings are only sent when their reason is still selected. */
+    uninstall_survey_submitted: {
+        reasons: string[];
+        missing_feature?: string;
+        alternative?: string;
+        other_reason?: string;
+        freetext?: string;
+    };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

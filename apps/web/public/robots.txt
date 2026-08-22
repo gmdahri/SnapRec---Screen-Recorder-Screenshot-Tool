@@ -10,6 +10,8 @@ Disallow: /auth
 Disallow: /login
 Disallow: /editor
 Disallow: /v/
+# Reachable only from chrome.runtime.setUninstallURL; nothing links to it.
+Disallow: /uninstall-survey
 
 User-agent: GPTBot
 Allow: /

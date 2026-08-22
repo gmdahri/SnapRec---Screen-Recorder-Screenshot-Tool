@@ -20,6 +20,10 @@ const NON_PUBLIC = new Set([
   // Auth-adjacent: reachable only mid-sign-in, and indexing them would put
   // a half-finished auth flow in search results.
   '/claim', '/session-expired',
+  // Opened by the browser on uninstall. Not public in the sitemap sense: it has
+  // no inbound links, no search intent, and indexing "we're sorry to see you go"
+  // against the brand would be actively harmful.
+  '/uninstall-survey',
 ]);
 
 const app = read('src/App.tsx');

@@ -78,6 +78,11 @@ https://snaprecorder.pages.dev/*  https://www.snaprecorder.org/:splat  301
 /video-preview/*  /index.html  200
 /v/*  /index.html  200
 
+# The uninstall survey. Unlinked and unindexed, but it must still resolve — it is
+# the page the browser opens when SnapRec is removed, so a 404 here would greet
+# every uninstalling user at the exact moment we are asking for feedback.
+/uninstall-survey  /index.html  200
+
 # Anything else is a bad URL. src/pages/NotFound.tsx renders in the body; this
 # is the status code Googlebot needs to see so it drops the URL instead of
 # indexing a blank page.
