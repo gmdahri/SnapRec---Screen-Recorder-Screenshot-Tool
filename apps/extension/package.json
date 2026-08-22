@@ -1,15 +1,15 @@
 {
-  "name": "@snaprec/extension",
-  "version": "1.3.3",
-  "description": "SnapRec Chrome Extension",
-  "private": true,
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "type": "module",
-  "devDependencies": {
-    "jsdom": "^25.0.1",
-    "vitest": "^3.2.7"
-  }
+    "name": "@snaprec/extension",
+    "version": "1.3.4",
+    "description": "SnapRec Chrome Extension",
+    "private": true,
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "type": "module",
+    "devDependencies": {
+        "jsdom": "^25.0.1",
+        "vitest": "^3.2.7"
+    }
 }
