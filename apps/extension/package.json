@@ -1,6 +1,6 @@
 {
     "name": "@snaprec/extension",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "SnapRec Chrome Extension",
     "private": true,
     "scripts": {
