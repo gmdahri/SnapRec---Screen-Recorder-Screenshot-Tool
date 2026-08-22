@@ -99,6 +99,7 @@
             "resources": [
                 "offscreen/offscreen.html",
                 "offscreen/offscreen.js",
+                "offscreen/resolution.js",
                 "content/content.js",
                 "content/region.js",
                 "content/webcam.js",

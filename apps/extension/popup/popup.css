@@ -734,3 +734,59 @@ button { font-family: inherit; cursor: pointer; }
   object-fit: cover;
   display: block;
 }
+
+/* ============================================================ rating prompt */
+
+/* A quiet band under the completion actions, separated by the same hairline
+   rule the rest of the popup uses to divide sections. Deliberately not a
+   notice: .sr-notice is for states that need an answer before continuing, and
+   this needs nothing. */
+.sr-rating {
+  margin: 4px 14px 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sr-border-dark);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.sr-rating-body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sr-text-secondary-on-dark);
+}
+
+.sr-rating-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Outlined, not filled: the cyan fill is the popup's primary action, and on
+   this view that is "Upload and get link". A rating ask must not outrank it. */
+.sr-rating-primary {
+  height: var(--sr-h-xs);
+  padding: 0 11px;
+  border: 1px solid var(--sr-cyan);
+  border-radius: var(--sr-radius-control);
+  background: transparent;
+  color: var(--sr-cyan);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--sr-dur-fast, 120ms) ease, color var(--sr-dur-fast, 120ms) ease;
+}
+.sr-rating-primary:hover { background: var(--sr-cyan); color: var(--sr-cyan-fg); }
+.sr-rating-primary:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 2px; }
+
+.sr-rating-dismiss {
+  height: var(--sr-h-xs);
+  padding: 0 9px;
+  border: none;
+  background: transparent;
+  color: var(--sr-text-faint-on-dark);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.sr-rating-dismiss:hover { color: var(--sr-text-primary-on-dark); }
+.sr-rating-dismiss:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 2px; }

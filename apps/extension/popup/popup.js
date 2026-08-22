@@ -1,7 +1,10 @@
-import { derive, initialState, transition } from './state.js';
+import { derive, initialState, recordingOptions, transition } from './state.js';
 import { render } from './render.js';
 // Analytics: the popup never owns a PostHog client — see popup/analytics.js.
 import { getOptOut, setOptOut } from './analytics.js';
+// The resolution picker is a preference, so it outlives the popup.
+import { loadResolution, saveResolution } from './capturePrefs.js';
+import { markRatingPromptShown, reviewUrl, shouldShowRatingPrompt } from './ratingPrompt.js';
 
 /** Wires the pure state machine to Chrome.
  *
@@ -23,8 +26,18 @@ function dispatch(event) {
   runSideEffects(event, previous);
 }
 
+/** rating_prompt_shown must fire when the banner appears, not on every repaint —
+ * paint() runs on every dispatch, and the completion view repaints on upload
+ * progress. */
+let ratingShownTracked = false;
+
 function paint() {
   render(state, dispatch, { captureScreenshot });
+
+  if (state.showRatingPrompt && state.view === 'complete' && !ratingShownTracked) {
+    ratingShownTracked = true;
+    track('rating_prompt_shown');
+  }
 
   // Focus management the state machine cannot own, because it has no DOM.
   document.querySelector('[data-focus-target]')?.focus();
@@ -59,15 +72,24 @@ const AREA_ACTION = {
 function runSideEffects(event, previous) {
   switch (event.type) {
     case 'START':
-      send({
-        action: 'startRecording',
-        options: {
-          source: state.source,
-          microphone: state.inputs.mic,
-          systemAudio: state.inputs.tabAudio,
-          webcam: state.inputs.camera,
-        },
-      });
+      // The payload was built inline here and omitted state.options entirely,
+      // which is why the resolution picker had no effect on the recording.
+      // state.js owns the shape now, so tests/resolution.test.js covers it.
+      send({ action: 'startRecording', options: recordingOptions(state) });
+      break;
+
+    // Both answers are final. markRatingPromptShown is fire-and-forget: the
+    // banner is already gone from the in-memory state, and a failed write costs
+    // at most one extra ask on a later completion.
+    case 'RATE_CLICKED':
+      track('rating_prompt_accepted');
+      markRatingPromptShown();
+      chrome.tabs.create({ url: reviewUrl() });
+      break;
+
+    case 'RATING_DISMISSED':
+      track('rating_prompt_dismissed');
+      markRatingPromptShown();
       break;
 
     case 'STOP':
@@ -118,8 +140,21 @@ function runSideEffects(event, previous) {
     // The analytics switch is the only option that persists outside the popup:
     // the background reads it before every event. state.options.analytics is
     // already the NEW value here, and the stored flag is its inverse.
+    // Persisted so the choice survives the popup closing. Fire-and-forget:
+    // the in-memory state has already changed, and a failed write only costs
+    // the preference, not the setting for this session.
+    case 'SET_OPTION':
+      if (event.key === 'resolution') saveResolution(state.options.resolution);
+      break;
+
     case 'TOGGLE_OPTION':
       if (event.key === 'analytics') setOptOut(!state.options.analytics);
+      break;
+
+    case 'FINISHED':
+      // The background has just incremented the count, so eligibility can only
+      // now have become true.
+      void refreshRatingPrompt();
       break;
 
     case 'TOGGLE_INPUT':
@@ -273,9 +308,27 @@ async function loadAnalyticsPreference() {
   state = { ...state, options: { ...state.options, analytics: !optedOut } };
 }
 
+/** Restore the picked recording resolution.
+ *
+ * Without this the picker reset to the default on every open, so a deliberate
+ * choice lasted exactly one popup session. */
+/** Ask the gate whether the banner is due. Never throws — shouldShowRatingPrompt
+ * fails closed, and a missing rating ask is not worth a broken popup. */
+async function refreshRatingPrompt() {
+  const show = await shouldShowRatingPrompt();
+  dispatch({ type: 'SET_RATING_PROMPT', show });
+}
+
+async function loadCapturePreferences() {
+  const resolution = await loadResolution();
+  state = { ...state, options: { ...state.options, resolution } };
+}
+
 async function boot() {
   await loadShortcuts();
   await loadAnalyticsPreference();
+  await loadCapturePreferences();
+  await refreshRatingPrompt();
 
   // The popup is closed and reopened constantly and must never show `ready`
   // while a recording is running.

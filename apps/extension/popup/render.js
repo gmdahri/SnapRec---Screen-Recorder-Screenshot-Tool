@@ -152,7 +152,11 @@ function viewScreenshot(state, d) {
 
 /* -------------------------------------------------------------- options */
 
-const RESOLUTIONS = ['720p', '1080p', '1440p'];
+/* Must stay in step with RESOLUTION_CAPS in offscreen/resolution.core.js and
+ * VALID in popup/capturePrefs.js — a label none of them knows records uncapped,
+ * which is exactly the silent no-op this control used to be. 'Max' leads because
+ * it is the default and the honest description of unconstrained capture. */
+const RESOLUTIONS = ['Max', '4K', '1440p', '1080p', '720p'];
 const FRAME_RATES = ['24', '30', '60'];
 const COUNTDOWNS = ['0', '3', '5'];
 
@@ -443,6 +447,27 @@ function completionPlate(state, d, { strike = false, badge = '' } = {}) {
 
 /** No Copy link yet: there is no link, so no button pretends there is. The
  * primary action names its outcome. */
+/** A one-time rating ask, below the actions and after the work is done.
+ *
+ * A banner rather than a modal, and last in the view rather than above the
+ * actions: the reason to be here is the recording that just finished, and the
+ * ask must not sit between the user and uploading it. Eligibility is resolved in
+ * popup.js — render only draws what it is told. */
+function ratingPrompt() {
+  return `
+    <div class="sr-rating" role="region" aria-label="Rate SnapRec">
+      <p class="sr-rating-body">Enjoying SnapRec? A quick rating helps others find us.</p>
+      <div class="sr-rating-actions">
+        <button type="button" class="sr-rating-primary" data-action="rate">
+          ⭐ Rate on Chrome Store
+        </button>
+        <button type="button" class="sr-rating-dismiss" data-action="rating-dismiss">
+          Not now
+        </button>
+      </div>
+    </div>`;
+}
+
 function viewComplete(state, d) {
   return `
     ${header(state)}
@@ -457,7 +482,8 @@ function viewComplete(state, d) {
         <button type="button" class="sr-notice-secondary" data-action="save-library">Save to library</button>
         <button type="button" class="sr-notice-secondary" data-action="annotate">Annotate</button>
       </div>
-    </div>`;
+    </div>
+    ${state.showRatingPrompt ? ratingPrompt() : ''}`;
 }
 
 /** Progress in two places, one meaning: a cyan rule fills along the media's
@@ -620,6 +646,10 @@ function bind(root, dispatch, effects = {}) {
     dispatch({ type: 'SET_OPTION', key: el.dataset.option, value: el.dataset.value }));
   on(root, '[data-option-toggle]', (el) =>
     dispatch({ type: 'TOGGLE_OPTION', key: el.dataset.optionToggle }));
+
+  // The rating banner. Both answers are final — popup.js retires the prompt.
+  on(root, '[data-action="rate"]', () => dispatch({ type: 'RATE_CLICKED' }));
+  on(root, '[data-action="rating-dismiss"]', () => dispatch({ type: 'RATING_DISMISSED' }));
 
   // request-permission, recheck and discard are side effects popup.js owns —
   // they need chrome.permissions and a confirm dialog, so they carry no

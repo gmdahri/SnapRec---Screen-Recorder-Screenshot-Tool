@@ -31,7 +31,12 @@ export function initialState() {
      * (analyticsOptOut) because opt-out is the thing that has to survive a
      * missing value — absent means not opted out. popup.js translates at the
      * boundary; nothing else needs to know. Seeded from storage in boot(). */
-    options: { resolution: '1080p', countdown: 3, autoZoom: true, cursor: true, analytics: true },
+    /* `resolution: 'Max'` — no cap, which is what the recorder has always
+     * actually done. It read '1080p' before, but nothing consumed the value, so
+     * honouring 1080p now that it IS consumed would quietly downgrade every
+     * 1440p and 4K user. Seeded from storage in boot(); see
+     * popup/capturePrefs.js and offscreen/resolution.core.js. */
+    options: { resolution: 'Max', countdown: 3, autoZoom: true, cursor: true, analytics: true },
     count: 0,
     elapsed: 0,
     /** The recorder's own start time, once it is running. Null until then. */
@@ -45,11 +50,36 @@ export function initialState() {
     micDevice: null,
     micLevel: 0,
     previewUrl: null,
+    /** Whether the one-time rating banner should render in the completion view.
+     * Resolved asynchronously by popup.js (it depends on chrome.storage), so it
+     * starts false and is seeded on boot — this module stays pure. */
+    showRatingPrompt: false,
     /** Live keyboard bindings from chrome.commands.getAll(), keyed by command
      * name. Null until they resolve — the popup shows no shortcut rather than
      * a guessed one, because the user can rebind these in chrome://extensions
      * and a stale hint is worse than none. */
     shortcuts: null,
+  };
+}
+
+/** The recorder payload for a START.
+ *
+ * This exists because the payload used to be built inline in popup.js from
+ * `state.source` and `state.inputs` only — `state.options` was never read, so
+ * the resolution picker wrote to a field that never left the popup. Keeping the
+ * shape here makes it testable, and makes the omission visible the next time a
+ * capture option is added.
+ *
+ * `resolution` is passed as the picker's own label. offscreen/resolution.js owns
+ * the label -> constraint mapping, so one place knows the pixel dimensions
+ * rather than two that can disagree. */
+export function recordingOptions(state) {
+  return {
+    source: state.source,
+    microphone: state.inputs.mic,
+    systemAudio: state.inputs.tabAudio,
+    webcam: state.inputs.camera,
+    resolution: state.options.resolution,
   };
 }
 
@@ -151,6 +181,18 @@ export function transition(state, event) {
       // Paused freezes the timer; every other view ignores ticks entirely.
       return state;
     }
+
+    /* Both answers retire the banner immediately. They are separate events
+     * because popup.js does different things with them — one opens the store —
+     * but the state change is identical: the ask is over. */
+    case 'RATE_CLICKED':
+    case 'RATING_DISMISSED':
+      return state.showRatingPrompt ? set(state, { showRatingPrompt: false }) : state;
+
+    case 'SET_RATING_PROMPT':
+      return state.showRatingPrompt === event.show
+        ? state
+        : set(state, { showRatingPrompt: event.show });
 
     case 'PAUSE':
       return state.view === 'recording' ? set(state, { view: 'paused' }) : state;

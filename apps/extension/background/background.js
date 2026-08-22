@@ -1028,6 +1028,16 @@ async function handleRecordingComplete() {
         const { captureCount = 0 } = await chrome.storage.local.get('captureCount');
         await chrome.storage.local.set({ captureCount: captureCount + 1 });
 
+        /* Recordings only, for the rating prompt's gate. captureCount above is
+         * incremented by screenshots too, so it cannot answer "has this person
+         * finished a recording yet". This function is the single funnel: both
+         * the in-page stop bar and Chrome's native "Stop sharing" reach it. */
+        const { completedRecordingsCount = 0 } =
+            await chrome.storage.local.get('completedRecordingsCount');
+        await chrome.storage.local.set({
+            completedRecordingsCount: completedRecordingsCount + 1,
+        });
+
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
 
