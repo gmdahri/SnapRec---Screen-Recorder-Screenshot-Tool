@@ -24,6 +24,8 @@ import { normalizeCuts, outputDurationSec, type Cut } from './cuts';
 import {
   canRedo, canUndo, createHistory, record, redo, resetHistory, undo,
 } from './history';
+// Analytics
+import { capture } from '../../lib/analytics';
 
 interface EditSnapshot {
   trimStartSec: number;
@@ -616,6 +618,14 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     const d = videoDurationSec > 0 ? videoDurationSec : 120;
     const end = trimEndSec > trimStartSec ? trimEndSec : d;
     const start = Math.min(trimStartSec, Math.max(0, end - 0.1));
+
+    // Analytics: after the early return, so a click with no source is not
+    // counted as an export. Duration is the trimmed length actually being
+    // encoded, not the source length.
+    capture('video_export_started', {
+        format: 'video/webm',
+        duration_seconds: Math.max(0, Math.round(end - start)),
+    });
 
     setExportProgress({ pct: 0, frame: 0, frames: 0 });
     setExportModal('progress');

@@ -6,6 +6,8 @@ import { useClaimRecordings, useRecordings, type Recording } from '../hooks/useR
 import { SEO } from '../components';
 import { decodeReturnTo } from '../lib/returnTo';
 import { formatMeta, toCaptureKind } from '../lib/captureAdapter';
+// Analytics
+import { capture } from '../lib/analytics';
 
 export interface ClaimableCapture {
   id: string;
@@ -165,7 +167,13 @@ export default function ClaimCaptures() {
       <ClaimPanel
         captures={claimable}
         email={user?.email ?? ''}
-        onClaim={ids => claim.mutate(ids, { onSuccess: () => navigate(returnTo, { replace: true }) })}
+        onClaim={ids => claim.mutate(ids, {
+          // Analytics: on success only — a failed claim is not a completed one.
+          onSuccess: () => {
+            capture('guest_claim_completed', { captures: ids.length });
+            navigate(returnTo, { replace: true });
+          },
+        })}
         onSkip={() => navigate(returnTo, { replace: true })}
       />
     </div>

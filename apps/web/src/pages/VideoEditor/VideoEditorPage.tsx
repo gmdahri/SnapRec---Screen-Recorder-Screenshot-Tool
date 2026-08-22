@@ -15,6 +15,8 @@ import { ProjectsView } from './ProjectsView';
 import { useParams } from 'react-router-dom';
 import { useEditorUnsavedGuard } from './useEditorUnsavedGuard';
 import { UnsavedChangesModal } from './UnsavedChangesModal';
+// Analytics
+import { capture } from '../../lib/analytics';
 
 function VideoEditorInner() {
   const {
@@ -166,6 +168,13 @@ function EditorModals() {
 }
 
 export default function VideoEditorPage() {
+  // Analytics: one event per editor open. `has_project` distinguishes opening a
+  // saved multi-clip project (/video-editor/project/:id) from the bare editor.
+  const { projectId } = useParams();
+  useEffect(() => {
+    capture('video_editor_opened', { has_project: Boolean(projectId) });
+  }, [projectId]);
+
   return (
     <VideoEditorProvider>
       <SEO title="Video Editor" description="Edit screen recordings in SnapRec." noIndex />

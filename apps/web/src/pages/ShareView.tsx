@@ -272,6 +272,26 @@ const ShareView: React.FC = () => {
     const getUploadUrlMutation = useGetUploadUrl();
     const createRecordingMutation = useCreateRecording();
 
+    /* Analytics: one share_page_viewed per mount.
+     *
+     * Keyed on `id` rather than on the loaded recording, so a page that never
+     * resolves still counts as viewed — a share link that fails to load is
+     * exactly the case worth seeing in the funnel. is_owner separates the
+     * creator checking their own link from a real recipient. */
+    const viewTrackedFor = React.useRef<string | null>(null);
+    useEffect(() => {
+        const key = id ?? 'fresh';
+        if (viewTrackedFor.current === key) return;
+        viewTrackedFor.current = key;
+        capture('share_page_viewed', {
+            content_type: recordingData?.type ?? 'unknown',
+            is_owner: Boolean(user && recordingData?.user?.supabaseId === user.id),
+        });
+        // recordingData is deliberately not a dependency: this fires on arrival,
+        // not again when the payload resolves.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
     // Stop polling once ready or if it's a new local-only recording
     useEffect(() => {
         if (recording?.isReady || (recording?.type === 'screenshot' && recording)) {
@@ -463,28 +483,35 @@ const ShareView: React.FC = () => {
         // Reactions are less critical to persist across redirect for now, 
         // but let's keep the modal if not logged in.
         if (!user) {
+            capture('auth_modal_triggered', { trigger: 'react' });
             setLoginAction(`react with "${type}"`);
             setIsLoginModalOpen(true);
             return;
         }
         if (!id) return;
+        capture('reaction_added', { type });
         addReaction.mutate({ id, type });
     };
 
     const handlePostComment = () => {
         if (!user) {
+            capture('auth_modal_triggered', { trigger: 'comment' });
             setLoginAction('post a comment');
             setIsLoginModalOpen(true);
             return;
         }
         if (!id || !commentText.trim()) return;
         addComment.mutate({ id, content: commentText }, {
-            onSuccess: () => setCommentText(''),
+            onSuccess: () => {
+                capture('comment_posted', {});
+                setCommentText('');
+            },
         });
     };
 
     const handleDownload = () => {
         if (!user) {
+            capture('auth_modal_triggered', { trigger: 'download' });
             setLoginAction('download this video');
             setPendingAction('download');
             setIsLoginModalOpen(true);
@@ -553,6 +580,7 @@ const ShareView: React.FC = () => {
 
     const handleUploadToCloud = async () => {
         if (!user) {
+            capture('auth_modal_triggered', { trigger: 'share_link' });
             setLoginAction('generate a shareable link');
             setPendingAction('share');
             setIsLoginModalOpen(true);
@@ -570,6 +598,9 @@ const ShareView: React.FC = () => {
             }
             const shareUrl = `${window.location.origin}/v/${recordingId}`;
             capture('recording_shared', { method: 'generate_link', surface: 'share_page' });
+            capture('share_link_generated', {
+                content_type: recordingData?.type === 'screenshot' ? 'screenshot' : 'recording',
+            });
             try {
                 await navigator.clipboard.writeText(shareUrl);
                 showNotification('Shareable link generated and copied to clipboard!', 'success');
@@ -585,6 +616,7 @@ const ShareView: React.FC = () => {
 
     const handleOpenVideoEditor = async () => {
         if (!user) {
+            capture('auth_modal_triggered', { trigger: 'video_editor' });
             setLoginAction('open the Video Editor');
             setPendingAction('videoEditor');
             setIsLoginModalOpen(true);
@@ -621,6 +653,7 @@ const ShareView: React.FC = () => {
 
     const handleSaveClick = () => {
         if (!user) {
+            capture('auth_modal_triggered', { trigger: 'save' });
             setLoginAction('save this recording to your account');
             setPendingAction('save');
             setIsLoginModalOpen(true);
@@ -804,6 +837,7 @@ const ShareView: React.FC = () => {
                        after signing in. Same gate as reactions and download. */
                     onPost={({ content, timecodeMs, anchorX, anchorY }) => {
                         if (!user) {
+                            capture('auth_modal_triggered', { trigger: 'comment' });
                             setLoginAction('post a comment');
                             setIsLoginModalOpen(true);
                             return false;

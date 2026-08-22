@@ -44,6 +44,45 @@ export interface AnalyticsEvents {
     recording_downloaded: { capture_type: string; surface: string };
     /** A share link copied. */
     recording_shared: { method: string; surface: string };
+
+    /* ── Auth ─────────────────────────────────────────────────────────────── */
+
+    /** Google OAuth initiated — fired before the redirect leaves the page. */
+    auth_google_started: Record<string, never>;
+    /** The magic-link email was accepted by Supabase for sending. */
+    auth_magic_link_sent: Record<string, never>;
+    /** A genuine sign-in completed.
+     *
+     * `method` cannot be read from the auth event itself, so the chosen method
+     * is stashed before the redirect and read back here. It is 'unknown' when
+     * that hand-off is lost — most often a magic link opened in a different
+     * browser from the one that requested it. */
+    auth_completed: { method: 'google' | 'magic_link' | 'unknown' };
+    /** The login modal opened, and what the visitor was trying to do. */
+    auth_modal_triggered: {
+        trigger: 'react' | 'comment' | 'download' | 'share_link'
+        | 'video_editor' | 'save' | 'screenshot_gated';
+    };
+    /** Guest captures were transferred into the account. */
+    guest_claim_completed: { captures: number };
+
+    /* ── Sharing ──────────────────────────────────────────────────────────── */
+
+    share_link_generated: { content_type: 'recording' | 'screenshot' };
+    /** A /v/:id page was opened. Fires once per mount, for owner and visitor alike. */
+    share_page_viewed: { content_type: string; is_owner: boolean };
+    reaction_added: { type: string };
+    comment_posted: Record<string, never>;
+
+    /* ── Editors ──────────────────────────────────────────────────────────── */
+
+    screenshot_editor_opened: { has_capture: boolean };
+    /** An annotation tool was selected. `tool` is the tool key from
+     * pages/Editor/tools.ts — select, crop, draw, arrow, line, shape, text,
+     * mark, blur, step. */
+    screenshot_tool_used: { tool: string };
+    video_editor_opened: { has_project: boolean };
+    video_export_started: { format?: string; duration_seconds?: number | null };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

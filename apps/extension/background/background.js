@@ -339,6 +339,10 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 async function handleDriveUpload(dataUrl, filename, mimeType = 'image/png') {
     console.log('handleDriveUpload called with filename:', filename);
 
+    // Analytics: at the top of the attempt, so a cancelled Google consent
+    // screen still shows as a started upload — that gap is the interesting one.
+    Analytics.track('gdrive_upload_started', { mime_type: mimeType });
+
     try {
         console.log('Requesting auth token...');
         const token = await getAuthToken(true);
@@ -392,6 +396,13 @@ async function handleDriveUpload(dataUrl, filename, mimeType = 'image/png') {
 
         const result = await uploadResponse.json();
         console.log('Drive upload successful:', result);
+
+        // Analytics: only after Drive returned a file id. Every failure path
+        // above throws, so this cannot fire for a failed upload.
+        Analytics.track('gdrive_upload_completed', {
+            mime_type: mimeType,
+            file_size_mb: Math.round((blob.size / (1024 * 1024)) * 100) / 100,
+        });
 
         return {
             success: true,

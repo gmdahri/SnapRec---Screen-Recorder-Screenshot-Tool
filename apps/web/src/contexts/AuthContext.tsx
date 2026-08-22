@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useClaimRecordings } from '../hooks/useRecordings';
+// Analytics: tracking only — no auth behaviour is changed here.
+import { capture } from '../lib/analytics';
 
 interface AuthContextType {
     user: User | null;
@@ -20,6 +22,35 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
     children: ReactNode;
+}
+
+/* Analytics: which method started a sign-in cannot be read from the auth event
+ * that completes it, and both methods leave the page before completing. The
+ * choice is therefore stashed the same way auth_return_path already is, and
+ * read back once on SIGNED_IN.
+ *
+ * Timestamped and short-lived: a magic link opened days later, or in a
+ * different browser, must not attribute that sign-in to a stale intent. */
+const AUTH_METHOD_KEY = 'snaprec_auth_method';
+const AUTH_METHOD_TTL_MS = 60 * 60 * 1000;
+
+function rememberAuthMethod(method: 'google' | 'magic_link') {
+    try {
+        localStorage.setItem(AUTH_METHOD_KEY, JSON.stringify({ method, at: Date.now() }));
+    } catch { /* storage unavailable — falls back to 'unknown' */ }
+}
+
+function takeAuthMethod(): 'google' | 'magic_link' | 'unknown' {
+    try {
+        const raw = localStorage.getItem(AUTH_METHOD_KEY);
+        localStorage.removeItem(AUTH_METHOD_KEY);
+        if (!raw) return 'unknown';
+        const { method, at } = JSON.parse(raw);
+        if (Date.now() - at > AUTH_METHOD_TTL_MS) return 'unknown';
+        return method === 'google' || method === 'magic_link' ? method : 'unknown';
+    } catch {
+        return 'unknown';
+    }
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -52,6 +83,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setUser(session?.user ?? null);
                 setLoading(false);
 
+                // Analytics: SIGNED_IN already carries the meaning "a genuine new
+                // sign-in" in this file — the claim below relies on it — so a
+                // restored session on page load does not fire this.
+                if (event === 'SIGNED_IN' && session?.user) {
+                    capture('auth_completed', { method: takeAuthMethod() });
+                }
+
                 // Only claim guest recordings on explicit SIGNED_IN event (not TOKEN_REFRESHED)
                 // Also only claim once per session
                 if (event === 'SIGNED_IN' && session?.user && !hasClaimedRef.current) {
@@ -83,6 +121,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const redirectTo = `${window.location.origin}/auth/callback`;
         console.log('SignIn: Storing return path:', currentPath);
         localStorage.setItem('auth_return_path', currentPath);
+        rememberAuthMethod('google');
+        capture('auth_google_started', {});
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
@@ -105,6 +145,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             email,
             options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
+
+        // Analytics: only when Supabase accepted the send. An error here means
+        // no email went out, so counting it as sent would overstate the funnel.
+        if (!error) {
+            rememberAuthMethod('magic_link');
+            capture('auth_magic_link_sent', {});
+        }
 
         // Returned rather than thrown: the sign-in panel renders it beside the
         // field, and an uncaught rejection here would blank the page the user

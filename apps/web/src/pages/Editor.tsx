@@ -5,6 +5,8 @@ import { Toolbar, PropertySidebar, CanvasArea } from './Editor/components';
 import { EditorProvider, useEditor } from './Editor/context/EditorContext';
 import { FABRIC_TOOL, type ToolKey } from './Editor/tools';
 import { detectApple } from '../lib/shortcuts';
+// Analytics
+import { capture } from '../lib/analytics';
 
 /** Resolved once at the app edge rather than sniffed inside each control —
  * see lib/shortcuts. */
@@ -145,7 +147,10 @@ const EditorContent: React.FC = () => {
                     <Toolbar
                         active={(Object.keys(FABRIC_TOOL) as ToolKey[])
                             .find((k) => FABRIC_TOOL[k] === activeTool) ?? 'select'}
-                        onSelect={(key) => handleToolChange(FABRIC_TOOL[key] ?? 'select')}
+                        onSelect={(key) => {
+                            capture('screenshot_tool_used', { tool: key });
+                            handleToolChange(FABRIC_TOOL[key] ?? 'select');
+                        }}
                         isApple={isApple}
                     />
                     <CanvasArea />
@@ -166,6 +171,15 @@ const EditorContent: React.FC = () => {
 };
 
 const Editor: React.FC = () => {
+    // Analytics: one event per editor open. `has_capture` separates a real
+    // capture handed over by the extension from an empty editor someone landed
+    // on directly — the two are very different sessions.
+    useEffect(() => {
+        capture('screenshot_editor_opened', {
+            has_capture: Boolean(window.location.pathname.replace(/\/+$/, '').split('/')[2]),
+        });
+    }, []);
+
     return (
         <EditorProvider>
             <EditorContent />

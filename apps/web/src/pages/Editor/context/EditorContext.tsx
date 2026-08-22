@@ -2,6 +2,8 @@ import React, { createContext, useContext, useMemo, useCallback, type ReactNode 
 import { useFabricEditor } from '../../../hooks/useFabricEditor';
 import { useEditorLifecycle } from '../../../hooks/useEditorLifecycle';
 import { useAuth } from '../../../contexts/AuthContext';
+// Analytics
+import { capture } from '../../../lib/analytics';
 
 type EditorContextType = ReturnType<typeof useFabricEditor> &
     ReturnType<typeof useEditorLifecycle> & {
@@ -19,6 +21,9 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const handleActionClick = useCallback((action: string) => {
         if (!user) {
+            // Analytics: the screenshot editor's own gate — both Download and
+            // Create-share-link route through here when signed out.
+            capture('auth_modal_triggered', { trigger: 'screenshot_gated' });
             editorLifecycle.setPendingAction(action);
             editorLifecycle.setShowLoginPrompt(true);
             return;
