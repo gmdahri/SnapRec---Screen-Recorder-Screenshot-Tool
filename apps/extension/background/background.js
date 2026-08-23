@@ -712,10 +712,39 @@ async function openEditor(dataUrl, id = null) {
     } catch (e) {
         console.error('Failed to open web editor:', e);
         const filename = `SnapRec_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+
+        /* This is the last-resort path: the editor could not be opened, so the
+         * file is offered directly. It had no callback, so a failure here was
+         * completely silent — the user got no editor AND no file, with nothing
+         * logged and nothing shown. chrome.downloads reports failure by setting
+         * lastError and returning an undefined id, neither of which surfaces
+         * unless you ask. */
         chrome.downloads.download({
             url: dataUrl,
             filename: filename,
             saveAs: true
+        }, (downloadId) => {
+            const failure = chrome.runtime.lastError?.message
+                || (downloadId === undefined ? 'download did not start' : null);
+            if (!failure) {
+                Analytics.track('recording_download_completed', { surface: 'extension_fallback' });
+                return;
+            }
+
+            console.error('[SnapRec] Screenshot download failed:', failure);
+            Analytics.track('recording_download_failed', {
+                surface: 'extension_fallback',
+                error_reason: failure,
+            });
+
+            // Both routes failed, so say so rather than leaving the capture to
+            // vanish without explanation.
+            chrome.notifications.create('snaprec-download-failed', {
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: 'Could not save your screenshot',
+                message: 'The editor and the download both failed. Try capturing again.',
+            });
         });
     }
 }

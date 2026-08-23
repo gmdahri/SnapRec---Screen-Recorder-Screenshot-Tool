@@ -84,6 +84,15 @@ export interface AnalyticsEvents {
     video_editor_opened: { has_project: boolean };
     video_export_started: { format?: string; duration_seconds?: number | null };
 
+    /* ── Downloads ────────────────────────────────────────────────────────── */
+
+    /** A download was requested. Always followed by exactly one completed or
+     * failed event, so the difference between them is the failure rate. */
+    recording_download_started: { surface: string; capture_type?: string };
+    recording_download_completed: { surface: string; capture_type?: string; ms?: number };
+    /** `error_reason` is one of the DownloadFailure values in lib/download.ts. */
+    recording_download_failed: { surface: string; error_reason: string; status?: number };
+
     /* ── Uninstall survey ─────────────────────────────────────────────────── */
 
     /** The form on /uninstall-survey, opened by chrome.runtime.setUninstallURL.

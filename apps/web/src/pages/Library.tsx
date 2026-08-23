@@ -24,6 +24,9 @@ import { ActionsSheet } from './Library/ActionsSheet';
 import { EmptyState } from './Library/EmptyState';
 import { NoResults } from './Library/NoResults';
 import { LoadingState } from './Library/LoadingState';
+// The bulk Download action used to be a toast and nothing else — see below.
+import { downloadFile, downloadErrorMessage } from '../lib/download';
+import { capture } from '../lib/analytics';
 
 function toLibraryItem(r: Recording): LibraryItem {
   return {
@@ -104,6 +107,68 @@ export default function Library() {
     setSearchParams({}, { replace: true });
   };
 
+  /** A recognisable filename rather than the storage key. */
+  const downloadNameFor = (rec: { title?: string; type?: string }) => {
+    const ext = rec.type === 'screenshot' ? 'png' : 'webm';
+    const base = (rec.title || `snaprec-${rec.type ?? 'capture'}`)
+      .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'snaprec-capture';
+    return `${base}.${ext}`;
+  };
+
+  /** Download every selected capture.
+   *
+   * This action previously showed "Preparing your download" and did nothing
+   * else — no request, no file, no error. A user clicking it saw a toast that
+   * promised a download which never arrived, every time.
+   *
+   * Sequential with a gap, not parallel: Chrome throttles or silently drops
+   * rapid consecutive downloads, which would reproduce the same "nothing
+   * happened" symptom for everything after the first file. */
+  const downloadSelected = async () => {
+    const ids = [...view.selected];
+    const targets = ids.map(id => byId.get(id)).filter(Boolean) as typeof recordings;
+    if (targets.length === 0) return;
+
+    capture('recording_download_started', { surface: 'library', capture_type: 'bulk' });
+    showNotification(
+      targets.length === 1 ? 'Starting your download' : `Starting ${targets.length} downloads`,
+      'info',
+    );
+
+    const failures: string[] = [];
+    const startedAt = Date.now();
+
+    for (const rec of targets) {
+      const result = await downloadFile(rec.fileUrl, downloadNameFor(rec));
+      if (!result.ok) {
+        failures.push(result.error ?? 'network');
+        capture('recording_download_failed', {
+          surface: 'library',
+          error_reason: result.error ?? 'network',
+          status: result.status,
+        });
+      }
+      // Breathing room between downloads so the browser honours each one.
+      if (targets.length > 1) await new Promise(r => setTimeout(r, 400));
+    }
+
+    const succeeded = targets.length - failures.length;
+    if (succeeded > 0) {
+      capture('recording_download_completed', {
+        surface: 'library', capture_type: 'bulk', ms: Date.now() - startedAt,
+      });
+    }
+
+    if (failures.length === 0) {
+      showNotification(succeeded === 1 ? 'Download started' : `${succeeded} downloads started`, 'success');
+    } else if (succeeded === 0) {
+      // One reason is more useful than a count when everything failed.
+      showNotification(downloadErrorMessage(failures[0] as never), 'error');
+    } else {
+      showNotification(`${succeeded} started, ${failures.length} failed`, 'error');
+    }
+  };
+
   return shell(
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {view.selected.size > 0 ? (
@@ -114,7 +179,7 @@ export default function Library() {
           actions={[
             {
               key: 'download', label: 'Download', icon: 'ant-design:download-outlined',
-              onSelect: () => showNotification('Preparing your download', 'info'),
+              onSelect: () => void downloadSelected(),
               disabledReason: capability.canDownload === true ? undefined : capability.canDownload,
             },
             {

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
 // Analytics: the share page owns the real download and share actions.
 import { capture } from '../lib/analytics';
+// Downloads have real failure states now — see lib/download.ts for why.
+import { useDownload } from '../hooks/useDownload';
 import { FreshCaptureChrome } from './Share/FreshCaptureChrome';
 import type { VideoPlayerHandle } from '../components/VideoPlayer';
 import { ShareShell } from './Share/ShareShell';
@@ -60,6 +62,18 @@ const convertBase64ToBlobUrl = async (dataUrl: string): Promise<string> => {
         }
     }
 };
+
+/** Two minutes of 3-second polls. Past this the file is not coming. */
+const MAX_PROCESSING_POLLS = 40;
+
+/** A filename the user will recognise in their Downloads folder, rather than
+ * the opaque storage key. Falls back to the type when there is no title. */
+function filenameFor(rec: { title?: string; type?: string } | null | undefined): string {
+    const ext = rec?.type === 'screenshot' ? 'png' : 'webm';
+    const base = (rec?.title || `snaprec-${rec?.type ?? 'capture'}`)
+        .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'snaprec-capture';
+    return `${base}.${ext}`;
+}
 
 const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -219,6 +233,11 @@ const ShareView: React.FC = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [videoEditorLoading, setVideoEditorLoading] = useState(false);
     const [pollInterval, setPollInterval] = useState<number | false>(3000);
+    /* Processing cannot poll forever. If the file never becomes ready the user
+     * was left watching a spinner with no error and no way out — which is what
+     * "it just keeps trying to download forever" turned out to be. */
+    const [pollAttempts, setPollAttempts] = useState(0);
+    const [processingTimedOut, setProcessingTimedOut] = useState(false);
 
     const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
         enabled: (!!isValidId && !isFreshParam) || isUploaded || isUploading
@@ -299,6 +318,28 @@ const ShareView: React.FC = () => {
             setIsUploaded(true);
         }
     }, [recording?.isReady, recording?.type]);
+
+    /* Give up after MAX_PROCESSING_POLLS. The poll used to stop only on success,
+     * so an upload that never completed left the page polling every 3 seconds
+     * indefinitely with the download button inert. Two minutes is long enough
+     * for a large file to finish and short enough that a stuck one is reported
+     * rather than waited on. */
+    useEffect(() => {
+        if (pollInterval === false) return;
+        const t = setTimeout(() => setPollAttempts(n => n + 1), pollInterval);
+        return () => clearTimeout(t);
+    }, [pollInterval, pollAttempts]);
+
+    useEffect(() => {
+        if (pollAttempts >= MAX_PROCESSING_POLLS && pollInterval !== false) {
+            setPollInterval(false);
+            setProcessingTimedOut(true);
+            capture('recording_download_failed', {
+                surface: 'share_page_processing',
+                error_reason: 'processing_timeout',
+            });
+        }
+    }, [pollAttempts, pollInterval]);
 
     // Extension Message Listener for local video data
     useEffect(() => {
@@ -509,6 +550,11 @@ const ShareView: React.FC = () => {
         });
     };
 
+    const download = useDownload({
+        surface: 'share_page',
+        captureType: recordingData?.type ?? undefined,
+    });
+
     const handleDownload = () => {
         if (!user) {
             capture('auth_modal_triggered', { trigger: 'download' });
@@ -517,15 +563,17 @@ const ShareView: React.FC = () => {
             setIsLoginModalOpen(true);
             return;
         }
-        if (downloadUrl) {
-            const a = document.createElement('a');
-            a.href = downloadUrl + '?download=true';
-            a.click();
-            capture('recording_downloaded', {
-                capture_type: recordingData?.type ?? 'unknown',
-                surface: 'share_page',
-            });
-        }
+        /* Previously this was `if (downloadUrl) { ...click... }` with no else, so
+         * a recording with no file yet produced a click that did nothing at all.
+         * downloadFile reports that case as 'no_url' and the UI shows why. */
+        capture('recording_downloaded', {
+            capture_type: recordingData?.type ?? 'unknown',
+            surface: 'share_page',
+        });
+        void download.start(
+            downloadUrl ? `${downloadUrl}?download=true` : downloadUrl,
+            filenameFor(recordingData),
+        );
     };
 
     /** Upload local blob and create recording; returns server recording id or null */
@@ -936,8 +984,10 @@ const ShareView: React.FC = () => {
                 onClick={handleDownload}
                 className={`inline-flex items-center gap-2 h-[30px] px-3 border border-[var(--sr-border-light)] rounded-[2px] text-[var(--sr-text-secondary-on-light)] text-[12.5px] font-medium hover:border-[var(--sr-text-primary-on-light)] transition-colors ${!isUploaded ? 'invisible' : ''}`}
             >
-                <span className="material-symbols-outlined text-[16px]">download</span>
-                Download
+                <span className="material-symbols-outlined text-[16px]">
+                    {download.isBusy ? 'sync' : 'download'}
+                </span>
+                {download.isBusy ? 'Preparing…' : 'Download'}
             </button>
 
             {!isUploaded ? (
@@ -973,6 +1023,49 @@ const ShareView: React.FC = () => {
                 noIndex={isFresh}
             />
             <div className="bg-background-light transition-colors duration-300 pb-20">
+                {/* Download and processing failures are stated, not spun on. Both
+                    are dismissible and both offer the action that might work. */}
+                {(download.state.status === 'error' || processingTimedOut) && (
+                    <div
+                        role="alert"
+                        className="max-w-[1440px] mx-auto px-6 lg:px-20 pt-3"
+                    >
+                        <div className="flex flex-wrap items-center gap-3 border border-[var(--sr-border-light)] border-l-2 border-l-[var(--sr-coral-text)] bg-[var(--sr-surface-paper)] px-4 py-3 rounded-[2px]">
+                            <span className="text-[13px] text-[var(--sr-text-primary-on-light)] flex-1 min-w-[240px]">
+                                {download.state.status === 'error'
+                                    ? download.state.message
+                                    : 'This recording is taking longer than expected to process. It may still be uploading.'}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (download.state.status === 'error') {
+                                        download.retry();
+                                    } else {
+                                        // Resume polling for another window.
+                                        setProcessingTimedOut(false);
+                                        setPollAttempts(0);
+                                        setPollInterval(3000);
+                                    }
+                                }}
+                                className="inline-flex items-center h-[30px] px-3 rounded-[var(--sr-radius-control)] bg-[var(--sr-text-primary-on-light)] text-[var(--sr-surface-paper)] text-[12.5px] font-semibold hover:opacity-90 transition-opacity"
+                            >
+                                Try again
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    download.reset();
+                                    setProcessingTimedOut(false);
+                                }}
+                                aria-label="Dismiss"
+                                className="text-[12.5px] text-[var(--sr-text-faint-on-light)] hover:text-[var(--sr-text-primary-on-light)] transition-colors"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {isFresh && !isUploaded && (
                     <div className="bg-[var(--sr-surface-paper)] border-b border-[var(--sr-border-light-soft)] py-2.5">
                         <div className="max-w-[1440px] mx-auto px-6 lg:px-20 flex items-center justify-between gap-4">
