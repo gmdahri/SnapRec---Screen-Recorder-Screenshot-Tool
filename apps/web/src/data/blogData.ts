@@ -28,6 +28,231 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
     {
+        slug: '4k-screen-recorder-extension-chrome',
+        title: 'Best 4K Screen Recorder Extension for Chrome 2026',
+        description: 'Record your screen in 4K for free with SnapRec — a Chrome extension with no watermarks, no time limits, and no account required.',
+        keywords: '4k screen recorder extension, 4k screen recorder chrome, screen recorder 4k free, record screen in 4k, 4k chrome extension recorder, high resolution screen recorder, free 4k screen capture',
+        date: '2026-08-23',
+        readTime: '7 min read',
+        category: 'comparison',
+        heroIcon: '4k',
+        content: `
+<h2 id="why-4k">Why Resolution Matters More Than People Expect</h2>
+<p>Screen recording is not like filming a landscape. What you are capturing is mostly <em>text</em> — code, spreadsheet cells, form labels, menu items, error messages. Text is the first thing to fall apart under compression, and the difference between a recording someone can read and one they squint at is usually resolution, not lighting or framing.</p>
+<p>Three cases where it decides whether the recording works at all:</p>
+<ul>
+<li><strong>Tutorials and documentation.</strong> If a viewer cannot read the menu item you just clicked, the tutorial has failed at the only thing it was for.</li>
+<li><strong>Product demos.</strong> A demo that looks soft on a prospect's monitor reads as a soft product. Fair or not, it is how it lands.</li>
+<li><strong>Presentations on high-resolution displays.</strong> A 720p recording played back on a 4K screen is being upscaled four times over. Every flaw is magnified.</li>
+</ul>
+
+<h2 id="the-catch">Most Free Tiers Stop at 1080p — or Lower</h2>
+<p>This is the part that catches people out. Plenty of extensions advertise 4K, and the capability is real, but it sits behind a subscription.</p>
+<p>Loom is the clearest example: its free Starter plan records at up to <strong>720p</strong>, and 4K arrives on Business at <strong>$18 per seat per month</strong> (figures from Loom's pricing page, August 2026). Others cap the free tier at 1080p, or allow higher resolution but stamp the export with a watermark, which defeats the point of recording at high quality in the first place.</p>
+<p>SnapRec has no paid tier, so there is no resolution to unlock. It captures at whatever your display actually provides.</p>
+
+<h2 id="how-to">How to Record in 4K with SnapRec</h2>
+<p>There is no 4K mode to switch on. The recorder asks your browser for the screen at its native resolution, so a 4K display produces a 4K recording by default.</p>
+<h3>1. Install from the Chrome Web Store</h3>
+<p><a href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Add SnapRec to Chrome</a>. No account, no credit card, nothing to configure. It works in Chrome, Edge and Brave.</p>
+<h3>2. Click record</h3>
+<p>Click the SnapRec icon in your toolbar, or press <code>Ctrl + Shift + 4</code>. Choose what to capture — a tab, a window, or your whole screen — and pick your audio and webcam options.</p>
+<img src="/blog/snaprec-record-popup.png" alt="The SnapRec extension popup with recording source, audio and webcam options" width="1280" height="800" loading="lazy" decoding="async" />
+<h3>3. Your resolution matches your display</h3>
+<p>There is no step three, which is the point. The capture runs at the native resolution of the surface you picked. On a 4K monitor recording the full screen, that is 3840 &times; 2160.</p>
+<p><strong>One honest caveat:</strong> SnapRec does not upscale. It records what your display actually outputs, so if your monitor is 1080p you get a sharp 1080p recording, not a synthetic 4K one. That is the correct behaviour — upscaling adds file size and no detail — but it does mean "4K recording" depends on 4K hardware. Recording a single browser tab also captures the tab's dimensions, not the whole desktop, so full-screen capture is what produces the largest frame.</p>
+
+<h2 id="when-4k">When You Actually Need 4K — and When You Don't</h2>
+<p>4K is roughly four times the pixels of 1080p, and file size follows. A few minutes of 4K screen capture can run to hundreds of megabytes, which affects how long uploads take and how quickly a shared link starts playing for the person you sent it to.</p>
+<p><strong>Record in 4K when:</strong> the content is dense and text-heavy (code, spreadsheets, dashboards); the recording is a lasting asset like documentation or a course; or the audience will watch it on a large or high-resolution display.</p>
+<p><strong>1080p is genuinely fine when:</strong> it is a quick bug report or a message to a colleague; you are recording a single browser tab rather than a whole desktop; the recording will be watched once and discarded; or you are on a slow connection and the upload matters more than the last increment of sharpness.</p>
+<p>SnapRec's recording options include a resolution cap for exactly this reason — you can hold a recording at 1440p, 1080p or 720p when a smaller file is worth more than maximum detail. The default is uncapped.</p>
+
+<h2 id="alternatives">Other Extensions That Advertise 4K</h2>
+<p>Most 4K claims in this category are true but conditional. The pattern is consistent: the capability exists, and it is a paid feature.</p>
+<ul>
+<li><strong>Loom</strong> — 4K on Business and above. The free plan is 720p and carries Loom branding.</li>
+<li><strong>Subscription recorders generally</strong> — high resolution is one of the standard upgrade triggers, alongside removing watermarks and lifting time limits. It is the feature most reliably placed behind the paywall, because it is the one people notice.</li>
+<li><strong>Desktop software such as OBS</strong> — genuinely free and genuinely capable of 4K, with far more control than any extension. The trade is setup: scenes, sources and encoder settings before your first recording, and no shareable link at the end.</li>
+</ul>
+<p>If you want full production control and do not mind configuring it, OBS is an excellent answer. If you want to press record in the browser and send a link, an extension is the right shape of tool — and SnapRec is the one that does not charge for the resolution.</p>
+
+<h2 id="faq">Frequently Asked Questions</h2>
+<h3>Does 4K recording slow down my browser?</h3>
+<p>It uses noticeably more CPU and memory than 1080p, because the browser is encoding four times the pixels in real time. On a modern machine, recording a tab or a window at 4K is usually unremarkable. On an older laptop, or while something else is already loading the CPU, you may see dropped frames. If a recording looks choppy, capture a single tab instead of the whole screen, close what you do not need, or cap the resolution in the extension's options — the file will be smaller and the encode much lighter.</p>
+<h3>What file format are 4K recordings saved in?</h3>
+<p>WebM, encoded with VP9 where the browser supports it and VP8 as a fallback. WebM plays natively in Chrome, Edge, Brave and Firefox, and is accepted by every major video platform. If you need MP4 for a specific editor, convert after export — the recording itself is a standard WebM file with no wrapper or DRM.</p>
+<h3>Can I share 4K recordings with a link?</h3>
+<p>Yes. Recordings upload and produce a shareable link like any other. Bear in mind that a 4K file is large: the upload takes longer on a slow connection, and so does the first load for whoever you send it to. For a quick message, 1080p often gets there faster in every sense.</p>
+<h3>Is it really free?</h3>
+<p>Yes. There is no paid tier, no trial, and no credit card. No watermark, no time limit, no video cap, and no account required to record and download — signing in only adds a cloud library and shareable links.</p>
+
+<h2 id="start">Start Recording</h2>
+<p><a href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Add SnapRec to Chrome</a> and record your next video at whatever resolution your display gives you. It takes about a minute and costs nothing.</p>
+<p>Comparing tools first? Read the <a href="https://www.snaprecorder.org/blog/loom-vs-snaprec-honest-comparison/">honest Loom vs SnapRec comparison</a>, or the <a href="https://www.snaprecorder.org/blog/switch-from-loom-to-snaprec/">five reasons people switch from Loom</a>. There is also a full <a href="https://www.snaprecorder.org/loom-alternative/">SnapRec vs Loom feature breakdown</a>, and <a href="https://www.snaprecorder.org/">the SnapRec homepage</a> covers everything else the extension does.</p>
+`,
+        faqs: [
+            { q: 'Does 4K recording slow down my browser?', a: 'It uses more CPU and memory than 1080p, because the browser encodes four times the pixels in real time. On a modern machine recording a tab or window at 4K is usually unremarkable; on an older laptop you may see dropped frames. Capturing a single tab or capping the resolution in the options makes the encode much lighter.' },
+            { q: 'What file format are 4K recordings saved in?', a: 'WebM, encoded with VP9 where the browser supports it and VP8 as a fallback. WebM plays natively in Chrome, Edge, Brave and Firefox and is accepted by every major video platform. Convert to MP4 afterwards if a specific editor needs it.' },
+            { q: 'Can I share 4K recordings with a link?', a: 'Yes, exactly like any other recording. A 4K file is large, so the upload takes longer on a slow connection and so does the first load for the viewer. For a quick message 1080p often arrives faster.' },
+            { q: 'Is SnapRec really free for 4K recording?', a: 'Yes. There is no paid tier, no trial and no credit card. No watermark, no time limit, no video cap, and no account required to record and download.' },
+            { q: 'Do I need a 4K monitor to record in 4K?', a: 'Yes. SnapRec records at your display’s native resolution and does not upscale, so a 1080p monitor produces a sharp 1080p recording rather than a synthetic 4K one. Full-screen capture produces the largest frame; recording a single tab captures the tab’s dimensions.' },
+        ],
+        steps: [
+            { name: 'Install from the Chrome Web Store', text: 'Add SnapRec to Chrome. No account, no credit card, nothing to configure. Works in Chrome, Edge and Brave.' },
+            { name: 'Click record', text: 'Click the SnapRec icon or press Ctrl + Shift + 4, choose a tab, window or your whole screen, and set audio and webcam options.' },
+            { name: 'Your resolution matches your display', text: 'The capture runs at the native resolution of the surface you picked — on a 4K monitor recording the full screen, that is 3840 x 2160. No 4K mode to switch on.' },
+        ],
+    },
+    {
+        slug: 'loom-vs-snaprec-honest-comparison',
+        title: 'Loom vs SnapRec: An Honest Comparison (2026)',
+        description: 'A straight comparison of Loom and SnapRec on pricing, limits, quality, editing and privacy — including where Loom is genuinely the better tool.',
+        keywords: 'loom vs snaprec, loom comparison, loom alternative comparison, snaprec vs loom, loom vs snaprec 2026, loom pricing comparison, compare screen recorders',
+        date: '2026-08-23',
+        readTime: '7 min read',
+        category: 'comparison',
+        heroIcon: 'compare',
+        content: `
+<h2 id="intro">Two Recorders, Two Different Jobs</h2>
+<p>Loom and SnapRec both record your screen and give you a link to share. That is where the similarity ends. Loom is a team communication platform that happens to start with a recorder — analytics, CRM integrations, AI summaries, workspace administration. SnapRec is a capture tool: record or screenshot, mark it up, send the link, done.</p>
+<p>Neither of those is the "right" design. They serve different people. This page lays out where each one actually wins, including the cases where Loom is the better buy — because a comparison that only flatters the tool publishing it is not worth reading.</p>
+<p>All Loom figures below are from Loom's own pricing page as of August 2026. Loom changes its plans regularly, so check them before making a decision on price alone.</p>
+
+<h2 id="comparison">Side by Side</h2>
+<table>
+<thead><tr><th>&nbsp;</th><th>SnapRec</th><th>Loom</th></tr></thead>
+<tbody>
+<tr><td><strong>Price</strong></td><td>Free, no paid tier</td><td>Free tier; Business $18/seat/mo; Business + AI $24/seat/mo</td></tr>
+<tr><td><strong>Recording length</strong></td><td>Unlimited</td><td>5 min (free) / Unlimited (paid)</td></tr>
+<tr><td><strong>Number of videos</strong></td><td>Unlimited</td><td>25 per person (free) / Unlimited (paid)</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Up to 4K, free</td><td>720p (free) / up to 4K (paid)</td></tr>
+<tr><td><strong>Loom branding</strong></td><td>None, ever</td><td>On free; removable on Business+</td></tr>
+<tr><td><strong>Account required</strong></td><td>No</td><td>Yes</td></tr>
+<tr><td><strong>Screenshots</strong></td><td>Visible, region and full-page scrolling, with annotation</td><td>Yes, with annotation and blur — no scrolling capture</td></tr>
+<tr><td><strong>Video editing</strong></td><td>Trim, cuts, speed, zoom keyframes</td><td>Trim and stitch; AI filler-word and silence removal on Business + AI</td></tr>
+<tr><td><strong>Viewer analytics</strong></td><td>View counts and watch coverage</td><td>Per-viewer engagement data</td></tr>
+<tr><td><strong>Integrations</strong></td><td>Shareable link</td><td>Slack, Jira, HubSpot, Salesforce and more</td></tr>
+<tr><td><strong>Local recording</strong></td><td>Yes — upload is optional</td><td>Cloud-first</td></tr>
+</tbody>
+</table>
+
+<h2 id="pricing">Pricing</h2>
+<p>Loom's free tier is best understood as an extended trial. You get 25 videos, five minutes each, at 720p, with Loom branding on them. That is enough to evaluate the product and not much more. Removing any one of those limits means Business at <strong>$18 per seat per month</strong>, and the AI features most people associate with Loom now sit on Business + AI at <strong>$24 per seat per month</strong>. For a five-person team that is $1,080 to $1,440 a year.</p>
+<p>SnapRec has no paid tier. There is nothing to upgrade to, which also means there is no roadmap where today's free features move behind a paywall — the constraint cuts both ways, and it is worth being clear about: a free tool has no subscription revenue funding a large team.</p>
+
+<h2 id="limits">Recording Limits</h2>
+<p>The five-minute cap is the limit people hit first. It is fine for a quick bug report and useless for a walkthrough, a lecture, or a demo. The 25-video cap arrives more slowly and is more annoying — you end up curating a library to stay under a number rather than recording freely.</p>
+<p>SnapRec has neither cap. Record for as long as you need, as often as you need.</p>
+
+<h2 id="quality">Video Quality</h2>
+<p>Loom's free tier records at up to 720p. On a modern display that is soft, and for anything where text has to stay readable — code, spreadsheets, dense interfaces — it is the difference between a usable recording and one people squint at. 4K requires a Business seat.</p>
+<p>SnapRec captures at the native resolution of whatever you record, so a 4K display produces a 4K recording, on the free plan, with an optional cap if you would rather keep file sizes down.</p>
+
+<h2 id="editing">Editing</h2>
+<p><strong>This is a category where Loom is ahead.</strong> Business + AI removes filler words and silences automatically, generates titles, summaries and chapters, and writes meeting recaps. If your workflow is "record a long, messy explanation and let software tidy it up", that is a real capability and SnapRec has no equivalent.</p>
+<p>SnapRec's video editor is manual: trim, cut, adjust speed, add zoom keyframes, export. Good enough to tighten a recording, not an AI post-production suite.</p>
+
+<h2 id="sharing">Sharing</h2>
+<p>Both produce an instant link. Loom goes considerably further: embedded viewer analytics, Slack and Jira integrations, and HubSpot and Salesforce connections that let sales teams attach recordings to CRM records and track who watched. <strong>If that pipeline data drives decisions on your team, Loom's ecosystem does something SnapRec does not attempt.</strong></p>
+<p>SnapRec gives you a link, view counts, and how much of the video people actually watched. For most people sending a recording to a colleague or a customer, that is the whole requirement.</p>
+
+<h2 id="screenshots">Screenshots</h2>
+<p>Both tools take screenshots, and both let you annotate them with arrows, text and blur. Loom includes unlimited screenshots on every plan, free included — a point worth correcting if you have read otherwise.</p>
+<p>The real difference is <strong>full-page scrolling capture</strong>. SnapRec scrolls a page and stitches it into one image, however long the page is. Loom does not currently offer scrolling screenshots. If you document long pages — a whole dashboard, a full article, a long form — that is the gap.</p>
+
+<h2 id="privacy">Privacy</h2>
+<p>Loom is cloud-first: recordings go to Loom's servers as part of the normal flow. That is what makes the workspace, the analytics and the integrations work, and for most teams it is a fair trade.</p>
+<p>SnapRec records locally and only uploads when you choose to create a share link. If you work with customer data, internal systems, or anything under an NDA, keeping the default on-device is a materially different position — and you can use SnapRec without an account at all, which means there is no profile to associate a recording with in the first place.</p>
+
+<h2 id="loom-wins">Where Loom Is Genuinely Better</h2>
+<p>Three things, stated plainly:</p>
+<ul>
+<li><strong>Brand recognition.</strong> "I'll send you a Loom" is a verb in a lot of companies. Sending a link from a tool nobody has heard of occasionally needs a sentence of explanation.</li>
+<li><strong>Integrations.</strong> Slack, Jira, HubSpot and Salesforce connections are real infrastructure, and rebuilding that workflow around a link is a downgrade if your team depends on it.</li>
+<li><strong>AI summaries and editing.</strong> Auto titles, summaries, chapters, filler-word and silence removal. SnapRec has none of this.</li>
+</ul>
+
+<h2 id="verdict">The Verdict</h2>
+<p><strong>If you need enterprise features, use Loom.</strong> CRM integrations, per-viewer analytics, AI post-production and workspace administration are what you are paying $18–24 per seat for, and they are worth it to teams that use them.</p>
+<p><strong>If you want a free tool that just works, use SnapRec.</strong> No time limit, no video cap, no branding on your recordings, 4K at no cost, full-page screenshots, and no account between you and the record button.</p>
+<p>A useful test: if you cannot name a Loom integration your team actually relies on, you are probably paying for a recorder. <a href="https://www.snaprecorder.org/loom-alternative/">See the full SnapRec vs Loom breakdown</a>, or <a href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">install SnapRec from the Chrome Web Store</a> and compare them yourself — it takes about a minute and costs nothing.</p>
+<p>Recording a presentation with your camera in the corner? See <a href="https://www.snaprecorder.org/webcam-overlay-presentation/">recording with a webcam overlay</a>. Or start from <a href="https://www.snaprecorder.org/">the SnapRec homepage</a>.</p>
+`,
+        faqs: [
+            { q: 'Is SnapRec really free compared to Loom?', a: 'Yes. SnapRec has no paid tier at all — no time limits, no video caps and no branding on recordings. Loom has a free Starter plan limited to 25 videos of 5 minutes each at 720p, with Loom branding; removing those limits costs $18 per seat per month.' },
+            { q: 'Does Loom put a watermark on free videos?', a: "Loom's free Starter plan carries Loom branding. Removing it is a Business feature. SnapRec never adds branding on any recording." },
+            { q: 'Does Loom have screenshots?', a: 'Yes. Loom includes unlimited screenshots on every plan including free, with annotation and blur. It does not currently offer full-page scrolling screenshots, which SnapRec does.' },
+            { q: 'When is Loom the better choice?', a: 'When you rely on its integrations (Slack, Jira, HubSpot, Salesforce), per-viewer analytics, or the AI features on Business + AI such as auto summaries and filler-word removal. SnapRec does not offer those.' },
+            { q: 'Can SnapRec record in 4K like Loom Business?', a: 'Yes, and at no cost. SnapRec captures at your display’s native resolution, so a 4K display produces a 4K recording. Loom caps free recordings at 720p and unlocks 4K on paid plans.' },
+        ],
+    },
+    {
+        slug: 'switch-from-loom-to-snaprec',
+        title: '5 Reasons to Switch from Loom to SnapRec',
+        description: 'Five practical reasons teams move off Loom: no time limits, no branding, full-page screenshots, no account needed and 4K free — plus how to switch.',
+        keywords: 'switch from loom, why switch from loom, moving from loom, loom replacement, leaving loom, loom too expensive, stop paying for loom',
+        date: '2026-08-23',
+        readTime: '7 min read',
+        category: 'comparison',
+        heroIcon: 'swap_horiz',
+        content: `
+<h2 id="intro">Why People Leave Loom</h2>
+<p>Most people do not leave Loom because it is bad. They leave because they hit a wall — the five-minute cap mid-explanation, the 25-video limit, or a renewal quote for seats that only ever record. Here are the five reasons that come up most, with what each one actually means day to day.</p>
+<p>Loom figures below are from Loom's own pricing page as of August 2026.</p>
+
+<h2 id="time-limits">1. No Recording Time Limits</h2>
+<p>Loom's free plan stops you at five minutes per recording. That is enough for a quick bug report and nothing else. A product walkthrough, a lecture, an onboarding session or a design review all run longer, and the cap does not warn you gently — you plan a recording around it, or you split one explanation across three videos and make the viewer stitch them together.</p>
+<p>SnapRec has no time limit. Record for as long as the thing takes. The only practical ceiling is disk space, because the file is written locally as you go.</p>
+<p>There is no video-count limit either. Loom's free tier holds 25 videos per person, which sounds generous until you are deleting old recordings to make room — curating a library instead of just recording.</p>
+
+<h2 id="watermark">2. No Branding on Free Recordings</h2>
+<p>On Loom's Starter plan, "Remove Loom branding" is a Business feature — so free recordings carry Loom's. For an internal bug report nobody cares. For a recording you send to a client, a prospect or a student, another company's branding on your work is a small, repeated tax on how the recording reads.</p>
+<p>SnapRec never adds branding, at any tier, because there is no other tier. What you record is what the viewer sees.</p>
+<p>This is the difference between a free plan and a trial. Loom's free tier is designed to make upgrading feel necessary, which is a legitimate business model — it is just worth recognising it for what it is before you build a workflow on top of it.</p>
+
+<h2 id="screenshots">3. Full-Page Screenshots and a Real Annotation Editor</h2>
+<p>Both tools take screenshots, and both annotate them — Loom includes unlimited screenshots with arrows, text and blur on every plan, free included. If you have read that Loom has no screenshot feature, that is out of date.</p>
+<p>The gap is <strong>full-page scrolling capture</strong>. SnapRec scrolls the page and stitches it into a single image, however long it runs — a whole dashboard, an entire article, a long form. Loom does not currently offer scrolling screenshots.</p>
+<p>SnapRec's editor also covers the cases documentation actually needs: numbered step markers for sequences, blur for anything sensitive, crop, and shapes. Combined with recording in the same extension, it means one tool for "show me" and "here is exactly what I mean", rather than a recorder plus a separate screenshot app.</p>
+
+<h2 id="no-account">4. No Account Required to Start</h2>
+<p>Loom requires an account before it will record anything. That is one email, one password and one onboarding flow between installing and capturing — trivial once, and a real obstacle when you are trying to get a colleague to send you a recording of the bug they are seeing. "Install this and hit record" converts. "Install this, make an account, verify your email, then hit record" does not.</p>
+<p>SnapRec records immediately after install. No email, no Google login, no onboarding. An account is optional and only adds a cloud library and shareable links.</p>
+<p>It is also a privacy position. No account means no profile to attach a recording to. SnapRec records locally and only uploads when you choose to create a link, so if you work with customer data or anything under an NDA, the default is on-device rather than cloud-first.</p>
+
+<h2 id="4k">5. 4K Recording at No Cost</h2>
+<p>Loom's free plan records at up to 720p. On a modern display that is visibly soft, and for anything text-heavy — code, spreadsheets, dense dashboards — it decides whether the recording is usable. Anything above 720p means a Business seat at $18 per seat per month.</p>
+<p>SnapRec captures at your display's native resolution, so a 4K monitor produces a 4K recording on the free plan. If you would rather keep file sizes down, the resolution picker caps it at 1440p, 1080p or 720p — your choice rather than your plan's.</p>
+<p>For a five-person team, the difference between 720p and 4K is $1,080 a year on Loom Business, or nothing on SnapRec.</p>
+
+<h2 id="how-to-switch">How to Switch in Three Steps</h2>
+<p>There is no migration and no export deadline. Loom keeps your existing videos; you can run both while you decide.</p>
+<ol>
+<li><strong>Install SnapRec.</strong> Add it from the Chrome Web Store. No account, no credit card, nothing to configure. It works in Chrome, Edge and Brave.</li>
+<li><strong>Record your next video with it.</strong> Click the SnapRec icon or press Ctrl+Shift+4, pick a tab, window or your whole screen, and record. Share the link exactly as you would a Loom.</li>
+<li><strong>Move anything worth keeping.</strong> Download the Loom recordings you still reference and re-upload them, or simply leave them where they are and let the Loom library become an archive. Most recordings are read once in the week they are made.</li>
+</ol>
+<p>If your team is mid-contract on Loom Business, finish the term. Evaluate whether the integrations and AI features earned their price, then decide.</p>
+
+<h2 id="next">Before You Switch</h2>
+<p>Loom is genuinely better at three things: brand recognition, integrations with Slack, Jira, HubSpot and Salesforce, and the AI features on Business + AI. If your team depends on any of those, read the <a href="https://www.snaprecorder.org/blog/loom-vs-snaprec-honest-comparison/">full Loom vs SnapRec comparison</a> first — it covers where Loom wins in more detail.</p>
+<p>Otherwise: <a href="https://www.snaprecorder.org/loom-alternative/">see the SnapRec vs Loom feature breakdown</a>, <a href="https://chromewebstore.google.com/detail/screen-recorder-screensho/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">install SnapRec from the Chrome Web Store</a>, or start at <a href="https://www.snaprecorder.org/">the SnapRec homepage</a>.</p>
+`,
+        faqs: [
+            { q: 'Do I lose my Loom videos if I switch?', a: 'No. Switching recorders does not touch your Loom library. You can download recordings you still need and leave the rest where they are — running both while you decide costs nothing.' },
+            { q: 'Is there a migration tool from Loom to SnapRec?', a: 'No. There is no direct import: download from Loom and re-upload anything you want to keep. In practice most recordings are watched once in the week they are made, so few people move more than a handful.' },
+            { q: 'What does SnapRec cost?', a: 'Nothing. There is no paid tier, no trial and no credit card. Loom Business is $18 per seat per month and Business + AI is $24.' },
+            { q: 'Will my team notice the difference?', a: 'They receive a link and watch a video, same as before. The visible differences are that recordings can run longer, look sharper, and carry no Loom branding.' },
+            { q: 'Should I switch if we use Loom with Slack or Salesforce?', a: 'Probably not. Those integrations are the strongest reason to stay on Loom, and SnapRec does not replace them — it gives you a shareable link instead.' },
+        ],
+        steps: [
+            { name: 'Install SnapRec', text: 'Add SnapRec from the Chrome Web Store. No account, no credit card, nothing to configure. Works in Chrome, Edge and Brave.' },
+            { name: 'Record your next video with it', text: 'Click the SnapRec icon or press Ctrl+Shift+4, choose a tab, window or your whole screen, and record. Share the link as you would a Loom.' },
+            { name: 'Move anything worth keeping', text: 'Download the Loom recordings you still reference and re-upload them, or leave them in Loom as an archive.' },
+        ],
+    },
+    {
         slug: 'how-to-record-google-slides-presentation',
         title: 'How to Record a Google Slides Presentation With Audio (Free, 2026)',
         description: 'Google Slides has no built-in recorder. Learn how to record your presentation with audio and webcam using SnapRec — free, no watermarks, no time limits.',
@@ -467,7 +692,7 @@ export const blogPosts: BlogPost[] = [
 <ul>
 <li>5-minute limit on free plan</li>
 <li>25 video limit on free plan</li>
-<li>Paid plans start at $12.50/month</li>
+<li>Paid plans start at $18/seat/month</li>
 </ul>
 
 <h2 id="verdict">The Verdict</h2>
@@ -1058,7 +1283,7 @@ export const blogPosts: BlogPost[] = [
 <tr><td>SnapRec (tab recording)</td><td>Free</td><td>Under 1 min</td><td>Excellent (direct tab capture)</td><td>Recommended for most users</td></tr>
 <tr><td>Google Meet built-in</td><td>$6+/mo Workspace</td><td>None</td><td>Excellent</td><td>Notifies all participants automatically</td></tr>
 <tr><td>OBS Studio</td><td>Free</td><td>15-30 min</td><td>Good</td><td>Desktop app, more complex setup</td></tr>
-<tr><td>Loom</td><td>$12.50/mo</td><td>2 min</td><td>Good</td><td>5-min limit on free plan</td></tr>
+<tr><td>Loom</td><td>$18/seat/mo</td><td>2 min</td><td>Good</td><td>5-min limit on free plan</td></tr>
 </tbody>
 </table>
 
@@ -1718,7 +1943,7 @@ export const blogPosts: BlogPost[] = [
 <tbody>
 <tr><td><strong>SnapRec</strong></td><td>None</td><td>Unlimited</td><td>Yes</td><td>Yes (link)</td><td>Free</td></tr>
 <tr><td>Screencastify</td><td>Yes (free)</td><td>30 min</td><td>Yes</td><td>No</td><td>$49/yr</td></tr>
-<tr><td>Loom</td><td>None</td><td>5 min</td><td>Yes</td><td>Yes</td><td>$12.50/mo</td></tr>
+<tr><td>Loom</td><td>On free plan</td><td>5 min</td><td>Yes</td><td>Yes</td><td>$18/seat/mo</td></tr>
 <tr><td>OBS</td><td>None</td><td>Unlimited</td><td>Yes</td><td>No</td><td>Free</td></tr>
 <tr><td>Zoom (record)</td><td>None</td><td>40 min (free)</td><td>Yes</td><td>Cloud (paid)</td><td>$13.33/mo</td></tr>
 </tbody>
@@ -1893,7 +2118,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2 id="faq">Frequently Asked Questions</h2>
 <h3>What happened to Loom's free plan?</h3>
-<p>Loom tightened its free tier in 2024: recordings are capped at 5 minutes each, the library is capped at 25 videos, and free recording resolution tops out at 720p. Loom does not brand free recordings with a watermark — the pressure comes from the length, count and quality ceilings, and from needing an account before you can record at all.</p>
+<p>Loom tightened its free tier in 2024 and has raised prices since: recordings are capped at 5 minutes each, the library at 25 videos, and free recording tops out at 720p with Loom branding on it. Removing any of that means Business at $18 per seat per month, and the AI features sit on Business + AI at $24.</p>
 
 <h3>Can I import my Loom recordings into another tool?</h3>
 <p>You can download your recordings from Loom and re-upload them to another platform, but there's no direct import or migration tool. Your videos remain in Loom's library until you manually download and move them.</p>
@@ -1902,7 +2127,7 @@ export const blogPosts: BlogPost[] = [
 <p>SnapRec works on any Chromium-based browser, including Chrome on Chromebook. Install it from the Chrome Web Store and you can record and share without any desktop app. OBS and most desktop tools don't run natively on Chromebook.</p>
         `,
         faqs: [
-            { q: "What happened to Loom's free plan?", a: 'Loom tightened its free tier in 2024: recordings are capped at 5 minutes each, the library is capped at 25 videos, and free recording resolution tops out at 720p. Loom does not brand free recordings with a watermark — the pressure comes from the length, count and quality ceilings, and from needing an account before you can record at all.' },
+            { q: "What happened to Loom's free plan?", a: 'Loom tightened its free tier in 2024 and has raised prices since: recordings are capped at 5 minutes each, the library at 25 videos, and free recording tops out at 720p with Loom branding on it. Removing any of that means Business at $18 per seat per month, and the AI features sit on Business + AI at $24.' },
             { q: 'Can I import my Loom recordings into another tool?', a: "You can download your recordings from Loom and re-upload them to another platform, but there's no direct import or migration tool." },
             { q: 'Which Loom alternative works on Chromebook?', a: 'SnapRec works on any Chromium-based browser, including Chrome on Chromebook. Install it from the Chrome Web Store and you can record and share without any desktop app.' },
         ],

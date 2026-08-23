@@ -57,7 +57,7 @@ const jsonLd = {
                 {
                     '@type': 'Question',
                     name: 'Can SnapRec record in 4K like Loom Business?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. SnapRec supports up to 4K resolution recording for free — a feature Loom locks behind its $12.50/month Business plan.' },
+                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. SnapRec supports up to 4K resolution recording for free. Loom caps free recordings at 720p and unlocks 4K on its Business plan, at $18 per seat per month.' },
                 },
                 {
                     '@type': 'Question',
@@ -76,28 +76,31 @@ const jsonLd = {
     ],
 };
 
-/* SEO: the comparison table. Two rows were added (Chrome extension, Local
- * recording) because they are true, verifiable and were missing — local recording
- * is the privacy differentiator, confirmed in Privacy.tsx and the offscreen
- * recorder, which keeps captures on-device until an explicit upload.
+/* The comparison table. Every Loom figure here is from loom.com/pricing,
+ * checked August 2026 — re-check it before editing, because Loom changes plans
+ * often and this table is the page's main claim.
  *
- * Two values were deliberately NOT changed to what a draft of this table proposed:
- * Loom does not watermark free recordings, so "Watermarks: None" stays for both —
- * claiming otherwise would be inaccurate and would contradict the FAQ below. And
- * Loom's free tier is 720p, not 1080p, so the more precise existing figure stays. */
+ * Corrected August 2026, after checking Loom's own pricing page rather than
+ * reasoning from assumption:
+ *  - Branding: previously "None" for both. Loom lists "Remove Loom branding" as
+ *    a Business feature, so free recordings DO carry it.
+ *  - Screenshots: previously "❌" for Loom. Loom ships unlimited screenshots on
+ *    every plan, free included, with annotation and blur. The real gap is
+ *    full-page scrolling capture, which Loom does not offer.
+ *  - Price: previously $12.50/mo, which is out of date. */
 const comparison = [
-    { feature: 'Price',                snaprec: 'Free forever',   loom: '$0 (limited) / from $12.50/mo' },
+    { feature: 'Price',                snaprec: 'Free forever',   loom: '$0 (limited) / from $18/seat/mo' },
     { feature: 'Recording length',     snaprec: '∞ Unlimited',    loom: '5 min (free) / Unlimited (paid)' },
     { feature: 'Number of videos',     snaprec: '∞ Unlimited',    loom: '25 (free) / Unlimited (paid)' },
     { feature: 'Resolution',           snaprec: 'Up to 4K',       loom: '720p (free) / up to 4K (paid)' },
-    { feature: 'Watermarks',           snaprec: 'None',           loom: 'None' },
+    { feature: 'Loom branding',        snaprec: 'None, ever',     loom: 'On free / removable on Business' },
     { feature: 'Account required',     snaprec: 'No',             loom: 'Yes' },
     { feature: 'Chrome extension',     snaprec: '✅',             loom: '✅' },
     { feature: 'Webcam overlay',       snaprec: '✅',             loom: '✅' },
     { feature: 'System audio',         snaprec: '✅',             loom: '✅' },
     { feature: 'Cloud sharing',        snaprec: '✅ Free',        loom: '✅' },
     { feature: 'Records locally',      snaprec: '✅ Upload optional', loom: '❌ Cloud-first' },
-    { feature: 'Screenshot tool',      snaprec: '✅ Full-page + annotation', loom: '❌' },
+    { feature: 'Screenshots',          snaprec: '✅ Visible, region, full-page', loom: '✅ No scrolling capture' },
     { feature: 'Auto-zoom on clicks',  snaprec: '✅',             loom: '❌' },
 ];
 
@@ -115,12 +118,12 @@ const reasons = [
     {
         icon: '4️⃣',
         title: '4K for free',
-        desc: 'Loom only unlocks 4K on its $12.50/month Business plan. SnapRec records in up to 4K on the free plan with no upgrade required.',
+        desc: 'Loom caps free recordings at 720p and unlocks 4K on Business, at $18 per seat per month. SnapRec records in up to 4K on the free plan with no upgrade required.',
     },
     {
         icon: '📸',
-        title: 'Screenshots Loom can\'t do',
-        desc: 'SnapRec adds full-page screenshots with an annotation editor — blur, arrows, text. Loom has no screenshot feature at any price.',
+        title: 'Full-page screenshots',
+        desc: 'Loom takes screenshots and annotates them too. What it does not do is scroll a long page and stitch it into one image — SnapRec captures the whole page however far it runs, then blurs, crops and annotates it.',
     },
     {
         icon: '🔍',
@@ -137,7 +140,7 @@ const reasons = [
 const faqs = [
     { q: 'Is SnapRec really a free Loom alternative?', a: "Yes. SnapRec is 100% free with no recording time limits, no video caps, and no watermarks — addressing every restriction on Loom's free plan." },
     { q: 'Does SnapRec have a 5-minute recording limit like Loom?', a: 'No. SnapRec has no time limit on recordings. Record for as long as you need, completely free.' },
-    { q: 'Can SnapRec record in 4K like Loom Business?', a: 'Yes. SnapRec supports up to 4K resolution recording for free — a feature Loom locks behind its $12.50/month Business plan.' },
+    { q: 'Can SnapRec record in 4K like Loom Business?', a: 'Yes. SnapRec supports up to 4K resolution recording for free. Loom caps free recordings at 720p and unlocks 4K on its Business plan, at $18 per seat per month.' },
     { q: 'Does SnapRec work on Edge and Brave like Loom?', a: 'Yes. SnapRec works on all Chromium-based browsers including Google Chrome, Microsoft Edge, and Brave.' },
     { q: 'Can I share recordings with a link like Loom?', a: 'Yes. SnapRec generates an instant shareable link after recording. No account required for basic recording and downloading; sign in with Google to save to your permanent cloud library.' },
 ];
@@ -240,7 +243,7 @@ const LoomAlternative: React.FC = () => (
                         <p>
                             <strong className="text-[var(--sr-text-primary-on-light)]">It costs nothing, permanently.</strong>{' '}
                             Loom's free tier is a trial shaped like a product: 5 minutes per recording, 25 videos
-                            total, 720p. Getting past any of those means $12.50 per user per month. SnapRec has no
+                            total, 720p. Getting past any of those means $18 per seat per month. SnapRec has no
                             paid tier to upgrade to, so there is no ceiling to hit and no renewal to budget for.
                         </p>
                         <p>
