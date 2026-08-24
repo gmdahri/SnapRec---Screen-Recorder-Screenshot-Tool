@@ -34,6 +34,10 @@
      * options is a decision nobody wants while setting up a recording. */
     let webcamShape = 'circle';
     let micMuted = false;
+    /** Whether the first-drag event has already been sent for this page. One
+     * page instance is one session: the content script is injected fresh per
+     * tab and per navigation, which is the same window the hint lives in. */
+    let webcamDragTracked = false;
 
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -579,6 +583,23 @@
         }
     }
 
+    /** Send one analytics event from the page.
+     *
+     * The page does NOT own a PostHog client — background/analytics.js is the
+     * only one, because the install id and the opt-out flag have to be
+     * single-valued. Fire-and-forget, and the callback exists only to clear
+     * lastError: an unread lastError logs a console error whenever the worker
+     * is asleep, which is a normal state rather than a fault. */
+    function trackFromPage(event, properties = {}) {
+        try {
+            chrome.runtime.sendMessage({ action: 'trackEvent', event, properties }, () => {
+                void chrome.runtime.lastError;
+            });
+        } catch {
+            // No receiver, or the page is going away. Nothing to recover.
+        }
+    }
+
     /** One camera, two meanings.
      *
      * `preview: true` is the popup's toggle — you are framing, nothing is
@@ -644,8 +665,15 @@
             renderWebcamState();
 
             makeWebcamDraggable(webcamElement);
+            makeWebcamResizable(webcamElement);
             document.body.appendChild(webcamElement);
+            // Size before position: the position clamp needs the real
+            // dimensions to know how much of the overlay is still on screen.
+            applyWebcamSize(webcamElement, await loadWebcamSize());
             applyWebcamPosition(webcamElement, await loadWebcamPosition());
+            // Not awaited: the hint may appear a frame late, and must never
+            // stand between the user and a live camera.
+            maybeShowWebcamHint(webcamElement);
             console.log('[SnapRec Content] Webcam started');
         } catch (error) {
             // Denied, or in use by another app. The overlay is not worth
@@ -697,6 +725,148 @@
         return Math.max(visible - size, Math.min(value, limit - visible));
     }
 
+    /** Scroll to resize. The overlay is square, so one number says it all.
+     *
+     * Bounded at both ends: under ~120px a face is unreadable, and over
+     * ~360px the overlay is competing with the thing being recorded instead
+     * of accompanying it — which is the complaint that prompted this. */
+    const WEBCAM_SIZE_KEY = 'webcamSize';
+    const WEBCAM_MIN_SIZE = 120;
+    const WEBCAM_MAX_SIZE = 360;
+
+    function clampWebcamSize(px) {
+        return Math.max(WEBCAM_MIN_SIZE, Math.min(px, WEBCAM_MAX_SIZE));
+    }
+
+    async function loadWebcamSize() {
+        try {
+            const { [WEBCAM_SIZE_KEY]: size } = await chrome.storage.local.get(WEBCAM_SIZE_KEY);
+            return typeof size === 'number' ? clampWebcamSize(size) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function applyWebcamSize(el, size) {
+        if (!size) return;
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+    }
+
+    function makeWebcamResizable(el) {
+        let persist = null;
+
+        el.addEventListener('wheel', (e) => {
+            // preventDefault with passive: false, or the page scrolls out
+            // from under the overlay being resized — on a long article the
+            // user would lose their place to change a bubble's size.
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Chrome sends pixel deltas, but a mouse configured for line or
+            // page deltas sends 3 or 1, which would make the gesture feel
+            // dead rather than fine-grained.
+            const px = e.deltaMode === 1 ? e.deltaY * 16
+                : e.deltaMode === 2 ? e.deltaY * window.innerHeight
+                : e.deltaY;
+
+            const rect = el.getBoundingClientRect();
+            // Scrolling up grows it: the direction of pinching outwards, and
+            // the opposite of pushing content away.
+            const next = clampWebcamSize(rect.width - px * 0.5);
+            if (Math.abs(next - rect.width) < 0.5) return;   // already at a bound
+            applyWebcamSize(el, next);
+
+            // Growing in a corner would otherwise push the overlay off the
+            // edge: the drag clamp only runs on pointermove.
+            if (el.style.left) {
+                el.style.left = `${clampWebcam(rect.left, next, window.innerWidth)}px`;
+                el.style.top = `${clampWebcam(rect.top, next, window.innerHeight)}px`;
+            }
+
+            // Resizing is the other gesture the hint names, so it has served
+            // its purpose here too.
+            dismissWebcamHint();
+
+            // One write per gesture. A trackpad fires dozens of these a
+            // second and chrome.storage.local has a write quota.
+            clearTimeout(persist);
+            persist = setTimeout(() => {
+                try {
+                    chrome.storage.local.set({ [WEBCAM_SIZE_KEY]: next });
+                } catch { /* the overlay still resized; persistence is a nicety */ }
+            }, 250);
+        }, { passive: false });
+    }
+
+    /** The first-run hint.
+     *
+     * The overlay has always been draggable, and now resizes too, but nothing
+     * on screen ever said so — a user left believing the bubble was pinned
+     * where it landed, on top of their slides for the whole presentation.
+     *
+     * Shown once per install rather than once per recording: this sits over
+     * the picture being captured, so a hint that returned every take would be
+     * in the recording as well as in the way. */
+    const WEBCAM_HINT_KEY = 'webcamHintShown';
+    const WEBCAM_HINT_MS = 4000;
+    const WEBCAM_HINT_FADE_MS = 220;
+    let webcamHintEl = null;
+    let webcamHintTimer = null;
+    /** Whether this page showed the hint, so the drag event can say whether
+     * the gesture was found with help or without it. */
+    let webcamHintWasShown = false;
+
+    async function maybeShowWebcamHint(el) {
+        try {
+            const { [WEBCAM_HINT_KEY]: shown } = await chrome.storage.local.get(WEBCAM_HINT_KEY);
+            if (shown) return;
+            // Claimed before it is drawn, not after it fades: the background
+            // injects this overlay per tab, so two tabs coming up together
+            // would otherwise both read false and both show it.
+            await chrome.storage.local.set({ [WEBCAM_HINT_KEY]: true });
+            showWebcamHintIfStillUp(el);
+        } catch {
+            // Without storage there is no way to know whether this is the
+            // first time, and a hint on every recording is worse than none.
+        }
+    }
+
+    /** The camera can be turned off inside the awaits above, and the overlay
+     * can have been torn down and rebuilt by a re-injection. */
+    function showWebcamHintIfStillUp(el) {
+        if (!el.isConnected || el !== webcamElement) return;
+        showWebcamHint(el);
+    }
+
+    function showWebcamHint(el) {
+        const hint = document.createElement('div');
+        hint.className = 'snaprec-webcam-hint';
+        hint.textContent = 'Drag to move · Scroll to resize';
+        // Announced, not only drawn: the overlay is reachable by keyboard,
+        // and this is the only place the two gestures are named.
+        hint.setAttribute('role', 'status');
+        el.appendChild(hint);
+        webcamHintEl = hint;
+        webcamHintWasShown = true;
+        trackFromPage('webcam_hint_shown');
+        webcamHintTimer = setTimeout(() => dismissWebcamHint(), WEBCAM_HINT_MS);
+    }
+
+    /** Idempotent: the timer, the first drag, the first resize and stopWebcam
+     * all call this, in any order. */
+    function dismissWebcamHint() {
+        const hint = webcamHintEl;
+        if (!hint) return;
+        webcamHintEl = null;
+        clearTimeout(webcamHintTimer);
+        webcamHintTimer = null;
+        hint.dataset.leaving = 'true';
+        // Removed on a timer rather than on transitionend, which never fires
+        // under prefers-reduced-motion because there is no transition to end.
+        setTimeout(() => hint.remove(), WEBCAM_HINT_FADE_MS);
+    }
+
     /** Drag to move, anywhere on screen.
      *
      * Pointer events rather than mouse events so a trackpad, a pen and touch
@@ -727,6 +897,17 @@
         el.addEventListener('pointermove', (e) => {
             if (!dragging) return;
             moved = true;
+            // The gesture the hint describes has happened, so it has nothing
+            // left to say. On movement rather than pointerdown: a press that
+            // never moves has not taught the user anything yet.
+            dismissWebcamHint();
+            if (!webcamDragTracked) {
+                webcamDragTracked = true;
+                // Once per page, not once per frame of the gesture — and it
+                // carries whether the hint was on screen, which is the whole
+                // question the hint was added to answer.
+                trackFromPage('webcam_bubble_dragged', { hinted: webcamHintWasShown });
+            }
             const rect = el.getBoundingClientRect();
             el.style.left = `${clampWebcam(e.clientX - offsetX, rect.width, window.innerWidth)}px`;
             el.style.top = `${clampWebcam(e.clientY - offsetY, rect.height, window.innerHeight)}px`;
@@ -871,6 +1052,8 @@
 
     function stopWebcam() {
         webcamWanted = false;
+        // The node goes with the overlay, but its timers would outlive it.
+        dismissWebcamHint();
         if (webcamStream) {
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;

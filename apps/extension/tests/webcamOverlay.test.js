@@ -439,3 +439,85 @@ describe('the popup shows the chosen source, once', () => {
     expect(POPUP).toMatch(/case 'recordingStopped':/);
   });
 });
+
+
+/** A user churned believing the overlay was pinned where it landed — it sat
+ * over their slides for the whole presentation. It had always been draggable;
+ * nothing on screen ever said so, and it was not resizable at all, so a
+ * bubble too big for the frame had no remedy but turning the camera off.
+ *
+ * Verified in Chrome with a fake camera device: the first overlay of a fresh
+ * profile carries the hint, it goes away on its own after four seconds and
+ * immediately once the overlay is dragged, and a second overlay never shows
+ * it again. Scrolling over the overlay resizes it between 120 and 360px
+ * without scrolling the page underneath. None of that runs in jsdom, so these
+ * cases hold the wiring that makes it possible. */
+describe('the camera overlay says how it can be handled', () => {
+  it('names both gestures, in the words the hint has to use', () => {
+    expect(CONTENT).toMatch(/Drag to move · Scroll to resize/);
+    // A chip in the page, not a title attribute: a native tooltip needs a
+    // hover the user has no reason to try, which is the whole problem.
+    expect(CONTENT).toMatch(/className = 'snaprec-webcam-hint'/);
+  });
+
+  it('shows it once ever, not once a recording', () => {
+    expect(CONTENT).toMatch(/const WEBCAM_HINT_KEY = 'webcamHintShown'/);
+    expect(CONTENT).toMatch(/chrome\.storage\.local\.get\(WEBCAM_HINT_KEY\)/);
+    // Claimed before it is drawn, not after it fades: two tabs opening the
+    // overlay at once must not each count as the first time.
+    expect(CONTENT).toMatch(/set\(\{ \[WEBCAM_HINT_KEY\]: true \}\);\s*showWebcamHintIfStillUp\(el\)/);
+  });
+
+  it('stays out of the way of the gesture it describes', () => {
+    expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*pointer-events:\s*none/s);
+    // Semi-transparent dark ground: it sits on whatever the camera is
+    // pointing at, where plain text with a shadow disappears.
+    expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*background:\s*rgba\(4, 7, 8, \.\d+\)/s);
+    expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*color:\s*#F3F6F6/s);
+    expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*border-radius:\s*4px/s);
+  });
+
+  it('fades after four seconds, and leaves at the first drag', () => {
+    expect(CONTENT).toMatch(/setTimeout\(\(\) => dismissWebcamHint\(\), WEBCAM_HINT_MS\)/);
+    expect(CONTENT).toMatch(/const WEBCAM_HINT_MS = 4000/);
+    expect(CSS).toMatch(/\.snaprec-webcam-hint\[data-leaving\]\s*\{[^}]*opacity:\s*0/s);
+    // Dismissed on real movement, not on pointerdown — a press that never
+    // moves has taught the user nothing yet.
+    expect(CONTENT).toMatch(/moved = true;[\s\S]{0,300}?dismissWebcamHint\(\)/);
+  });
+
+  it('reports that the hint appeared, and whether anyone acted on it', () => {
+    expect(CONTENT).toMatch(/trackFromPage\('webcam_hint_shown'\)/);
+    expect(CONTENT).toMatch(/trackFromPage\('webcam_bubble_dragged'/);
+    // Once per page, not once per pointermove — the drag handler fires this
+    // on every frame of the gesture otherwise.
+    expect(CONTENT).toMatch(/if \(!webcamDragTracked\)/);
+    // No second PostHog client in the page: identity and the opt-out live in
+    // the background worker, and a second client double-counts every install.
+    expect(CONTENT).toMatch(/action: 'trackEvent', event, properties/);
+  });
+
+  it('resizes on scroll, between a thumbnail and a quarter of the screen', () => {
+    expect(CONTENT).toMatch(/addEventListener\('wheel'/);
+    expect(CONTENT).toMatch(/const WEBCAM_MIN_SIZE = 120/);
+    expect(CONTENT).toMatch(/const WEBCAM_MAX_SIZE = 360/);
+    expect(CONTENT).toMatch(/function clampWebcamSize/);
+    // passive: false, or preventDefault is ignored and the page scrolls away
+    // underneath the overlay being resized.
+    expect(CONTENT).toMatch(/\{ passive: false \}/);
+  });
+
+  it('remembers the size it was left at, like the position', () => {
+    expect(CONTENT).toMatch(/const WEBCAM_SIZE_KEY = 'webcamSize'/);
+    expect(CONTENT).toMatch(/loadWebcamSize/);
+    // Applied before the position is read, since the clamp needs the real
+    // size to know what is still on screen.
+    expect(CONTENT).toMatch(/applyWebcamSize\([\s\S]{0,200}?applyWebcamPosition\(/);
+  });
+
+  it('cannot be grown off the edge of the screen', () => {
+    // The drag clamp only runs on pointermove, so growing in a corner would
+    // otherwise push the overlay out of reach.
+    expect(CONTENT).toMatch(/clampWebcam\(rect\.left, next, window\.innerWidth\)/);
+  });
+});

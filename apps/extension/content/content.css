@@ -338,6 +338,40 @@
 
 .snaprec-webcam-status[hidden] { display: none; }
 
+/* First-run hint: the one thing on this overlay that says it can be handled.
+   Inside the frame, because the container clips its overflow to cut the circle
+   — a chip hanging below it would simply be sliced off. Centred rather than at
+   the foot, where the control bar appears on hover. */
+.snaprec-webcam-hint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 84%;
+    padding: 6px 9px;
+    text-align: center;
+    text-wrap: balance;
+    font-family: 'Schibsted Grotesk Variable', system-ui, -apple-system, sans-serif;
+    font-size: 11px;
+    line-height: 1.35;
+    letter-spacing: .01em;
+    color: #F3F6F6;                  /* --sr-text-primary-on-dark */
+    /* A chip on a dark scrim, not text with a shadow: this sits on whatever
+       the camera happens to be pointing at, bright or busy. */
+    background: rgba(4, 7, 8, .78);
+    border-radius: 4px;
+    opacity: 1;
+    transition: opacity .2s ease;
+    /* Never in the way of the two gestures it is describing. */
+    pointer-events: none;
+}
+
+.snaprec-webcam-hint[data-leaving] { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    .snaprec-webcam-hint { transition: none; }
+}
+
 /* Countdown Timer Overlay */
 .snaprec-countdown-overlay {
     position: fixed;
