@@ -3438,7 +3438,7 @@ export const blogPosts: BlogPost[] = [
 </ol>
 
 <h2 id="escalations">Screen Recording in Bug Escalations</h2>
-<p>When a customer issue escalates to engineering, the support agent becomes a communication bridge. A screen recording of the customer's issue (or a reproduction the agent created themselves) is far more useful to the engineering team than a text summary. See the <a href="/blog/how-to-create-video-bug-report">video bug report guide</a> for the specific format that developers find most useful.</p>
+<p>When a customer issue escalates to engineering, the support agent becomes a communication bridge. A screen recording of the customer's issue (or a reproduction the agent created themselves) is far more useful to the engineering team than a text summary. See the <a href="/blog/how-to-create-video-bug-report/">video bug report guide</a> for the specific format that developers find most useful.</p>
         `,
         faqs: [
             { q: 'How do I ask customers to send a screen recording?', a: "Add a note to your support intake form: 'A quick screen recording helps us resolve your issue faster. SnapRec is free, takes 15 seconds to install, and requires no account.' Customers who are technically comfortable will use it." },
@@ -3598,6 +3598,85 @@ export const blogPosts: BlogPost[] = [
             { q: 'When should I send a video message instead of scheduling a meeting?', a: "Use async video for status updates, demos, feedback, and explanations — any communication where you\'re sharing information rather than negotiating a decision. Keep meetings for joint decisions, high-stakes conversations, and urgent coordination." },
             { q: 'How long should an async video message be?', a: "Under 5 minutes for most communications. Status updates: 2–3 minutes. Technical walkthroughs: 3–5 minutes. Longer recordings get watched less completely. Break anything over 7 minutes into separate focused recordings." },
             { q: 'What is the best tool for async video messaging?', a: "For free async video with shareable links and no account needed, SnapRec is the best option. For AI features (transcripts, chapters, viewer analytics), Loom is the leading paid tool." },
+        ],
+    },
+    {
+        slug: 'canva-record-alternative',
+        title: 'Free Canva Record Alternative — Screen Recording Without Limits',
+        description: 'Canva Record is convenient inside Canva. Here is a free Canva screen recorder alternative with 4K, screenshots, annotation and no 25-minute cap.',
+        keywords: 'canva record alternative, canva screen recorder alternative, free canva record alternative, canva record limits, canva screen recording, free screen recorder no watermark, canva alternative screen recording',
+        date: '2026-08-24',
+        readTime: '6 min read',
+        category: 'comparison',
+        heroIcon: 'compare',
+        content: `
+<h2 id="intro">Canva Record Is Convenient — Until You Need to Leave Canva</h2>
+<p>If your slides, thumbnails and social posts already live in Canva, recording there is the path of least resistance. You open a design, hit <strong>Present and record</strong> or <strong>Record yourself</strong>, talk over your slides, and the clip lands in the same editor as everything else. No new tool, no new tab, no new login.</p>
+<p>That convenience is also the boundary. Canva's recording features are built around Canva designs — recording <em>a Canva presentation</em>, adding a camera bubble to <em>a Canva video</em>. The moment the thing you need to show is a dashboard, a bug in your own app, a spreadsheet, or a browser tab that has nothing to do with Canva, you are working against the tool instead of with it. And Canva publishes real caps: as of August 2026 the Screen Recorder is a desktop-app feature, recordings top out at <strong>25 minutes and 1&nbsp;GB</strong>, output is capped at 1080p, and it <strong>cannot capture system audio</strong> — the sound coming out of your computer. If you are recording a video call, a product with sound design, or anything where the audio is part of the demo, that last one is not a detail.</p>
+<p>This is a comparison of Canva Record against <a href="https://www.snaprecorder.org/">SnapRec</a>, a free Chrome extension built for the other case: recording anything on your screen, at up to 4K, with no time limit and no watermark.</p>
+
+<h2 id="comparison">Canva Record vs SnapRec</h2>
+<table>
+<thead><tr><th>Feature</th><th>Canva Record</th><th>SnapRec</th></tr></thead>
+<tbody>
+<tr><td>Recording scope</td><td>Built around Canva designs; screen capture is a desktop-app feature</td><td>Any tab, any window, your whole screen</td></tr>
+<tr><td>Recording length</td><td>25 minutes per recording</td><td>Unlimited</td></tr>
+<tr><td>Resolution</td><td>Up to 1080p</td><td>Up to 4K (3840×2160)</td></tr>
+<tr><td>System audio (computer sound)</td><td>No</td><td>Yes, with mic mixing</td></tr>
+<tr><td>Full-page screenshots</td><td>No</td><td>Yes, with scroll capture</td></tr>
+<tr><td>Annotation (arrows, text, blur)</td><td>No — design elements, not markup on captures</td><td>Yes, full annotation editor</td></tr>
+<tr><td>Share link with comments</td><td>Share a design or export a file</td><td>Instant link with comments and reactions</td></tr>
+<tr><td>Video editor</td><td>Yes — Canva's editor, strongest for design</td><td>Yes — trim, multi-clip timeline, auto-zoom on clicks</td></tr>
+<tr><td>Webcam bubble: move and resize</td><td>Layout presets</td><td>Drag to move, scroll to resize, position remembered</td></tr>
+<tr><td>Google Drive upload</td><td>Export, then upload yourself</td><td>One click from the extension</td></tr>
+<tr><td>Account required</td><td>Yes</td><td>No — optional</td></tr>
+<tr><td>Price</td><td>Free tier; Canva Pro for the full editor</td><td>Free, no watermark, no tiers</td></tr>
+</tbody>
+</table>
+
+<h2 id="scope">The Difference That Actually Decides It</h2>
+<p>Every other row is downstream of the first one: <strong>what are you allowed to point the camera at?</strong></p>
+<p>Canva's recording is designed for the case where the content <em>is</em> the Canva file. That is genuinely the better tool when you are narrating a deck you just designed — your slides are already there, the branding is already applied, and the recording drops straight into a design you can keep editing.</p>
+<p>SnapRec starts from the opposite assumption: the thing worth recording is usually something you did not make in a design tool. A checkout flow that breaks on step three. A query returning the wrong rows. A code review walkthrough. For those, you want to pick a tab, record it at native resolution with the tab's audio, and hand someone a link.</p>
+<p>The 25-minute cap matters less often than people expect — most good async videos are under five minutes anyway — but it bites hard in the cases where it bites: a full training session, a long QA pass, a recorded workshop. And the lack of system audio has no workaround at all. You cannot narrate around a sound you were unable to capture.</p>
+
+<h2 id="webcam">The Webcam Bubble: A Small Thing That Ruins Recordings</h2>
+<p>Here is a failure mode we hear about more than any other feature request, and it is worth its own section because it is the difference between a usable take and a re-record.</p>
+<p>You start presenting. Your camera bubble sits in the bottom-right corner. Twenty minutes in you realise it has been parked on top of the one chart that mattered for the whole recording — and you have to do the entire thing again.</p>
+<p>In Canva you choose from layout presets: the camera goes where the layout puts it. That is clean and predictable, and if a preset happens to fit your slides, it is all you need.</p>
+<p>SnapRec's overlay is a live object on the page instead. <strong>Drag it anywhere</strong> — pointer, trackpad, pen or touch — and it stays where you put it, in viewport percentages, so a corner is still a corner the next time you record on a different window size. <strong>Scroll over it to resize it</strong>, from a small 120px marker up to 360px when you want your face to carry the moment, and it remembers that too. It is coral while you are live and cyan while you are only framing, so you always know which state you are in. And because nobody discovers a gesture they were never told about, the first time the bubble appears it says so: <em>Drag to move · Scroll to resize</em>, once, then it gets out of the way.</p>
+<p>That is a five-second fix mid-recording instead of a re-record. If presenting with your camera on is most of what you do, we wrote up the whole workflow in <a href="https://www.snaprecorder.org/webcam-overlay-presentation/">recording a presentation with a webcam overlay</a>.</p>
+
+<h2 id="who-should-use-what">Who Should Use What</h2>
+<p><strong>Stay with Canva Record if:</strong></p>
+<ul>
+<li>The thing you are recording is a Canva design — a deck, a social video, a branded explainer</li>
+<li>You want the recording to land in an editor where you can restyle it with your brand kit</li>
+<li>Your recordings are short, and the audio is only your voice</li>
+<li>You are already paying for Canva Pro and want one tool, not two</li>
+</ul>
+<p><strong>Use SnapRec if:</strong></p>
+<ul>
+<li>You need to record anything outside Canva: an app, a dashboard, a bug, a call</li>
+<li>You need computer audio, not just your microphone</li>
+<li>You record longer than 25 minutes, or need 4K rather than 1080p</li>
+<li>You also need annotated screenshots — bug reports, design feedback, support replies</li>
+<li>You want a link with comments on it, not a file to upload somewhere first</li>
+<li>You want the camera bubble where <em>you</em> put it, at the size you chose</li>
+</ul>
+<p>They are not really competitors. Plenty of people design in Canva and record in SnapRec, because the two tools are answering different questions. Canva asks "how should this look?" SnapRec asks "can you see what I am seeing?"</p>
+
+<h2 id="cta">Try It on Your Next Recording</h2>
+<p><a href="https://chromewebstore.google.com/detail/snaprec-screen-recorder-s/lgafjgnifbjeafallnkkfpljgbilfajg" target="_blank" rel="noopener noreferrer">Add SnapRec to Chrome</a> — it installs in about ten seconds, needs no account, and records unlimited length with no watermark. Works in Chrome, Edge and Brave.</p>
+<p>If you landed here because you are auditing recording tools generally, the comparisons worth reading next are the Loom ones — Loom is the tool most teams are actually paying for. Start with the <a href="https://www.snaprecorder.org/loom-alternative/">free Loom alternative breakdown</a>, then the <a href="/blog/loom-vs-snaprec-honest-comparison/">honest Loom vs SnapRec comparison</a> (including where Loom is genuinely better), the <a href="/blog/best-free-loom-alternatives-2026/">best free Loom alternatives in 2026</a>, and the <a href="/blog/switch-from-loom-to-snaprec/">practical guide to switching off Loom</a>. Or start from <a href="https://www.snaprecorder.org/">the SnapRec homepage</a> and record something in the next minute.</p>
+        `,
+        faqs: [
+            { q: 'Is there a free Canva Record alternative?', a: "Yes. SnapRec is a free Chrome extension that records your screen, a window or a single tab with no time limit, no watermark and no account required. Unlike Canva Record it captures computer audio, records up to 4K, and also takes annotated full-page screenshots." },
+            { q: 'Can Canva Record capture my whole screen?', a: "Canva's Screen Recorder is a desktop-app feature and can capture your screen, but Canva's recording tools are built around Canva designs and it is not supported in the browser or on mobile. If you mainly need to record apps and tabs outside Canva, a browser-based recorder is a better fit." },
+            { q: 'Does Canva Record have a time limit?', a: "Yes. Canva caps each recording at 25 minutes and 1 GB, with output up to 1080p. SnapRec has no time limit and records at up to 4K (3840x2160)." },
+            { q: 'Can Canva record computer audio?', a: "No. Canva's screen recorder cannot capture system audio — the sound coming from your computer — so anything where the audio is part of the demo needs a different tool. SnapRec records tab and system audio mixed with your microphone." },
+            { q: 'Can I move and resize the webcam bubble while recording?', a: "In SnapRec, yes — drag the webcam overlay anywhere on the page and scroll over it to resize it between 120px and 360px, and it remembers where you left it. Canva gives you layout presets instead, so the camera sits where the chosen layout puts it." },
+            { q: 'Do I need an account to use SnapRec?', a: "No. You can record, screenshot and share as a guest. Signing in is optional and only exists so your recordings follow you across devices — anything you made as a guest can be claimed later." },
         ],
     },
 ];
