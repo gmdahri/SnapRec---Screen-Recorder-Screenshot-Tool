@@ -23,17 +23,17 @@ export const LANDING_LINKS: NavLinkSpec[] = [
   { label: 'How it works', to: '#how' },
   { label: 'Compare', to: '#compare' },
   { label: 'FAQ', to: '#faq' },
-  { label: 'Blog', to: '/blog' },
+  { label: 'Blog', to: '/blog/' },
 ];
 
 /** Everywhere else. The prototype shows the landing set, but dropping these
  * from the rest of the site would orphan pages that carry real search
  * traffic — so other pages keep their destinations and gain the styling. */
 export const SITE_LINKS: NavLinkSpec[] = [
-  { label: 'How it works', to: '/how-it-works' },
-  { label: 'Blog', to: '/blog' },
-  { label: 'About', to: '/about' },
-  { label: 'Contact', to: '/contact' },
+  { label: 'How it works', to: '/how-it-works/' },
+  { label: 'Blog', to: '/blog/' },
+  { label: 'About', to: '/about/' },
+  { label: 'Contact', to: '/contact/' },
 ];
 
 export interface LandingNavbarProps {

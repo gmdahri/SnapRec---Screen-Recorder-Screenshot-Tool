@@ -287,13 +287,13 @@ const HowItWorks: React.FC = () => {
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                         <p className="text-sm text-[var(--sr-text-faint-on-light)] mb-4">Coming from another tool?</p>
                         <div className="flex flex-wrap justify-center gap-4 text-sm">
-                            <NavLink to="/loom-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                            <NavLink to="/loom-alternative/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
                                 Free Loom Alternative →
                             </NavLink>
-                            <NavLink to="/screencastify-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                            <NavLink to="/screencastify-alternative/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
                                 Free Screencastify Alternative →
                             </NavLink>
-                            <NavLink to="/screen-recorder-for-teachers" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                            <NavLink to="/screen-recorder-for-teachers/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
                                 Screen Recorder for Teachers →
                             </NavLink>
                         </div>

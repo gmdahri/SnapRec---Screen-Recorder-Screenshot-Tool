@@ -12,12 +12,12 @@ describe('LandingNavbar', () => {
     // The landing page passes LANDING_LINKS, which held only the three in-page
     // anchors — so `/` was the one marketing surface with no route to the blog.
     nav(LANDING_LINKS);
-    expect(screen.getByRole('link', { name: 'Blog' })).toHaveAttribute('href', '/blog');
+    expect(screen.getByRole('link', { name: 'Blog' })).toHaveAttribute('href', '/blog/');
   });
 
   it('keeps the blog on every other marketing page too', () => {
     nav(SITE_LINKS);
-    expect(screen.getByRole('link', { name: 'Blog' })).toHaveAttribute('href', '/blog');
+    expect(screen.getByRole('link', { name: 'Blog' })).toHaveAttribute('href', '/blog/');
   });
 
   it('keeps the landing page anchors as anchors, and Blog as a route', () => {
@@ -26,7 +26,7 @@ describe('LandingNavbar', () => {
     // stop working.
     expect(LANDING_LINKS.filter(l => l.to.startsWith('#')).map(l => l.label))
       .toEqual(['How it works', 'Compare', 'FAQ']);
-    expect(LANDING_LINKS.at(-1)).toEqual({ label: 'Blog', to: '/blog' });
+    expect(LANDING_LINKS.at(-1)).toEqual({ label: 'Blog', to: '/blog/' });
   });
 
   it('always offers the two things a visitor without an account can do', () => {

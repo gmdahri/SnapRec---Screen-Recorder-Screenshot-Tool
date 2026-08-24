@@ -263,11 +263,11 @@ const Landing: React.FC = () => {
                             far more weight than a sitewide footer link. */}
                         <p className="text-[13.5px] text-[var(--sr-text-muted-on-light)] m-0">
                             Want the detail?{' '}
-                            <Link to="/loom-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                            <Link to="/loom-alternative/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
                                 SnapRec vs Loom, feature by feature
                             </Link>
                             {' '}·{' '}
-                            <Link to="/screencastify-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
+                            <Link to="/screencastify-alternative/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
                                 SnapRec vs Screencastify
                             </Link>
                         </p>
@@ -303,7 +303,7 @@ const Landing: React.FC = () => {
                         >
                             Add to Chrome — free
                         </a>
-                        <Link to="/how-it-works" className="text-[13px] text-[var(--sr-cyan-on-light)]">
+                        <Link to="/how-it-works/" className="text-[13px] text-[var(--sr-cyan-on-light)]">
                             Read the full walkthrough
                         </Link>
                     </div>

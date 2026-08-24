@@ -91,7 +91,7 @@ const SECTIONS: LegalSection[] = [
                 <p>
                 Your privacy is important to us. Our use of your information is governed by
                 our{' '}
-                <a href="/privacy">Privacy Policy</a>,
+                <a href="/privacy/">Privacy Policy</a>,
                 which is incorporated into these Terms by reference. In summary, SnapRec
                 does not collect personal data, does not track browsing activity, and
                 processes all captures locally on your device.

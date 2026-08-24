@@ -33,7 +33,7 @@ export const CookieConsent: React.FC = () => {
                 <div className="flex flex-row gap-3 items-center">
                     <p className="flex-1 min-w-0 text-sm text-[var(--sr-text-primary-on-light)] leading-snug">
                         We use cookies for ads &amp; analytics.{' '}
-                        <NavLink to="/privacy" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">
+                        <NavLink to="/privacy/" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">
                             Privacy Policy
                         </NavLink>
                     </p>

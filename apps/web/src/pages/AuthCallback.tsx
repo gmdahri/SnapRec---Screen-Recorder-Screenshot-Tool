@@ -88,7 +88,7 @@ const AuthCallback: React.FC = () => {
                     onRetry={() => navigate('/login', { replace: true })}
                     onGoogle={signInWithGoogle}
                     onEmailInstead={() => navigate('/login', { replace: true })}
-                    onApprovalLink={() => navigate('/contact')}
+                    onApprovalLink={() => navigate('/contact/')}
                 />
             </div>
         );

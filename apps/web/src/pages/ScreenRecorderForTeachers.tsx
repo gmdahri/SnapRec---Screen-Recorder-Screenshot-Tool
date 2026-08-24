@@ -243,9 +243,9 @@ const ScreenRecorderForTeachers: React.FC = () => (
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <p className="text-sm text-[var(--sr-text-faint-on-light)] mb-4">Also comparing tools for your classroom?</p>
                     <div className="flex flex-wrap justify-center gap-4 text-sm">
-                        <NavLink to="/screencastify-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
-                        <NavLink to="/loom-alternative" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Loom Alternative →</NavLink>
-                        <NavLink to="/webcam-overlay-presentation" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
+                        <NavLink to="/screencastify-alternative/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Screencastify Alternative →</NavLink>
+                        <NavLink to="/loom-alternative/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Free Loom Alternative →</NavLink>
+                        <NavLink to="/webcam-overlay-presentation/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">Record Presentation with Webcam →</NavLink>
                     </div>
                 </div>
             </section>

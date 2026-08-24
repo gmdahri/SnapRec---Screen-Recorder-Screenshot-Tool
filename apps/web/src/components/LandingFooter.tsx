@@ -16,27 +16,27 @@ const COLUMNS: Column[] = [
   {
     title: 'Product',
     links: [
-      { label: 'How it works', to: '/how-it-works' },
+      { label: 'How it works', to: '/how-it-works/' },
       { label: 'Chrome extension', to: CHROME_STORE, external: true },
-      { label: 'Changelog', to: '/changelog' },
-      { label: 'Blog', to: '/blog' },
+      { label: 'Changelog', to: '/changelog/' },
+      { label: 'Blog', to: '/blog/' },
     ],
   },
   {
     title: 'Compare',
     links: [
-      { label: 'SnapRec vs Loom', to: '/loom-alternative' },
-      { label: 'SnapRec vs Screencastify', to: '/screencastify-alternative' },
-      { label: 'For teachers', to: '/screen-recorder-for-teachers' },
+      { label: 'SnapRec vs Loom', to: '/loom-alternative/' },
+      { label: 'SnapRec vs Screencastify', to: '/screencastify-alternative/' },
+      { label: 'For teachers', to: '/screen-recorder-for-teachers/' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About', to: '/about' },
-      { label: 'Contact', to: '/contact' },
-      { label: 'Privacy', to: '/privacy' },
-      { label: 'Terms', to: '/terms' },
+      { label: 'About', to: '/about/' },
+      { label: 'Contact', to: '/contact/' },
+      { label: 'Privacy', to: '/privacy/' },
+      { label: 'Terms', to: '/terms/' },
     ],
   },
 ];

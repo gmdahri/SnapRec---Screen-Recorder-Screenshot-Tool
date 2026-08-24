@@ -1354,8 +1354,8 @@ const ShareView: React.FC = () => {
                         </div>
                         )}
                         <div className="mt-8 flex flex-wrap justify-center gap-6 text-[var(--sr-text-faint-on-light)] text-sm">
-                            <a className="hover:text-[var(--sr-cyan-on-light)] transition-colors" href="/privacy">Privacy Policy</a>
-                            <a className="hover:text-[var(--sr-cyan-on-light)] transition-colors" href="/how-it-works">How it Works</a>
+                            <a className="hover:text-[var(--sr-cyan-on-light)] transition-colors" href="/privacy/">Privacy Policy</a>
+                            <a className="hover:text-[var(--sr-cyan-on-light)] transition-colors" href="/how-it-works/">How it Works</a>
                             <p>© {new Date().getFullYear()} SnapRec</p>
                         </div>
                     </section>

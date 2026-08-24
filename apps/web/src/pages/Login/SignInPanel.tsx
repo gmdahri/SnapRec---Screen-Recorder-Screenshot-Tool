@@ -107,8 +107,8 @@ export function SignInPanel({ onGoogle, heading, subheading }: SignInPanelProps)
         margin: 0, fontSize: 11.5, lineHeight: 1.6,
         color: 'var(--sr-text-faint-on-light)',
       }}>
-        By continuing you agree to the <Link to="/terms">Terms</Link> and{' '}
-        <Link to="/privacy">Privacy</Link> policy.
+        By continuing you agree to the <Link to="/terms/">Terms</Link> and{' '}
+        <Link to="/privacy/">Privacy</Link> policy.
       </p>
     </div>
   );

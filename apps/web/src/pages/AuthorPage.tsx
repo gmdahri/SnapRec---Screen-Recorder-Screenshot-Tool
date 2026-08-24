@@ -82,7 +82,7 @@ const AuthorPage: React.FC = () => (
                     <nav className="text-sm text-[var(--sr-text-faint-on-light)] mb-10 flex items-center gap-2">
                         <NavLink to="/" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">Home</NavLink>
                         <span>/</span>
-                        <NavLink to="/about" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">About</NavLink>
+                        <NavLink to="/about/" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">About</NavLink>
                         <span>/</span>
                         <span className="text-[var(--sr-text-muted-on-light)]">Ghulam Muhammad</span>
                     </nav>
@@ -198,7 +198,7 @@ const AuthorPage: React.FC = () => (
                         {authorPosts.map((post) => (
                             <NavLink
                                 key={post.slug}
-                                to={`/blog/${post.slug}`}
+                                to={`/blog/${post.slug}/`}
                                 className="group flex flex-col p-5 bg-[var(--sr-surface-panel-light)] rounded-[2px] border border-[var(--sr-border-light-soft)] hover:border-[var(--sr-cyan)]/30 hover:shadow-md transition-all"
                             >
                                 <span className="text-xs font-bold text-[var(--sr-cyan-on-light)] uppercase tracking-wide mb-2">{post.category}</span>
@@ -209,7 +209,7 @@ const AuthorPage: React.FC = () => (
                         ))}
                     </div>
                     <div className="mt-8 text-center">
-                        <NavLink to="/blog" className="inline-flex items-center gap-2 text-[var(--sr-cyan-on-light)] font-bold hover:underline">
+                        <NavLink to="/blog/" className="inline-flex items-center gap-2 text-[var(--sr-cyan-on-light)] font-bold hover:underline">
                             View all articles
                             <span className="material-symbols-outlined text-base">arrow_forward</span>
                         </NavLink>

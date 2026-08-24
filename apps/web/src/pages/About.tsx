@@ -139,7 +139,7 @@ const About = () => {
                                 Local by default — recordings stay on your device unless you choose to upload to your
                                 private cloud library. We use only the minimum browser permissions needed to provide
                                 capture functionality, and every permission is explained in our{' '}
-                                <a href="/privacy" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">Privacy Policy</a>.
+                                <a href="/privacy/" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">Privacy Policy</a>.
                             </p>
                         </section>
 
@@ -167,7 +167,7 @@ const About = () => {
                                 SnapRec is built and maintained by Ghulam Muhammad — a full-stack developer who built the extension because he needed a screen recorder that didn't get in the way. He writes guides on screen recording, browser APIs, and productivity tools.
                             </p>
                             <NavLink
-                                to="/about/ghulam-muhammad"
+                                to="/about/ghulam-muhammad/"
                                 className="inline-flex items-center gap-2 text-[var(--sr-cyan-on-light)] font-semibold hover:underline"
                             >
                                 <span className="material-symbols-outlined text-base">person</span>

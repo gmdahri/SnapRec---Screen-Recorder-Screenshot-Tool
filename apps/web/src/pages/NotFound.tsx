@@ -13,10 +13,10 @@ import { LandingNavbar, LandingFooter, SEO } from '../components';
  * than behind a back button. */
 
 const DESTINATIONS: { label: string; to: string; blurb: string }[] = [
-    { label: 'How it works', to: '/how-it-works', blurb: 'Recording, screenshots and sharing, start to finish.' },
-    { label: 'Blog', to: '/blog', blurb: 'Tutorials, comparisons and screen-recording tips.' },
-    { label: 'Loom alternative', to: '/loom-alternative', blurb: 'No time limit, no watermark, no video cap.' },
-    { label: 'Contact', to: '/contact', blurb: 'Tell us what was meant to be here.' },
+    { label: 'How it works', to: '/how-it-works/', blurb: 'Recording, screenshots and sharing, start to finish.' },
+    { label: 'Blog', to: '/blog/', blurb: 'Tutorials, comparisons and screen-recording tips.' },
+    { label: 'Loom alternative', to: '/loom-alternative/', blurb: 'No time limit, no watermark, no video cap.' },
+    { label: 'Contact', to: '/contact/', blurb: 'Tell us what was meant to be here.' },
 ];
 
 export function NotFound() {
@@ -54,7 +54,7 @@ export function NotFound() {
                             Back to the homepage
                         </NavLink>
                         <NavLink
-                            to="/blog"
+                            to="/blog/"
                             className="inline-flex items-center h-[var(--sr-h-sm)] px-4 rounded-[var(--sr-radius-control)] border border-[var(--sr-border-light)] text-[13px] font-semibold text-[var(--sr-text-primary-on-light)] no-underline hover:bg-[var(--sr-surface-paper)] transition-colors"
                         >
                             Read the blog

@@ -104,7 +104,7 @@ const BlogPost: React.FC = () => {
     }, [slug]);
 
     if (!post) {
-        return <Navigate to="/blog" replace />;
+        return <Navigate to="/blog/" replace />;
     }
 
     const relatedPosts = getRelatedPosts(post.slug, 3);
@@ -136,7 +136,7 @@ const BlogPost: React.FC = () => {
                             <li>
                                 <div className="flex items-center">
                                     <span className="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
-                                    <NavLink to="/blog" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">Blog</NavLink>
+                                    <NavLink to="/blog/" className="hover:text-[var(--sr-cyan-on-light)] transition-colors">Blog</NavLink>
                                 </div>
                             </li>
                             <li aria-current="page">
@@ -248,7 +248,7 @@ const BlogPost: React.FC = () => {
                             {relatedPosts.map((related) => (
                                 <NavLink
                                     key={related.slug}
-                                    to={`/blog/${related.slug}`}
+                                    to={`/blog/${related.slug}/`}
                                     className="group block"
                                 >
                                     <div className="bg-[var(--sr-surface-paper)] rounded-[2px] border border-[var(--sr-border-light-soft)] p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">

@@ -97,7 +97,7 @@ const Blog: React.FC = () => {
                     {/* Featured Post */}
                     {featured && (
                         <NavLink
-                            to={`/blog/${featured.slug}`}
+                            to={`/blog/${featured.slug}/`}
                             className="block group mb-12"
                         >
                             <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-[2px] border border-[var(--sr-border-light-soft)] p-8 md:p-12 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden">
@@ -136,7 +136,7 @@ const Blog: React.FC = () => {
                             {rest.map((post) => (
                                 <NavLink
                                     key={post.slug}
-                                    to={`/blog/${post.slug}`}
+                                    to={`/blog/${post.slug}/`}
                                     className="group block"
                                 >
                                     <div className="bg-[var(--sr-surface-paper)] rounded-[2px] border border-[var(--sr-border-light-soft)] p-6 md:p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">

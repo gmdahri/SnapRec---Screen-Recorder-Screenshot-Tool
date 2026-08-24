@@ -47,8 +47,8 @@ describe('sign in (A1)', () => {
 
   it('links the terms rather than burying them', () => {
     panel();
-    expect(screen.getByRole('link', { name: /Terms/ })).toHaveAttribute('href', '/terms');
-    expect(screen.getByRole('link', { name: /Privacy/ })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: /Terms/ })).toHaveAttribute('href', '/terms/');
+    expect(screen.getByRole('link', { name: /Privacy/ })).toHaveAttribute('href', '/privacy/');
   });
 });
 
