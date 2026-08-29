@@ -208,6 +208,50 @@ describe('_redirects covers every public route', () => {
     expect(missing).toEqual([]);
   });
 
+  /* Every route in App.tsx that is NOT prerendered needs a rule here, or it has
+   * no file on disk to be served from and falls through to the 404.
+   *
+   * The rule has to end in `*`. Cloudflare Pages does not honour an exact-path
+   * 200 proxy to /index.html — the rules were all present and correctly ordered
+   * when /editor, /login, /home and the rest were answering 308 -> / in
+   * production, so "a rule exists" is not the property worth asserting. */
+  it('gives every non-prerendered app route a wildcard 200 proxy', () => {
+    // Deliberately broader than the publicRoutes regex above: that one stops at
+    // the first `:`, so it never saw /editor/:id? or /v/:id? — the very routes
+    // that were broken.
+    const prerendered = new Set<string>(
+      (getAllRoutes() as { route: string }[]).map(r => r.route));
+
+    /* The literal prefix of each wildcard rule, so coverage is decided by
+     * whether a rule's prefix actually matches the route. Matching on the
+     * leading path segment instead let `/video-editor*` answer for `/v`. */
+    const prefixes = [...redirects.matchAll(/^(\/\S*)\*\s+\/index\.html\s+200/gm)]
+      .map(m => m[1]);
+
+    const uncovered = [...app.matchAll(/path="(\/[^"]*)"/g)]
+      .map(m => m[1])
+      .filter(p => {
+        if (p === '/') return false;
+        const base = p.replace(/\/:.*$/, '');       // /editor/:id? -> /editor
+        if (prerendered.has(base)) return false;    // served from disk instead
+        return !prefixes.some(pre => base.startsWith(pre));
+      });
+
+    expect(uncovered).toEqual([]);
+  });
+
+  /* Pages supports redirects and 200 proxies in _redirects, but not 404
+   * rewrites: `/*  /index.html  404` was silently downgraded to 200, so every
+   * bad URL stayed a soft 404. Its absence is also what makes Pages serve the
+   * real 404.html instead of assuming an SPA and redirecting to `/`. */
+  it('has no catch-all, so unmatched routes reach the real 404.html', () => {
+    expect(redirects).not.toMatch(/^\/\*\s/m);
+  });
+
+  it('builds a top-level 404.html to take Pages out of SPA mode', () => {
+    expect(read('vite.config.ts')).toContain("'404.html'");
+  });
+
   it('301s blog posts by slug, above the SPA rewrite that would swallow them', () => {
     expect(redirects).toMatch(/^\/blog\/:slug\s+\/blog\/:slug\/\s+301/m);
     expect(redirects.indexOf('/blog/:slug  /blog/:slug/  301'))
@@ -221,5 +265,77 @@ describe('_redirects covers every public route', () => {
       if (target.startsWith('/blog/')) continue;   // the :slug rule itself
       expect(target).toMatch(/\/$/);
     }
+  });
+});
+
+/* SEO: internal links added inside blog copy and marketing pages.
+ *
+ * The 11 posts GSC reported as "crawled — currently not indexed" had, between
+ * them, zero in-content links to anywhere else on the site: the only internal
+ * links a post carried were the navbar, the footer and an automatic related-
+ * posts strip that pointed every post in a category at the same three targets.
+ * Contextual links were added to fix that, and they are hand-written strings
+ * inside a 3,700-line data file, so a typo'd slug is both easy to make and
+ * invisible — it renders as a normal link and 404s only when someone clicks it.
+ *
+ * The trailing-slash suite above checks the *form* of an internal link. This
+ * checks the destination exists. */
+describe('in-content internal links point at real destinations', () => {
+  const posts = getBlogPosts() as { slug: string }[];
+  const slugs = new Set(posts.map(p => p.slug));
+  const sources = globSync('src/**/*.{ts,tsx}')
+    .filter(f => !f.includes('__tests__'))
+    .map(f => ({ file: f, text: read(f) }));
+
+  it('found sources to check', () => {
+    expect(sources.length).toBeGreaterThan(20);
+  });
+
+  it('links only to blog slugs that exist', () => {
+    const broken = sources.flatMap(({ file, text }) =>
+      [...text.matchAll(/["'`]\/blog\/([a-z0-9-]+)\/["'`]/g)]
+        .map(m => m[1])
+        .filter(slug => !slugs.has(slug))
+        .map(slug => `${file} -> /blog/${slug}/`));
+
+    expect([...new Set(broken)]).toEqual([]);
+  });
+
+  it('links only to marketing routes that exist', () => {
+    const known = new Set<string>(
+      (getAllRoutes() as { route: string }[]).map(r => r.route));
+
+    const broken = sources.flatMap(({ file, text }) =>
+      [...text.matchAll(/href="(\/[a-z0-9-]+)\/"/g)]
+        .map(m => m[1])
+        .filter(route => !known.has(route))
+        .map(route => `${file} -> ${route}/`));
+
+    expect([...new Set(broken)]).toEqual([]);
+  });
+
+  /* Each of the 11 needs somewhere to send its own authority, and a product
+   * link is what turns a reader who finished the post into a user. */
+  it('gives every affected post at least two blog links and one product link', () => {
+    const affected = [
+      'how-to-annotate-screenshots-chrome', 'how-to-create-video-bug-report',
+      'screenshot-vs-screen-recording-when-to-use', 'how-to-record-presentation-with-webcam',
+      'how-to-record-screen-windows-10-free', 'how-to-take-full-page-screenshot-chrome',
+      'how-to-screenshot-on-chromebook', 'how-to-record-screen-chrome-free',
+      'screen-record-google-meet-free', 'screen-recording-tips-remote-work',
+      'record-screen-with-audio-webcam-chrome',
+    ];
+    const data = read('src/data/blogData.ts');
+
+    const thin = affected.filter(slug => {
+      const start = data.indexOf(`slug: '${slug}'`);
+      const end = data.indexOf("        slug: '", start + 10);
+      const block = data.slice(start, end === -1 ? undefined : end);
+      const links = [...block.matchAll(/href="(\/[^"]+)"/g)].map(m => m[1]);
+      return links.filter(l => l.startsWith('/blog/')).length < 2
+        || links.filter(l => !l.startsWith('/blog/')).length < 1;
+    });
+
+    expect(thin).toEqual([]);
   });
 });

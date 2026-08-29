@@ -27,23 +27,38 @@
 /webcam-overlay-presentation  /webcam-overlay-presentation/  301
 /screen-recorder-for-teachers  /screen-recorder-for-teachers/  301
 
+# The uninstall survey needs its 301 here, in the block that runs BEFORE the
+# rewrites, for the same reason every route above does. Without it Cloudflare's
+# own trailing-slash normalisation claimed the bare path first and 308'd it to
+# `/` — so chrome.runtime.setUninstallURL, which points at the bare path, sent
+# every uninstalling user to the landing page and the survey was never shown.
+# Extensions already in the wild have the bare URL stored in the browser and
+# will keep requesting it forever, so this line is what fixes them.
+/uninstall-survey  /uninstall-survey/  301
+
 # Redirect pages.dev traffic to production
 https://snaprecorder.pages.dev/*  https://www.snaprecorder.org/:splat  301
 
-# ── SEO C2: known routes rewrite with 200, everything else 404s ─────────────
+# ── Known routes get the SPA shell; everything else gets a real 404 ────────
 #
-# The old config was a single `/*  /index.html  200`, which meant every typo,
-# stale link and crawler probe got HTTP 200 with an empty body — an unbounded
-# soft-404 surface. The fix is a real 404 status, but a bare `/*  404` would
-# also 404 every client-only route (the signed-in app, /editor, and every /v/
-# share link), because those have no prerendered file on disk. Slack, X and
-# LinkedIn refuse to unfurl a 404, so that would have broken share previews.
+# The original config was a single `/*  /index.html  200`, which gave every
+# typo, stale link and crawler probe HTTP 200 with an empty body — an unbounded
+# soft-404 surface. Enumerating the real routes here is what allows the rest to
+# 404 without taking the client-only routes (the signed-in app, the editors and
+# every /v/ share link) down with them; none of those have a file on disk, and
+# Slack, X and LinkedIn refuse to unfurl a 404.
 #
-# So: enumerate the routes that legitimately need the SPA shell, then 404 the
-# rest. Every route here matches one in src/App.tsx.
+# The 404 itself comes from dist/404.html, not from a rule in this file — see
+# the note at the bottom. Every route here matches one in src/App.tsx, and
+# src/__tests__/routes.test.ts fails if one is added there without a rule here.
 
-# Public marketing routes. Prerendered files normally serve these directly;
-# these lines are the safety net for when prerender has not run.
+# Public marketing routes, served from their prerendered files on disk.
+#
+# These lines are NOT a working fallback for a build where prerender did not
+# run: they are exact-path 200 proxies, which Pages does not honour (the app
+# block below explains). They are kept because they document the route list and
+# cost nothing, but if prerender stops running these pages 404 — the build is
+# the thing that guarantees they exist, not this file.
 /  /index.html  200
 /how-it-works/  /index.html  200
 /changelog/  /index.html  200
@@ -61,29 +76,53 @@ https://snaprecorder.pages.dev/*  https://www.snaprecorder.org/:splat  301
 
 # Auth, the signed-in app, the editors and share links. Never prerendered, all
 # noindex or robots-disallowed, so a 200 here costs nothing in search.
-/login  /index.html  200
+#
+# EVERY RULE IN THIS BLOCK ENDS IN `*`, AND THAT IS LOAD-BEARING.
+#
+# Cloudflare Pages does not honour an exact-path 200 proxy to /index.html. The
+# previous version of this block spelled these out as `/editor  /index.html
+# 200`, and every one of them answered 308 -> / in production while the file
+# looked completely correct: /editor, /login, /home, /library, /projects,
+# /shared, /analytics, /settings, /claim, /dashboard and /video-editor all
+# landed on the marketing page instead of the app. The wildcard forms
+# (/editor/*, /auth/*, /v/*) sitting beside them worked the whole time, which
+# is what makes the pattern visible.
+#
+# A trailing `*` also covers the bare path, so one rule per route replaces the
+# pair, and /editor, /editor/ and /editor/:id all resolve.
+/login*  /index.html  200
 /auth/*  /index.html  200
-/claim  /index.html  200
-/dashboard  /index.html  200
-/home  /index.html  200
-/library  /index.html  200
-/projects  /index.html  200
-/shared  /index.html  200
-/analytics  /index.html  200
-/settings  /index.html  200
-/editor  /index.html  200
-/editor/*  /index.html  200
-/video-editor  /index.html  200
-/video-editor/*  /index.html  200
-/video-preview/*  /index.html  200
-/v/*  /index.html  200
+/claim*  /index.html  200
+/dashboard*  /index.html  200
+/home*  /index.html  200
+/library*  /index.html  200
+/projects*  /index.html  200
+/shared*  /index.html  200
+/analytics*  /index.html  200
+/settings*  /index.html  200
+/editor*  /index.html  200
+# Both /video-* rules must precede /v*, which is a prefix of them and would
+# otherwise claim them. Same destination either way today, but the ordering is
+# what keeps that true if these ever diverge. /v* rather than /v/* so the bare
+# /v resolves too — the route is /v/:id?, so the id is optional.
+/video-editor*  /index.html  200
+/video-preview*  /index.html  200
+/v*  /index.html  200
 
 # The uninstall survey. Unlinked and unindexed, but it must still resolve — it is
 # the page the browser opens when SnapRec is removed, so a 404 here would greet
 # every uninstalling user at the exact moment we are asking for feedback.
-/uninstall-survey  /index.html  200
+# The bare path 301s to the slashed form up in the block above; this serves it.
+/uninstall-survey*  /index.html  200
 
-# Anything else is a bad URL. src/pages/NotFound.tsx renders in the body; this
-# is the status code Googlebot needs to see so it drops the URL instead of
-# indexing a blank page.
-/*  /index.html  404
+# No catch-all. Anything reaching this point matches no asset and no rule, and
+# Pages answers it with the top-level 404.html that vite.config.ts emits.
+#
+# There used to be a `/*  /index.html  404` here, which never worked: Pages
+# supports redirects and 200 proxies in this file but not 404 rewrites, so the
+# status was quietly downgraded and every typo, stale link and crawler probe
+# still got HTTP 200 — the exact soft-404 surface that rule was written to
+# remove. Worse, its presence meant the project had no top-level 404.html, and
+# without one Pages assumes a single-page app and redirects every unmatched
+# route to `/`. That assumption is what sent the bare app routes above to the
+# homepage. Deleting the rule and shipping a real 404.html fixes both.

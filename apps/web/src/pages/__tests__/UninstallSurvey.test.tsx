@@ -152,11 +152,36 @@ describe('uninstall survey', () => {
 describe('uninstall survey is unlinked and unindexed', () => {
     const web = (p: string) => readFileSync(resolve(__dirname, '../../..', p), 'utf8');
 
-    it('resolves instead of hitting the 404 catch-all', () => {
+    /* The previous version of this test asserted only that a rewrite rule for
+     * the bare path existed, which it did — and the page was still unreachable
+     * for a week. Cloudflare's own trailing-slash normalisation claimed the
+     * bare path first and 308'd it to `/`, so every uninstalling user landed on
+     * the marketing homepage and the survey recorded nothing. What matters is
+     * not that a rule mentions the path but that the path the extension
+     * actually opens ends up at the survey, so that is what these assert. */
+    /* The wildcard form is required, not stylistic: Cloudflare Pages does not
+     * honour an exact-path 200 proxy to /index.html, so `/uninstall-survey/
+     * /index.html  200` was present and inert while the page was unreachable. */
+    it('resolves through a wildcard 200 proxy', () => {
         const redirects = web('public/_redirects');
-        const rule = redirects.indexOf('/uninstall-survey  /index.html  200');
-        expect(rule, 'needs a 200 rewrite').toBeGreaterThan(-1);
-        expect(rule, 'must precede the catch-all').toBeLessThan(redirects.indexOf('/*  /index.html  404'));
+        expect(redirects).toMatch(/^\/uninstall-survey\*\s+\/index\.html\s+200/m);
+    });
+
+    it('301s the bare path to the form rather than letting it normalise to /', () => {
+        const redirects = web('public/_redirects');
+        const redirect = redirects.indexOf('/uninstall-survey  /uninstall-survey/  301');
+        expect(redirect, 'bare path needs an explicit 301').toBeGreaterThan(-1);
+        expect(redirect, 'must precede the proxy, or the proxy claims it first')
+            .toBeLessThan(redirects.indexOf('/uninstall-survey*  /index.html  200'));
+    });
+
+    /* Extensions already installed have the bare URL stored in the browser and
+     * will request it forever, so the _redirects rule above is the only thing
+     * that can fix them. New installs skip the hop. */
+    it('the extension points at a URL the redirects resolve', () => {
+        const bg = readFileSync(
+            resolve(__dirname, '../../../../extension/background/background.js'), 'utf8');
+        expect(bg).toContain('${CONFIG.WEB_BASE_URL}/uninstall-survey/');
     });
 
     it('is disallowed in robots.txt', () => {

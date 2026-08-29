@@ -1,9 +1,46 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { copyFileSync, existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+/** Emit dist/404.html — a copy of the SPA shell.
+ *
+ * Two things depend on this file existing, and both were broken without it.
+ *
+ * Cloudflare Pages decides how to serve the whole project by whether a
+ * top-level 404.html is present: "If your project does not include a top-level
+ * 404.html file, Pages assumes that you are deploying a single-page
+ * application", and in that mode it REDIRECTS every unmatched route to `/`.
+ * That is why /editor, /login, /settings and the rest answered 308 -> / in
+ * production no matter what public/_redirects said.
+ *
+ * It is also the only supported way to return a real 404. Pages honours
+ * redirects and 200 proxies in _redirects but not 404 rewrites, so the
+ * `/*  /index.html  404` rule that used to live there was silently downgraded
+ * to 200 and every bad URL was a soft 404.
+ *
+ * Copied at closeBundle, which runs before prerender.mjs rewrites
+ * dist/index.html with the prerendered landing page — so this is the generic
+ * shell, not a copy of the homepage. That matters: a 404 that ships the
+ * homepage's markup asks Googlebot to treat the two as the same page. React
+ * Router renders NotFound into this one on load.
+ */
+function emit404Shell() {
+  return {
+    name: 'snaprec-404-shell',
+    // After the bundle is written, before prerender touches index.html.
+    closeBundle() {
+      const dist = resolve(__dirname, 'dist')
+      const index = resolve(dist, 'index.html')
+      if (!existsSync(index)) return
+      copyFileSync(index, resolve(dist, '404.html'))
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), emit404Shell()],
   build: {
     rollupOptions: {
       output: {
