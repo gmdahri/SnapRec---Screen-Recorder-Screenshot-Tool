@@ -737,18 +737,40 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ============================================================ rating prompt */
 
-/* A quiet band under the completion actions, separated by the same hairline
-   rule the rest of the popup uses to divide sections. Deliberately not a
-   notice: .sr-notice is for states that need an answer before continuing, and
-   this needs nothing. */
-.sr-rating {
-  margin: 4px 14px 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--sr-border-dark);
+/* Centred over the completion view, on the same scrim the popup already uses
+   for its other full-surface overlays. Was a hairline-separated band at the
+   foot of the view, which sat below the fold and went unread. */
+.sr-rating-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--sr-scrim-dark);
+}
+
+.sr-rating-modal {
+  width: 100%;
+  border: 1px solid var(--sr-border-dark);
+  border-radius: var(--sr-radius-control);
+  background: var(--sr-surface-panel-dark);
+  box-shadow: 0 16px 48px rgba(4, 7, 8, .6);
+  padding: 16px 15px 14px;
   display: flex;
   flex-direction: column;
   gap: 9px;
 }
+
+.sr-rating-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--sr-text-primary-on-dark);
+}
+.sr-rating-title:focus-visible { outline: none; }
 
 .sr-rating-body {
   margin: 0;
@@ -757,25 +779,34 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--sr-text-secondary-on-dark);
 }
 
-.sr-rating-actions { display: flex; align-items: center; gap: 8px; }
+/* Stacked, not side by side: the primary label is long enough that a row would
+   either wrap it or crowd it against the dismiss at this width. */
+.sr-rating-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 3px;
+}
 
-/* Outlined, not filled: the cyan fill is the popup's primary action, and on
-   this view that is "Upload and get link". A rating ask must not outrank it. */
+/* Filled now, not outlined: inside the modal this IS the primary action, and
+   the completion view's own cyan button is behind the scrim and unreachable
+   until this is answered. */
 .sr-rating-primary {
-  height: var(--sr-h-xs);
-  padding: 0 11px;
+  height: var(--sr-h-sm);
+  padding: 0 12px;
   border: 1px solid var(--sr-cyan);
   border-radius: var(--sr-radius-control);
-  background: transparent;
-  color: var(--sr-cyan);
+  background: var(--sr-cyan);
+  color: var(--sr-cyan-fg);
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--sr-dur-fast, 120ms) ease, color var(--sr-dur-fast, 120ms) ease;
+  transition: filter var(--sr-dur-fast, 120ms) ease;
 }
-.sr-rating-primary:hover { background: var(--sr-cyan); color: var(--sr-cyan-fg); }
+.sr-rating-primary:hover { filter: brightness(1.08); }
 .sr-rating-primary:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 2px; }
 
 .sr-rating-dismiss {

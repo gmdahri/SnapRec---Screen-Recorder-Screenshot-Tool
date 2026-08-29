@@ -352,3 +352,74 @@ describe('capture completion (B1–B6)', () => {
       .querySelector('[data-strike]')).toBeTruthy();
   });
 });
+
+/** The rating modal.
+ *
+ * It was a banner at the foot of the completion view, below the fold of a
+ * 600px popup, and went unread. Now it is a centred modal shown at most three
+ * times. These render it for real, because the gate's own tests only prove the
+ * arithmetic and the wiring tests only prove the source mentions the markup. */
+describe('rating modal (complete view)', () => {
+  const completed = (extra = {}) => ({
+    ...transition(initialState(), { type: 'FINISHED', capture: { id: 'c1', bytes: 7_200_000 } }),
+    ...extra,
+  });
+
+  it('is absent until the gate says otherwise', () => {
+    const root = mount(completed());
+    expect(root.querySelector('.sr-rating-scrim')).toBeNull();
+    expect(root.querySelector('[data-action="rate"]')).toBeNull();
+  });
+
+  it('renders centred, as a labelled dialog', () => {
+    const root = mount(completed({ showRatingPrompt: true, ratingShowing: 1 }));
+    const dialog = root.querySelector('.sr-rating-scrim [role="dialog"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+
+    // Labelled by its own heading, which is also where focus lands.
+    const title = root.querySelector(`#${dialog.getAttribute('aria-labelledby')}`);
+    expect(title?.textContent?.trim()).toBe('Enjoying SnapRec?');
+    expect(title.hasAttribute('data-focus-target')).toBe(true);
+  });
+
+  it('says why it is asking, and offers exactly two answers', () => {
+    const root = mount(completed({ showRatingPrompt: true, ratingShowing: 2 }));
+    expect(root.querySelector('.sr-rating-body').textContent.trim()).toBe(
+      'SnapRec is free and built by one person. A quick review helps other people find it and keeps development going.');
+
+    const buttons = [...root.querySelectorAll('.sr-rating-modal button')]
+      .map((b) => b.textContent.trim());
+    expect(buttons).toEqual(['⭐ Rate on Chrome Store', 'Maybe later']);
+  });
+
+  it('leaves the completion actions rendered underneath', () => {
+    // The modal covers them with a scrim rather than replacing the view, so
+    // answering it returns the user to the upload they came for.
+    const root = mount(completed({ showRatingPrompt: true, ratingShowing: 1 }));
+    expect(root.querySelector('[data-action="primary"]')).not.toBeNull();
+    expect(root.querySelector('[data-action="save-library"]')).not.toBeNull();
+  });
+
+  it('dispatches the two answers', () => {
+    const dispatch = vi.fn();
+    const root = mount(completed({ showRatingPrompt: true, ratingShowing: 3 }), dispatch);
+
+    root.querySelector('[data-action="rate"]').click();
+    expect(dispatch).toHaveBeenCalledWith({ type: 'RATE_CLICKED' });
+
+    root.querySelector('[data-action="rating-dismiss"]').click();
+    expect(dispatch).toHaveBeenCalledWith({ type: 'RATING_DISMISSED' });
+  });
+
+  it('closes on either answer, and only Rate is final', () => {
+    const shown = completed({ showRatingPrompt: true, ratingShowing: 2 });
+
+    for (const type of ['RATE_CLICKED', 'RATING_DISMISSED']) {
+      const after = transition(shown, { type });
+      expect(after.showRatingPrompt, type).toBe(false);
+      expect(after.ratingShowing, type).toBe(0);
+      expect(mount(after).querySelector('.sr-rating-scrim'), type).toBeNull();
+    }
+  });
+});

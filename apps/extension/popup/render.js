@@ -447,23 +447,36 @@ function completionPlate(state, d, { strike = false, badge = '' } = {}) {
 
 /** No Copy link yet: there is no link, so no button pretends there is. The
  * primary action names its outcome. */
-/** A one-time rating ask, below the actions and after the work is done.
+/** The rating ask, centred over the completion view.
  *
- * A banner rather than a modal, and last in the view rather than above the
- * actions: the reason to be here is the recording that just finished, and the
- * ask must not sit between the user and uploading it. Eligibility is resolved in
- * popup.js — render only draws what it is told. */
+ * A modal rather than the banner this used to be: the banner sat last in the
+ * view, below the fold of a 600px popup, and was reliably missed. It does now
+ * stand between the user and uploading — that is the point of a modal and the
+ * reason it is capped at three showings and closes on either button.
+ *
+ * Focus goes to the heading, not to either button: the completion view's own
+ * primary action is "Upload and get link", and a keyboard user who was mid-flow
+ * pressing Enter must not open the store by accident.
+ *
+ * Eligibility and which showing this is are resolved in popup.js — render only
+ * draws what it is told. */
 function ratingPrompt() {
   return `
-    <div class="sr-rating" role="region" aria-label="Rate SnapRec">
-      <p class="sr-rating-body">Enjoying SnapRec? A quick rating helps others find us.</p>
-      <div class="sr-rating-actions">
-        <button type="button" class="sr-rating-primary" data-action="rate">
-          ⭐ Rate on Chrome Store
-        </button>
-        <button type="button" class="sr-rating-dismiss" data-action="rating-dismiss">
-          Not now
-        </button>
+    <div class="sr-rating-scrim">
+      <div class="sr-rating-modal" role="dialog" aria-modal="true"
+           aria-labelledby="sr-rating-title">
+        <h2 class="sr-rating-title" id="sr-rating-title" data-focus-target tabindex="-1">
+          Enjoying SnapRec?
+        </h2>
+        <p class="sr-rating-body">SnapRec is free and built by one person. A quick review helps other people find it and keeps development going.</p>
+        <div class="sr-rating-actions">
+          <button type="button" class="sr-rating-primary" data-action="rate">
+            ⭐ Rate on Chrome Store
+          </button>
+          <button type="button" class="sr-rating-dismiss" data-action="rating-dismiss">
+            Maybe later
+          </button>
+        </div>
       </div>
     </div>`;
 }
@@ -647,7 +660,8 @@ function bind(root, dispatch, effects = {}) {
   on(root, '[data-option-toggle]', (el) =>
     dispatch({ type: 'TOGGLE_OPTION', key: el.dataset.optionToggle }));
 
-  // The rating banner. Both answers are final — popup.js retires the prompt.
+  // The rating modal. Both answers close it; only "Rate" retires it for good,
+  // which popup.js owns because it needs chrome.storage.
   on(root, '[data-action="rate"]', () => dispatch({ type: 'RATE_CLICKED' }));
   on(root, '[data-action="rating-dismiss"]', () => dispatch({ type: 'RATING_DISMISSED' }));
 

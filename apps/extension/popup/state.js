@@ -50,10 +50,14 @@ export function initialState() {
     micDevice: null,
     micLevel: 0,
     previewUrl: null,
-    /** Whether the one-time rating banner should render in the completion view.
+    /** Whether the rating modal should render over the completion view.
      * Resolved asynchronously by popup.js (it depends on chrome.storage), so it
      * starts false and is seeded on boot — this module stays pure. */
     showRatingPrompt: false,
+    /** Which of the three showings this is (1, 2 or 3), or 0 when none is due.
+     * Carried in state because the PostHog events report it and the modal is
+     * rendered from state alone. */
+    ratingShowing: 0,
     /** Live keyboard bindings from chrome.commands.getAll(), keyed by command
      * name. Null until they resolve — the popup shows no shortcut rather than
      * a guessed one, because the user can rebind these in chrome://extensions
@@ -182,17 +186,21 @@ export function transition(state, event) {
       return state;
     }
 
-    /* Both answers retire the banner immediately. They are separate events
-     * because popup.js does different things with them — one opens the store —
-     * but the state change is identical: the ask is over. */
+    /* Both answers close the modal immediately. They are separate events
+     * because popup.js does different things with them — one opens the store
+     * and retires the prompt for good — but the state change is identical:
+     * this ask is over. Whether there will be another is storage's business,
+     * not this module's. */
     case 'RATE_CLICKED':
     case 'RATING_DISMISSED':
-      return state.showRatingPrompt ? set(state, { showRatingPrompt: false }) : state;
+      return state.showRatingPrompt
+        ? set(state, { showRatingPrompt: false, ratingShowing: 0 })
+        : state;
 
     case 'SET_RATING_PROMPT':
-      return state.showRatingPrompt === event.show
+      return state.showRatingPrompt === event.show && state.ratingShowing === (event.showing ?? 0)
         ? state
-        : set(state, { showRatingPrompt: event.show });
+        : set(state, { showRatingPrompt: event.show, ratingShowing: event.showing ?? 0 });
 
     case 'PAUSE':
       return state.view === 'recording' ? set(state, { view: 'paused' }) : state;

@@ -4,7 +4,12 @@ import { render } from './render.js';
 import { getOptOut, setOptOut } from './analytics.js';
 // The resolution picker is a preference, so it outlives the popup.
 import { loadResolution, saveResolution } from './capturePrefs.js';
-import { markRatingPromptShown, reviewUrl, shouldShowRatingPrompt } from './ratingPrompt.js';
+import {
+  markRatingPromptRated,
+  ratingPromptState,
+  recordRatingPromptShowing,
+  reviewUrl,
+} from './ratingPrompt.js';
 
 /** Wires the pure state machine to Chrome.
  *
@@ -26,17 +31,22 @@ function dispatch(event) {
   runSideEffects(event, previous);
 }
 
-/** rating_prompt_shown must fire when the banner appears, not on every repaint —
+/** rating_prompt_shown must fire when the modal appears, not on every repaint —
  * paint() runs on every dispatch, and the completion view repaints on upload
- * progress. */
-let ratingShownTracked = false;
+ * progress. Holds the showing already reported, so showings 2 and 3 are each
+ * reported once rather than the flag latching after the first. */
+let ratingShownTracked = 0;
 
 function paint() {
   render(state, dispatch, { captureScreenshot });
 
-  if (state.showRatingPrompt && state.view === 'complete' && !ratingShownTracked) {
-    ratingShownTracked = true;
-    track('rating_prompt_shown');
+  if (state.showRatingPrompt && state.view === 'complete'
+      && ratingShownTracked !== state.ratingShowing) {
+    ratingShownTracked = state.ratingShowing;
+    track('rating_prompt_shown', { which_showing: state.ratingShowing });
+    // Spending the showing here, where it is drawn, is what makes "Maybe
+    // later" and a closed popup behave the same: both have consumed one ask.
+    recordRatingPromptShowing();
   }
 
   // Focus management the state machine cannot own, because it has no DOM.
@@ -78,18 +88,19 @@ function runSideEffects(event, previous) {
       send({ action: 'startRecording', options: recordingOptions(state) });
       break;
 
-    // Both answers are final. markRatingPromptShown is fire-and-forget: the
-    // banner is already gone from the in-memory state, and a failed write costs
-    // at most one extra ask on a later completion.
+    // Rating is final; "Maybe later" is not. The showing itself was already
+    // spent in paint(), so dismissing needs no write — the next threshold is
+    // reached on its own. markRatingPromptRated is fire-and-forget: the modal
+    // is already gone from the in-memory state, and a failed write costs at
+    // most one extra ask at a later threshold.
     case 'RATE_CLICKED':
-      track('rating_prompt_accepted');
-      markRatingPromptShown();
+      track('rating_prompt_accepted', { which_showing: previous.ratingShowing });
+      markRatingPromptRated();
       chrome.tabs.create({ url: reviewUrl() });
       break;
 
     case 'RATING_DISMISSED':
-      track('rating_prompt_dismissed');
-      markRatingPromptShown();
+      track('rating_prompt_dismissed', { which_showing: previous.ratingShowing });
       break;
 
     case 'STOP':
@@ -315,8 +326,8 @@ async function loadAnalyticsPreference() {
 /** Ask the gate whether the banner is due. Never throws — shouldShowRatingPrompt
  * fails closed, and a missing rating ask is not worth a broken popup. */
 async function refreshRatingPrompt() {
-  const show = await shouldShowRatingPrompt();
-  dispatch({ type: 'SET_RATING_PROMPT', show });
+  const { show, showing } = await ratingPromptState();
+  dispatch({ type: 'SET_RATING_PROMPT', show, showing });
 }
 
 async function loadCapturePreferences() {
