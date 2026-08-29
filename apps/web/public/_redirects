@@ -126,3 +126,4 @@ https://snaprecorder.pages.dev/*  https://www.snaprecorder.org/:splat  301
 # without one Pages assumes a single-page app and redirects every unmatched
 # route to `/`. That assumption is what sent the bare app routes above to the
 # homepage. Deleting the rule and shipping a real 404.html fixes both.
+/*  /index.html  200
