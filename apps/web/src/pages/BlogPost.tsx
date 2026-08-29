@@ -110,6 +110,12 @@ const BlogPost: React.FC = () => {
     const relatedPosts = getRelatedPosts(post.slug, 3);
     const jsonLd = useMemo(() => buildBlogPostJsonLd(post), [post]);
 
+    /* Whether the post's own HTML already contains an FAQ section, so the
+     * rendered block below does not duplicate it. Matches the two forms the
+     * hand-written blocks actually use — an `id="faq"` anchor and the literal
+     * heading — rather than sniffing for question marks. */
+    const hasInlineFaq = /id="faq"|Frequently Asked Questions/i.test(post.content);
+
     return (
         <div className="min-h-screen bg-[var(--sr-surface-paper)] text-[var(--sr-text-primary-on-light)] font-display">
             <SEO
@@ -202,6 +208,43 @@ const BlogPost: React.FC = () => {
                                     prose-td:p-5 prose-td:border prose-td:border-[var(--sr-border-light-soft)] prose-td:text-[var(--sr-text-muted-on-light)]"
                         dangerouslySetInnerHTML={{ __html: post.content }}
                     />
+
+                    {/* FAQ — rendered, not just marked up.
+                     *
+                     * 11 of the 33 posts with a `faqs` array fed it to FAQPage JSON-LD and
+                     * nowhere else, so those questions and answers existed for Google and
+                     * were invisible to readers — which inverts the one rule structured
+                     * data has, that it must describe content the user can actually see.
+                     *
+                     * The other 22 posts hand-wrote the same Q&A into `content` as well,
+                     * so this is conditional: rendering unconditionally would print every
+                     * FAQ twice on two thirds of the blog. `hasInlineFaq` is the test for
+                     * a post that already carries its own section. The long-term fix is to
+                     * delete those hand-written blocks and let every post render from the
+                     * array, but that is 22 content edits and each one risks dropping copy
+                     * the post already ranks for, so the gate stays until then. */}
+                    {post.faqs?.length && !hasInlineFaq ? (
+                        <section className="mt-16" aria-labelledby="faq-heading">
+                            <h2
+                                id="faq-heading"
+                                className="text-3xl font-black tracking-tight pb-4 mb-8 border-b-2 border-[var(--sr-border-light-soft)]"
+                            >
+                                Frequently Asked Questions
+                            </h2>
+                            <dl className="flex flex-col gap-8">
+                                {post.faqs.map((faq) => (
+                                    <div key={faq.q}>
+                                        <dt className="text-xl font-black mb-3 text-[var(--sr-text-primary-on-light)]">
+                                            {faq.q}
+                                        </dt>
+                                        <dd className="text-[1.125rem] leading-[1.8] text-[var(--sr-text-muted-on-light)]">
+                                            {faq.a}
+                                        </dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </section>
+                    ) : null}
 
                     {/* Author Bio */}
                     <div className="mt-16 flex items-start gap-6 border border-[var(--sr-border-light-soft)] rounded-[2px] p-6 md:p-8 bg-[var(--sr-surface-panel-light)]">

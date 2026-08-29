@@ -68,6 +68,32 @@ const useCases = [
     },
 ];
 
+/** Four guides, one per step above: capture, record with narration, annotate,
+ *  and decide which format to send. Slugs must exist in blogData.ts —
+ *  src/__tests__/routes.test.ts fails on a link to a post that does not. */
+const FURTHER_READING = [
+    {
+        to: '/blog/how-to-take-full-page-screenshot-chrome/',
+        label: 'Full-page screenshots in Chrome',
+        blurb: 'Capture an entire page, not just the part you can see.',
+    },
+    {
+        to: '/blog/record-screen-with-audio-webcam-chrome/',
+        label: 'Record with audio and webcam',
+        blurb: 'Add narration and a face cam to any screen recording.',
+    },
+    {
+        to: '/blog/how-to-annotate-screenshots-chrome/',
+        label: 'Annotate screenshots',
+        blurb: 'Arrows, text, highlights and blur in the built-in editor.',
+    },
+    {
+        to: '/blog/screenshot-vs-screen-recording-when-to-use/',
+        label: 'Screenshot or recording?',
+        blurb: 'A ten-second rule for picking the right format.',
+    },
+];
+
 const howToJsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -296,6 +322,40 @@ const HowItWorks: React.FC = () => {
                             <NavLink to="/screen-recorder-for-teachers/" className="text-[var(--sr-cyan-on-light)] font-semibold hover:underline">
                                 Screen Recorder for Teachers →
                             </NavLink>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Further reading. /how-it-works explains the four steps but pointed at
+                    no blog post, so the one page that describes the whole product passed
+                    nothing to the guides that answer the specific questions people arrive
+                    with — and the page itself was reported "crawled — currently not
+                    indexed", which a page with 825 words and no outbound topical links
+                    invites. Each link is a step on this page taken further. */}
+                <section className="pb-24 border-t border-[var(--sr-border-light-soft)] pt-16">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <h2 className="text-2xl font-black tracking-tight mb-3 text-center">
+                            Further reading
+                        </h2>
+                        <p className="text-sm text-[var(--sr-text-faint-on-light)] mb-8 text-center max-w-2xl mx-auto">
+                            Step-by-step guides for the things people most often want to do
+                            with SnapRec once the extension is installed.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {FURTHER_READING.map(item => (
+                                <NavLink
+                                    key={item.to}
+                                    to={item.to}
+                                    className="block rounded-[2px] border border-[var(--sr-border-light-soft)] p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[var(--sr-surface-paper)]"
+                                >
+                                    <span className="block font-bold leading-snug mb-1.5 text-[var(--sr-text-primary-on-light)]">
+                                        {item.label}
+                                    </span>
+                                    <span className="block text-sm text-[var(--sr-text-faint-on-light)] leading-relaxed">
+                                        {item.blurb}
+                                    </span>
+                                </NavLink>
+                            ))}
                         </div>
                     </div>
                 </section>
