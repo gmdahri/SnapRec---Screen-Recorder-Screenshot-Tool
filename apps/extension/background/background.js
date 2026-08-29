@@ -9,6 +9,9 @@ importScripts('utils/contentScriptManager.js');
 importScripts('utils/storage.js');
 importScripts('auth.js');
 
+/** Retries delivery of the one-shot install event. See onInstalled below. */
+const INSTALL_FLUSH_ALARM = 'snaprec-flush-install';
+
 // Single consolidated message listener
 let recordingMetadata = []; // Store metadata chunks during recording
 
@@ -1283,8 +1286,15 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 chrome.runtime.onInstalled.addListener((details) => {
     // Analytics: first install only. 'update' and 'chrome_update' fire here too,
     // and counting those as installs would inflate the number on every release.
+    //
+    // Queued to storage rather than sent from here. This listener returns
+    // immediately, and Chrome may stop the worker straight afterwards — a fetch
+    // still in flight at that moment would take the one install event this
+    // profile will ever produce with it. queueInstall persists it; the flushes
+    // below (and INSTALL_FLUSH_ALARM) get it delivered.
     if (details?.reason === 'install') {
-        Analytics.track('extension_installed');
+        Analytics.queueInstall().then(() => Analytics.flushPendingInstall());
+        chrome.alarms.create(INSTALL_FLUSH_ALARM, { delayInMinutes: 1, periodInMinutes: 5 });
     }
 
     /* The page Chrome opens when SnapRec is removed.
@@ -1300,7 +1310,10 @@ chrome.runtime.onInstalled.addListener((details) => {
      * a bad trade. */
     if (chrome.runtime.setUninstallURL) {
         try {
-            chrome.runtime.setUninstallURL(`${CONFIG.WEB_BASE_URL}/uninstall-survey`, () => {
+            // Trailing slash is load-bearing: the bare path 301s, and a stored
+            // uninstall URL that needs a redirect is one more thing that can
+            // fail at the only moment this page is ever opened.
+            chrome.runtime.setUninstallURL(`${CONFIG.WEB_BASE_URL}/uninstall-survey/`, () => {
                 // Reading lastError stops an unchecked-error warning in the
                 // service worker console when the URL is rejected.
                 void chrome.runtime.lastError;
@@ -1470,6 +1483,46 @@ self.addEventListener('online', () => {
 chrome.runtime.onMessageExternal.addListener((message, _sender, respond) => {
     if (message?.type === 'PING') {
         respond({ version: chrome.runtime.getManifest().version });
+        return false;
     }
+
+    /* The web app handing over its PostHog identity and how the visitor got
+     * here. Without it the site's visitor and this install are two unrelated
+     * people in PostHog and the activation funnel cannot span them.
+     *
+     * Nothing is sent back and nothing is read out of the page: this is one
+     * anonymous analytics id crossing a boundary that manifest
+     * externally_connectable already restricts to snaprecorder.org. */
+    if (message?.type === 'SNAPREC_ANALYTICS_IDENTITY') {
+        Analytics.linkWebIdentity({
+            distinctId: message.distinctId,
+            source: message.source,
+        })
+            // The source is what the queued install event was waiting for.
+            .then(() => Analytics.flushPendingInstall())
+            .then((sent) => respond({ ok: true, installSent: sent }))
+            .catch(() => respond({ ok: false }));
+        return true;   // async response
+    }
+
     return false;
 });
+
+/* Retry for an install event that could not be sent — an offline first run, a
+ * blocked domain, or a worker killed mid-flight. Also the deadline: after the
+ * grace window flushPendingInstall stops waiting for the web handshake and
+ * sends with install_source 'unknown', because an install counted without its
+ * source still beats an install never counted. Clears itself once delivered. */
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name !== INSTALL_FLUSH_ALARM) return;
+    Analytics.flushPendingInstall()
+        .then(() => Analytics.hasPendingInstall())
+        // "Nothing pending" covers both a delivered event and one dropped
+        // because the user opted out; neither wants the alarm to keep running.
+        .then((stillPending) => {
+            if (!stillPending) chrome.alarms.clear(INSTALL_FLUSH_ALARM);
+        });
+});
+
+// Cold start: pick up anything a previous worker left undelivered.
+Analytics.flushPendingInstall();

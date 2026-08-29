@@ -17,6 +17,7 @@
 
 import type { PostHog } from 'posthog-js';
 import { CONSENT_EVENT, getConsent } from './consent';
+import { resolveInstallSource, startIdentityBridge } from './extensionIdentity';
 
 /** The whole analytics surface. Adding an event means adding it here first. */
 export interface AnalyticsEvents {
@@ -225,6 +226,27 @@ async function loadAndInit(): Promise<void> {
     // Drain anything captured while the library was in flight.
     const pending = queue.splice(0, queue.length);
     if (ph) for (const fn of pending) safely(() => fn(ph as PostHog));
+
+    /* Hand our identity to the extension so the activation funnel can span both
+     * contexts. Deliberately after init: distinct_id does not exist until the
+     * library has loaded. See lib/extensionIdentity.ts for why this is needed. */
+    safely(() => {
+        if (!ph || hasOptedOut()) return;
+        startIdentityBridge({
+            getDistinctId: () => {
+                try {
+                    return ph?.get_distinct_id() ?? null;
+                } catch {
+                    return null;
+                }
+            },
+            getSource: () => resolveInstallSource(
+                window.location,
+                document.referrer,
+                typeof localStorage === 'undefined' ? null : localStorage,
+            ),
+        });
+    });
 }
 
 /** Record an event. Typed against AnalyticsEvents, and never throws. */
