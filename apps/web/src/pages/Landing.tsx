@@ -20,7 +20,7 @@ const CHROME_STORE =
  * Google has indexed and which rich result shows. See the note at the top of
  * copy.ts. */
 const faqs = [
-    { q: 'Is SnapRec really free?', a: 'Yes — SnapRec is 100% free with no hidden limits. No watermarks on recordings or screenshots, no time caps, and no mandatory sign-up to start capturing.' },
+    { q: 'Is SnapRec really free?', a: 'Yes — SnapRec is free for local capture and editing. No watermarks, no recording time cap, and no mandatory sign-up to capture locally. Cloud uploads have size and daily allowances.' },
     { q: 'Does SnapRec work on Edge and Brave?', a: 'Absolutely. SnapRec works on all Chromium-based browsers including Google Chrome, Microsoft Edge, and Brave. Install it from the Chrome Web Store.' },
     { q: 'Can I record with audio and webcam?', a: 'Yes. SnapRec supports system audio, microphone input, and webcam overlay — all at once. Perfect for tutorials, demos, and walkthroughs.' },
     { q: 'Where are my recordings stored?', a: 'Download locally or upload to the cloud for instant link sharing. Your data is stored securely and you can delete it anytime from your dashboard.' },
@@ -119,7 +119,7 @@ const SCREENSHOT_MODES = [
 const RECORDING_MODES = [
     ['Current tab', 'Cleanest result, and tab audio comes along.'],
     ['A window', 'One application, nothing else on your desktop.'],
-    ['Entire screen', 'For anything that leaves the browser. System audio included.'],
+    ['Entire screen', 'For anything that leaves the browser. Audio availability depends on your browser and operating system.'],
 ] as const;
 
 /** A mode column. Registration-mark corners on the label, mono body — the
@@ -284,6 +284,7 @@ const Landing: React.FC = () => {
                     </div>
                 </section>
 
+                <p className="px-6 py-8"><a href="/screen-recorder-for-developers/">Use SnapRec for bug reports and client feedback</a></p>
                 {/* ── Final CTA — the second and last time ─────────────── */}
                 <section className="py-24 px-6 lg:px-10 bg-[var(--sr-surface-panel-light)]">
                     <div className="max-w-[680px] mx-auto flex flex-col items-center gap-5 text-center">
@@ -291,7 +292,7 @@ const Landing: React.FC = () => {
                             Record something in the next minute
                         </h2>
                         <p className="text-[15px] leading-[1.65] text-[var(--sr-text-muted-on-light)]">
-                            Install the extension and press ⌥⇧R. You don&apos;t need an account until
+                            Install the extension and press Ctrl+Shift+4 (Windows/Linux) or Command+Shift+4 (Mac). You don&apos;t need an account until
                             you want a link.
                         </p>
                         <a

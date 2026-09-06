@@ -182,7 +182,7 @@ export class VideoProjectsService {
       title,
       recordingId,
       fileUrl,
-      videoUrl: this.streamPath(fileUrl),
+      videoUrl: await this.storageService.getDownloadUrl(fileUrl),
       timelineJson: timelineJson ?? null,
       updatedAt: updatedAt?.toISOString?.() ?? null,
       fileSizeBytes,

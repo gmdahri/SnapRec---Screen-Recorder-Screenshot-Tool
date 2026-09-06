@@ -28,6 +28,7 @@ function makeService(over: { owner?: string | null; comments?: any[]; durationSe
   const service = new RecordingsService(
     recordings as any, {} as any, {} as any, {} as any,
     { findOrCreateBySupabaseId: jest.fn() } as any,
+    { deleteObject: jest.fn().mockResolvedValue(undefined) } as any,
   );
   return { service, recordings, recording };
 }

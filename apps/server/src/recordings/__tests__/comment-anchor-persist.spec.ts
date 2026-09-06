@@ -19,6 +19,7 @@ function makeService() {
 
   const service = new RecordingsService(
     recordings as any, {} as any, comments as any, {} as any, users as any,
+    { deleteObject: jest.fn().mockResolvedValue(undefined) } as any,
   );
   return { service, recordings, comments, users };
 }

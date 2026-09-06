@@ -17,6 +17,8 @@ export interface Recording {
     heightPx?: number;
     views: number;
     isReady?: boolean;
+    isPublic?: boolean;
+    sharingDisabledAt?: string | null;
     description?: string;
     location?: string;
     user?: {
@@ -75,6 +77,19 @@ interface UploadUrlResponse {
 // API Base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snaprec-489525905608.us-central1.run.app';
 
+let sessionGuestSecret: string | undefined;
+function guestCredential(): string {
+    try {
+        let secret = localStorage.getItem('snaprec_upload_secret');
+        if (!secret) { secret = sessionGuestSecret || crypto.randomUUID(); localStorage.setItem('snaprec_upload_secret', secret); }
+        sessionGuestSecret = secret;
+        return secret;
+    } catch {
+        // Storage restrictions must not prevent reading public recordings.
+        return sessionGuestSecret ||= crypto.randomUUID();
+    }
+}
+
 // Base fetch function with auth - exported for use by AuthContext
 export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -89,7 +104,6 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
     // Debug logging
     console.log('API Request:', endpoint, {
         hasToken: !!token,
-        tokenPrefix: token ? token.substring(0, 20) + '...' : 'none',
         aborted: options.signal?.aborted
     });
 
@@ -99,6 +113,7 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            'X-Snaprec-Guest': guestCredential(),
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...options.headers,
         },
@@ -114,7 +129,9 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
         if (response.status !== 404) {
             console.error(`API Error: ${response.status}`, errorText);
         }
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        let message = `API Error: ${response.status} ${response.statusText}`;
+        try { const detail = JSON.parse(errorText); if (typeof detail.message === 'string') message = detail.message; } catch { /* non-JSON error */ }
+        throw new Error(message);
     }
 
     return response.json();
@@ -126,7 +143,7 @@ export async function fetchBlobWithAuth(videoUrl: string): Promise<Blob> {
     if (sessionError) throw new Error('Authentication error. Please log in again.');
     const token = session?.access_token;
     const response = await fetch(videoUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: token && new URL(videoUrl, window.location.origin).origin === new URL(API_BASE_URL).origin ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!response.ok) {
         throw new Error(`Could not download video (${response.status}).`);
@@ -228,7 +245,7 @@ export function useRecording(id: string | undefined, refetchInterval?: number | 
         },
         enabled: (options.enabled !== undefined ? options.enabled : true) && isValidId,
         retry: 1,
-        refetchInterval: refetchInterval,
+        refetchInterval: refetchInterval || 60000,
     });
 }
 
@@ -261,7 +278,7 @@ export function useUpdateRecording() {
     return useMutation({
         mutationFn: ({ id, data }: {
             id: string;
-            data: { title?: string; fileUrl?: string; description?: string };
+            data: { title?: string; fileUrl?: string; description?: string; isPublic?: boolean };
         }) =>
             fetchWithAuth<Recording>(`/recordings/${id}`, {
                 method: 'PATCH',
@@ -300,10 +317,10 @@ export function useDeleteRecording() {
  */
 export function useGetUploadUrl() {
     return useMutation({
-        mutationFn: ({ fileName, contentType }: { fileName: string; contentType: string }) =>
+        mutationFn: ({ fileName, contentType, sizeBytes }: { fileName: string; contentType: string; sizeBytes: number }) =>
             fetchWithAuth<UploadUrlResponse>('/recordings/upload-url', {
                 method: 'POST',
-                body: JSON.stringify({ fileName, contentType }),
+                body: JSON.stringify({ fileName, contentType, sizeBytes }),
             }),
     });
 }

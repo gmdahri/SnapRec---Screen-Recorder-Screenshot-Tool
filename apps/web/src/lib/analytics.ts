@@ -21,6 +21,8 @@ import { resolveInstallSource, startIdentityBridge } from './extensionIdentity';
 
 /** The whole analytics surface. Adding an event means adding it here first. */
 export interface AnalyticsEvents {
+    qualified_view: { content_type: string };
+    issue_report_copied: { surface: string };
     /** Any primary call-to-action. `location` is where on the site it sits. */
     cta_clicked: { location: string };
     /** A click through to the Chrome Web Store listing. */
@@ -172,7 +174,7 @@ export function initAnalytics(): void {
     /* The cookie banner is the opt-out control. lib/consent.ts broadcasts on
      * answer, so declining stops capture immediately rather than at next load. */
     window.addEventListener(CONSENT_EVENT, () => {
-        if (getConsent() === 'declined') optOut();
+        if (getConsent() !== 'accepted') optOut();
         else optIn();
     });
 }
@@ -198,7 +200,8 @@ async function loadAndInit(): Promise<void> {
             // instrumenting each one. The named events above are the ones worth
             // reasoning about in a funnel; autocapture is the safety net for
             // everything nobody thought to instrument.
-            autocapture: true,
+            autocapture: false,
+            opt_out_capturing_by_default: getConsent() !== 'accepted',
 
             /* Pageviews are sent by trackPageview() on route change instead of
              * automatically. This is a React Router SPA: the automatic pageview
@@ -216,7 +219,7 @@ async function loadAndInit(): Promise<void> {
             loaded: (loaded) => {
                 // Consent may already have been declined in a previous session,
                 // or while the library was still downloading.
-                if (getConsent() === 'declined' || optedOutBeforeLoad) loaded.opt_out_capturing();
+                if (getConsent() !== 'accepted' || optedOutBeforeLoad) loaded.opt_out_capturing();
             },
         });
 

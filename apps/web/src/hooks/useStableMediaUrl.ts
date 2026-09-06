@@ -14,10 +14,20 @@ import { useRef } from 'react';
  * first URL seen for a path is the one that keeps being used, and a genuinely
  * different file still swaps as it should.
  *
- * The pinned URL carries the expiry it was signed with — an hour. A tab left
- * open longer than that will find seeks past the buffered range failing, which
- * is the same thing that would happen to a video mid-playback anyway, and a far
- * smaller problem than restarting playback every few seconds. */
+ * Near expiry, accept a newly signed URL. The player preserves its position
+ * when reloading a signature for the same object. */
+
+export function expiresSoon(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const params = new URL(url).searchParams;
+    const stamp = params.get('X-Amz-Date');
+    const seconds = Number(params.get('X-Amz-Expires'));
+    if (!stamp || !seconds) return false;
+    const iso = stamp.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/, '$1-$2-$3T$4:$5:$6Z');
+    return Date.parse(iso) + seconds * 1000 <= Date.now() + 90000;
+  } catch { return false; }
+}
 
 /** Whether two URLs address the same stored object, signature aside. */
 export function sameMediaObject(a: string | null | undefined, b: string | null | undefined): boolean {
@@ -41,6 +51,6 @@ export function useStableMediaUrl(url: string | null | undefined): string | unde
     pinned.current = undefined;
     return undefined;
   }
-  if (!sameMediaObject(pinned.current, url)) pinned.current = url;
+  if (!sameMediaObject(pinned.current, url) || expiresSoon(pinned.current)) pinned.current = url;
   return pinned.current;
 }

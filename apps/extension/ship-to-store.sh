@@ -49,6 +49,8 @@ node -e "
 
 echo "✔ version.json, package.json, manifest.json updated to $NEW_VERSION"
 
+(cd ../.. && node scripts/check-release.mjs)
+
 # ── Build zip ────────────────────────────────────────────────────────────────
 
 ZIP_NAME="snaprec-extension-v${NEW_VERSION}.zip"

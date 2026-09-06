@@ -3,12 +3,16 @@
      Do not hand-edit: add the route to routes.mjs (or the post to blogData.ts) and rebuild. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://www.snaprecorder.org/screen-recorder-for-developers/</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+  <url>
     <loc>https://www.snaprecorder.org/</loc>
     <lastmod>2026-08-25</lastmod>
   </url>
   <url>
     <loc>https://www.snaprecorder.org/how-it-works/</loc>
-    <lastmod>2026-08-25</lastmod>
+    <lastmod>2026-08-30</lastmod>
   </url>
   <url>
     <loc>https://www.snaprecorder.org/changelog/</loc>
@@ -32,7 +36,7 @@
   </url>
   <url>
     <loc>https://www.snaprecorder.org/blog/</loc>
-    <lastmod>2026-08-25</lastmod>
+    <lastmod>2026-08-30</lastmod>
   </url>
   <url>
     <loc>https://www.snaprecorder.org/blog/4k-screen-recorder-extension-chrome/</loc>

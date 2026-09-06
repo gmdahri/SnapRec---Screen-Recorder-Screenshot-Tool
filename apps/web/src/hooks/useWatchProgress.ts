@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { getConsent } from '../lib/consent';
 import { fetchWithAuth } from './useRecordings';
 import { mergeIntervals, type Interval } from '../lib/intervals';
 
@@ -26,7 +27,7 @@ export function useWatchProgress(recordingId: string | undefined, playing: boole
   const lastSeen = useRef<number | null>(null);
 
   const flush = useCallback(() => {
-    if (!recordingId) return;
+    if (!recordingId || getConsent() !== 'accepted') { pending.current = []; openFrom.current = null; lastSeen.current = null; return; }
     const ranges = mergeIntervals(pending.current);
     if (ranges.length === 0) return;
     pending.current = [];
@@ -40,6 +41,7 @@ export function useWatchProgress(recordingId: string | undefined, playing: boole
 
   /** Called on each clock update while playing. */
   const observe = useCallback((currentSec: number) => {
+    if (getConsent() !== 'accepted') { pending.current = []; openFrom.current = null; lastSeen.current = null; return; }
     const previous = lastSeen.current;
     lastSeen.current = currentSec;
 

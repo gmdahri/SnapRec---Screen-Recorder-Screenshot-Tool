@@ -16,8 +16,8 @@ const dto = (o: Partial<AddCommentDto>): AddCommentDto =>
   Object.assign(new AddCommentDto(), { content: 'a comment', ...o });
 
 function makeController() {
-  const recordings = { addComment: jest.fn().mockResolvedValue({ id: 'com-1' }) };
-  const controller = new RecordingsController({} as any, recordings as any);
+  const recordings = { assertAccess: jest.fn().mockResolvedValue({}), addComment: jest.fn().mockResolvedValue({ id: 'com-1' }) };
+  const controller = new RecordingsController({} as any, recordings as any, {} as any);
   return { controller, recordings };
 }
 

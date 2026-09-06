@@ -771,7 +771,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       const contentType = stagedExportFile.type || 'video/webm';
       const { uploadUrl, fileUrl } = await fetchWithAuth<{ uploadUrl: string; fileUrl: string }>(
         '/recordings/upload-url',
-        { method: 'POST', body: JSON.stringify({ fileName, contentType }) },
+        { method: 'POST', body: JSON.stringify({ fileName, contentType, sizeBytes: stagedExportFile.size }) },
       );
       await uploadFile(uploadUrl, stagedExportFile, contentType);
 
@@ -851,7 +851,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
           '/recordings/upload-url',
           {
             method: 'POST',
-            body: JSON.stringify({ fileName, contentType }),
+            body: JSON.stringify({ fileName, contentType, sizeBytes: stagedExportFile.size }),
           },
         );
         await uploadFile(uploadUrl, stagedExportFile, contentType);

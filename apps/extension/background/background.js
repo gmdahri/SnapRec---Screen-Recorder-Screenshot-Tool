@@ -201,6 +201,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'downloadScreenshot':
             downloadScreenshot(message.dataUrl);
             return false; // No response needed
+        case 'recordingStorageFailed':
+            chrome.storage.local.set({ isRecording: false });
+            chrome.notifications.create({ type: 'basic', iconUrl: 'icons/icon128.png', title: 'Recording stopped', message: message.error });
+            break;
         case 'recordingComplete':
             handleRecordingComplete(message.dataUrl);
             return false; // No response needed

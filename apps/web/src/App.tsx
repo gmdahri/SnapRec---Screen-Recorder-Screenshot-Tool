@@ -1,3 +1,4 @@
+const DeveloperWorkflow = React.lazy(() => import('./pages/DeveloperWorkflow'));
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -5,30 +6,30 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Library from './pages/Library';
-import Projects from './pages/Projects';
-import Shared from './pages/Shared';
+const Library = React.lazy(() => import('./pages/Library'));
+const Projects = React.lazy(() => import('./pages/Projects'));
+const Shared = React.lazy(() => import('./pages/Shared'));
 import ClaimCaptures from './pages/ClaimCaptures';
-import Home from './pages/Home';
-import Analytics from './pages/Analytics';
-import Settings from './pages/Settings';
-import ShareView from './pages/ShareView';
+const Home = React.lazy(() => import('./pages/Home'));
+const Analytics = React.lazy(() => import('./pages/Analytics'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const ShareView = React.lazy(() => import('./pages/ShareView'));
 
 const Editor = React.lazy(() => import('./pages/Editor'));
 const VideoEditorPage = React.lazy(() => import('./pages/VideoEditor/VideoEditorPage'));
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
-import Privacy from './pages/Privacy';
+const Privacy = React.lazy(() => import('./pages/Privacy'));
 import Landing from './pages/Landing';
-import Changelog from './pages/Changelog';
-import HowItWorks from './pages/HowItWorks';
-import Blog from './pages/Blog';
-import BlogPost from './pages/BlogPost';
-import About from './pages/About';
-import Terms from './pages/Terms';
-import Contact from './pages/Contact';
-import LoomAlternative from './pages/LoomAlternative';
-import ScreencastifyAlternative from './pages/ScreencastifyAlternative';
+const Changelog = React.lazy(() => import('./pages/Changelog'));
+const HowItWorks = React.lazy(() => import('./pages/HowItWorks'));
+const Blog = React.lazy(() => import('./pages/Blog'));
+const BlogPost = React.lazy(() => import('./pages/BlogPost'));
+const About = React.lazy(() => import('./pages/About'));
+const Terms = React.lazy(() => import('./pages/Terms'));
+const Contact = React.lazy(() => import('./pages/Contact'));
+const LoomAlternative = React.lazy(() => import('./pages/LoomAlternative'));
+const ScreencastifyAlternative = React.lazy(() => import('./pages/ScreencastifyAlternative'));
 import WebcamOverlayPresentation from './pages/WebcamOverlayPresentation';
 import ScreenRecorderForTeachers from './pages/ScreenRecorderForTeachers';
 import AuthorPage from './pages/AuthorPage';
@@ -68,6 +69,7 @@ function App() {
           <AuthProvider>
             <Router>
               <AnalyticsPageviews />
+              <Suspense fallback={<p role="status">Loading SnapRec…</p>}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
@@ -156,6 +158,7 @@ function App() {
                 />
                 <Route path="/video-preview/:id" element={<Navigate to="/v/:id" replace />} />
                 <Route path="/v/:id?" element={<ShareView />} />
+                <Route path="/screen-recorder-for-developers" element={<DeveloperWorkflow />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/about" element={<About />} />
@@ -176,6 +179,7 @@ function App() {
                     returns an HTTP 404 status to match. */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
               <CookieConsent />
               <AdSenseLoader />
             </Router>

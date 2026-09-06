@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { StatusBadge } from '@snaprec/design-system';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { fetchWithAuth } from '../hooks/useRecordings';
+import { fetchWithAuth, useUpdateRecording } from '../hooks/useRecordings';
 import { AppShell, SEO } from '../components';
 
 export type ShareVisibility = 'link' | 'restricted' | 'off';
@@ -23,7 +23,7 @@ export interface SharedCapture {
 
 const VISIBILITY_LABEL: Record<ShareVisibility, string> = {
   link: 'Anyone with the link',
-  restricted: 'Only people I invite',
+  restricted: 'Only you',
   off: 'you turned this link off',
 };
 
@@ -80,6 +80,7 @@ export function SharedList({ items, onAction }: SharedListProps) {
             )}
           </span>
 
+          {item.visibility === 'link' && <button type="button" onClick={() => onAction(item.id, 'Turn sharing off')}>Turn sharing off</button>}
           {item.needsReply && <StatusBadge status="needs a reply" />}
 
           <button
@@ -117,6 +118,7 @@ export default function Shared() {
   const { user, loading: authLoading } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const updateRecording = useUpdateRecording();
   const [direction, setDirection] = useState<'by-me' | 'with-me'>('by-me');
 
   const { data: items = [], isError, error } = useQuery({
@@ -172,20 +174,30 @@ export default function Shared() {
 
         {direction === 'with-me' ? (
           <p style={{ margin: 0, padding: '48px 0', textAlign: 'center', fontSize: 13, color: 'var(--sr-text-muted-on-light)' }}>
-            Nothing yet. Captures other people share with you will appear here.
+            Shared inbox is not available yet. Open a capture using the link its owner sends you.
           </p>
         ) : (
           <SharedList
             items={items}
             onAction={(id, action) => {
               if (action === 'Open and reply') return navigate(`/v/${id}`);
+              if (action === 'Turn sharing off') {
+                updateRecording.mutate({ id, data: { isPublic: false } }, {
+                  onSuccess: () => showNotification('Sharing is off. Previously issued media links expire within five minutes.', 'success'),
+                  onError: () => showNotification('Could not turn sharing off', 'error'),
+                });
+                return;
+              }
               if (action === 'Copy link') {
                 navigator.clipboard.writeText(`${window.location.origin}/v/${id}`)
                   .then(() => showNotification('Link copied', 'success'))
                   .catch(() => showNotification('Could not copy the link', 'error'));
                 return;
               }
-              showNotification('Sharing controls are per capture for now', 'info');
+              updateRecording.mutate({ id, data: { isPublic: true } }, {
+                onSuccess: () => showNotification('Anyone with the link can now view this capture', 'success'),
+                onError: () => showNotification('Could not change sharing. Please retry.', 'error'),
+              });
             }}
           />
         )}

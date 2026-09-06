@@ -1,0 +1,17 @@
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const json = p => JSON.parse(readFileSync(p, 'utf8'));
+const base = 'apps/extension/';
+const manifest = json(base + 'manifest.json');
+assert.equal(manifest.version, json(base + 'package.json').version, 'Extension package version differs');
+assert.equal(manifest.version, json(base + 'version.json').version, 'Extension version marker differs');
+const context = vm.createContext({});
+vm.runInContext(readFileSync(base + 'background/config.js', 'utf8') + ';this.config = CONFIG;', context);
+assert.equal(context.config.API_BASE_URL, 'https://snaprec-489525905608.us-central1.run.app');
+assert.equal(context.config.WEB_BASE_URL, 'https://www.snaprecorder.org');
+assert.ok(!manifest.externally_connectable.matches.some(url => /localhost|127\.0\.0\.1/.test(url)), 'Release must not accept messages from localhost');
+const marker = json('apps/web/public/version.json').version;
+assert.ok(marker.split('.').map(Number).reduce((a, v) => a * 10000 + v, 0) <= manifest.version.split('.').map(Number).reduce((a, v) => a * 10000 + v, 0), 'Web marker must not advertise an unreleased extension');
+for (const path of ['offscreen/recording-store.js', 'recovery/recovery.html', 'recovery/recovery.js']) readFileSync(base + path);
+console.log(`Release checks passed: extension ${manifest.version}, store marker ${marker}`);

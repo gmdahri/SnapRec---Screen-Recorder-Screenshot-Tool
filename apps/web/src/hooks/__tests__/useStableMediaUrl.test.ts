@@ -77,3 +77,12 @@ describe('the URL handed to the player', () => {
     expect(result.current).toBe(signed('a'));
   });
 });
+
+it('replaces an expired signature for the same media object', () => {
+  const expired = signed('expired') + '&X-Amz-Date=20200101T000000Z&X-Amz-Expires=300';
+  const { result, rerender } = renderHook(({ url }) => useStableMediaUrl(url), {
+    initialProps: { url: expired },
+  });
+  rerender({ url: signed('renewed') });
+  expect(result.current).toBe(signed('renewed'));
+});

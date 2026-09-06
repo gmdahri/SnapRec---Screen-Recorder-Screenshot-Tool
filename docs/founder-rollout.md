@@ -1,0 +1,21 @@
+# Rollout and remaining gates
+
+## Required before production
+
+1. Review branch and security tests. Apply additive `1788652800000-AddUploadGrants` using the existing migration command. The existing visibility migration must already be applied. Raw SQL tables intentionally have no TypeORM entity mappings; application entities remain registered in both data sources.
+2. Configure upload budgets: `UPLOAD_MAX_BYTES` (default 536870912), `UPLOAD_DAILY_COUNT` (100), `UPLOAD_DAILY_BYTES` (2147483648). These defaults are protective starting points, not validated economics. `TRUST_PROXY_HOPS` defaults to 0; set the verified Cloud Run ingress hop count, otherwise IP budgets may group all requests behind one proxy. Do not blindly trust arbitrary X-Forwarded-For values.
+3. R2 bucket must remain private. Allow PUT/GET/HEAD and Content-Type/If-None-Match in its CORS configuration for the production website and extension. Test Content-Length and conditional-write enforcement with actual R2: wrong size, overwriting an existing object, expired URL, MIME mismatch, missing metadata.
+4. Coordinate web/API/extension release. The new API intentionally rejects old unscoped uploads and missing sizes instead of retaining an unsafe compatibility endpoint. Publish the updated extension and surface its upgrade notice before enforcing the API change; existing local captures stay available. Keep the previous server artifact for rollback, but do not silently re-enable insecure uploads after migration.
+5. Stage guest and signed-in capture, claim, screenshot edit, project save/publish, public/private playback, comment/reaction, revoke and delete. Expired sessions must ask for sign-in. Verify a 30–60 minute recording, browser interruption, full disk, lost network and upload retry. Recovery preserves chunks on device; assembling/exporting a long recording can still require substantial memory.
+6. Previously issued R2 URLs remain valid for their signed duration. New URLs expire after five minutes. The web refreshes signed URLs and preserves playback position; test this past expiry and after revoke. Downloaded copies cannot be revoked.
+7. Run the cleanup script without `--apply` first; review count and run in staging before scheduling it. It handles only server-granted unreferenced objects older than 48h. Legacy orphaned files require a separate inventory and reviewed deletion plan.
+8. Enable production PostHog keys and verify the events in `measurement-and-pilot-playbook.md`. Website tracking now requires explicit acceptance and autocapture is off. This changes measurement coverage; annotate the release date.
+9. Validate actual Cloudflare response headers, canonical URLs, sitemap, prerendered landing pages, blog routes and account routes on staging. The existing SPA fallback is preserved because previous attempts at a top-level 404.html broke app routes in production. A true edge 404 remains a staging/infrastructure task.
+10. Before store submission run `apps/extension/ship-to-store.sh` to bump/package the version. It now checks production endpoints, localhost messaging and version consistency. Advance the website version marker only after that release is live. Align Chrome listing copy with local unlimited capture and disclosed cloud allowances; this branch does not publish store text.
+
+## Deferred decisions and external work
+
+- Invited-user ACLs, configurable link expiry and team billing require product decisions and additional work; owner-only sharing and explicit link revocation are implemented here.
+- Interviews, recruitment, paid pilots, dashboards and billing alerts need real users/account access. Playbook is ready, outcomes are not fabricated.
+- Existing May SEO findings partly predate main. Route registry/sitemap/IndexNow coupling, consent-based ad loading and optimized OG images already existed. Comparison and trust copy, developer landing, lazy route loading, and checks are updated. Broad blog fact-checking and index coverage require Search Console/current source review rather than automated word-count expansion.
+- Browser geometry tests require the repository's Chrome runtime, unavailable in the execution container. A live media/R2 integration pass remains required before merge/deployment.

@@ -1,13 +1,13 @@
-import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsUUID, ArrayMaxSize } from 'class-validator';
 
 export class ClaimRecordingsDto {
+    @ArrayMaxSize(200)
     @IsArray()
     @IsUUID('4', { each: true })
     recordingIds: string[];
 
-    /** The caller's local guest id. When present the claim is scoped to
-     * recordings that guest actually made; without it only ownerless rows
-     * predating the guestId column can be claimed. */
+    /** Legacy client field accepted for compatibility; authorization uses the
+     * private X-Snaprec-Guest credential, never this public identifier. */
     @IsOptional()
     @IsString()
     guestId?: string;

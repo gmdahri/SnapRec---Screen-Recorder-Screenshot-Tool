@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { StorageService } from '../storage/storage.service';
 import { Repository, In } from 'typeorm';
 import { Recording } from './entities/recording.entity';
 import { Reaction } from './entities/reaction.entity';
@@ -25,6 +26,7 @@ export class RecordingsService {
         @InjectRepository(RecordingView)
         private readonly viewsRepository: Repository<RecordingView>,
         private readonly usersService: UsersService,
+        private readonly storage: StorageService,
     ) { }
 
     async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Recording> {
@@ -54,7 +56,10 @@ export class RecordingsService {
             recording.guestId = createRecordingDto.guestId;
         }
 
-        return this.recordingsRepository.save(recording);
+        // INSERT, never save/upsert: a client-supplied existing id must not replace a row.
+        try { await this.recordingsRepository.insert(recording); }
+        catch (error) { if (error.code === '23505') throw new ConflictException('Capture already exists'); throw error; }
+        return recording;
     }
 
     async findAll(userId?: string): Promise<Recording[]> {
@@ -82,12 +87,38 @@ export class RecordingsService {
             relations: ['user', 'reactions', 'reactions.user', 'comments', 'comments.user']
         });
 
-        if (recording) {
-            recording.views += 1;
-            await this.recordingsRepository.save(recording);
-        }
-
         return recording;
+    }
+
+    async assertAccess(id: string, userId?: string): Promise<Recording> {
+        const recording = await this.findOne(id);
+        if (!recording || ((recording.isPublic === false || recording.sharingDisabledAt) && (!userId || recording.user?.supabaseId !== userId))) {
+            throw new NotFoundException('Recording unavailable. Sign in if this is your capture.');
+        }
+        // Never expose the credential used to claim an anonymous capture.
+        recording.guestId = null;
+        return recording;
+    }
+
+    async assertFileAccess(fileName: string, userId?: string): Promise<void> {
+        const recording = await this.recordingsRepository.findOne({ where: { fileUrl: fileName }, relations: ['user'] });
+        if (recording) { await this.assertAccess(recording.id, userId); return; }
+        // Owners can preview a newly uploaded editor asset before publishing it.
+        if (userId) {
+            const rows = await this.recordingsRepository.query('SELECT key FROM sr_upload_grants WHERE key=$1 AND principal=$2', [fileName, `user:${userId}`]);
+            if (rows.length) return;
+        }
+        throw new NotFoundException('Media unavailable');
+    }
+
+    async recordQualifiedView(id: string, sessionId: string, userId?: string) {
+        const recording = await this.assertAccess(id, userId);
+        if (userId && recording.user?.supabaseId === userId) return { counted: false };
+        const rows = await this.recordingsRepository.query(`WITH added AS (
+            INSERT INTO sr_qualified_views ("recordingId","sessionId") VALUES ($1,$2)
+            ON CONFLICT DO NOTHING RETURNING 1
+        ) UPDATE sr_recordings SET views=views+1 WHERE id=$1 AND EXISTS (SELECT 1 FROM added) RETURNING id`, [id, sessionId]);
+        return { counted: rows.length > 0 };
     }
 
     async addReaction(recordingId: string, type: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Reaction> {
@@ -218,12 +249,9 @@ export class RecordingsService {
      * its id, and share links expose ids — so opening a guest's share link was
      * enough to take ownership of their capture.
      *
-     * With `guestId` supplied, a recording is only claimable when it carries
-     * the same guestId. Rows predating that column have none, so they stay
-     * claimable by id alone: rejecting them would strand real guests who
-     * uploaded before the migration, and inventing a guestId for them would
-     * hand them to whoever asked first. That residue shrinks to nothing as old
-     * guest captures pass their 7-day expiry. */
+     * Only a hashed guest credential can authorize a claim. Legacy ownerless
+     * records without proof must be recovered through support.
+     */
     async claimRecordings(userId: string, recordingIds: string[], userMeta?: { email?: string; fullName?: string; avatarUrl?: string }, guestId?: string): Promise<{ claimed: string[] }> {
         const user = await this.usersService.findOrCreateBySupabaseId(userId, userMeta);
         const claimed: string[] = [];
@@ -241,21 +269,18 @@ export class RecordingsService {
             const alreadyMine = recording.user?.supabaseId === userId;
             const ownerless = recording.user === null || recording.user === undefined;
 
-            // An ownerless row is only claimable when it is provably this
-            // guest's, or when it predates the guestId column entirely.
-            const isThisGuests = recording.guestId
-                ? recording.guestId === guestId
-                : true;
-
-            if (alreadyMine || (ownerless && isThisGuests)) {
-                recording.user = user;
-                recording.guestId = null;
-                claimed.push(recording.id);
+            if (alreadyMine) { claimed.push(recording.id); continue; }
+            const isThisGuests = !!guestId && guestId.startsWith('guest:') && recording.guestId === guestId;
+            if (ownerless && isThisGuests) {
+                // Conditional update closes the race between two simultaneous claims.
+                const result = await this.recordingsRepository.createQueryBuilder()
+                    .update(Recording).set({ user, guestId: null })
+                    .where('id = :id AND "userId" IS NULL AND "guestId" = :guestId', { id: recording.id, guestId })
+                    .execute();
+                if (result.affected) claimed.push(recording.id);
             }
-            // Else: belongs to another user or another guest; skip.
         }
 
-        await this.recordingsRepository.save(recordings);
         return { claimed };
     }
 
@@ -276,8 +301,9 @@ export class RecordingsService {
     ): Promise<{ coveredSec: number; recorded: boolean }> {
         if (!actorSupabaseId) return { coveredSec: 0, recorded: false };
 
-        const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
+        const recording = await this.recordingsRepository.findOne({ where: { id: recordingId }, relations: ['user'] });
         if (!recording) throw new NotFoundException('Recording not found');
+        if (recording.user?.supabaseId === actorSupabaseId) return { coveredSec: 0, recorded: false };
 
         const user = await this.usersService.findOrCreateBySupabaseId(actorSupabaseId, userMeta);
 
@@ -390,6 +416,10 @@ export class RecordingsService {
             throw new ForbiddenException('You do not have permission to update this recording');
         }
 
+        if (updateRecordingDto.isPublic !== undefined) {
+            recording.isPublic = updateRecordingDto.isPublic;
+            recording.sharingDisabledAt = updateRecordingDto.isPublic ? null : new Date();
+        }
         if (updateRecordingDto.title) {
             recording.title = updateRecordingDto.title;
         }
@@ -421,6 +451,9 @@ export class RecordingsService {
             throw new ForbiddenException('You do not have permission to delete this recording');
         }
 
+        // Fail before removing the row so a storage failure remains retryable.
+        const [references] = await this.recordingsRepository.query('SELECT count(*)::int AS count FROM sr_recordings WHERE "fileUrl"=$1 AND id<>$2', [recording.fileUrl, id]);
+        if (!references?.count) await this.storage.deleteObject(recording.fileUrl);
         await this.recordingsRepository.remove(recording);
         return { success: true };
     }
@@ -447,10 +480,7 @@ export class RecordingsService {
     /** A link the owner turned off is 'off', not merely absent — the page has
      * to offer turning it back on, which needs the distinction.
      *
-     * NOTE: sr_recordings has no isPublic/sharingDisabledAt columns yet. Until
-     * they exist every uploaded recording is reachable by anyone holding the
-     * link, so an absent pair reports 'link'. Reporting 'restricted' would be
-     * a lie about what the product currently does. */
+     * The API enforces the same flags on metadata, downloads and interactions. */
     static visibilityOf(
         row: { isPublic?: boolean; sharingDisabledAt?: Date | null },
     ): 'link' | 'restricted' | 'off' {

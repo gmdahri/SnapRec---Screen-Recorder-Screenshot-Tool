@@ -16,6 +16,9 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  // Set only to the trusted proxy count in your deployment; never trust arbitrary forwarded headers.
+  app.getHttpAdapter().getInstance().set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 0));
+
   // Enable global validation pipe for DTOs
   app.useGlobalPipes(
     new ValidationPipe({
@@ -38,7 +41,7 @@ async function bootstrap() {
     origin: origins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Snaprec-Guest'],
   });
   const port = configService.get<number>('PORT', 3001);
 

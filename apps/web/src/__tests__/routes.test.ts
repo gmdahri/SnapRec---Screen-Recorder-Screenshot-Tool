@@ -244,12 +244,11 @@ describe('_redirects covers every public route', () => {
    * rewrites: `/*  /index.html  404` was silently downgraded to 200, so every
    * bad URL stayed a soft 404. Its absence is also what makes Pages serve the
    * real 404.html instead of assuming an SPA and redirecting to `/`. */
-  it('has no catch-all, so unmatched routes reach the real 404.html', () => {
-    expect(redirects).not.toMatch(/^\/\*\s/m);
-  });
-
-  it('builds a top-level 404.html to take Pages out of SPA mode', () => {
-    expect(read('vite.config.ts')).toContain("'404.html'");
+  // Production regressions b061fa9 / 9453f93 established that the SPA fallback
+  // is required. A real edge 404 must be tested on Pages before replacing it.
+  it('preserves the production SPA fallback for app routes', () => {
+    expect(redirects).toMatch(/^\/\*\s+\/index\.html\s+200/m);
+    expect(read('vite.config.ts')).not.toContain("fileName: '404.html'");
   });
 
   it('301s blog posts by slug, above the SPA rewrite that would swallow them', () => {

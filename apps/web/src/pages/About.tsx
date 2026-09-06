@@ -101,9 +101,7 @@ const About = () => {
                             </p>
                             <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed mt-4">
                                 We wanted something simple — click, record, share. No friction. So we built
-                                it ourselves and decided to make it free for everyone. Today SnapRec is used
-                                by thousands of people across education, remote work, content creation, and
-                                software development.
+                                it ourselves and decided to make it free for everyone. SnapRec is built for people working across education, remote work, content creation, and software development.
                             </p>
                         </section>
 
@@ -114,7 +112,7 @@ const About = () => {
                                     { icon: 'videocam', title: 'Screen Recording', desc: 'Record your tab, window, or entire screen in up to 4K. Include microphone audio and webcam overlay.' },
                                     { icon: 'screenshot_monitor', title: 'Screenshots', desc: 'Capture visible area, full-page scrolling screenshots, or select a specific region.' },
                                     { icon: 'edit', title: 'Annotation Tools', desc: 'Draw, add text, arrows, shapes, and blur sensitive information — all built in.' },
-                                    { icon: 'share', title: 'Instant Sharing', desc: 'Get a shareable link in one click. No account needed, no upload limits.' },
+                                    { icon: 'share', title: 'Instant Sharing', desc: 'Get a shareable link in one click. Local capture needs no account. Cloud uploads have file-size and daily allowances.' },
                                     { icon: 'shield', title: 'Privacy First', desc: 'Local by default — recordings stay on your device unless you choose to upload to your private library.' },
                                     { icon: 'code', title: 'Open Source', desc: 'SnapRec is open source on GitHub. Inspect the code, contribute, or fork it.' },
                                 ].map((f) => (
@@ -134,10 +132,9 @@ const About = () => {
                         <section className="mb-12">
                             <h2 className="text-3xl font-bold text-[var(--sr-text-primary-on-light)] mb-4">Privacy & Security</h2>
                             <p className="text-[var(--sr-text-muted-on-light)] leading-relaxed">
-                                Your privacy matters. SnapRec does not collect personal data, does not track
-                                your browsing activity, and processes all captures locally on your device by default.
+                                Captures are processed locally by default. Account details support sign-in; optional usage analytics help us improve SnapRec.
                                 Local by default — recordings stay on your device unless you choose to upload to your
-                                private cloud library. We use only the minimum browser permissions needed to provide
+                                cloud library. Uploaded captures are accessible to anyone with the link until you turn sharing off. We use only the minimum browser permissions needed to provide
                                 capture functionality, and every permission is explained in our{' '}
                                 <a href="/privacy/" className="text-[var(--sr-cyan-on-light)] hover:underline font-semibold">Privacy Policy</a>.
                             </p>

@@ -115,8 +115,7 @@
     ],
     "externally_connectable": {
         "matches": [
-            "https://www.snaprecorder.org/*",
-            "http://localhost:5173/*"
+            "https://www.snaprecorder.org/*"
         ]
     }
 }

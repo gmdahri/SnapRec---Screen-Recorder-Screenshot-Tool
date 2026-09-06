@@ -21,6 +21,7 @@ async function storeSession(session) {
             }
         });
         console.log('Session stored successfully');
+        if (typeof claimExtensionCaptures === 'function') claimExtensionCaptures().catch(() => {});
         return true;
     } catch (error) {
         console.error('Failed to store session:', error);

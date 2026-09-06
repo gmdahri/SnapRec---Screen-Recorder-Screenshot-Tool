@@ -6,17 +6,16 @@ describe('landing copy', () => {
     expect(DEMO_STEPS.map(s => s.label)).toEqual(['Capture', 'Refine', 'Share']);
   });
 
-  it('carries twelve factual comparison rows', () => {
-    expect(COMPARISON).toHaveLength(12);
+  it('carries only the verified comparison rows', () => {
+    expect(COMPARISON).toHaveLength(3);
   });
 
   it('dates the competitor claims, so a stale table is visible', () => {
-    expect(COMPARISON_CHECKED).toMatch(/^[A-Z][a-z]{2} \d{4}$/);
+    expect(COMPARISON_CHECKED).toMatch(/^\d{1,2} [A-Z][a-z]+ \d{4}$/);
   });
 
-  it('does not claim a competitor has a watermark when it does not', () => {
-    const watermark = COMPARISON.find(r => r.row === 'Watermark')!;
-    expect([watermark.snap, watermark.loom, watermark.cast]).toEqual(['None', 'None', 'None']);
+  it('uses the verified Screencastify recording duration', () => {
+    expect(COMPARISON.find(r => r.row === 'Recording length')?.cast).toBe('30 minutes per video');
   });
 
   it('never leaves a competitor cell empty — an empty cell reads as zero', () => {

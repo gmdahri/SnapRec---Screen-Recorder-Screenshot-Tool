@@ -2,7 +2,10 @@
 // This script handles MediaRecorder in a persistent context that survives tab navigations
 
 let mediaRecorder = null;
-let recordedChunks = [];
+let recordingSessionId = null;
+let recordingChunkIndex = 0;
+let chunkWrites = Promise.resolve();
+let journalError = null;
 let recordingStream = null;
 let audioContext = null;
 
@@ -269,12 +272,27 @@ async function startMediaRecorder() {
     mediaRecorder = new MediaRecorder(pendingStream, recorderOptions);
     console.log('[Offscreen] MediaRecorder created with mimeType:', recorderOptions.mimeType);
 
-    recordedChunks = [];
+    try {
+        recordingSessionId = await SnapRecRecordingStore.begin(mediaRecorder.mimeType || 'video/webm');
+    } catch (error) {
+        cleanup();
+        throw new Error('Recording could not start because local recovery storage is unavailable. Free device space and try again.');
+    }
+    recordingChunkIndex = 0;
+    journalError = null;
+    chunkWrites = Promise.resolve();
 
     mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
-            recordedChunks.push(e.data);
-            console.log('[Offscreen] Chunk received, total chunks:', recordedChunks.length);
+            const index = recordingChunkIndex++;
+            chunkWrites = chunkWrites.then(() => SnapRecRecordingStore.append(recordingSessionId, index, e.data)).catch(error => {
+                journalError = error;
+                // Stop promptly on disk/quota failure; already persisted chunks remain recoverable.
+                if (mediaRecorder?.state === 'recording') {
+                    stopRecording().catch(() => {});
+                    chrome.runtime.sendMessage({ action: 'recordingStorageFailed', error: 'Local storage is full or unavailable. Open Recover recordings to save the captured portion.' });
+                }
+            });
         }
     };
 
@@ -331,7 +349,9 @@ async function stopRecording() {
                 // Stop tracks immediately to remove the "Sharing screen" banner
                 cleanupTracks();
 
-                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+                await chunkWrites;
+                const blob = await SnapRecRecordingStore.blob(recordingSessionId, mediaRecorder.mimeType || 'video/webm');
+                if (!journalError) await SnapRecRecordingStore.finish(recordingSessionId);
                 console.log('[Offscreen] Blob created, size:', blob.size);
                 currentRecordingBlob = blob;
 
@@ -587,5 +607,5 @@ function cleanup() {
     console.log('[Offscreen] Cleaning up resources');
     cleanupTracks();
     mediaRecorder = null;
-    recordedChunks = [];
+    recordingSessionId = null;
 }

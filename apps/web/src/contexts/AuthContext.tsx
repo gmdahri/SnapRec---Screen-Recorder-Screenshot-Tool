@@ -98,8 +98,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         hasClaimedRef.current = true;
                         console.log('Claiming guest recordings:', guestIds);
                         claimMutation.mutate(guestIds, {
-                            onSuccess: () => {
-                                localStorage.removeItem('guestRecordingIds');
+                            onSuccess: (result) => {
+                                const remaining = guestIds.filter((id: string) => !result.claimed.includes(id));
+                                localStorage.setItem('guestRecordingIds', JSON.stringify(remaining));
                                 console.log('Guest recordings claimed successfully');
                             },
                             onError: (err) => {

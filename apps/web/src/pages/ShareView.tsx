@@ -1,3 +1,5 @@
+import { useQualifiedView } from '../hooks/useQualifiedView';
+import { IssueReport } from '../components/IssueReport';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { VideoPlayer, LoginModal, SEO, GoogleAd, AddToChromeButton } from '../components';
@@ -115,17 +117,7 @@ const ShareView: React.FC = () => {
                     const transaction = db.transaction(['recordings'], 'readwrite');
                     const store = transaction.objectStore('recordings');
 
-                    // TTL check: expire data older than 1 hour
-                    const VIDEO_TTL_MS = 60 * 60 * 1000; // 1 hour
-                    store.get('latest_video_timestamp').onsuccess = (tsEv: any) => {
-                        const timestamp = tsEv.target.result;
-                        if (timestamp && (Date.now() - timestamp) > VIDEO_TTL_MS) {
-                            console.log('IDB video data expired (older than 1 hour), clearing');
-                            store.clear();
-                            resolve({ blob: null, rawBlob: null, id: null, metadata: null });
-                            return;
-                        }
-
+                    store.get('latest_video_timestamp').onsuccess = () => {
                         let dbBlob: string | null = null;
                         let dbRawBlob: Blob | null = null;
                         let dbId: string | null = null;
@@ -254,6 +246,7 @@ const ShareView: React.FC = () => {
      * R2. Otherwise the recording's fileUrl, held still: the server re-signs it
      * on every read, and feeding the element a freshly signed URL restarts
      * playback from 0:00. See useStableMediaUrl. */
+    useQualifiedView(recording, user?.id);
     const mediaSrc = useStableMediaUrl(recording?.fileUrl) ?? undefined;
     const playerSrc = localVideoBlob || mediaSrc;
 
@@ -585,6 +578,7 @@ const ShareView: React.FC = () => {
         const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
             fileName,
             contentType: 'video/webm',
+            sizeBytes: blob.size,
         });
         await uploadFile(uploadUrl, blob, 'video/webm');
         // Measured here because this is the only moment the file is in hand.
@@ -850,9 +844,11 @@ const ShareView: React.FC = () => {
                     title={recording.title}
                     description={`Watch "${recording.title}" on SnapRec.`}
                     url={`/v/${recording.id}`}
+                    noIndex
                 />
+                <IssueReport title={recording.title} url={`${window.location.origin}/v/${recording.id}`} />
                 <ShareShell
-                    state={toShareState(recording)}
+                    state={recording.user?.supabaseId === user?.id && user ? (recording.isReady === false ? 'processing' : 'ready') : toShareState(recording)}
                     kind={kind}
                     capture={{
                         id: recording.id,

@@ -1,3 +1,4 @@
+import { sameMediaObject } from '../hooks/useStableMediaUrl';
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 
 export type VideoPlayerPlayback = {
@@ -64,6 +65,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   },
   ref,
 ) {
+  const previousSource = useRef<string | undefined>(undefined);
+  const resumePosition = useRef({ time: 0, playing: false });
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -287,6 +290,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   useEffect(() => {
     if (src && videoRef.current && !isProcessing) {
       const el = videoRef.current;
+      const refresh = previousSource.current !== src && sameMediaObject(previousSource.current, src);
+      const resume = resumePosition.current;
+      previousSource.current = src;
+      const restore = () => {
+        if (!refresh) return;
+        el.currentTime = resume.time;
+        if (resume.playing) void el.play().catch(() => {});
+      };
+      el.addEventListener('loadedmetadata', restore, { once: true });
       el.load();
       setIsPlaying(false);
       const rate = controlledRate ? playbackRate! : playbackSpeed;
@@ -304,7 +316,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         pollCount++;
         if (pollCount > 10) clearInterval(pollDuration);
       }, 500);
-      return () => clearInterval(pollDuration);
+      return () => { clearInterval(pollDuration); el.removeEventListener('loadedmetadata', restore); };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: load() only on src/isProcessing
   }, [src, isProcessing]);
@@ -359,7 +371,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         src={src}
         className={`w-full h-full object-contain transition-opacity duration-500 ${isProcessing ? 'opacity-30' : 'opacity-100'}`}
         style={zoomStyle}
-        onTimeUpdate={handleTimeUpdate}
+        onTimeUpdate={() => {
+          if (videoRef.current) resumePosition.current = { time: videoRef.current.currentTime, playing: !videoRef.current.paused };
+          handleTimeUpdate();
+        }}
         onLoadedMetadata={handleLoadedMetadata}
         onDurationChange={handleDurationChange}
         onCanPlay={handleDurationChange}
@@ -371,10 +386,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         preload="metadata"
         muted={isMuted}
         onPlay={() => {
+          resumePosition.current.playing = true;
           setIsPlaying(true);
           emitPlayback(true);
         }}
         onPause={() => {
+          resumePosition.current.playing = false;
           setIsPlaying(false);
           emitPlayback(false);
         }}

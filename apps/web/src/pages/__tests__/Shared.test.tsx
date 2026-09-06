@@ -24,7 +24,7 @@ describe('Shared', () => {
   it('shows who can see each capture — permissions are the point', () => {
     render(<SharedList items={items} onAction={() => {}} />);
     expect(screen.getByText('Anyone with the link')).toBeInTheDocument();
-    expect(screen.getByText('Only people I invite')).toBeInTheDocument();
+    expect(screen.getByText('Only you')).toBeInTheDocument();
   });
 
   it('says a link was turned off, and offers to turn it back on', () => {

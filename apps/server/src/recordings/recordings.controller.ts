@@ -14,6 +14,16 @@ import {
     Logger,
     NotFoundException,
 } from '@nestjs/common';
+import { UploadPolicyService, uploadPrincipal, guestPrincipal } from '../storage/upload-policy.service';
+import { IsUUID } from 'class-validator';
+class QualifiedViewDto { @IsUUID() sessionId: string; }
+const profile = (user: any) => user ? { supabaseId: user.supabaseId, fullName: user.fullName, avatarUrl: user.avatarUrl } : undefined;
+const publicRecording = (recording: any) => ({
+    ...recording, guestId: undefined, user: profile(recording.user),
+    comments: (recording.comments || []).map((comment: any) => ({ ...comment, user: profile(comment.user) })),
+    reactions: (recording.reactions || []).map((reaction: any) => ({ ...reaction, user: profile(reaction.user) })),
+});
+
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
@@ -31,23 +41,22 @@ export class RecordingsController {
     constructor(
         private readonly storageService: StorageService,
         private readonly recordingsService: RecordingsService,
+        private readonly uploads: UploadPolicyService,
     ) { }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Post('upload-url')
-    async getUploadUrl(@Body() uploadUrlDto: UploadUrlDto) {
-        const uploadUrl = await this.storageService.getUploadPresignedUrl(
-            uploadUrlDto.fileName,
-            uploadUrlDto.contentType,
-        );
-        return { uploadUrl, fileUrl: uploadUrlDto.fileName };
+    async getUploadUrl(@Req() req: any, @Body() dto: UploadUrlDto) {
+        return this.uploads.issue(req, dto.contentType, dto.sizeBytes);
     }
 
     @UseGuards(OptionalJwtAuthGuard)
     @Post()
     async createRecording(@Req() req: any, @Body() createRecordingDto: CreateRecordingDto) {
-        if (req.user && !createRecordingDto.userId) {
-            createRecordingDto.userId = req.user.id;
-        }
+        const principal = uploadPrincipal(req);
+        await this.uploads.assertOwned(createRecordingDto.fileUrl, principal);
+        createRecordingDto.userId = req.user?.id;
+        createRecordingDto.guestId = req.user ? undefined : principal;
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
         return this.recordingsService.create(createRecordingDto, userMeta);
     }
@@ -60,7 +69,7 @@ export class RecordingsController {
             req.user.id,
             claimRecordingsDto.recordingIds,
             userMeta,
-            claimRecordingsDto.guestId,
+            guestPrincipal(req),
         );
         return { success: true, claimed };
     }
@@ -89,18 +98,24 @@ export class RecordingsController {
         return this.recordingsService.findShared(req.user.id, query.direction ?? 'by-me');
     }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Get('status/:fileName')
-    async getFileStatus(@Param('fileName') fileName: string, @Res({ passthrough: true }) res: Response) {
+    async getFileStatus(@Req() req: any, @Param('fileName') fileName: string, @Res({ passthrough: true }) res: Response) {
+        await this.recordingsService.assertFileAccess(fileName, req.user?.id);
         res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         const exists = await this.storageService.checkFileExists(fileName);
         return { ready: exists };
     }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Get('stream/:fileName')
     async streamFile(
+        @Req() req: any,
         @Param('fileName') fileName: string,
         @Res() res: Response,
     ) {
+        await this.recordingsService.assertFileAccess(fileName, req.user?.id);
+        res.set('Cache-Control', 'no-store');
         try {
             // Keep old links working without sending the file through this service.
             const url = await this.storageService.getDownloadUrl(fileName);
@@ -115,9 +130,11 @@ export class RecordingsController {
         }
     }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Get(':id')
-    async getRecording(@Param('id', ParseUUIDPipe) id: string) {
-        const recording = await this.recordingsService.findOne(id);
+    async getRecording(@Req() req: any, @Res({ passthrough: true }) res: Response, @Param('id', ParseUUIDPipe) id: string) {
+        res.set('Cache-Control', 'no-store');
+        const recording = await this.recordingsService.assertAccess(id, req.user?.id);
         if (!recording) {
             throw new NotFoundException(`Recording with ID "${id}" not found`);
         }
@@ -125,7 +142,7 @@ export class RecordingsController {
         const isReady = await this.storageService.checkFileExists(recording.fileUrl);
 
         return {
-            ...recording,
+            ...publicRecording(recording),
             isReady,
             fileUrl: isReady
                 ? await this.storageService.getDownloadUrl(recording.fileUrl)
@@ -136,8 +153,10 @@ export class RecordingsController {
         };
     }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Get('download-url/:fileName')
-    async getDownloadUrl(@Param('fileName') fileName: string) {
+    async getDownloadUrl(@Req() req: any, @Param('fileName') fileName: string) {
+        await this.recordingsService.assertFileAccess(fileName, req.user?.id);
         const url = await this.storageService.getDownloadUrl(fileName);
         return { url };
     }
@@ -150,6 +169,7 @@ export class RecordingsController {
         @Body() updateRecordingDto: UpdateRecordingDto,
         @Req() req: any,
     ) {
+        if (updateRecordingDto.fileUrl) await this.uploads.assertOwned(updateRecordingDto.fileUrl, uploadPrincipal(req));
         return this.recordingsService.update(id, updateRecordingDto, req.user.id);
     }
 
@@ -166,6 +186,7 @@ export class RecordingsController {
         @Req() req: any,
     ) {
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
+        await this.recordingsService.assertAccess(id, req.user?.id);
         return this.recordingsService.addReaction(
             id,
             addReactionDto.type,
@@ -183,6 +204,7 @@ export class RecordingsController {
         @Req() req: any,
     ) {
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
+        await this.recordingsService.assertAccess(id, req.user?.id);
         return this.recordingsService.addComment(
             id,
             addCommentDto.content,
@@ -213,7 +235,14 @@ export class RecordingsController {
         const userMeta = req.user
             ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl }
             : undefined;
+        await this.recordingsService.assertAccess(id, req.user?.id);
         return this.recordingsService.recordWatchProgress(id, dto.ranges, req.user?.id, userMeta);
+    }
+
+    @UseGuards(OptionalJwtAuthGuard)
+    @Post(':id/view')
+    async qualifiedView(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QualifiedViewDto, @Req() req: any) {
+        return this.recordingsService.recordQualifiedView(id, dto.sessionId, req.user?.id);
     }
 
     /** Replace the media behind a recording, keeping its link and comments.
@@ -227,6 +256,7 @@ export class RecordingsController {
         @Body() dto: PublishRecordingDto,
         @Req() req: any,
     ) {
+        await this.uploads.assertOwned(dto.fileUrl, uploadPrincipal(req));
         return this.recordingsService.publish(id, dto, req.user.id);
     }
 
@@ -244,6 +274,7 @@ export class RecordingsController {
         const userMeta = req.user
             ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl }
             : undefined;
+        await this.recordingsService.assertAccess(id, req.user?.id);
         return this.recordingsService.setCommentResolved(
             id, commentId, dto.resolved ?? true, req.user?.id, userMeta,
         );

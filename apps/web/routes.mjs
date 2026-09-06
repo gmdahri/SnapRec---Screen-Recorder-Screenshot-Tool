@@ -25,6 +25,7 @@ export const SITE_URL = 'https://www.snaprecorder.org';
  * commit date is the honest `<lastmod>` for it. Anything not listed here is either
  * auth-gated or robots-disallowed — see NON_PUBLIC in src/__tests__/routes.test.ts. */
 export const STATIC_ROUTES = [
+  { route: '/screen-recorder-for-developers', source: 'src/pages/DeveloperWorkflow.tsx' },
   { route: '/', source: 'src/pages/Landing.tsx' },
   { route: '/how-it-works', source: 'src/pages/HowItWorks.tsx' },
   { route: '/changelog', source: 'src/pages/Changelog.tsx' },

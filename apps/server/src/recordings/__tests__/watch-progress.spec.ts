@@ -8,8 +8,8 @@ import { RecordingsService } from '../recordings.service';
 
 const VIEWER = 'sb-viewer';
 
-function makeService(over: { durationSec?: number; existing?: any; views?: any[] } = {}) {
-  const recording = { id: 'rec-1', durationSec: over.durationSec ?? 180 };
+function makeService(over: { durationSec?: number; owner?: string; existing?: any; views?: any[] } = {}) {
+  const recording = { id: 'rec-1', user: { supabaseId: over.owner }, durationSec: over.durationSec ?? 180 };
   const recordings = { findOne: jest.fn().mockResolvedValue(recording) };
   const saved: any[] = [];
   const views = {
@@ -21,6 +21,7 @@ function makeService(over: { durationSec?: number; existing?: any; views?: any[]
   const users = { findOrCreateBySupabaseId: jest.fn().mockResolvedValue({ id: 'user-1' }) };
   const service = new RecordingsService(
     recordings as any, {} as any, {} as any, views as any, users as any,
+    { deleteObject: jest.fn().mockResolvedValue(undefined) } as any,
   );
   return { service, views, users, saved };
 }
@@ -117,4 +118,12 @@ describe('the figure shown to an owner', () => {
     const { service } = makeService({ durationSec: 10, views: [{ coveredSec: 999 }] });
     expect(await service.watchedPercent('rec-1')).toBe(100);
   });
+});
+
+it('excludes the owner from watch coverage', async () => {
+  const { service, views, users } = makeService({ owner: VIEWER });
+  expect(await service.recordWatchProgress('rec-1', [{ startSec: 0, endSec: 30 }], VIEWER))
+    .toEqual({ coveredSec: 0, recorded: false });
+  expect(views.save).not.toHaveBeenCalled();
+  expect(users.findOrCreateBySupabaseId).not.toHaveBeenCalled();
 });

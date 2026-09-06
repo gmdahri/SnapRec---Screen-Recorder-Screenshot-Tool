@@ -78,7 +78,8 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
 
             const { uploadUrl, fileUrl } = await getUploadUrlMutation.mutateAsync({
                 fileName,
-                contentType: 'image/png'
+                contentType: 'image/png',
+                sizeBytes: blob.size
             });
 
             await uploadFile(uploadUrl, blob, 'image/png');

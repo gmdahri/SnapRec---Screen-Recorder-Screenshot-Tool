@@ -10,15 +10,15 @@ const SECTIONS: LegalSection[] = [
         title: 'Information We Collect',
         body: (
             <>
-                <p>The SnapRec Chrome extension does not collect any personal information.</p>
-                <p>The extension operates entirely on your local device and does not:</p>
+                <p>SnapRec processes captures locally. Signing in uses your account identifier and profile details; choosing cloud sharing uploads your selected media and its title.</p>
+                <p>Local recording does not require an account. The following describes capture storage:</p>
                 <ul>
-                <li>Collect personal data</li>
-                <li>Track your browsing activity</li>
+                <li>Local recovery copies stay in browser storage until you remove them</li>
+                <li>Product usage analytics may include feature actions and capture-site domains; do not include passwords or sensitive content in feedback</li>
                 <li>Store any screenshots or recordings on external servers (unless you opt in to cloud sharing)</li>
                 </ul>
                 <p>
-                <strong>Our website</strong> (snaprecorder.org) uses third-party advertising services
+                <strong>Product analytics</strong> use PostHog. Website analytics run after acceptance of the analytics choice; session replay is disabled. Qualified views use an anonymous session identifier and exclude signed-in owners. Cloud upload budgets store a hashed network identifier to limit abuse. <strong>Our website</strong> (snaprecorder.org) uses third-party advertising services
                 (Google AdSense) which may collect information via cookies and similar technologies.
                 See Section 5 ("Advertising & Third-Party Technologies") and Section 6 ("Cookies")
                 below for details.
@@ -50,7 +50,7 @@ const SECTIONS: LegalSection[] = [
                 <li>We use secure authentication for cloud providers</li>
                 <li>We only upload files you explicitly choose to save</li>
                 <li>We do not access or modify any other files in your storage</li>
-                <li>Your credentials are never stored by our extension, we use session tokens</li>
+                <li>The extension stores session tokens locally so you can stay signed in</li>
                 </ul>
             </>
         ),

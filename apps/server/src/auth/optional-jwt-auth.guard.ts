@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
     // Override handleRequest to not throw an error if user is missing
-    handleRequest(err: any, user: any) {
+    handleRequest(err: any, user: any, _info: any, context: ExecutionContext) {
+        if ((err || !user) && context.switchToHttp().getRequest().headers?.authorization) {
+            throw new UnauthorizedException("Session expired. Sign in again.");
+        }
         if (err || !user) {
             return null;
         }

@@ -1,6 +1,9 @@
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsBoolean } from 'class-validator';
 
 export class UpdateRecordingDto {
+    @IsOptional()
+    @IsBoolean()
+    isPublic?: boolean;
     @IsString()
     @IsOptional()
     title?: string;

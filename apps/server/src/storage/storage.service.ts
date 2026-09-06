@@ -37,14 +37,16 @@ export class StorageService implements OnModuleInit {
         }
     }
 
-    async getUploadPresignedUrl(fileName: string, contentType: string) {
+    async getUploadPresignedUrl(fileName: string, contentType: string, sizeBytes?: number) {
         const command = new PutObjectCommand({
             Bucket: this.bucketName,
             Key: fileName,
             ContentType: contentType,
+            ContentLength: sizeBytes,
+            IfNoneMatch: "*",
         });
 
-        return getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+        return getSignedUrl(this.s3Client, command, { expiresIn: 300 });
     }
 
     async getDownloadUrl(fileName: string) {
@@ -53,7 +55,7 @@ export class StorageService implements OnModuleInit {
             Key: fileName,
         });
 
-        return getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+        return getSignedUrl(this.s3Client, command, { expiresIn: 300 });
     }
 
     async getDownloadStream(fileName: string) {
