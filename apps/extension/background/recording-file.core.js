@@ -17,7 +17,13 @@
  * into a folder. Fields are zero-padded so the directory sorts chronologically
  * in every file manager. */
 function recordingFilename(date = new Date(), mimeType = 'video/webm') {
-  const ext = /mp4/i.test(mimeType) ? 'mp4' : 'webm';
+  // Screenshots share this naming, so the table covers images too. Anything
+  // unrecognised falls back to webm, which is what the recorder produces.
+  const ext = /webp/i.test(mimeType) ? 'webp'
+    : /png/i.test(mimeType) ? 'png'
+    : /jpe?g/i.test(mimeType) ? 'jpg'
+    : /mp4/i.test(mimeType) ? 'mp4'
+    : 'webm';
   const p = (n) => String(n).padStart(2, '0');
   const stamp = `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`
     + `-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;

@@ -1211,6 +1211,95 @@ async function saveRecordingToDisk() {
     return { filename, bytes: info.size, mimeType: info.mimeType };
 }
 
+/** The screenshot's disk copy, on the same terms as a recording's.
+ *
+ * Shares saveRecordingToDisk's contract: the blob: URL belongs to the offscreen
+ * document, so the write is awaited rather than merely started. */
+async function saveImageToDisk() {
+    const info = await chrome.runtime
+        .sendMessage({ action: 'offscreen_getBlobUrl', kind: 'image' })
+        .catch((e) => ({ success: false, error: e.message }));
+    if (!info?.success) {
+        console.error('[SnapRec] No image to save to disk:', info?.error);
+        return null;
+    }
+
+    const filename = SnapRecFile.recordingFilename(new Date(), info.mimeType);
+    const started = await new Promise((resolve) => {
+        chrome.downloads.download({ url: info.url, filename, saveAs: false }, (downloadId) => {
+            resolve(SnapRecFile.downloadStarted(downloadId, chrome.runtime.lastError?.message));
+        });
+    });
+    if (!started.ok) {
+        console.error('[SnapRec] Screenshot download refused:', started.reason);
+        return null;
+    }
+
+    const settled = await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            chrome.downloads.onChanged.removeListener(onChanged);
+            resolve({ ok: false, reason: 'timeout' });
+        }, DISK_SAVE_TIMEOUT_MS);
+        const onChanged = (delta) => {
+            const outcome = SnapRecFile.downloadSettled(delta, started.downloadId);
+            if (!outcome) return;
+            clearTimeout(timer);
+            chrome.downloads.onChanged.removeListener(onChanged);
+            resolve(outcome);
+        };
+        chrome.downloads.onChanged.addListener(onChanged);
+    });
+    if (!settled.ok) {
+        console.error('[SnapRec] Screenshot download failed:', settled.reason);
+        return null;
+    }
+
+    console.log('[SnapRec] Screenshot saved to disk:', filename, info.size, 'bytes');
+    return { filename, bytes: info.size, mimeType: info.mimeType };
+}
+
+/** Parks the image and opens the editor on it.
+ *
+ * The courier carries the Blob by reference, so this costs the same for a
+ * 16,000px page as for a short one. */
+async function deliverImageToEditor() {
+    const imageId = crypto.randomUUID();
+    const parked = await chrome.runtime.sendMessage({
+        action: 'offscreen_persistForHandoff', id: imageId, metadataStr: '[]', kind: 'image',
+    }).catch((e) => ({ success: false, error: e.message }));
+
+    if (!parked?.success) {
+        console.error('[SnapRec] Could not park screenshot:', parked?.error);
+        return;
+    }
+
+    const tab = await chrome.tabs.create({ url: `${CONFIG.WEB_BASE_URL}/editor` });
+    const frameUrl = chrome.runtime.getURL(
+        `handoff/handoff.html?kind=image&id=${encodeURIComponent(imageId)}`);
+
+    const listener = async (tabId, info) => {
+        if (tabId !== tab.id || info.status !== 'complete') return;
+        chrome.tabs.onUpdated.removeListener(listener);
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: (src) => {
+                    const frame = document.createElement('iframe');
+                    frame.src = src;
+                    frame.setAttribute('aria-hidden', 'true');
+                    frame.style.cssText =
+                        'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none';
+                    document.documentElement.appendChild(frame);
+                },
+                args: [frameUrl],
+            });
+        } catch (err) {
+            console.error('[SnapRec] Could not inject image handoff frame:', err.message);
+        }
+    };
+    chrome.tabs.onUpdated.addListener(listener);
+}
+
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
 

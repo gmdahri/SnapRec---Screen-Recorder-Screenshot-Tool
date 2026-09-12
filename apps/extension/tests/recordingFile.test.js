@@ -31,6 +31,21 @@ describe('disk copy naming', () => {
   it('treats an unrecognised mime type as webm, the recorder default', () => {
     expect(recordingFilename(new Date(2026, 0, 2, 3, 4, 5), '')).toMatch(/\.webm$/);
   });
+
+  it('names a WebP screenshot with a webp extension', () => {
+    expect(recordingFilename(new Date(2026, 0, 2, 3, 4, 5), 'image/webp'))
+      .toBe('SnapRec/SnapRec-2026-01-02-030405.webp');
+  });
+
+  it('names a PNG screenshot with a png extension', () => {
+    expect(recordingFilename(new Date(2026, 0, 2, 3, 4, 5), 'image/png'))
+      .toBe('SnapRec/SnapRec-2026-01-02-030405.png');
+  });
+
+  it('still treats an unrecognised type as webm, the recorder default', () => {
+    expect(recordingFilename(new Date(2026, 0, 2, 3, 4, 5), 'application/octet-stream'))
+      .toMatch(/\.webm$/);
+  });
 });
 
 describe('reading the start of a download', () => {

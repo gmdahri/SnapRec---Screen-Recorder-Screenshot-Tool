@@ -16,6 +16,12 @@
 
 const params = new URLSearchParams(location.search);
 const id = params.get('id') || '';
+/* Defaults to video so the recording handoff, which sends no kind, behaves
+ * exactly as before. */
+const kind = params.get('kind') === 'image' ? 'image' : 'video';
+const KEYS = kind === 'image'
+    ? { blob: 'latest_image_blob', meta: 'latest_image_meta', type: 'SNAPREC_EDIT_IMAGE' }
+    : { blob: 'latest_video_blob', meta: 'latest_metadata', type: 'SNAPREC_VIDEO_DATA' };
 
 function readParked() {
     return new Promise((resolve, reject) => {
@@ -35,9 +41,9 @@ function readParked() {
                 return;
             }
             const store = db.transaction(['recordings'], 'readonly').objectStore('recordings');
-            const blobReq = store.get('latest_video_blob');
+            const blobReq = store.get(KEYS.blob);
             blobReq.onsuccess = () => {
-                const metaReq = store.get('latest_metadata');
+                const metaReq = store.get(KEYS.meta);
                 metaReq.onsuccess = () => resolve({
                     blob: blobReq.result instanceof Blob ? blobReq.result : null,
                     metadataStr: metaReq.result ?? null,
@@ -56,7 +62,7 @@ function readParked() {
         const { blob, metadataStr } = await readParked();
         if (!blob) throw new Error('nothing parked');
         parent.postMessage(
-            { type: 'SNAPREC_VIDEO_DATA', blob, id, metadataStr },
+            { type: KEYS.type, blob, id, metadataStr },
             CONFIG.WEB_BASE_URL,
         );
         console.log('[Handoff] Delivered capture, size:', blob.size);

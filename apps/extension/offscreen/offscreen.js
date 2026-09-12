@@ -81,7 +81,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true;
 
         case 'offscreen_persistForHandoff':
-            persistForHandoff(message.id, message.metadataStr)
+            persistForHandoff(message.id, message.metadataStr, message.kind)
                 .then(result => sendResponse({ success: true, size: result.size, type: result.type }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
@@ -110,18 +110,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
          * write — see saveRecordingToDisk, which waits for the download to
          * settle rather than merely to start. Not revoked here for the same
          * reason; closing the document releases it. */
-        case 'offscreen_getBlobUrl':
-            if (!currentRecordingBlob) {
-                sendResponse({ success: false, error: 'No recording available' });
+        case 'offscreen_getBlobUrl': {
+            const blob = message.kind === 'image' ? currentImageBlob : currentRecordingBlob;
+            if (!blob) {
+                sendResponse({ success: false, error: 'No capture available' });
             } else {
                 sendResponse({
                     success: true,
-                    url: URL.createObjectURL(currentRecordingBlob),
-                    size: currentRecordingBlob.size,
-                    mimeType: currentRecordingBlob.type || 'video/webm',
+                    url: URL.createObjectURL(blob),
+                    size: blob.size,
+                    mimeType: blob.type || (message.kind === 'image' ? 'image/webp' : 'video/webm'),
                 });
             }
             return false;
+        }
 
         case 'offscreen_fpBegin':
             try {
@@ -430,11 +432,17 @@ async function getRecordingBlobBase64() {
  * blob is here, the offscreen document can close immediately and Chrome can
  * reap it — which it wants to do the moment the media tracks stop — without
  * taking the recording with it. handoff/handoff.js, same origin, reads it back. */
-async function persistForHandoff(id, metadataStr) {
-    if (!currentRecordingBlob) {
-        throw new Error('No recording blob available');
-    }
-    const blob = currentRecordingBlob;
+async function persistForHandoff(id, metadataStr, kind = 'video') {
+    const blob = kind === 'image' ? currentImageBlob : currentRecordingBlob;
+    if (!blob) throw new Error('No capture available');
+
+    // Images and recordings use separate keys so a screenshot can never
+    // overwrite a recording that has not reached the share page yet. There is
+    // deliberately no store.clear() here for the same reason.
+    const blobKey = kind === 'image' ? 'latest_image_blob' : 'latest_video_blob';
+    const idKey = kind === 'image' ? 'latest_image_id' : 'latest_id';
+    const metaKey = kind === 'image' ? 'latest_image_meta' : 'latest_metadata';
+    const tsKey = kind === 'image' ? 'latest_image_timestamp' : 'latest_video_timestamp';
 
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('SnapRecDB', 2);
@@ -450,14 +458,13 @@ async function persistForHandoff(id, metadataStr) {
             const db = e.target.result;
             const transaction = db.transaction(['recordings'], 'readwrite');
             const store = transaction.objectStore('recordings');
-            store.clear();
-            store.put(blob, 'latest_video_blob');
-            store.put(id, 'latest_id');
-            store.put(metadataStr, 'latest_metadata');
-            store.put(Date.now(), 'latest_video_timestamp');
+            store.put(blob, blobKey);
+            store.put(id, idKey);
+            store.put(metadataStr, metaKey);
+            store.put(Date.now(), tsKey);
 
             transaction.oncomplete = () => {
-                console.log('[Offscreen] Capture parked for handoff, size:', blob.size);
+                console.log('[Offscreen] Capture parked for handoff,', kind, blob.size);
                 resolve({ size: blob.size, type: blob.type });
             };
             transaction.onerror = () => reject(new Error('Failed to park capture for handoff'));
