@@ -90,6 +90,9 @@
       "ts"
     ],
     "rootDir": "src",
+    "setupFiles": [
+      "reflect-metadata"
+    ],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

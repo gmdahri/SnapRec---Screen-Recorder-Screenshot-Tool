@@ -22,7 +22,7 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { ResolveCommentDto } from './dto/resolve-comment.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
 import { WatchProgressDto } from './dto/watch-progress.dto';
-import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto } from './dto';
+import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto, BeginUploadDto, PartUrlDto, CompleteUploadDto, AbortUploadDto } from './dto';
 
 @Controller('recordings')
 export class RecordingsController {
@@ -40,6 +40,46 @@ export class RecordingsController {
             uploadUrlDto.contentType,
         );
         return { uploadUrl, fileUrl: uploadUrlDto.fileName };
+    }
+
+    /* ── Streaming upload ────────────────────────────────────────────────────
+     * A recording is uploaded while it is still being made: the extension opens
+     * an upload here, asks for a signed URL per 5 MB part, PUTs each part
+     * straight to R2, and completes at the end. Part bytes never reach this
+     * server — it only signs and bookkeeps. */
+
+    @Post('upload/begin')
+    async beginUpload(@Body() dto: BeginUploadDto) {
+        const uploadId = await this.storageService.createMultipartUpload(
+            dto.fileName, dto.contentType);
+        return { uploadId };
+    }
+
+    @Post('upload/part')
+    async getPartUrl(@Body() dto: PartUrlDto) {
+        const uploadUrl = await this.storageService.getUploadPartUrl(
+            dto.fileName, dto.uploadId, dto.partNumber);
+        return { uploadUrl };
+    }
+
+    @Post('upload/complete')
+    async completeUpload(@Body() dto: CompleteUploadDto) {
+        await this.storageService.completeMultipartUpload(
+            dto.fileName, dto.uploadId, dto.parts);
+        return { fileUrl: dto.fileName };
+    }
+
+    /** Abort is what stops orphaned parts billing. It must never throw at the
+     * caller: the extension calls this on cancel and on suspend, when it may
+     * have milliseconds to live and no way to react to a failure. */
+    @Post('upload/abort')
+    async abortUpload(@Body() dto: AbortUploadDto) {
+        try {
+            await this.storageService.abortMultipartUpload(dto.fileName, dto.uploadId);
+        } catch (e) {
+            this.logger.warn(`Abort failed for ${dto.fileName}: ${(e as Error).message}`);
+        }
+        return { aborted: true };
     }
 
     @UseGuards(OptionalJwtAuthGuard)

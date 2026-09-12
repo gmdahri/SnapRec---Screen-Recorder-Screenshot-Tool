@@ -5,3 +5,4 @@ export * from './claim-recordings.dto';
 export * from './add-reaction.dto';
 export * from './add-comment.dto';
 export * from './shared-query.dto';
+export * from './multipart.dto';
