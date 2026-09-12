@@ -62,7 +62,7 @@ export interface AnalyticsEvents {
     /** The login modal opened, and what the visitor was trying to do. */
     auth_modal_triggered: {
         trigger: 'react' | 'comment' | 'download' | 'share_link'
-        | 'video_editor' | 'save' | 'screenshot_gated';
+        | 'video_editor' | 'save' | 'screenshot_gated' | 'expiry_notice';
     };
     /** Guest captures were transferred into the account. */
     guest_claim_completed: { captures: number };

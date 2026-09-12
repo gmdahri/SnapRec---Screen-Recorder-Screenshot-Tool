@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase';
 
 // Types
 export interface Recording {
+    /** Set only on unclaimed guest recordings: when the sweep deletes this and
+     * its file. Null once claimed. */
+    expiresAt?: string | null;
     id: string;
     title: string;
     fileUrl: string;

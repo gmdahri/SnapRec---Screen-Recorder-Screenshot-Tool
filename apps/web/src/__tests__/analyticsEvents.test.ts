@@ -53,7 +53,8 @@ describe('analytics tracking plan', () => {
             .map(read).join('\n');
 
         expect(declared.sort()).toEqual([
-            'comment', 'download', 'react', 'save', 'screenshot_gated', 'share_link', 'video_editor',
+            'comment', 'download', 'expiry_notice', 'react', 'save', 'screenshot_gated',
+            'share_link', 'video_editor',
         ]);
         const missing = declared.filter((t) => !sources.includes(`trigger: '${t}'`));
         expect(missing).toEqual([]);

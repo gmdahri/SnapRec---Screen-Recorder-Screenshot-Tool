@@ -18,6 +18,7 @@ import { useVideoFrames } from '../hooks/useVideoFrames';
 import { useStableMediaUrl } from '../hooks/useStableMediaUrl';
 import { useUpdateRecording, useResolveComment, useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { readHandoffMessage } from '../lib/handoffMessage';
+import { describeExpiry } from '../lib/expiryCountdown';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
@@ -277,6 +278,16 @@ const ShareView: React.FC = () => {
     // clicking a comment seeks back to it.
     const [sharePlayheadSec, setSharePlayheadSec] = useState(0);
     const sharePlayerRef = React.useRef<VideoPlayerHandle | null>(null);
+
+    /* Re-rendered every 30s so the countdown stays honest without a timer for
+     * every second. Only runs while there is something to count down. */
+    const [expiryNow, setExpiryNow] = useState(() => new Date());
+    useEffect(() => {
+        if (!recording?.expiresAt) return;
+        const t = setInterval(() => setExpiryNow(new Date()), 30_000);
+        return () => clearInterval(t);
+    }, [recording?.expiresAt]);
+    const expiry = describeExpiry(recording?.expiresAt, expiryNow);
 
     const [copied, setCopied] = useState(false);
     const [commentText, setCommentText] = useState('');
@@ -1084,6 +1095,34 @@ const ShareView: React.FC = () => {
                 noIndex={isFresh}
             />
             <div className="bg-background-light transition-colors duration-300 pb-20">
+                {/* An unclaimed guest recording is deleted an hour after upload.
+                    Said in words with the remedy attached: a bare timer states
+                    the consequence without the way out, and the way out is one
+                    click. Matches the alert treatment below deliberately — this
+                    is the same class of thing the user has to act on. */}
+                {expiry && (
+                    <div role="status" className="max-w-[1440px] mx-auto px-6 lg:px-20 pt-3">
+                        <div className="flex flex-wrap items-center gap-3 border border-[var(--sr-border-light)] border-l-2 border-l-[var(--sr-coral-text)] bg-[var(--sr-surface-paper)] px-4 py-3 rounded-[2px]">
+                            <span className="text-[13px] text-[var(--sr-text-primary-on-light)] flex-1 min-w-[240px]">
+                                {expiry.text}
+                            </span>
+                            {!expiry.expired && !user && (
+                                <button
+                                    type="button"
+                                    className="text-[13px] underline text-[var(--sr-text-primary-on-light)]"
+                                    onClick={() => {
+                                        capture('auth_modal_triggered', { trigger: 'expiry_notice' });
+                                        setLoginAction('keep this recording');
+                                        setPendingAction('share');
+                                        setIsLoginModalOpen(true);
+                                    }}
+                                >
+                                    Sign in to keep it
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
                 {/* Download and processing failures are stated, not spun on. Both
                     are dismissible and both offer the action that might work. */}
                 {(download.state.status === 'error' || processingTimedOut) && (
