@@ -104,6 +104,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
             return false;
 
+        /* A handle to the capture that chrome.downloads can read.
+         *
+         * The URL belongs to THIS document, so the document must outlive the
+         * write — see saveRecordingToDisk, which waits for the download to
+         * settle rather than merely to start. Not revoked here for the same
+         * reason; closing the document releases it. */
+        case 'offscreen_getBlobUrl':
+            if (!currentRecordingBlob) {
+                sendResponse({ success: false, error: 'No recording available' });
+            } else {
+                sendResponse({
+                    success: true,
+                    url: URL.createObjectURL(currentRecordingBlob),
+                    size: currentRecordingBlob.size,
+                    mimeType: currentRecordingBlob.type || 'video/webm',
+                });
+            }
+            return false;
+
         case 'offscreen_getBlobChunk':
             if (!currentRecordingBlob) {
                 sendResponse({ success: false, error: 'No recording available' });

@@ -2,6 +2,7 @@
 importScripts('config.js');
 importScripts('analytics.js');   // must follow config.js — reads CONFIG.POSTHOG
 importScripts('queue.js');
+importScripts('recording-file.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
@@ -1043,6 +1044,81 @@ async function finalizeCleanup() {
 
 // ... existing code ...
 
+/** Ten minutes. A local disk write of a multi-gigabyte capture is seconds, so
+ * this is not a deadline — it is the guard against waiting forever on a
+ * download that will never report, which would leave the preview tab unopened. */
+const DISK_SAVE_TIMEOUT_MS = 600_000;
+
+/** Writes the capture to disk before anything else is attempted.
+ *
+ * This is the promise the product used to break. The recording existed as one
+ * in-memory Blob in the offscreen document, and the chunked handoff that was
+ * meant to rescue it could not finish inside its own kill timer for anything
+ * longer than a few minutes — so the timer fired, the document closed, and the
+ * only copy went with it. Disk first, then everything else: a failed upload, a
+ * closed tab or a dead network now costs a link, not the recording.
+ *
+ * Awaits settling rather than starting, because the blob: URL belongs to the
+ * offscreen document and Chrome is still reading through it. finalizeCleanup
+ * must not run until this returns. */
+async function saveRecordingToDisk() {
+    const info = await chrome.runtime
+        .sendMessage({ action: 'offscreen_getBlobUrl' })
+        .catch((e) => ({ success: false, error: e.message }));
+
+    const fail = (reason) => {
+        console.error('[SnapRec] Could not save recording to disk:', reason);
+        Analytics.track('recording_download_failed', {
+            surface: 'auto_save',
+            error_reason: String(reason),
+        });
+        chrome.notifications.create('snaprec-autosave-failed', {
+            type: 'basic',
+            iconUrl: '../icons/icon128.png',
+            title: 'Could not save your recording',
+            message: 'SnapRec could not write the file to your Downloads folder. '
+                + 'Use the preview tab to download it before closing that tab.',
+            priority: 2,
+        });
+        return null;
+    };
+
+    if (!info?.success) return fail(info?.error ?? 'no blob');
+
+    const filename = SnapRecFile.recordingFilename(new Date(), info.mimeType);
+
+    const started = await new Promise((resolve) => {
+        chrome.downloads.download({ url: info.url, filename, saveAs: false }, (downloadId) => {
+            resolve(SnapRecFile.downloadStarted(downloadId, chrome.runtime.lastError?.message));
+        });
+    });
+    if (!started.ok) return fail(started.reason);
+
+    const settled = await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            chrome.downloads.onChanged.removeListener(onChanged);
+            resolve({ ok: false, reason: 'timeout' });
+        }, DISK_SAVE_TIMEOUT_MS);
+
+        const onChanged = (delta) => {
+            const outcome = SnapRecFile.downloadSettled(delta, started.downloadId);
+            if (!outcome) return;
+            clearTimeout(timer);
+            chrome.downloads.onChanged.removeListener(onChanged);
+            resolve(outcome);
+        };
+        chrome.downloads.onChanged.addListener(onChanged);
+    });
+    if (!settled.ok) return fail(settled.reason);
+
+    console.log('[SnapRec] Recording saved to disk:', filename, info.size, 'bytes');
+    Analytics.track('recording_download_completed', {
+        surface: 'auto_save',
+        file_size_mb: Math.round((info.size / (1024 * 1024)) * 100) / 100,
+    });
+    return { filename, bytes: info.size, mimeType: info.mimeType };
+}
+
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
 
@@ -1069,6 +1145,10 @@ async function handleRecordingComplete() {
         await chrome.storage.local.set({
             completedRecordingsCount: completedRecordingsCount + 1,
         });
+
+        /* Disk first. Everything below this line is convenience — the preview
+         * tab, the handoff, the share link. This line is the guarantee. */
+        const savedFile = await saveRecordingToDisk();
 
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
