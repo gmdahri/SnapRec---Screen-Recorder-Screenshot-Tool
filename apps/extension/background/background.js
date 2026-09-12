@@ -4,6 +4,7 @@ importScripts('analytics.js');   // must follow config.js — reads CONFIG.POSTH
 importScripts('queue.js');
 importScripts('recording-file.js');
 importScripts('fullpage.js');
+importScripts('upload-parts.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
@@ -170,6 +171,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'captureFullPage':
             captureFullPage();
             return false; // No response needed
+        case 'streamPartReady':
+            void uploadNextPart(false);
+            return false;
         case 'fullPageBegin':
             fullPageBegin(message)
                 .then(r => sendResponse({ success: true, ...r }))
@@ -969,6 +973,10 @@ async function startRecording(options) {
             if (recorderResponse?.success) {
                 console.log('[SnapRec] Recording started at:', recorderResponse.startTime);
 
+                // Upload as we record. Not awaited: a slow or failed open must
+                // never delay the recorder, and the fallback path still works.
+                void startStreamingUpload();
+
                 // Analytics: not awaited — the recorder is live and the overlay
                 // must not wait on a network call. `format` is the container the
                 // MediaRecorder actually negotiated; tab_url_domain is the host
@@ -1130,6 +1138,11 @@ async function broadcastHideOverlay() {
 
 async function finalizeCleanup() {
     console.log('[SnapRec] Finalizing cleanup');
+    /* A no-op after a successful completion, which clears the slot. It only
+     * bites on the failure paths that reach cleanup with an upload still open
+     * — and an upload that is neither completed nor aborted bills for its
+     * parts invisibly until the bucket's lifecycle rule sweeps it. */
+    await abortStreamingUpload();
     await closeOffscreenDocument();
     // Overlay hiding already happened in broadcastHideOverlay
     // Just ensure state is clean
@@ -1303,6 +1316,135 @@ async function deliverImageToEditor() {
     chrome.tabs.onUpdated.addListener(listener);
 }
 
+/** The streaming upload in flight, or null.
+ *
+ * Only one recording runs at a time, so one slot is enough. Held in the worker
+ * rather than the offscreen document because the worker is what talks to the
+ * API — and because the offscreen document is closed at the end of a
+ * recording, while completing the upload may outlive it. */
+let streamingUpload = null;
+
+/** Opens the upload. Failure here is not fatal: the recording continues and
+ * falls back to the existing upload-on-demand path. */
+async function startStreamingUpload() {
+    try {
+        const fileName = `video-${crypto.randomUUID()}-${Date.now()}.webm`;
+        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/begin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName, contentType: 'video/webm' }),
+        });
+        if (!res.ok) throw new Error(`begin failed: HTTP ${res.status}`);
+
+        const { uploadId } = await res.json();
+        streamingUpload = {
+            fileName, uploadId, state: SnapRecParts.createUploadState(), busy: false,
+        };
+        await chrome.runtime.sendMessage({ action: 'offscreen_streamBegin' });
+        console.log('[SnapRec] Streaming upload opened:', fileName);
+    } catch (e) {
+        console.warn('[SnapRec] Could not open streaming upload:', e.message);
+        streamingUpload = null;
+    }
+}
+
+/** Uploads one part if one is ready.
+ *
+ * Serialised by `busy`: parts must not be taken concurrently, because
+ * offscreen_streamTakePart drains a single shared buffer. */
+async function uploadNextPart(isFinal = false) {
+    if (!streamingUpload || streamingUpload.busy) return;
+    streamingUpload.busy = true;
+    try {
+        const taken = await chrome.runtime.sendMessage({
+            action: 'offscreen_streamTakePart', isFinal,
+        });
+        if (!taken?.success || !taken.hasPart) return;
+
+        const partNumber = SnapRecParts.takePartNumber(streamingUpload.state);
+        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/part`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fileName: streamingUpload.fileName,
+                uploadId: streamingUpload.uploadId,
+                partNumber,
+            }),
+        });
+        if (!res.ok) throw new Error(`part url failed: HTTP ${res.status}`);
+
+        const { uploadUrl } = await res.json();
+        const put = await chrome.runtime.sendMessage({
+            action: 'offscreen_streamPutPart', uploadUrl,
+        });
+        if (!put?.success) throw new Error(put?.error ?? 'part PUT failed');
+
+        SnapRecParts.recordPart(streamingUpload.state, { partNumber, etag: put.etag });
+        console.log('[SnapRec] Part', partNumber, 'uploaded,', taken.bytes, 'bytes');
+    } catch (e) {
+        console.warn('[SnapRec] Part upload failed:', e.message);
+    } finally {
+        if (streamingUpload) streamingUpload.busy = false;
+    }
+}
+
+/** Drains the last part and completes. Returns the fileUrl, or null. */
+async function finishStreamingUpload() {
+    if (!streamingUpload) return null;
+    await uploadNextPart(true);
+
+    const upload = streamingUpload;
+    streamingUpload = null;
+
+    if (!SnapRecParts.isUsable(upload.state)) {
+        console.warn('[SnapRec] No parts uploaded; aborting');
+        await abortUpload(upload);
+        return null;
+    }
+
+    try {
+        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/complete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fileName: upload.fileName,
+                uploadId: upload.uploadId,
+                parts: SnapRecParts.completionPayload(upload.state),
+            }),
+        });
+        if (!res.ok) throw new Error(`complete failed: HTTP ${res.status}`);
+        const { fileUrl } = await res.json();
+        console.log('[SnapRec] Streaming upload complete:', fileUrl);
+        return fileUrl;
+    } catch (e) {
+        console.error('[SnapRec] Could not complete upload:', e.message);
+        await abortUpload(upload);
+        return null;
+    }
+}
+
+/** Abort is what stops orphaned parts billing. Best-effort by design: the
+ * bucket's 1-day lifecycle rule is the backstop for the cases where this
+ * cannot run at all. */
+async function abortUpload(upload) {
+    try {
+        await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/abort`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: upload.fileName, uploadId: upload.uploadId }),
+        });
+    } catch (e) {
+        console.warn('[SnapRec] Abort request failed:', e.message);
+    }
+}
+
+async function abortStreamingUpload() {
+    if (!streamingUpload) return;
+    const upload = streamingUpload;
+    streamingUpload = null;
+    await abortUpload(upload);
+}
+
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
 
@@ -1329,6 +1471,16 @@ async function handleRecordingComplete() {
         await chrome.storage.local.set({
             completedRecordingsCount: completedRecordingsCount + 1,
         });
+
+        /* Drain the last part and close the upload. By now most of the file is
+         * already on R2, so this is one short part plus a completion call.
+         *
+         * Must happen before finalizeCleanup below: taking the final part needs
+         * the offscreen document, and cleanup closes it. */
+        const streamedFileUrl = await finishStreamingUpload();
+        if (streamedFileUrl) {
+            console.log('[SnapRec] Recording already on R2 as', streamedFileUrl);
+        }
 
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
@@ -1599,6 +1751,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
  * the queue lives in the service worker and is persisted, not held in the
  * popup.
  * ======================================================================== */
+
+/* The worker can be shut down mid-recording. Best-effort: if this does not
+ * run, the bucket's 1-day lifecycle rule is the backstop. */
+chrome.runtime.onSuspend.addListener(() => { void abortStreamingUpload(); });
 
 const QUEUE_KEY = 'snaprecUploadQueue';
 const DRAIN_ALARM = 'snaprec-drain-queue';
