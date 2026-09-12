@@ -92,8 +92,12 @@ const MAX_ATTEMPTS = 40;
             await new Promise((r) => setTimeout(r, RETRY_MS));
         }
         if (!acknowledged) {
+            // Nobody is holding this capture. Tell the service worker so it can
+            // fall back to the browser's Downloads folder — the only remaining
+            // place to put it.
             console.warn('[Handoff] No acknowledgement after',
-                (MAX_ATTEMPTS * RETRY_MS) / 1000, 'seconds');
+                (MAX_ATTEMPTS * RETRY_MS) / 1000, 'seconds; falling back to disk');
+            chrome.runtime.sendMessage({ action: 'handoffFailed', kind, id });
         }
     } catch (error) {
         console.error('[Handoff] Could not deliver capture:', error.message);

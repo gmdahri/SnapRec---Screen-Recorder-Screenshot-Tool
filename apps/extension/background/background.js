@@ -686,7 +686,7 @@ async function fullPageFinish() {
         file_size_mb: Math.round((done.size / (1024 * 1024)) * 100) / 100,
     });
 
-    await saveImageToDisk();
+    // No disk copy unless the handoff fails — see the 'handoffFailed' handler.
     await deliverImageToEditor();
 
     return { thumbnail: done.thumbnail, scale, size: done.size };
@@ -1338,17 +1338,19 @@ async function handleRecordingComplete() {
         const shareUrl = `${CONFIG.WEB_BASE_URL}/v`;
         const tab = await chrome.tabs.create({ url: shareUrl });
 
-        /* Disk before anything that can cost us the capture.
+        /* No disk copy on the happy path.
          *
-         * Opening the tab above is free — it does not touch the blob — so it
-         * goes first and the user gets an instant response. Everything BELOW
-         * this line can lose the recording: finalizeCleanup closes the
-         * offscreen document, and the blob: URL Chrome is writing from belongs
-         * to it. So the write completes here, before any of that runs.
+         * This used to write every recording to Downloads unconditionally,
+         * which was the fastest way to stop captures vanishing but filled the
+         * user's folder with files they never asked for. The courier now waits
+         * for the page to acknowledge the capture, so a failed handoff is
+         * detectable — and the disk write happens then, and only then. See
+         * the 'handoffFailed' handler.
          *
-         * This is the guarantee the product used to break. A failed upload, a
-         * closed tab or a dead network now costs a link, not the recording. */
-        const savedFile = await saveRecordingToDisk();
+         * The capture is not at risk in the meantime: it is parked in
+         * extension-origin IndexedDB before finalizeCleanup runs, so closing
+         * the offscreen document no longer destroys it. */
+        const savedFile = null;
 
         /* Park the capture, then close the recorder. Once the blob is in
          * extension-origin IndexedDB it no longer depends on the offscreen
@@ -1416,6 +1418,32 @@ async function handleRecordingComplete() {
 }
 
 
+
+/** The safety net, armed only when delivery actually failed.
+ *
+ * handoff/handoff.js re-sends the capture until the page acknowledges it. If
+ * nothing acknowledges within its window the capture is in extension storage
+ * with no one holding it, and the browser is the only place left to put it.
+ * This is the one path that writes to Downloads. */
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.action !== 'handoffFailed') return;
+
+    const kind = message.kind === 'image' ? 'image' : 'video';
+    console.warn('[SnapRec] Handoff was never acknowledged; saving', kind, 'to disk');
+
+    const save = kind === 'image' ? saveImageToDisk() : saveRecordingToDisk();
+    save.then((saved) => {
+        if (!saved) return;
+        chrome.notifications.create('snaprec-handoff-fallback', {
+            type: 'basic',
+            iconUrl: '../icons/icon128.png',
+            title: 'Saved to your Downloads folder',
+            message: `SnapRec could not open your capture in the app, so it was `
+                + `saved as ${saved.filename.replace(/^.*\//, '')} instead.`,
+            priority: 2,
+        });
+    });
+});
 
 // Separate listener for upload completion and audio warnings from offscreen document
 chrome.runtime.onMessage.addListener((message) => {
