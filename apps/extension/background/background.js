@@ -1339,6 +1339,7 @@ async function startStreamingUpload() {
         const { uploadId } = await res.json();
         streamingUpload = {
             fileName, uploadId, state: SnapRecParts.createUploadState(), busy: false,
+            startedAt: Date.now(),
         };
         await chrome.runtime.sendMessage({ action: 'offscreen_streamBegin' });
         console.log('[SnapRec] Streaming upload opened:', fileName);
@@ -1388,7 +1389,12 @@ async function uploadNextPart(isFinal = false) {
     }
 }
 
-/** Drains the last part and completes. Returns the fileUrl, or null. */
+/** Drains the last part and completes.
+ *
+ * Returns the fileUrl and the recording's length, or null. The length is
+ * measured from when the upload opened rather than from
+ * storage.recordingStartTime, which broadcastHideOverlay has already cleared
+ * to null by the time anything downstream asks for it. */
 async function finishStreamingUpload() {
     if (!streamingUpload) return null;
     await uploadNextPart(true);
@@ -1414,8 +1420,9 @@ async function finishStreamingUpload() {
         });
         if (!res.ok) throw new Error(`complete failed: HTTP ${res.status}`);
         const { fileUrl } = await res.json();
-        console.log('[SnapRec] Streaming upload complete:', fileUrl);
-        return fileUrl;
+        const durationSec = Math.max(1, Math.round((Date.now() - upload.startedAt) / 1000));
+        console.log('[SnapRec] Streaming upload complete:', fileUrl, durationSec, 'seconds');
+        return { fileUrl, durationSec };
     } catch (e) {
         console.error('[SnapRec] Could not complete upload:', e.message);
         await abortUpload(upload);
@@ -1435,6 +1442,47 @@ async function abortUpload(upload) {
         });
     } catch (e) {
         console.warn('[SnapRec] Abort request failed:', e.message);
+    }
+}
+
+/** Creates the recording row for a file that is already on R2.
+ *
+ * Without this the upload succeeds and the recording is invisible: nothing
+ * lists it, /library is empty, and the capture exists only as an object in a
+ * bucket. This is the half of the original complaint that a file on disk never
+ * answered — "no history".
+ *
+ * The id is the one the courier hands the share page, so the page and the row
+ * agree on what this recording is. Ownership comes from the bearer token when
+ * there is a session; otherwise the guest id, which is what makes the capture
+ * claimable later. */
+async function registerStreamedRecording(recordingId, fileUrl, durationSec) {
+    try {
+        const authHeaders = await getAuthHeaders();
+        const signedIn = Boolean(authHeaders.Authorization);
+
+        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders },
+            body: JSON.stringify({
+                id: recordingId,
+                title: `Video Recording ${new Date().toLocaleString()}`,
+                fileUrl,
+                type: 'video',
+                durationSec,
+                // The server fills userId from the token; a guestId alongside it
+                // would be contradictory.
+                guestId: signedIn ? undefined : await getGuestId(),
+            }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        console.log('[SnapRec] Recording registered as', recordingId,
+            signedIn ? '(owned)' : '(guest, expires in an hour)');
+        return true;
+    } catch (e) {
+        console.warn('[SnapRec] Could not register the recording:', e.message);
+        return false;
     }
 }
 
@@ -1472,18 +1520,20 @@ async function handleRecordingComplete() {
             completedRecordingsCount: completedRecordingsCount + 1,
         });
 
-        /* Drain the last part and close the upload. By now most of the file is
-         * already on R2, so this is one short part plus a completion call.
-         *
-         * Must happen before finalizeCleanup below: taking the final part needs
-         * the offscreen document, and cleanup closes it. */
-        const streamedFileUrl = await finishStreamingUpload();
-        if (streamedFileUrl) {
-            console.log('[SnapRec] Recording already on R2 as', streamedFileUrl);
-        }
-
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
+
+        /* Drain the last part, close the upload, and register the row.
+         *
+         * Must happen before finalizeCleanup below: taking the final part needs
+         * the offscreen document, and cleanup closes it. Registering uses the
+         * same id the courier gives the share page, so both refer to one
+         * recording. */
+        const streamed = await finishStreamingUpload();
+        if (streamed) {
+            await registerStreamedRecording(
+                recordingId, streamed.fileUrl, streamed.durationSec);
+        }
 
         // IMMEDIATELY redirect to /v (generic preview)
         console.log('[SnapRec] Redirecting to share page immediately...');

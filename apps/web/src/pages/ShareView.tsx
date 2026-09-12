@@ -245,8 +245,16 @@ const ShareView: React.FC = () => {
     const [pollAttempts, setPollAttempts] = useState(0);
     const [processingTimedOut, setProcessingTimedOut] = useState(false);
 
+    /* localId is also worth asking about now that recordings stream.
+     *
+     * The extension uploads while you record and registers the row under the
+     * same id the courier hands this page, so by the time /v opens the
+     * recording usually already exists. Without asking, the page would offer
+     * "Generate shareable link" for something already on R2 and upload a second
+     * copy of it. A miss is cheap: an unstreamed capture 404s once, `recording`
+     * stays undefined, and the local-blob path runs exactly as before. */
     const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
-        enabled: (!!isValidId && !isFreshParam) || isUploaded || isUploading
+        enabled: (!!isValidId && !isFreshParam) || !!localId || isUploaded || isUploading
     });
 
     const addReaction = useAddReaction();
