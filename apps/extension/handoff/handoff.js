@@ -57,15 +57,44 @@ function readParked() {
     });
 }
 
+/** Delivers until the page confirms, because the page may not be listening yet.
+ *
+ * The courier is injected as soon as the tab reports "complete", which is
+ * before React has mounted and attached its message listener. A single
+ * postMessage lands in that gap and is lost — the editor sat on "Waiting for
+ * an image from the extension" while the capture was sitting right here.
+ *
+ * Re-posting is nearly free: a Blob crosses postMessage by reference, so this
+ * re-sends a handle, not 700 MB. Stops on the first ack, or after ten seconds,
+ * whichever comes first. */
+let acknowledged = false;
+window.addEventListener('message', (event) => {
+    if (event.data?.type === 'SNAPREC_HANDOFF_ACK' && event.data.id === id) {
+        acknowledged = true;
+        console.log('[Handoff] Page acknowledged the capture');
+    }
+});
+
+const RETRY_MS = 250;
+const MAX_ATTEMPTS = 40;
+
 (async () => {
     try {
         const { blob, metadataStr } = await readParked();
         if (!blob) throw new Error('nothing parked');
-        parent.postMessage(
-            { type: KEYS.type, blob, id, metadataStr },
-            CONFIG.WEB_BASE_URL,
-        );
-        console.log('[Handoff] Delivered capture, size:', blob.size);
+
+        for (let attempt = 0; attempt < MAX_ATTEMPTS && !acknowledged; attempt++) {
+            parent.postMessage(
+                { type: KEYS.type, blob, id, metadataStr },
+                CONFIG.WEB_BASE_URL,
+            );
+            if (attempt === 0) console.log('[Handoff] Delivered capture, size:', blob.size);
+            await new Promise((r) => setTimeout(r, RETRY_MS));
+        }
+        if (!acknowledged) {
+            console.warn('[Handoff] No acknowledgement after',
+                (MAX_ATTEMPTS * RETRY_MS) / 1000, 'seconds');
+        }
     } catch (error) {
         console.error('[Handoff] Could not deliver capture:', error.message);
     }

@@ -209,3 +209,29 @@ would have forced a 0.51 scale and cut its width from 2400 to 1228.
 `finishFullPage` additionally re-decodes the encoded blob and throws if its
 dimensions do not match the canvas, so a future limit of this kind fails loudly
 instead of silently truncating.
+
+### Second correction — the handoff raced the page's listener
+
+Reported from a real local run: the capture encoded, saved to disk and logged
+`[Handoff] Delivered capture`, but `/editor` sat on "Waiting for an image from
+the extension".
+
+The courier posted **once**, immediately on iframe load. The iframe is injected
+as soon as the tab reports `complete`, which is before React has mounted and
+attached its message listener, so the message landed in that gap and was lost.
+`ShareView` had been surviving the same race only because it also reads
+web-origin IndexedDB on mount; the editor's equivalent fallback reads a key that
+is written *after* a successful message, so it could not self-heal.
+
+Confirmed by re-posting the identical message from the same iframe once the page
+had settled — it was accepted immediately, which ruled out the origin guard.
+
+`handoff.js` now re-sends every 250 ms until the page replies with
+`SNAPREC_HANDOFF_ACK`, up to ten seconds. Re-sending is nearly free because a
+Blob crosses `postMessage` by reference. Both `Editor.tsx` and `ShareView.tsx`
+acknowledge the first payload they accept and ignore the retries.
+
+**The acceptance check that missed this has been replaced.** It asserted
+`canvases > 0`, but Fabric creates two canvas elements on init whether or not an
+image loaded, so it passed while nothing rendered. It now reads pixels back off
+the canvas and fails unless the capture is actually painted.

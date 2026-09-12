@@ -83,15 +83,28 @@ const EditorContent: React.FC = () => {
             });
         }
 
+        /** The courier re-sends until acknowledged, because it starts posting
+         * before React has mounted. Ack on the first accepted payload and
+         * ignore the rest, or each retry would rebuild the canvas. */
+        let accepted = false;
+        const ack = (event: MessageEvent, id?: string) => {
+            accepted = true;
+            (event.source as Window | null)?.postMessage(
+                { type: 'SNAPREC_HANDOFF_ACK', id }, event.origin);
+        };
+
         const handleMessage = (event: MessageEvent) => {
             const payload = readHandoffMessage(event.origin, event.data, window.location.origin);
             if (!payload) return;
+            if (accepted && (payload.kind === 'image' || payload.kind === 'imageDataUrl')) return;
 
             if (payload.kind === 'image') {
                 console.log('Editor: Received image blob,', payload.blob.size, 'bytes');
+                ack(event, payload.id);
                 setCapturedImage(URL.createObjectURL(payload.blob));
                 storeBlob(payload.blob);
             } else if (payload.kind === 'imageDataUrl') {
+                ack(event, payload.id);
                 console.log('Editor: Received SNAPREC_EDIT_IMAGE (legacy data URL)');
                 setCapturedImage(payload.dataUrl);
                 try {

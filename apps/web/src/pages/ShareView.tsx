@@ -439,6 +439,11 @@ const ShareView: React.FC = () => {
         const handleMessage = async (event: MessageEvent) => {
             const payload = readHandoffMessage(event.origin, event.data, window.location.origin);
             if (!payload) return;
+            // The courier re-sends until acknowledged; it begins before React
+            // has mounted. Ack once, then ignore the retries.
+            if (videoBlobSetByMessage.current) return;
+            (event.source as Window | null)?.postMessage(
+                { type: 'SNAPREC_HANDOFF_ACK', id: payload.id }, event.origin);
             console.log('Received video data from extension with id:', payload.id);
 
             if (payload.kind === 'blob') {
