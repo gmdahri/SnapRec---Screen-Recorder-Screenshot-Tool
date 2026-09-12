@@ -172,3 +172,40 @@ updated. It must also persist the Blob to page-origin IndexedDB, because a
   captures persist, lower it rather than assuming a different root cause.
 - Scroll-and-stitch fidelity limits remain (non-goals above); this design does
   not improve them.
+
+## Verification
+
+Run 2026-09-13 against Chrome for Testing 145.0.7632.77, `devicePixelRatio: 2`,
+1200px viewport, on high-entropy generated pages. 25/25 unit tests, 20/20
+capture checks, 5/5 compatibility checks.
+
+| Page | Plan | On disk | Cropped? | Time |
+|---|---|---|---|---|
+| 4,000 px | 2400×8000 webp, scale 1 | 0.19 MB | no | 8 s |
+| 16,000 px | 2400×32000 **jpeg**, scale 1 | 5.08 MB | no | 26 s |
+| 32,000 px | 1732×46188 **jpeg**, scale 0.722 | 12.83 MB | no | 52 s |
+
+Every on-disk image matched its planned dimensions exactly — A1, A2 and A4 hold,
+and A3 held with no "exceeded maximum allowed size" anywhere. A5 was checked by
+holding a blob in the offscreen document and taking a full-page screenshot: the
+document and the blob both survived. A6 was checked by posting the legacy
+same-origin `dataUrl` shape to the updated editor, which still rendered it. A7
+held across a reload of `/editor`.
+
+### Correction found during verification — the format's dimension limit
+
+The first run produced images that were **silently cropped**: a 16,000px page
+came back 2400×16383 instead of 2400×32000, losing half its height with nothing
+logged. WebP has a hard 16383 px per-dimension limit and `convertToBlob` does
+not refuse an oversized canvas — it crops. The megapixel budget alone did not
+catch this, because 2400×32000 is 76.8 MP, comfortably inside it.
+
+`capturePlan` now decides scale and format together. WebP is kept while both
+dimensions fit within 16383; beyond that the capture switches to JPEG, whose
+limit is 65535, so a tall page keeps its resolution by changing container rather
+than by losing pixels. Without the switch, fitting a 16,000px page into WebP
+would have forced a 0.51 scale and cut its width from 2400 to 1228.
+
+`finishFullPage` additionally re-decodes the encoded blob and throws if its
+dimensions do not match the canvas, so a future limit of this kind fails loudly
+instead of silently truncating.

@@ -638,16 +638,19 @@ let fullPageState = null;
  * to shrink so that never happens, and the content script reports it so a
  * downscaled capture is stated rather than passed off as full resolution. */
 async function fullPageBegin({ pageW, pageH, viewportH, dpr }) {
-    const scale = SnapRecFullPage.budgetedScale({ pageW, pageH, dpr });
+    // Scale and format are decided together: webp is smaller but cannot exceed
+    // 16383px, and it crops rather than refusing. See capturePlan.
+    const plan = SnapRecFullPage.capturePlan({ pageW, pageH, dpr });
     await createOffscreenDocument();
 
     const r = await chrome.runtime.sendMessage({
-        action: 'offscreen_fpBegin', pageW, pageH, dpr, scale,
+        action: 'offscreen_fpBegin',
+        pageW, pageH, dpr, scale: plan.scale, mimeType: plan.mimeType,
     });
     if (!r?.success) throw new Error(r?.error ?? 'could not start full-page capture');
 
-    fullPageState = { dpr, scale, viewportH, sections: 0 };
-    return { scale, width: r.width, height: r.height };
+    fullPageState = { dpr, scale: plan.scale, viewportH, sections: 0 };
+    return { scale: plan.scale, mimeType: plan.mimeType, width: r.width, height: r.height };
 }
 
 /** Captures the current viewport and forwards it straight to the offscreen
@@ -677,7 +680,7 @@ async function fullPageFinish() {
     if (!done?.success) throw new Error(done?.error ?? 'encoding failed');
 
     console.log('[SnapRec] Full-page capture:', sections, 'sections,',
-        done.size, 'bytes, scale', scale);
+        done.size, 'bytes,', done.mimeType, 'scale', scale);
     Analytics.track('screenshot_taken', {
         capture_type: 'fullpage',
         file_size_mb: Math.round((done.size / (1024 * 1024)) * 100) / 100,

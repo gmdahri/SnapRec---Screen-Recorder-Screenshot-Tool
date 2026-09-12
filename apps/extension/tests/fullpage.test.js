@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  PIXEL_BUDGET, budgetedScale, canvasSize, stitchPlan, thumbnailSize,
+  MAX_JPEG_DIM, MAX_WEBP_DIM, PIXEL_BUDGET,
+  budgetedScale, canvasSize, capturePlan, stitchPlan, thumbnailSize,
 } from '../background/fullpage.core.js';
 
 /** The arithmetic a full-page capture is made of.
@@ -123,6 +124,58 @@ describe('thumbnailSize', () => {
 
   it('keeps at least one pixel of height for an extremely wide capture', () => {
     expect(thumbnailSize({ width: 10000, height: 5 }).height).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('capturePlan', () => {
+  /** WebP cannot exceed 16383 pixels in either direction, and convertToBlob
+   * does not refuse an oversized canvas — it silently returns a CROPPED image.
+   * A 16,000px page at dpr 2 came back with half its height missing and no
+   * error anywhere, which is the same class of silent truncation this feature
+   * was rewritten to eliminate. */
+
+  it('keeps a short page in webp at full resolution', () => {
+    const p = capturePlan({ pageW: 1200, pageH: 4000, dpr: 2 });
+    expect(p).toEqual({ scale: 1, mimeType: 'image/webp', width: 2400, height: 8000 });
+  });
+
+  it('switches to jpeg rather than cropping a page taller than webp allows', () => {
+    const p = capturePlan({ pageW: 1200, pageH: 16000, dpr: 2 });
+    expect(p.mimeType).toBe('image/jpeg');
+    // Full resolution is retained: 2400x32000 is 76.8MP, inside the budget,
+    // and 32000 is comfortably inside jpeg's 65535 limit.
+    expect(p.scale).toBe(1);
+    expect(p.height).toBe(32000);
+  });
+
+  it('never emits a dimension the chosen format would crop', () => {
+    for (const pageH of [4000, 8000, 16000, 32000, 64000, 120000]) {
+      const p = capturePlan({ pageW: 1200, pageH, dpr: 2 });
+      const limit = p.mimeType === 'image/webp' ? MAX_WEBP_DIM : MAX_JPEG_DIM;
+      expect(p.width).toBeLessThanOrEqual(limit);
+      expect(p.height).toBeLessThanOrEqual(limit);
+    }
+  });
+
+  it('still respects the megapixel budget after choosing a format', () => {
+    for (const pageH of [4000, 32000, 64000, 120000]) {
+      const p = capturePlan({ pageW: 1200, pageH, dpr: 2 });
+      expect(p.width * p.height).toBeLessThanOrEqual(PIXEL_BUDGET * 1.001);
+    }
+  });
+
+  it('downscales an enormous page rather than returning nothing', () => {
+    const p = capturePlan({ pageW: 1200, pageH: 120000, dpr: 2 });
+    expect(p.scale).toBeGreaterThan(0);
+    expect(p.scale).toBeLessThan(1);
+    expect(p.width).toBeGreaterThan(0);
+    expect(p.height).toBeGreaterThan(0);
+  });
+
+  it('handles a very wide page the same way', () => {
+    const p = capturePlan({ pageW: 20000, pageH: 800, dpr: 2 });
+    const limit = p.mimeType === 'image/webp' ? MAX_WEBP_DIM : MAX_JPEG_DIM;
+    expect(p.width).toBeLessThanOrEqual(limit);
   });
 });
 

@@ -61,4 +61,38 @@ function thumbnailSize({ width, height, maxW = 480 }) {
   return { width: maxW, height: Math.max(1, Math.round(height * scale)) };
 }
 
-export { PIXEL_BUDGET, budgetedScale, canvasSize, stitchPlan, thumbnailSize };
+/** Hard per-dimension limits of the encoders.
+ *
+ * convertToBlob does not refuse a canvas larger than the format allows — it
+ * silently returns a CROPPED image. A 16,000px page at dpr 2 came back with
+ * half its height missing and nothing logged anywhere. */
+const MAX_WEBP_DIM = 16383;
+const MAX_JPEG_DIM = 65535;
+
+/** Scale and format for one capture, decided together.
+ *
+ * They are interdependent: webp is smaller and preferred, but cannot exceed
+ * 16383px, and forcing a tall page to fit that would shrink a 16,000px page to
+ * a quarter of its width. jpeg reaches 65535px, so a tall page keeps its
+ * resolution by changing container rather than by losing pixels. The area
+ * budget still applies on top, because the canvas itself stops encoding long
+ * before either format's limit. */
+function capturePlan({ pageW, pageH, dpr, budget = PIXEL_BUDGET }) {
+  const areaScale = budgetedScale({ pageW, pageH, dpr, budget });
+  const w = pageW * dpr * areaScale;
+  const h = pageH * dpr * areaScale;
+
+  const fitsWebp = w <= MAX_WEBP_DIM && h <= MAX_WEBP_DIM;
+  const mimeType = fitsWebp ? 'image/webp' : 'image/jpeg';
+  const maxDim = fitsWebp ? MAX_WEBP_DIM : MAX_JPEG_DIM;
+
+  const dimScale = Math.min(1, maxDim / Math.max(1, w, h));
+  const scale = areaScale * dimScale;
+
+  return { scale, mimeType, ...canvasSize({ pageW, pageH, dpr, scale }) };
+}
+
+export {
+  MAX_JPEG_DIM, MAX_WEBP_DIM, PIXEL_BUDGET,
+  budgetedScale, canvasSize, capturePlan, stitchPlan, thumbnailSize,
+};

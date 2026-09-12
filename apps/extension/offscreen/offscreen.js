@@ -135,7 +135,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 fpCtx.fillStyle = '#FFFFFF';
                 fpCtx.fillRect(0, 0, width, height);
                 currentImageBlob = null;
-                console.log('[Offscreen] Full-page canvas', width, 'x', height);
+                fpMimeType = message.mimeType || 'image/webp';
+                console.log('[Offscreen] Full-page canvas', width, 'x', height, fpMimeType);
                 sendResponse({ success: true, width, height });
             } catch (e) {
                 fpCanvas = null; fpCtx = null;
@@ -371,6 +372,7 @@ let currentRecordingBlob = null;
  * a recording that has not been delivered yet. */
 let fpCanvas = null;
 let fpCtx = null;
+let fpMimeType = 'image/webp';
 let currentImageBlob = null;
 
 async function stopRecording() {
@@ -525,8 +527,14 @@ async function drawFullPageSection({ dataUrl, sourceYCss, drawHCss, destYCss, dp
 async function finishFullPage() {
     if (!fpCanvas) throw new Error('No full-page capture in progress');
 
-    const blob = await fpCanvas.convertToBlob({ type: 'image/webp', quality: 0.92 });
+    const blob = await fpCanvas.convertToBlob({ type: fpMimeType, quality: 0.92 });
     if (!blob || blob.size === 0) throw new Error('Encoding produced no image');
+    // convertToBlob crops silently past a format's dimension limit, so verify
+    // the encoder honoured the canvas rather than trusting it.
+    const encoded = await createImageBitmap(blob);
+    const cropped = encoded.width !== fpCanvas.width || encoded.height !== fpCanvas.height;
+    encoded.close();
+    if (cropped) throw new Error(`Encoder cropped the capture to ${encoded.width}x${encoded.height}`);
     currentImageBlob = blob;
 
     const t = globalThis.SnapRecFullPage.thumbnailSize({
@@ -545,7 +553,7 @@ async function finishFullPage() {
     fpCanvas = null; fpCtx = null;
 
     console.log('[Offscreen] Full-page encoded,', blob.size, 'bytes');
-    return { size: blob.size, mimeType: blob.type || 'image/webp', thumbnail };
+    return { size: blob.size, mimeType: blob.type || fpMimeType, thumbnail };
 }
 
 async function cropImage(dataUrl, rect) {
