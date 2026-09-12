@@ -17,6 +17,7 @@ import { useWatchProgress } from '../hooks/useWatchProgress';
 import { useVideoFrames } from '../hooks/useVideoFrames';
 import { useStableMediaUrl } from '../hooks/useStableMediaUrl';
 import { useUpdateRecording, useResolveComment, useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
+import { readHandoffMessage } from '../lib/handoffMessage';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useMemo } from 'react';
@@ -394,69 +395,119 @@ const ShareView: React.FC = () => {
             });
         };
 
+        /** Keeps a refresh from losing the capture.
+         *
+         * The frame that delivered the Blob belongs to the extension and is
+         * gone the moment this page reloads, so the page keeps its own copy.
+         * Writing a Blob to IndexedDB does not pull it through the JS heap —
+         * the browser moves it between its own stores — so size is not a
+         * concern here the way it was for the base64 path this replaced. */
+        const persistBlobToIDB = (
+            blob: Blob, id: string | null, metadataStr: string | null,
+        ): Promise<void> =>
+            new Promise((resolve) => {
+                try {
+                    const request = indexedDB.open('SnapRecDB', 2);
+                    request.onupgradeneeded = (e: any) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('recordings')) {
+                            db.createObjectStore('recordings');
+                        }
+                    };
+                    request.onsuccess = (e: any) => {
+                        const db = e.target.result;
+                        const tx = db.transaction(['recordings'], 'readwrite');
+                        const store = tx.objectStore('recordings');
+                        store.clear();
+                        store.put(blob, 'latest_video_blob');
+                        if (id) store.put(id, 'latest_id');
+                        if (metadataStr) store.put(metadataStr, 'latest_metadata');
+                        store.put(Date.now(), 'latest_video_timestamp');
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => resolve();
+                    };
+                    request.onerror = () => resolve();
+                } catch {
+                    resolve();
+                }
+            });
+
         const handleMessage = async (event: MessageEvent) => {
-            if (event.data?.type === 'SNAPREC_VIDEO_DATA') {
-                console.log('Received video data from extension with id:', event.data.id);
+            const payload = readHandoffMessage(event.origin, event.data, window.location.origin);
+            if (!payload) return;
+            console.log('Received video data from extension with id:', payload.id);
 
-                // New IDB path: blob was stored directly in IndexedDB by the injected script
-                if (event.data.fromIDB) {
-                    console.log('Loading video blob from IndexedDB (no base64 conversion)...');
-                    const { blob, metadata } = await loadBlobAndMetadataFromIDB();
-                    
-                    if (metadata) {
-                        setLocalMetadata(metadata);
-                        try {
-                            sessionStorage.setItem('snaprec_local_metadata', JSON.stringify(metadata));
-                        } catch (e) {}
-                    }
-                    
-                    if (blob) {
-                        const blobUrl = URL.createObjectURL(blob);
-                        console.log('Video blob loaded from IDB, size:', blob.size, 'type:', blob.type);
-                        videoBlobSetByMessage.current = true;
-                        setLocalVideoBlob(blobUrl);
-                    } else {
-                        console.warn('No blob found in IndexedDB, falling back to loadFromIndexedDB (legacy)');
-                        // Try the legacy 'latest_video' key (base64 data URL stored as string)
-                        const { blob: legacyBlob } = await loadFromIndexedDB();
-                        if (legacyBlob) {
-                            if (legacyBlob.startsWith('data:')) {
-                                const blobUrl = await convertBase64ToBlobUrl(legacyBlob);
-                                setLocalVideoBlob(blobUrl);
-                            } else {
-                                setLocalVideoBlob(legacyBlob);
-                            }
-                        }
-                    }
-                } else {
-                    // Legacy path: dataUrl was passed directly via postMessage
-                    const dataUrl = event.data.dataUrl;
-                    if (!dataUrl) return;
+            if (payload.kind === 'blob') {
+                // A Blob crosses postMessage by reference, so this costs the
+                // same for a one-hour capture as for a ten-second one. It is
+                // also copied into this origin's IndexedDB, because the frame
+                // that delivered it is gone after a refresh and the share page
+                // has to survive one.
+                const blobUrl = URL.createObjectURL(payload.blob);
+                console.log('Video blob received by reference, size:', payload.blob.size);
+                videoBlobSetByMessage.current = true;
+                setLocalVideoBlob(blobUrl);
 
-                    if (dataUrl.startsWith('data:')) {
-                        const blobUrl = await convertBase64ToBlobUrl(dataUrl);
-                        setLocalVideoBlob(blobUrl);
-                    } else {
-                        setLocalVideoBlob(dataUrl);
-                    }
-
-                    // Only try sessionStorage for small data (< 2MB)
-                    if (dataUrl.length < 2 * 1024 * 1024) {
-                        try {
-                            sessionStorage.setItem('snaprec_local_video_blob', dataUrl);
-                        } catch (e) {
-                            console.warn('QuotaExceededError: Cannot save video to sessionStorage');
-                        }
+                // The video editor reads this back out of sessionStorage to
+                // rebuild auto-zoom and click markers; dropping it here would
+                // silently cost every new recording its zoom track.
+                if (payload.metadataStr) {
+                    try {
+                        setLocalMetadata(JSON.parse(payload.metadataStr));
+                        sessionStorage.setItem('snaprec_local_metadata', payload.metadataStr);
+                    } catch {
+                        console.warn('Could not store capture metadata');
                     }
                 }
 
-                if (event.data.id) {
-                    setLocalId(event.data.id);
+                void persistBlobToIDB(payload.blob, payload.id ?? null, payload.metadataStr ?? null);
+            } else if (payload.kind === 'idb') {
+                console.log('Loading video blob from IndexedDB (legacy extension)...');
+                const { blob, metadata } = await loadBlobAndMetadataFromIDB();
+
+                if (metadata) {
+                    setLocalMetadata(metadata);
                     try {
-                        sessionStorage.setItem('snaprec_local_video_id', event.data.id);
-                    } catch (e) {
-                        console.warn('QuotaExceededError: Cannot save video ID to sessionStorage');
+                        sessionStorage.setItem('snaprec_local_metadata', JSON.stringify(metadata));
+                    } catch { /* quota */ }
+                }
+
+                if (blob) {
+                    const blobUrl = URL.createObjectURL(blob);
+                    console.log('Video blob loaded from IDB, size:', blob.size, 'type:', blob.type);
+                    videoBlobSetByMessage.current = true;
+                    setLocalVideoBlob(blobUrl);
+                } else {
+                    console.warn('No blob found in IndexedDB, trying the legacy string key');
+                    const { blob: legacyBlob } = await loadFromIndexedDB();
+                    if (legacyBlob) {
+                        setLocalVideoBlob(legacyBlob.startsWith('data:')
+                            ? await convertBase64ToBlobUrl(legacyBlob)
+                            : legacyBlob);
                     }
+                }
+            } else {
+                const { dataUrl } = payload;
+                setLocalVideoBlob(dataUrl.startsWith('data:')
+                    ? await convertBase64ToBlobUrl(dataUrl)
+                    : dataUrl);
+
+                // Only try sessionStorage for small data (< 2MB)
+                if (dataUrl.length < 2 * 1024 * 1024) {
+                    try {
+                        sessionStorage.setItem('snaprec_local_video_blob', dataUrl);
+                    } catch {
+                        console.warn('QuotaExceededError: Cannot save video to sessionStorage');
+                    }
+                }
+            }
+
+            if (payload.id) {
+                setLocalId(payload.id);
+                try {
+                    sessionStorage.setItem('snaprec_local_video_id', payload.id);
+                } catch {
+                    console.warn('QuotaExceededError: Cannot save video ID to sessionStorage');
                 }
             }
         };
