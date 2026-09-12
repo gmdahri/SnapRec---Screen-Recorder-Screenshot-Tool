@@ -125,6 +125,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false;
         }
 
+        case 'offscreen_streamBegin':
+            streamBuffer = [];
+            streamBufferedBytes = 0;
+            streamPendingPart = null;
+            streaming = true;
+            sendResponse({ success: true });
+            return false;
+
+        case 'offscreen_streamTakePart': {
+            if (!globalThis.SnapRecParts.shouldFlush(streamBufferedBytes, !!message.isFinal)) {
+                sendResponse({ success: true, hasPart: false, bytes: 0 });
+                return false;
+            }
+            streamPendingPart = new Blob(streamBuffer, { type: 'application/octet-stream' });
+            const partBytes = streamPendingPart.size;
+            streamBuffer = [];
+            streamBufferedBytes = 0;
+            sendResponse({ success: true, hasPart: true, bytes: partBytes });
+            return false;
+        }
+
+        case 'offscreen_streamPutPart':
+            putPendingPart(message.uploadUrl)
+                .then(etag => sendResponse({ success: true, etag }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+
         case 'offscreen_fpBegin':
             try {
                 const { width, height } = globalThis.SnapRecFullPage.canvasSize(message);
@@ -326,7 +353,17 @@ async function startMediaRecorder() {
     mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
             recordedChunks.push(e.data);
-            console.log('[Offscreen] Chunk received, total chunks:', recordedChunks.length);
+            if (streaming) {
+                streamBuffer.push(e.data);
+                streamBufferedBytes += e.data.size;
+                // The service worker owns the upload; it only needs to know a
+                // part's worth has accumulated. The bytes stay here.
+                if (streamBufferedBytes >= globalThis.SnapRecParts.PART_MIN_BYTES) {
+                    chrome.runtime.sendMessage({
+                        action: 'streamPartReady', bytes: streamBufferedBytes,
+                    }).catch(() => { /* worker asleep; the next chunk retries */ });
+                }
+            }
         }
     };
 
@@ -373,6 +410,16 @@ let currentRecordingBlob = null;
 let fpCanvas = null;
 let fpCtx = null;
 let fpMimeType = 'image/webp';
+
+/** Chunks waiting to become the next upload part.
+ *
+ * Separate from recordedChunks, which is the whole recording and is still what
+ * the local blob and the handoff are built from. This buffer is drained as it
+ * fills; the recording itself is untouched by uploading. */
+let streamBuffer = [];
+let streamBufferedBytes = 0;
+let streamPendingPart = null;
+let streaming = false;
 let currentImageBlob = null;
 
 async function stopRecording() {
@@ -554,6 +601,28 @@ async function finishFullPage() {
 
     console.log('[Offscreen] Full-page encoded,', blob.size, 'bytes');
     return { size: blob.size, mimeType: blob.type || fpMimeType, thumbnail };
+}
+
+/** PUTs the pending part straight to R2.
+ *
+ * This function existing here is the whole design: the part is several
+ * megabytes and it never enters a chrome.runtime message. The service worker
+ * sends a signed URL — a string — and gets back an ETag — a string.
+ *
+ * The ETag is quoted by R2 and must be handed back to CompleteMultipartUpload
+ * exactly as received, quotes included. */
+async function putPendingPart(uploadUrl) {
+    if (!streamPendingPart) throw new Error('No part pending');
+
+    const response = await fetch(uploadUrl, { method: 'PUT', body: streamPendingPart });
+    if (!response.ok) throw new Error(`Part upload failed: HTTP ${response.status}`);
+
+    const etag = response.headers.get('ETag');
+    if (!etag) throw new Error('R2 returned no ETag for the part');
+
+    streamPendingPart = null;
+    console.log('[Offscreen] Part uploaded,', etag);
+    return etag;
 }
 
 async function cropImage(dataUrl, rect) {

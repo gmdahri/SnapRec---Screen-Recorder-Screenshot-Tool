@@ -13,6 +13,9 @@
     <!-- fullpage.js first: it defines globalThis.SnapRecFullPage, which
          offscreen.js reads to size the stitched canvas and its thumbnail. -->
     <script src="../background/fullpage.js"></script>
+    <!-- upload-parts.js defines globalThis.SnapRecParts, which offscreen.js
+         reads to decide when a buffer has become a part. -->
+    <script src="../background/upload-parts.js"></script>
     <script src="offscreen.js"></script>
 </body>
 
