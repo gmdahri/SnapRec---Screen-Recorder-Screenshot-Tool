@@ -423,3 +423,25 @@ describe('rating modal (complete view)', () => {
     }
   });
 });
+
+describe('completion view (durability)', () => {
+  const finished = (filename) => ({
+    ...initialState(),
+    view: 'complete',
+    capture: { id: 'r1', bytes: 1024, mimeType: 'video/webm', filename },
+  });
+
+  it('names the file it saved, so the view answers "where did it go"', () => {
+    const root = mount(finished('SnapRec/SnapRec-2026-09-13-140509.webm'));
+    expect(root.textContent).toContain('SnapRec-2026-09-13-140509.webm');
+  });
+
+  it('shows the bare filename, not the folder-prefixed download path', () => {
+    const root = mount(finished('SnapRec/SnapRec-2026-09-13-140509.webm'));
+    expect(root.textContent).not.toContain('SnapRec/SnapRec-2026');
+  });
+
+  it('says nothing about a file when none reached disk', () => {
+    expect(mount(finished(null)).textContent).not.toContain('Saved to');
+  });
+});

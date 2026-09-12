@@ -487,6 +487,11 @@ function viewComplete(state, d) {
     <h1 class="sr-completion-title">Recording finished</h1>
     ${completionPlate(state, d, { strike: d.strikesCorners })}
     ${spine(d)}
+    ${state.capture?.filename ? `
+      <p class="sr-footnote sr-completion-file">
+        Saved to <strong>${state.capture.filename.replace(/^.*\//, '')}</strong>
+        in your Downloads folder
+      </p>` : ''}
     <div class="sr-footer sr-completion-actions">
       <button type="button" class="sr-primary" data-action="primary" data-tone="cyan">
         ${icon('cloudUpload', 15)}Upload and get link

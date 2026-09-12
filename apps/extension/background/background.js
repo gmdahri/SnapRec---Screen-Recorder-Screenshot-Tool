@@ -1211,6 +1211,19 @@ async function handleRecordingComplete() {
         };
         chrome.tabs.onUpdated.addListener(listener);
 
+        /* The popup's completion view has existed since the plate redesign and
+         * has never once been reachable: nothing sent captureFinished. This is
+         * the sender. Best-effort — the popup is usually closed, which is fine. */
+        notifyPopup({
+            action: 'captureFinished',
+            capture: {
+                id: recordingId,
+                bytes: savedFile?.bytes ?? 0,
+                mimeType: savedFile?.mimeType ?? 'video/webm',
+                filename: savedFile?.filename ?? null,
+            },
+        });
+
         // We skip all backend calls here - web app will handle it now.
     } catch (error) {
         console.error('[SnapRec] Error handling recording completion:', error);
