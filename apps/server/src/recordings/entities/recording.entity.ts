@@ -74,6 +74,11 @@ export class Recording {
     @Column({ type: 'timestamptz', nullable: true })
     sharingDisabledAt: Date | null;
 
+    /** Set on guest uploads, cleared when the recording is claimed. A row past
+     * this is deleted by the sweep along with its R2 object. */
+    @Column({ type: 'timestamptz', nullable: true })
+    expiresAt: Date | null;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 
