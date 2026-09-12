@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  PART_MIN_BYTES, completionPayload, createUploadState, isUsable,
+  PART_MIN_BYTES, completionPayload, createUploadState, isUsable, partSliceLength,
   recordPart, shouldFlush, takePartNumber,
 } from '../background/upload-parts.core.js';
 
@@ -82,6 +82,43 @@ describe('isUsable', () => {
     const s = createUploadState();
     recordPart(s, { partNumber: 1, etag: '"a"' });
     expect(isUsable(s)).toBe(true);
+  });
+});
+
+describe('partSliceLength', () => {
+  /** R2 is stricter than S3 here, and only says so at the very end.
+   *
+   * S3 asks that non-final parts be at least 5 MB. R2 additionally requires
+   * every non-trailing part to be EXACTLY the same length, and reports a
+   * violation as InvalidPart at CompleteMultipartUpload — after the whole
+   * recording has been uploaded. Flushing "whatever has accumulated" therefore
+   * produces parts of 5 MB plus a bit, all different, and fails at the one
+   * moment that wastes the most work. */
+
+  it('takes nothing while the buffer is short', () => {
+    expect(partSliceLength(PART_MIN_BYTES - 1, false)).toBe(0);
+  });
+
+  it('takes exactly one part when the buffer just reaches the size', () => {
+    expect(partSliceLength(PART_MIN_BYTES, false)).toBe(PART_MIN_BYTES);
+  });
+
+  it('takes exactly one part and leaves the remainder buffered', () => {
+    // The whole point: NOT PART_MIN_BYTES + 1234.
+    expect(partSliceLength(PART_MIN_BYTES + 1234, false)).toBe(PART_MIN_BYTES);
+  });
+
+  it('still takes exactly one part when several have accumulated', () => {
+    expect(partSliceLength(PART_MIN_BYTES * 3 + 99, false)).toBe(PART_MIN_BYTES);
+  });
+
+  it('takes everything left for the trailing part, whatever its size', () => {
+    expect(partSliceLength(1234, true)).toBe(1234);
+    expect(partSliceLength(PART_MIN_BYTES * 2 + 7, true)).toBe(PART_MIN_BYTES * 2 + 7);
+  });
+
+  it('takes nothing from an empty final buffer', () => {
+    expect(partSliceLength(0, true)).toBe(0);
   });
 });
 

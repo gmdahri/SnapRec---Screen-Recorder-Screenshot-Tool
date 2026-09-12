@@ -50,8 +50,21 @@ function isUsable(state) {
   return state.parts.length > 0;
 }
 
+/** How many bytes to take as the next part, or 0 for none.
+ *
+ * R2 is stricter than S3: every non-trailing part must be EXACTLY the same
+ * length, not merely at least 5 MB, and it reports a violation as InvalidPart
+ * at CompleteMultipartUpload — after the entire recording has been uploaded.
+ * So a part is sliced to exactly PART_MIN_BYTES and the remainder stays
+ * buffered; the trailing part is the only one allowed to differ. */
+function partSliceLength(bufferedBytes, isFinal) {
+  if (bufferedBytes <= 0) return 0;
+  if (isFinal) return bufferedBytes;
+  return bufferedBytes >= PART_MIN_BYTES ? PART_MIN_BYTES : 0;
+}
+
 // Loaded by importScripts into the service worker's global scope.
 globalThis.SnapRecParts = {
-  PART_MIN_BYTES, completionPayload, createUploadState, isUsable,
+  PART_MIN_BYTES, completionPayload, createUploadState, isUsable, partSliceLength,
   recordPart, shouldFlush, takePartNumber,
 };

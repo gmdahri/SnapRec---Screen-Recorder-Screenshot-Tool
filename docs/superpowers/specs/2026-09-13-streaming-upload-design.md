@@ -224,3 +224,55 @@ upload, or an extension that has not updated, still falls back to.
 - **Partial recordings.** A recording interrupted mid-way now has real parts on
   R2. The design treats an incomplete upload as nothing — it is aborted, not
   salvaged into a truncated video.
+
+## Verification
+
+Run 2026-09-13 against Chrome for Testing 145.0.7632.77, the live R2 bucket and
+the live database. Real `MediaRecorder` output from a canvas stream, because
+`getDisplayMedia` needs a macOS permission Chrome for Testing does not hold;
+everything downstream of the recorder is the production path.
+
+| Check | Result |
+|---|---|
+| **A1** parts upload during recording | 15 parts over 40 s; 24 parts over 71 s |
+| **A2** 20 s network drop mid-recording | completed, 24 parts, nothing lost |
+| **A3** registered without being asked | `registerOk=true`, row present |
+| **A4** no orphaned multipart uploads | `ListMultipartUploads` → 0 |
+| **A5** no oversized messages | 24 parts PUT straight to R2 |
+| **A6** guest expiry | `expiresAt` 59 minutes out; duration 71 s |
+| **A8** sweep deletes row *and* R2 object | `{"deleted":1}`, both gone, unexpired row untouched |
+
+Claiming is covered by `claim-clears-expiry.spec.ts` rather than end-to-end —
+it needs a Supabase-issued token, which the harness cannot mint.
+
+### Correction found during verification — R2 requires equal-sized parts
+
+The first two runs uploaded every part successfully and then failed at
+completion:
+
+```
+InvalidPart: All non-trailing parts must have the same length.
+```
+
+**This is an R2 constraint that S3 does not have.** S3 asks only that
+non-final parts be at least 5 MB; R2 additionally requires every non-trailing
+part to be *exactly* the same length. The implementation flushed the whole
+buffer whenever it crossed 5 MB, producing parts of 5 MB plus a remainder — all
+different sizes — and R2 reported it at `CompleteMultipartUpload`, after the
+entire recording had been uploaded. Precisely the failure mode this design
+predicted for the part list, arriving at the most expensive possible moment.
+
+`partSliceLength` now slices exactly `PART_MIN_BYTES` and leaves the remainder
+buffered; only the trailing part may differ.
+
+Fixing that exposed two further defects that the network-drop test would have
+hit:
+
+- **A failed part was silently dropped.** `offscreen_streamTakePart` sliced a
+  fresh part on top of one that had not uploaded, losing those bytes from the
+  recording and leaving a hole in the part numbering. It now returns the same
+  pending part until it succeeds, and the service worker reuses its number.
+- **A backlog drained one part per incoming chunk.** After a network drop
+  several parts' worth can be buffered, and one part per second of recording
+  never catches up. A successful part now re-triggers while more than a part
+  remains buffered.

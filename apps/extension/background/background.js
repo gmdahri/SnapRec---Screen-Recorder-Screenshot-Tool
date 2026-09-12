@@ -1362,7 +1362,12 @@ async function uploadNextPart(isFinal = false) {
         });
         if (!taken?.success || !taken.hasPart) return;
 
-        const partNumber = SnapRecParts.takePartNumber(streamingUpload.state);
+        /* Reuse the number for a part that is being retried. Taking a fresh one
+         * would leave a gap, and R2 rejects a completion whose part numbers are
+         * not contiguous. */
+        const partNumber = streamingUpload.pendingPartNumber
+            ?? SnapRecParts.takePartNumber(streamingUpload.state);
+        streamingUpload.pendingPartNumber = partNumber;
         const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/part`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1381,7 +1386,15 @@ async function uploadNextPart(isFinal = false) {
         if (!put?.success) throw new Error(put?.error ?? 'part PUT failed');
 
         SnapRecParts.recordPart(streamingUpload.state, { partNumber, etag: put.etag });
+        streamingUpload.pendingPartNumber = null;
         console.log('[SnapRec] Part', partNumber, 'uploaded,', taken.bytes, 'bytes');
+
+        /* Drain a backlog rather than waiting for the next chunk. After a
+         * network drop several parts' worth can be buffered, and one part per
+         * incoming chunk would never catch up. */
+        if (!isFinal && taken.remaining >= SnapRecParts.PART_MIN_BYTES) {
+            queueMicrotask(() => { void uploadNextPart(false); });
+        }
     } catch (e) {
         console.warn('[SnapRec] Part upload failed:', e.message);
     } finally {

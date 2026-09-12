@@ -134,15 +134,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false;
 
         case 'offscreen_streamTakePart': {
-            if (!globalThis.SnapRecParts.shouldFlush(streamBufferedBytes, !!message.isFinal)) {
+            /* Sliced to an exact boundary, not flushed wholesale.
+             *
+             * R2 requires every non-trailing part to be EXACTLY the same
+             * length and only says so at CompleteMultipartUpload, after the
+             * whole recording is uploaded — "InvalidPart: All non-trailing
+             * parts must have the same length." Taking the buffer as-is gave
+             * parts of 5 MB plus a bit, all different, and failed every
+             * completion. The remainder stays buffered for the next part. */
+            /* A part that failed to upload is still pending. Hand the SAME
+             * one back rather than slicing a new one on top of it — otherwise
+             * a network blip silently drops those bytes out of the recording
+             * and leaves a hole in the part numbering. */
+            if (streamPendingPart) {
+                sendResponse({
+                    success: true, hasPart: true,
+                    bytes: streamPendingPart.size, pending: true,
+                });
+                return false;
+            }
+
+            const take = globalThis.SnapRecParts.partSliceLength(
+                streamBufferedBytes, !!message.isFinal);
+            if (take <= 0) {
                 sendResponse({ success: true, hasPart: false, bytes: 0 });
                 return false;
             }
-            streamPendingPart = new Blob(streamBuffer, { type: 'application/octet-stream' });
-            const partBytes = streamPendingPart.size;
-            streamBuffer = [];
-            streamBufferedBytes = 0;
-            sendResponse({ success: true, hasPart: true, bytes: partBytes });
+            const buffered = new Blob(streamBuffer, { type: 'application/octet-stream' });
+            streamPendingPart = buffered.slice(0, take);
+            const remainder = buffered.slice(take);
+            streamBuffer = remainder.size > 0 ? [remainder] : [];
+            streamBufferedBytes = remainder.size;
+            sendResponse({
+                success: true, hasPart: true,
+                bytes: streamPendingPart.size, remaining: streamBufferedBytes,
+            });
             return false;
         }
 
