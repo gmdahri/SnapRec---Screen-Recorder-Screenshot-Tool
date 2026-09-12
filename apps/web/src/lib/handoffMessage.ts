@@ -13,7 +13,9 @@
 export type HandoffPayload =
     | { kind: 'blob'; blob: Blob; id?: string; metadataStr?: string }
     | { kind: 'idb'; id?: string }
-    | { kind: 'dataUrl'; dataUrl: string; id?: string };
+    | { kind: 'dataUrl'; dataUrl: string; id?: string }
+    | { kind: 'image'; blob: Blob; id?: string }
+    | { kind: 'imageDataUrl'; dataUrl: string; id?: string };
 
 const EXTENSION_ORIGIN = /^chrome-extension:\/\/[a-p]{32}$/;
 
@@ -26,9 +28,19 @@ export function readHandoffMessage(
     if (typeof data !== 'object' || data === null) return null;
 
     const msg = data as Record<string, unknown>;
-    if (msg.type !== 'SNAPREC_VIDEO_DATA') return null;
+    const isVideo = msg.type === 'SNAPREC_VIDEO_DATA';
+    const isImage = msg.type === 'SNAPREC_EDIT_IMAGE';
+    if (!isVideo && !isImage) return null;
 
     const id = typeof msg.id === 'string' ? msg.id : undefined;
+
+    if (isImage) {
+        if (msg.blob instanceof Blob) return { kind: 'image', blob: msg.blob, id };
+        if (typeof msg.dataUrl === 'string' && msg.dataUrl) {
+            return { kind: 'imageDataUrl', dataUrl: msg.dataUrl, id };
+        }
+        return null;
+    }
 
     // Order is deliberate: a Blob is the whole capture in hand, so it wins over
     // a signal that merely says where to go looking for one.

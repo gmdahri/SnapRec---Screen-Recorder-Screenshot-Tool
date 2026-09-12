@@ -490,7 +490,8 @@ const ShareView: React.FC = () => {
                             : legacyBlob);
                     }
                 }
-            } else {
+            } else if (payload.kind === 'dataUrl') {
+                // Image kinds belong to the editor, not the share view.
                 const { dataUrl } = payload;
                 setLocalVideoBlob(dataUrl.startsWith('data:')
                     ? await convertBase64ToBlobUrl(dataUrl)

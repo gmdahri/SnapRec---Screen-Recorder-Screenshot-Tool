@@ -90,3 +90,31 @@ describe('readHandoffMessage', () => {
       .toEqual({ kind: 'blob', blob, id: undefined, metadataStr: undefined });
   });
 });
+
+describe('readHandoffMessage — screenshots', () => {
+  it('accepts an image Blob from the extension iframe', () => {
+    const blob = new Blob(['x'], { type: 'image/webp' });
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_EDIT_IMAGE', blob, id: 'i1' }, SELF))
+      .toEqual({ kind: 'image', blob, id: 'i1' });
+  });
+
+  it('accepts the legacy data URL an older extension injects', () => {
+    expect(readHandoffMessage(SELF, { type: 'SNAPREC_EDIT_IMAGE', dataUrl: 'data:image/png;base64,AA' }, SELF))
+      .toEqual({ kind: 'imageDataUrl', dataUrl: 'data:image/png;base64,AA', id: undefined });
+  });
+
+  it('rejects an image from a cross-origin frame', () => {
+    const blob = new Blob(['x'], { type: 'image/webp' });
+    expect(readHandoffMessage('https://evil.example', { type: 'SNAPREC_EDIT_IMAGE', blob }, SELF))
+      .toBeNull();
+  });
+
+  it('ignores an image message carrying nothing', () => {
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_EDIT_IMAGE', id: 'i1' }, SELF)).toBeNull();
+  });
+
+  it('keeps video and image messages distinct', () => {
+    const blob = new Blob(['x'], { type: 'video/webm' });
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_VIDEO_DATA', blob }, SELF)?.kind).toBe('blob');
+  });
+});

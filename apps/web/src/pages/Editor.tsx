@@ -7,6 +7,7 @@ import { FABRIC_TOOL, type ToolKey } from './Editor/tools';
 import { detectApple } from '../lib/shortcuts';
 // Analytics
 import { capture } from '../lib/analytics';
+import { readHandoffMessage } from '../lib/handoffMessage';
 
 /** Resolved once at the app edge rather than sniffed inside each control —
  * see lib/shortcuts. */
@@ -32,19 +33,70 @@ const EditorContent: React.FC = () => {
 
     // Extension Message Listener & Session Fallback
     useEffect(() => {
-        // 1. Check if there's an image in sessionStorage (from extension injection)
+        /** A blob: URL dies with the document, so sessionStorage cannot carry a
+         * screenshot across a refresh the way a data URL did. The image is kept
+         * in this origin's IndexedDB instead, and read back on mount. */
+        const IMAGE_KEY = 'snaprec_editor_image_blob';
+
+        const loadStoredBlob = (): Promise<Blob | null> => new Promise((resolve) => {
+            try {
+                const rq = indexedDB.open('SnapRecDB', 2);
+                rq.onupgradeneeded = (e: any) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) db.createObjectStore('recordings');
+                };
+                rq.onsuccess = (e: any) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) return resolve(null);
+                    const g = db.transaction(['recordings'], 'readonly').objectStore('recordings').get(IMAGE_KEY);
+                    g.onsuccess = () => resolve(g.result instanceof Blob ? g.result : null);
+                    g.onerror = () => resolve(null);
+                };
+                rq.onerror = () => resolve(null);
+            } catch { resolve(null); }
+        });
+
+        const storeBlob = (blob: Blob) => {
+            try {
+                const rq = indexedDB.open('SnapRecDB', 2);
+                rq.onupgradeneeded = (e: any) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) db.createObjectStore('recordings');
+                };
+                rq.onsuccess = (e: any) => {
+                    const db = e.target.result;
+                    db.transaction(['recordings'], 'readwrite').objectStore('recordings').put(blob, IMAGE_KEY);
+                };
+            } catch { /* storage unavailable */ }
+        };
+
         const savedImage = sessionStorage.getItem('snaprec_editing_image');
         if (savedImage) {
             console.log('Editor: Found image in sessionStorage');
             setCapturedImage(savedImage);
-            // Don't clear immediately, we might need it on refresh if not saved yet
+        } else {
+            void loadStoredBlob().then((blob) => {
+                if (blob) {
+                    console.log('Editor: Restored image from IndexedDB,', blob.size, 'bytes');
+                    setCapturedImage(URL.createObjectURL(blob));
+                }
+            });
         }
 
         const handleMessage = (event: MessageEvent) => {
-            if (event.data?.type === 'SNAPREC_EDIT_IMAGE') {
-                console.log('Editor: Received message SNAPREC_EDIT_IMAGE');
-                setCapturedImage(event.data.dataUrl);
-                sessionStorage.setItem('snaprec_editing_image', event.data.dataUrl);
+            const payload = readHandoffMessage(event.origin, event.data, window.location.origin);
+            if (!payload) return;
+
+            if (payload.kind === 'image') {
+                console.log('Editor: Received image blob,', payload.blob.size, 'bytes');
+                setCapturedImage(URL.createObjectURL(payload.blob));
+                storeBlob(payload.blob);
+            } else if (payload.kind === 'imageDataUrl') {
+                console.log('Editor: Received SNAPREC_EDIT_IMAGE (legacy data URL)');
+                setCapturedImage(payload.dataUrl);
+                try {
+                    sessionStorage.setItem('snaprec_editing_image', payload.dataUrl);
+                } catch { /* quota */ }
             }
         };
         window.addEventListener('message', handleMessage);
