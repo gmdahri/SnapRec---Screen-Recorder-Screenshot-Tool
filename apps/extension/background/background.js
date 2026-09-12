@@ -765,11 +765,18 @@ async function hasOffscreenDocument() {
     return contexts.length > 0;
 }
 
+/** One offscreen document, reused.
+ *
+ * This used to close any open document before creating a new one, which made
+ * every screenshot a hazard: region capture opens an offscreen document to
+ * crop in, so taking one during a recording closed the document holding the
+ * recording and destroyed it. There is only ever one, and every caller wants
+ * "make sure it exists", not "make me a fresh one".
+ *
+ * BLOBS is declared alongside the media reasons because full-page capture
+ * stitches into a canvas there and encodes the result. */
 async function createOffscreenDocument() {
-    if (await hasOffscreenDocument()) {
-        console.log('[SnapRec] Offscreen document already exists, closing it first');
-        await closeOffscreenDocument();
-    }
+    if (await hasOffscreenDocument()) return;
 
     if (creatingOffscreen) {
         await creatingOffscreen;
@@ -779,8 +786,13 @@ async function createOffscreenDocument() {
     console.log('[SnapRec] Creating offscreen document...');
     creatingOffscreen = chrome.offscreen.createDocument({
         url: OFFSCREEN_DOCUMENT_PATH,
-        reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA, chrome.offscreen.Reason.USER_MEDIA],
-        justification: 'Recording screen/tab video and audio; microphone captured via getUserMedia'
+        reasons: [
+            chrome.offscreen.Reason.DISPLAY_MEDIA,
+            chrome.offscreen.Reason.USER_MEDIA,
+            chrome.offscreen.Reason.BLOBS,
+        ],
+        justification: 'Recording screen/tab video and audio; microphone captured via '
+            + 'getUserMedia; stitching and encoding full-page screenshots'
     });
 
     await creatingOffscreen;
