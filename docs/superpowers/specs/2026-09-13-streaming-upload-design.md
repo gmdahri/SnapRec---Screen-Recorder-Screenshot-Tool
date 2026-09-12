@@ -203,17 +203,16 @@ upload, or an extension that has not updated, still falls back to.
 
 ## Risks
 
-- **A guest share link dies within the hour.** This is the significant product
-  consequence of D3 and it is not a side effect — it is the design. A guest who
-  records something and sends the link to a colleague has given them a link that
-  breaks in under an hour, and shared links are a large part of how people meet
-  this product. The trade is deliberate: it converts guests into accounts and
-  bounds storage cost. It should be measured, not assumed — if guest-shared
-  links are a meaningful acquisition path, this window is the first number to
-  revisit.
-- **Deletion while someone is watching.** A viewer can be mid-playback when the
-  sweep runs. The share page must handle the file disappearing without showing a
-  broken player.
+- **No shared link can break.** Worth stating explicitly, because it bounds this
+  risk to nothing: a guest cannot produce a shareable link at all. Both
+  `handleUploadToCloud` and `handleDownload` in `ShareView.tsx` open the sign-in
+  modal first, and signing in claims the recording, which clears `expiresAt`.
+  The hour is therefore a holding period for a recording only its creator can
+  reach — never a link already in someone else's hands.
+- **The creator can still lose it by walking away.** The one real exposure: a
+  guest who records, does not sign in, and comes back later finds the recording
+  gone. The countdown is what makes that a choice rather than a surprise, which
+  is why D3 requires it in words rather than as a bare timer.
 - **Cost of anonymous use.** Every guest recording is stored for up to an hour,
   including abandoned ones. The expiry job is what bounds this; if it fails,
   cost grows silently. It needs monitoring, not just writing.
