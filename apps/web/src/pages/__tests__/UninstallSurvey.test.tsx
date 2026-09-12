@@ -159,20 +159,35 @@ describe('uninstall survey is unlinked and unindexed', () => {
      * the marketing homepage and the survey recorded nothing. What matters is
      * not that a rule mentions the path but that the path the extension
      * actually opens ends up at the survey, so that is what these assert. */
-    /* The wildcard form is required, not stylistic: Cloudflare Pages does not
-     * honour an exact-path 200 proxy to /index.html, so `/uninstall-survey/
-     * /index.html  200` was present and inert while the page was unreachable. */
-    it('resolves through a wildcard 200 proxy', () => {
-        const redirects = web('public/_redirects');
-        expect(redirects).toMatch(/^\/uninstall-survey\*\s+\/index\.html\s+200/m);
+    /* The survey has no per-route rule any more and must not get one back:
+     * Cloudflare Pages ignores per-route 200 rewrites to /index.html for paths
+     * with no file on disk, and while `/uninstall-survey*  /index.html  200`
+     * was present it was inert. The page is served by the `/*` catch-all
+     * instead — see the header comment in public/_redirects. */
+    it('is served by the catch-all, not a per-route rule', () => {
+        const rules = web('public/_redirects').split('\n')
+            .map(l => l.trim())
+            .filter(l => l && !l.startsWith('#'));
+
+        expect(rules.at(-1)).toBe('/*  /index.html  200');
+        expect(rules.filter(l => /^\/uninstall-survey\S*\s+\/index\.html/.test(l)))
+            .toEqual([]);
     });
 
-    it('301s the bare path to the form rather than letting it normalise to /', () => {
+    it('301s the bare path to the slashed form rather than letting it normalise to /', () => {
         const redirects = web('public/_redirects');
-        const redirect = redirects.indexOf('/uninstall-survey  /uninstall-survey/  301');
-        expect(redirect, 'bare path needs an explicit 301').toBeGreaterThan(-1);
-        expect(redirect, 'must precede the proxy, or the proxy claims it first')
-            .toBeLessThan(redirects.indexOf('/uninstall-survey*  /index.html  200'));
+        const rules = redirects.split('\n')
+            .map(l => l.trim())
+            .filter(l => l && !l.startsWith('#'));
+
+        expect(rules, 'bare path needs an explicit 301')
+            .toContain('/uninstall-survey  /uninstall-survey/  301');
+
+        /* Order is what makes it work: Pages takes the first match, so the 301
+         * has to come before the catch-all or the catch-all serves the bare
+         * path directly and the canonical slashed URL is never reached. */
+        expect(rules.indexOf('/uninstall-survey  /uninstall-survey/  301'))
+            .toBeLessThan(rules.indexOf('/*  /index.html  200'));
     });
 
     /* Extensions already installed have the bare URL stored in the browser and

@@ -183,79 +183,42 @@ describe('both URL forms still resolve to the same post', () => {
   });
 });
 
-/* SEO: the redirect table has to keep pace with the route list.
+/* SEO / routing: the redirect table has to keep pace with the route list.
  *
- * A new public route added to routes.mjs without its two _redirects lines is
- * invisible until GSC reports it — the bare form 404s on the catch-all instead
- * of 301ing, and the prerendered slashed form has no fallback if prerender has
- * not run. Both were present for all 13 routes when this was written; this is
- * what keeps it that way. */
-describe('_redirects covers every public route', () => {
+ * Cloudflare Pages does not honour per-route 200 rewrites to /index.html for
+ * paths with no file on disk, and it downgrades a 404 status here to 200. The
+ * only arrangement that works is 301s for normalisation, prerendered files on
+ * disk, and one `/*` catch-all last — see the header comment in _redirects.
+ *
+ * This suite guards the two halves that are easy to get wrong: a public route
+ * added to routes.mjs without its 301, and the catch-all losing its last-line
+ * position (which silently disables every 301 below it). */
+describe('_redirects', () => {
   const redirects = read('public/_redirects');
   const routes: string[] = (read('routes.mjs').match(/route: '(\/[a-z0-9/-]*)'/g) || [])
     .map(m => m.replace(/route: '|'/g, ''))
     .filter(p => p !== '/');
 
-  it('301s the bare form to the canonical trailing-slash form', () => {
+  /** Rule lines only — the file is mostly explanatory comments. */
+  const rules = redirects.split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+
+  it('301s the bare form of every public route to the trailing-slash form', () => {
     const missing = routes.filter(r =>
       !new RegExp(`^${r}\\s+${r}/\\s+301`, 'm').test(redirects));
     expect(missing).toEqual([]);
   });
 
-  it('serves the canonical form the SPA shell as a 200 fallback', () => {
-    const missing = routes.filter(r =>
-      !new RegExp(`^${r}/\\s+/index\\.html\\s+200`, 'm').test(redirects));
-    expect(missing).toEqual([]);
-  });
-
-  /* Every route in App.tsx that is NOT prerendered needs a rule here, or it has
-   * no file on disk to be served from and falls through to the 404.
-   *
-   * The rule has to end in `*`. Cloudflare Pages does not honour an exact-path
-   * 200 proxy to /index.html — the rules were all present and correctly ordered
-   * when /editor, /login, /home and the rest were answering 308 -> / in
-   * production, so "a rule exists" is not the property worth asserting. */
-  it('gives every non-prerendered app route a wildcard 200 proxy', () => {
-    // Deliberately broader than the publicRoutes regex above: that one stops at
-    // the first `:`, so it never saw /editor/:id? or /v/:id? — the very routes
-    // that were broken.
-    const prerendered = new Set<string>(
-      (getAllRoutes() as { route: string }[]).map(r => r.route));
-
-    /* The literal prefix of each wildcard rule, so coverage is decided by
-     * whether a rule's prefix actually matches the route. Matching on the
-     * leading path segment instead let `/video-editor*` answer for `/v`. */
-    const prefixes = [...redirects.matchAll(/^(\/\S*)\*\s+\/index\.html\s+200/gm)]
-      .map(m => m[1]);
-
-    const uncovered = [...app.matchAll(/path="(\/[^"]*)"/g)]
-      .map(m => m[1])
-      .filter(p => {
-        if (p === '/') return false;
-        const base = p.replace(/\/:.*$/, '');       // /editor/:id? -> /editor
-        if (prerendered.has(base)) return false;    // served from disk instead
-        return !prefixes.some(pre => base.startsWith(pre));
-      });
-
-    expect(uncovered).toEqual([]);
-  });
-
-  /* Pages supports redirects and 200 proxies in _redirects, but not 404
-   * rewrites: `/*  /index.html  404` was silently downgraded to 200, so every
-   * bad URL stayed a soft 404. Its absence is also what makes Pages serve the
-   * real 404.html instead of assuming an SPA and redirecting to `/`. */
-  it('has no catch-all, so unmatched routes reach the real 404.html', () => {
-    expect(redirects).not.toMatch(/^\/\*\s/m);
-  });
-
-  it('builds a top-level 404.html to take Pages out of SPA mode', () => {
-    expect(read('vite.config.ts')).toContain("'404.html'");
-  });
-
-  it('301s blog posts by slug, above the SPA rewrite that would swallow them', () => {
+  it('301s blog posts by slug', () => {
     expect(redirects).toMatch(/^\/blog\/:slug\s+\/blog\/:slug\/\s+301/m);
-    expect(redirects.indexOf('/blog/:slug  /blog/:slug/  301'))
-      .toBeLessThan(redirects.indexOf('/blog/*  /index.html  200'));
+  });
+
+  /* chrome.runtime.setUninstallURL points at the bare path, and every extension
+   * already installed has that URL stored in the browser forever. It is not in
+   * routes.mjs (not public, not sitemapped), so the loop above never checks it. */
+  it('301s the bare uninstall-survey URL the extension has hardcoded', () => {
+    expect(redirects).toMatch(/^\/uninstall-survey\s+\/uninstall-survey\/\s+301/m);
   });
 
   it('sends the consolidated posts straight to the canonical target, not through a second hop', () => {
@@ -265,6 +228,48 @@ describe('_redirects covers every public route', () => {
       if (target.startsWith('/blog/')) continue;   // the :slug rule itself
       expect(target).toMatch(/\/$/);
     }
+  });
+
+  /* The app routes have no file on disk and no rule of their own — the
+   * catch-all is the only thing serving them. If it stops being last, every
+   * rule after it is dead; if it disappears, so does the entire signed-in app. */
+  it('ends with the SPA catch-all, and has exactly one', () => {
+    expect(rules.at(-1)).toBe('/*  /index.html  200');
+    expect(rules.filter(l => l.startsWith('/*'))).toHaveLength(1);
+  });
+
+  /* The regression this whole arrangement exists to prevent. Rules like
+   * `/editor*  /index.html  200` look right and do nothing, and while they were
+   * present they also stopped the app routes reaching the catch-all. */
+  it('has no per-route 200 rewrites, which Pages silently ignores', () => {
+    const rewrites = rules.filter(l => /\s200$/.test(l) && !l.startsWith('/*'));
+    expect(rewrites).toEqual([]);
+  });
+
+  /* Pages downgrades a 404 in this file to 200, so a rule claiming otherwise is
+   * worse than none: it reads as a soft-404 defence that is not there. */
+  it('has no 404 rule, which Pages downgrades to 200', () => {
+    expect(rules.filter(l => /\s404$/.test(l))).toEqual([]);
+  });
+});
+
+/* A top-level 404.html takes Pages OUT of its SPA assumption: it stops serving
+ * index.html for unmatched paths and starts 308ing them to `/`. That is what
+ * broke /editor, /login, /v/:id and every other client-only route, so the file
+ * must not come back — from the vite build or from public/. */
+describe('no 404.html, so Pages stays in SPA mode', () => {
+  it('is not emitted by the vite build', () => {
+    expect(read('vite.config.ts')).not.toContain('404.html');
+  });
+
+  it('is not shipped as a static file', () => {
+    expect(globSync('public/404.html')).toEqual([]);
+  });
+
+  /* The visible half: unmatched paths answer 200 with the SPA shell, so the
+   * only thing keeping a soft 404 out of the index is NotFound's noIndex. */
+  it('renders NotFound with noIndex, since the status will be 200', () => {
+    expect(read('src/pages/NotFound.tsx')).toMatch(/<SEO\s+noIndex/);
   });
 });
 
