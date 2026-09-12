@@ -99,25 +99,39 @@ Parts go up as they fill, for the whole recording. On a weak connection this
 competes with whatever the user is recording. That trade is accepted
 deliberately: the alternative gives up G1 and G2, which are the point.
 
-### D3 — Everyone uploads; guest recordings expire
+### D3 — Everyone uploads; an unclaimed guest recording lives one hour
 
 Guests stream-upload on the same path as signed-in users, so no capture is ever
-stranded. A guest recording is deleted after **48 hours** unless claimed, which
-caps the cost of anonymous use without making the guest experience second-class.
-This figure is a starting value, not a measured one — it is the cheapest number
-to change once there is real usage data, and it should be revisited as soon as
-there is any.
+stranded. An unclaimed guest recording is deleted **one hour** after its upload
+completes.
+
+One hour is deliberately short. It caps the cost of anonymous use hard and makes
+signing in the obvious next step rather than an optional one.
 
 `POST /recordings/claim` already transfers guest-owned recordings on sign-in;
-claiming clears the expiry. The recordings table gains:
+claiming clears `expiresAt` and the recording becomes permanent. The recordings
+table gains:
 
 ```
-expiresAt  timestamptz NULL   -- set for guest uploads, cleared on claim
+expiresAt  timestamptz NULL   -- upload completion + 1h for guests, cleared on claim
 ```
 
-A daily job deletes rows past `expiresAt` and their R2 objects. The guest must
-be told: the share page states when an unclaimed recording expires and what
-signing in does about it.
+`expiresAt` is measured from **upload completion**, not from when recording
+started, so a 50-minute recording still gets its full hour.
+
+A job every **5 minutes** deletes rows past `expiresAt` together with their R2
+objects. A daily sweep is useless at this resolution — the job's cadence has to
+be a fraction of the window.
+
+The countdown has to be impossible to miss, because the consequence is
+permanent:
+
+- `/v/:id` shows a live countdown and a single primary action: **Sign in to keep
+  this recording**.
+- The extension popup shows the same countdown on the completion view while the
+  capture is unclaimed.
+- The state is stated in words — "deletes in 42 minutes unless you sign in" —
+  not implied by a timer alone.
 
 **Build order matters here.** Guest streaming must stay switched off until the
 expiry job exists and is verified. Shipping "everyone uploads" without the thing
@@ -179,13 +193,28 @@ upload, or an extension that has not updated, still falls back to.
   `ListMultipartUploads` returns nothing for it.
 - **A5.** No `SNAPREC` message carries more than 1 MB; media reaches R2 only by
   direct PUT from the extension.
-- **A6.** A guest recording carries an `expiresAt`; signing in and claiming it
-  clears it.
+- **A6.** A guest recording carries an `expiresAt` one hour after upload
+  completion; signing in and claiming it clears the value and the recording
+  survives the next sweep.
+- **A8.** An unclaimed guest recording and its R2 object are both gone within
+  five minutes of `expiresAt`, and `/v/:id` for it answers cleanly rather than
+  erroring.
 - **A7.** Nothing is written to the Downloads folder on the happy path.
 
 ## Risks
 
-- **Cost of anonymous use.** Every guest recording is stored for up to 48 hours,
+- **A guest share link dies within the hour.** This is the significant product
+  consequence of D3 and it is not a side effect — it is the design. A guest who
+  records something and sends the link to a colleague has given them a link that
+  breaks in under an hour, and shared links are a large part of how people meet
+  this product. The trade is deliberate: it converts guests into accounts and
+  bounds storage cost. It should be measured, not assumed — if guest-shared
+  links are a meaningful acquisition path, this window is the first number to
+  revisit.
+- **Deletion while someone is watching.** A viewer can be mid-playback when the
+  sweep runs. The share page must handle the file disappearing without showing a
+  broken player.
+- **Cost of anonymous use.** Every guest recording is stored for up to an hour,
   including abandoned ones. The expiry job is what bounds this; if it fails,
   cost grows silently. It needs monitoring, not just writing.
 - **Upstream contention.** Uploading while recording can degrade the call or
