@@ -82,6 +82,25 @@ export class RecordingsController {
         return { aborted: true };
     }
 
+    /** Called by Cloud Scheduler every five minutes.
+     *
+     * Guarded by a shared secret rather than a user token: there is no user.
+     * Cloud Run scales to zero, so an in-process cron would simply not run —
+     * the schedule has to come from outside.
+     *
+     * Answers 404 rather than 401 when the secret is wrong or unset, so the
+     * endpoint does not advertise its own existence. */
+    @Post('sweep-expired')
+    async sweepExpired(@Req() req: any) {
+        const expected = process.env.SWEEP_SECRET;
+        if (!expected || req.headers['x-sweep-secret'] !== expected) {
+            throw new NotFoundException();
+        }
+        const result = await this.recordingsService.sweepExpired();
+        if (result.deleted) this.logger.log(`Sweep deleted ${result.deleted} expired recordings`);
+        return result;
+    }
+
     @UseGuards(OptionalJwtAuthGuard)
     @Post()
     async createRecording(@Req() req: any, @Body() createRecordingDto: CreateRecordingDto) {

@@ -21,6 +21,7 @@ function makeService(over: { durationSec?: number; existing?: any; views?: any[]
   const users = { findOrCreateBySupabaseId: jest.fn().mockResolvedValue({ id: 'user-1' }) };
   const service = new RecordingsService(
     recordings as any, {} as any, {} as any, views as any, users as any,
+    {} as any, // storageService — used only by the expiry sweep
   );
   return { service, views, users, saved };
 }

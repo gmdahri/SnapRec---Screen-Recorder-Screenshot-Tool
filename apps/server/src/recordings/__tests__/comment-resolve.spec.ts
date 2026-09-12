@@ -34,6 +34,7 @@ function makeService(over: { recordingOwner?: string | null; commentAuthor?: str
 
   const service = new RecordingsService(
     {} as any, {} as any, comments as any, {} as any, users as any,
+    {} as any, // storageService — used only by the expiry sweep
   );
   return { service, comments, users, comment };
 }

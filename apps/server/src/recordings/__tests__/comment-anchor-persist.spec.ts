@@ -19,6 +19,7 @@ function makeService() {
 
   const service = new RecordingsService(
     recordings as any, {} as any, comments as any, {} as any, users as any,
+    {} as any, // storageService — used only by the expiry sweep
   );
   return { service, recordings, comments, users };
 }

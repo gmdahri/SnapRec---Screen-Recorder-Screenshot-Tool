@@ -28,6 +28,7 @@ function makeService(over: { owner?: string | null; comments?: any[]; durationSe
   const service = new RecordingsService(
     recordings as any, {} as any, {} as any, {} as any,
     { findOrCreateBySupabaseId: jest.fn() } as any,
+    {} as any, // storageService — used only by the expiry sweep
   );
   return { service, recordings, recording };
 }

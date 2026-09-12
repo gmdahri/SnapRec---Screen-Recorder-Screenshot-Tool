@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { StorageService } from '../storage/storage.service';
+import { expiresAtForUpload } from './expiry';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThan } from 'typeorm';
 import { Recording } from './entities/recording.entity';
 import { Reaction } from './entities/reaction.entity';
 import { Comment } from './entities/comment.entity';
@@ -15,6 +17,29 @@ import { PublishRecordingDto } from './dto/publish-recording.dto';
 export class RecordingsService {
     private readonly logger = new Logger(RecordingsService.name);
 
+    /** Deletes guest recordings nobody claimed.
+     *
+     * Runs every five minutes against a one-hour window. A failure to remove
+     * the R2 object must not stop the row going: a stuck sweep would let rows
+     * accumulate silently, which is exactly what this exists to prevent. */
+    async sweepExpired(now: Date = new Date()): Promise<{ deleted: number }> {
+        const due = await this.recordingsRepository.find({
+            where: { expiresAt: LessThan(now) },
+        });
+        if (!due.length) return { deleted: 0 };
+
+        for (const recording of due) {
+            try {
+                await this.storageService.deleteObject(recording.fileUrl);
+            } catch (e) {
+                this.logger.warn(
+                    `Sweep: could not delete ${recording.fileUrl}: ${(e as Error).message}`);
+            }
+        }
+        await this.recordingsRepository.remove(due);
+        return { deleted: due.length };
+    }
+
     constructor(
         @InjectRepository(Recording)
         private readonly recordingsRepository: Repository<Recording>,
@@ -25,6 +50,8 @@ export class RecordingsService {
         @InjectRepository(RecordingView)
         private readonly viewsRepository: Repository<RecordingView>,
         private readonly usersService: UsersService,
+        // Last, so every existing positional construction stays valid.
+        private readonly storageService: StorageService,
     ) { }
 
     async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Recording> {
@@ -53,6 +80,10 @@ export class RecordingsService {
         } else if (createRecordingDto.guestId) {
             recording.guestId = createRecordingDto.guestId;
         }
+
+        // A guest upload is temporary until somebody claims it. Signing in and
+        // claiming clears this; a signed-in recording never carries it.
+        recording.expiresAt = expiresAtForUpload(Boolean(createRecordingDto.userId));
 
         return this.recordingsRepository.save(recording);
     }
@@ -249,6 +280,9 @@ export class RecordingsService {
 
             if (alreadyMine || (ownerless && isThisGuests)) {
                 recording.user = user;
+                // Claiming is what makes a recording permanent — this is the
+                // line that saves it from the sweep.
+                recording.expiresAt = null;
                 recording.guestId = null;
                 claimed.push(recording.id);
             }
