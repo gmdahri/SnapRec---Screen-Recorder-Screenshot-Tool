@@ -80,8 +80,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
 
-        case 'offscreen_storeRecordingBlob':
-            storeRecordingBlobToIDB()
+        case 'offscreen_persistForHandoff':
+            persistForHandoff(message.id, message.metadataStr)
                 .then(result => sendResponse({ success: true, size: result.size, type: result.type }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
@@ -386,11 +386,17 @@ async function getRecordingBlobBase64() {
     });
 }
 
-// Store the raw Blob directly into IndexedDB to avoid base64 conversion overhead
-async function storeRecordingBlobToIDB() {
+/** Parks the capture in extension-origin IndexedDB.
+ *
+ * This is what unhooks the capture from this document's lifetime. Once the
+ * blob is here, the offscreen document can close immediately and Chrome can
+ * reap it — which it wants to do the moment the media tracks stop — without
+ * taking the recording with it. handoff/handoff.js, same origin, reads it back. */
+async function persistForHandoff(id, metadataStr) {
     if (!currentRecordingBlob) {
         throw new Error('No recording blob available');
     }
+    const blob = currentRecordingBlob;
 
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('SnapRecDB', 2);
@@ -406,20 +412,20 @@ async function storeRecordingBlobToIDB() {
             const db = e.target.result;
             const transaction = db.transaction(['recordings'], 'readwrite');
             const store = transaction.objectStore('recordings');
-            store.put(currentRecordingBlob, 'latest_video_blob');
+            store.clear();
+            store.put(blob, 'latest_video_blob');
+            store.put(id, 'latest_id');
+            store.put(metadataStr, 'latest_metadata');
+            store.put(Date.now(), 'latest_video_timestamp');
 
             transaction.oncomplete = () => {
-                console.log('[Offscreen] Blob stored in IndexedDB, size:', currentRecordingBlob.size);
-                resolve({ size: currentRecordingBlob.size, type: currentRecordingBlob.type });
+                console.log('[Offscreen] Capture parked for handoff, size:', blob.size);
+                resolve({ size: blob.size, type: blob.type });
             };
-            transaction.onerror = () => {
-                reject(new Error('Failed to store blob in IndexedDB'));
-            };
+            transaction.onerror = () => reject(new Error('Failed to park capture for handoff'));
         };
 
-        request.onerror = () => {
-            reject(new Error('Failed to open IndexedDB for blob storage'));
-        };
+        request.onerror = () => reject(new Error('Failed to open IndexedDB'));
     });
 }
 

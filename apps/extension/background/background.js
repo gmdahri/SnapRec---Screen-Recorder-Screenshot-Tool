@@ -1146,10 +1146,6 @@ async function handleRecordingComplete() {
             completedRecordingsCount: completedRecordingsCount + 1,
         });
 
-        /* Disk first. Everything below this line is convenience — the preview
-         * tab, the handoff, the share link. This line is the guarantee. */
-        const savedFile = await saveRecordingToDisk();
-
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
 
@@ -1158,158 +1154,59 @@ async function handleRecordingComplete() {
         const shareUrl = `${CONFIG.WEB_BASE_URL}/v`;
         const tab = await chrome.tabs.create({ url: shareUrl });
 
-        let injectionSucceeded = false;
-        let retryCount = 0;
-        const MAX_RETRIES = 5;
+        /* Disk before anything that can cost us the capture.
+         *
+         * Opening the tab above is free — it does not touch the blob — so it
+         * goes first and the user gets an instant response. Everything BELOW
+         * this line can lose the recording: finalizeCleanup closes the
+         * offscreen document, and the blob: URL Chrome is writing from belongs
+         * to it. So the write completes here, before any of that runs.
+         *
+         * This is the guarantee the product used to break. A failed upload, a
+         * closed tab or a dead network now costs a link, not the recording. */
+        const savedFile = await saveRecordingToDisk();
 
-        // Safety timeout: chunked injection for large recordings can take a few seconds
-        const safetyTimeout = setTimeout(() => {
-            if (!injectionSucceeded) {
-                console.warn('[SnapRec] Safety timeout reached, cleaning up');
-                chrome.tabs.onUpdated.removeListener(listener);
-                finalizeCleanup();
-            }
-        }, 60000);
+        /* Park the capture, then close the recorder. Once the blob is in
+         * extension-origin IndexedDB it no longer depends on the offscreen
+         * document staying alive, which removes the race this code used to
+         * lose: Chrome reaps an offscreen document once its media tracks stop,
+         * and the old chunked transfer took minutes. */
+        const parked = await chrome.runtime.sendMessage({
+            action: 'offscreen_persistForHandoff',
+            id: recordingId,
+            metadataStr: JSON.stringify(recordingMetadata),
+        }).catch((e) => ({ success: false, error: e.message }));
 
-        const cleanupAfterSuccess = () => {
-            injectionSucceeded = true;
-            clearTimeout(safetyTimeout);
+        if (!parked?.success) {
+            console.error('[SnapRec] Could not park capture for handoff:', parked?.error);
+        }
+        await finalizeCleanup();
+
+        /* The courier is same-origin with the parked blob and can hand it to
+         * the page by reference. Injected on tab load rather than immediately:
+         * an about:blank tab has no document to append to yet. */
+        const frameUrl = chrome.runtime.getURL(
+            `handoff/handoff.html?id=${encodeURIComponent(recordingId)}`);
+
+        const listener = async (tabId, info) => {
+            if (tabId !== tab.id || info.status !== 'complete') return;
             chrome.tabs.onUpdated.removeListener(listener);
-            finalizeCleanup();
-        };
-
-        const CHUNK_SIZE = 512 * 1024; // 512 KB per chunk — stays well under Chrome IPC limits
-        let isInjecting = false;
-
-        const attemptChunkedInjection = async () => {
-            // Step 1: get blob metadata only (lightweight message)
-            const infoResponse = await new Promise((resolve) => {
-                chrome.runtime.sendMessage({ action: 'offscreen_getBlobInfo' }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        resolve({ success: false, error: chrome.runtime.lastError.message });
-                    } else {
-                        resolve(response);
-                    }
-                });
-            });
-
-            if (!infoResponse?.success) {
-                throw new Error(infoResponse?.error || 'No blob info');
-            }
-
-            const { size, mimeType } = infoResponse;
-            const totalChunks = Math.ceil(size / CHUNK_SIZE);
-            console.log(`[SnapRec] Starting chunked injection: ${totalChunks} chunks for ${size} bytes`);
-
-            // Step 2: initialize chunk buffer in web page
-            await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                func: (totalChunks, mimeType, id, metadataStr) => {
-                    window.__snaprecBuf = new Array(totalChunks);
-                    window.__snaprecMime = mimeType;
-                    window.__snaprecId = id;
-                    window.__snaprecMeta = metadataStr;
-                },
-                args: [totalChunks, mimeType, recordingId, JSON.stringify(recordingMetadata)]
-            });
-
-            // Step 3: transfer each chunk
-            for (let i = 0; i < totalChunks; i++) {
-                const offset = i * CHUNK_SIZE;
-                const length = Math.min(CHUNK_SIZE, size - offset);
-
-                const chunkResponse = await new Promise((resolve) => {
-                    chrome.runtime.sendMessage(
-                        { action: 'offscreen_getBlobChunk', offset, length },
-                        (response) => {
-                            if (chrome.runtime.lastError) {
-                                resolve({ success: false, error: chrome.runtime.lastError.message });
-                            } else {
-                                resolve(response);
-                            }
-                        }
-                    );
-                });
-
-                if (!chunkResponse?.success) {
-                    throw new Error(`Chunk ${i} failed: ${chunkResponse?.error}`);
-                }
-
+            try {
                 await chrome.scripting.executeScript({
                     target: { tabId: tab.id },
-                    func: (index, chunkBytes) => {
-                        window.__snaprecBuf[index] = new Uint8Array(chunkBytes);
+                    func: (src) => {
+                        const frame = document.createElement('iframe');
+                        frame.src = src;
+                        frame.setAttribute('aria-hidden', 'true');
+                        frame.style.cssText =
+                            'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none';
+                        document.documentElement.appendChild(frame);
                     },
-                    args: [i, chunkResponse.chunk]
+                    args: [frameUrl],
                 });
-            }
-
-            // Step 4: assemble blob and store in IDB
-            await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                func: () => {
-                    const chunks = window.__snaprecBuf;
-                    const mimeType = window.__snaprecMime;
-                    const id = window.__snaprecId;
-                    const metadataStr = window.__snaprecMeta;
-
-                    const blob = new Blob(chunks, { type: mimeType });
-                    console.log('SnapRec: assembled blob', blob.size, 'bytes,', blob.type);
-
-                    const open = indexedDB.open('SnapRecDB', 2);
-                    open.onupgradeneeded = (e) => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains('recordings')) {
-                            db.createObjectStore('recordings');
-                        }
-                    };
-                    open.onsuccess = (e) => {
-                        const db = e.target.result;
-                        const tx = db.transaction(['recordings'], 'readwrite');
-                        const store = tx.objectStore('recordings');
-                        store.clear();
-                        store.put(blob, 'latest_video_blob');
-                        store.put(id, 'latest_id');
-                        store.put(Date.now(), 'latest_video_timestamp');
-                        store.put(metadataStr, 'latest_metadata');
-                        const signal = () => {
-                            delete window.__snaprecBuf;
-                            delete window.__snaprecMime;
-                            delete window.__snaprecId;
-                            delete window.__snaprecMeta;
-                            window.postMessage({ type: 'SNAPREC_VIDEO_DATA', fromIDB: true, id }, '*');
-                        };
-                        tx.oncomplete = signal;
-                        tx.onerror = signal;
-                    };
-                    open.onerror = () => {
-                        window.postMessage({ type: 'SNAPREC_VIDEO_DATA', fromIDB: true, id }, '*');
-                    };
-                },
-                args: []
-            });
-        };
-
-        // Wait for tab to load, then inject blob via chunked transfer
-        const listener = (tabId, info) => {
-            if (tabId === tab.id && info.status === 'complete' && !injectionSucceeded && !isInjecting) {
-                isInjecting = true;
-                console.log(`[SnapRec] Tab loaded (attempt ${retryCount + 1}), starting chunked injection...`);
-
-                attemptChunkedInjection()
-                    .then(() => {
-                        console.log('[SnapRec] Chunked injection successful');
-                        cleanupAfterSuccess();
-                    })
-                    .catch((err) => {
-                        console.warn(`[SnapRec] Chunked injection attempt ${retryCount + 1} failed:`, err.message);
-                        isInjecting = false;
-                        retryCount++;
-                        if (retryCount >= MAX_RETRIES) {
-                            console.error('[SnapRec] Max retries reached, giving up');
-                            cleanupAfterSuccess();
-                        }
-                    });
+                console.log('[SnapRec] Handoff frame injected');
+            } catch (err) {
+                console.error('[SnapRec] Could not inject handoff frame:', err.message);
             }
         };
         chrome.tabs.onUpdated.addListener(listener);
