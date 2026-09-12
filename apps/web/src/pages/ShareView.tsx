@@ -116,8 +116,12 @@ const ShareView: React.FC = () => {
                     const transaction = db.transaction(['recordings'], 'readwrite');
                     const store = transaction.objectStore('recordings');
 
-                    // TTL check: expire data older than 1 hour
-                    const VIDEO_TTL_MS = 60 * 60 * 1000; // 1 hour
+                    /* TTL check. One hour was shorter than the sessions this
+                     * is meant to protect: a user who recorded for an hour and
+                     * came back to the tab found store.clear() had already run
+                     * and their recording gone. Twenty-four hours, and the disk
+                     * copy under Downloads/SnapRec is the real safety net now. */
+                    const VIDEO_TTL_MS = 24 * 60 * 60 * 1000;
                     store.get('latest_video_timestamp').onsuccess = (tsEv: any) => {
                         const timestamp = tsEv.target.result;
                         if (timestamp && (Date.now() - timestamp) > VIDEO_TTL_MS) {
