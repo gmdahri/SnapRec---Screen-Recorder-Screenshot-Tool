@@ -123,6 +123,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
             return false;
 
+        case 'offscreen_fpBegin':
+            try {
+                const { width, height } = globalThis.SnapRecFullPage.canvasSize(message);
+                fpCanvas = new OffscreenCanvas(width, height);
+                fpCtx = fpCanvas.getContext('2d');
+                // White, not transparent: a page with no background of its own
+                // would otherwise encode as black once alpha is flattened.
+                fpCtx.fillStyle = '#FFFFFF';
+                fpCtx.fillRect(0, 0, width, height);
+                currentImageBlob = null;
+                console.log('[Offscreen] Full-page canvas', width, 'x', height);
+                sendResponse({ success: true, width, height });
+            } catch (e) {
+                fpCanvas = null; fpCtx = null;
+                sendResponse({ success: false, error: e.message });
+            }
+            return false;
+
+        case 'offscreen_fpSection':
+            drawFullPageSection(message)
+                .then(() => sendResponse({ success: true }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+
+        case 'offscreen_fpFinish':
+            finishFullPage()
+                .then(r => sendResponse({ success: true, ...r }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+
         case 'offscreen_getBlobChunk':
             if (!currentRecordingBlob) {
                 sendResponse({ success: false, error: 'No recording available' });
@@ -333,6 +363,14 @@ async function startMediaRecorder() {
 
 let currentRecordingBlob = null;
 
+/** The full-page capture being assembled, and its finished Blob.
+ *
+ * Kept separate from currentRecordingBlob so a screenshot can never overwrite
+ * a recording that has not been delivered yet. */
+let fpCanvas = null;
+let fpCtx = null;
+let currentImageBlob = null;
+
 async function stopRecording() {
     console.log('[Offscreen] Stopping recording');
 
@@ -445,6 +483,62 @@ async function getRecordingBlobAsArray() {
         mimeType: currentRecordingBlob.type || 'video/webm',
         size: currentRecordingBlob.size
     };
+}
+
+/** Draws one scrolled section onto the full-page canvas.
+ *
+ * The section arrives as a data URL because that is what captureVisibleTab
+ * returns, but it is a single viewport — around a megabyte — not the whole
+ * page, so it crosses IPC comfortably. The whole point of this function's
+ * existing here is that the assembled result never does. */
+async function drawFullPageSection({ dataUrl, sourceYCss, drawHCss, destYCss, dpr, scale }) {
+    if (!fpCtx) throw new Error('No full-page capture in progress');
+
+    const bitmap = await createImageBitmap(await (await fetch(dataUrl)).blob());
+    try {
+        // captureVisibleTab returns device pixels, so the image is already
+        // dpr-scaled; only the budget scale still has to be applied.
+        const srcY = Math.round(sourceYCss * dpr);
+        const srcH = Math.round(drawHCss * dpr);
+        const dstY = Math.round(destYCss * dpr * scale);
+        const dstH = Math.round(drawHCss * dpr * scale);
+        const dstW = Math.round(bitmap.width * scale);
+
+        fpCtx.drawImage(bitmap, 0, srcY, bitmap.width, srcH, 0, dstY, dstW, dstH);
+    } finally {
+        bitmap.close();
+    }
+}
+
+/** Encodes the assembled canvas and returns a preview-sized copy with it.
+ *
+ * convertToBlob rather than toDataURL: no base64, so no 33% inflation and no
+ * 64 MiB message ceiling. The thumbnail is what the in-page mini preview
+ * displays — it used to be handed the full-size image for a card-sized slot. */
+async function finishFullPage() {
+    if (!fpCanvas) throw new Error('No full-page capture in progress');
+
+    const blob = await fpCanvas.convertToBlob({ type: 'image/webp', quality: 0.92 });
+    if (!blob || blob.size === 0) throw new Error('Encoding produced no image');
+    currentImageBlob = blob;
+
+    const t = globalThis.SnapRecFullPage.thumbnailSize({
+        width: fpCanvas.width, height: fpCanvas.height,
+    });
+    const thumbCanvas = new OffscreenCanvas(t.width, t.height);
+    thumbCanvas.getContext('2d').drawImage(fpCanvas, 0, 0, t.width, t.height);
+    const thumbBlob = await thumbCanvas.convertToBlob({ type: 'image/webp', quality: 0.8 });
+    const thumbnail = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(thumbBlob);
+    });
+
+    // Release the big canvas as soon as the bytes are safe.
+    fpCanvas = null; fpCtx = null;
+
+    console.log('[Offscreen] Full-page encoded,', blob.size, 'bytes');
+    return { size: blob.size, mimeType: blob.type || 'image/webp', thumbnail };
 }
 
 async function cropImage(dataUrl, rect) {

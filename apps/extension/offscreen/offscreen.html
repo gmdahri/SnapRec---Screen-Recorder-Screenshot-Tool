@@ -10,6 +10,9 @@
     <!-- resolution.js must load first: it defines globalThis.SnapRecResolution,
          which offscreen.js reads when building the capture constraints. -->
     <script src="resolution.js"></script>
+    <!-- fullpage.js first: it defines globalThis.SnapRecFullPage, which
+         offscreen.js reads to size the stitched canvas and its thumbnail. -->
+    <script src="../background/fullpage.js"></script>
     <script src="offscreen.js"></script>
 </body>
 
