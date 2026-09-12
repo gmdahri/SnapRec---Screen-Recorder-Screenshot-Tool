@@ -348,7 +348,12 @@ describe('the camera overlay carries its own controls', () => {
 
   it('takes its shape rules from the tested module rather than repeating them', () => {
     // webcam.js had no consumer at all until now — nothing injected it.
-    expect(INJECT).toMatch(/'content\/webcam\.js', 'content\/content\.js'/);
+    // Asserted as an ordering rather than an adjacency: content.js reads the
+    // globals its predecessors define, so what matters is that webcam.js comes
+    // first, not that nothing may ever be injected between them.
+    expect(INJECT).toMatch(/'content\/webcam\.js'/);
+    expect(INJECT.indexOf("'content/webcam.js'"))
+      .toBeLessThan(INJECT.indexOf("'content/content.js'"));
     expect(CONTENT).toMatch(/globalThis\.SnapRecWebcam/);
     expect(CONTENT).toMatch(/rules\.shapeFor\(webcamShape\)/);
   });

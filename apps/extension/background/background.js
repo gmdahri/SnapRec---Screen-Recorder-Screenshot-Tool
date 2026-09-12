@@ -3,6 +3,7 @@ importScripts('config.js');
 importScripts('analytics.js');   // must follow config.js — reads CONFIG.POSTHOG
 importScripts('queue.js');
 importScripts('recording-file.js');
+importScripts('fullpage.js');
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
@@ -169,6 +170,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'captureFullPage':
             captureFullPage();
             return false; // No response needed
+        case 'fullPageBegin':
+            fullPageBegin(message)
+                .then(r => sendResponse({ success: true, ...r }))
+                .catch(e => sendResponse({ success: false, error: e.message }));
+            return true;
+        case 'fullPageSection':
+            fullPageSection(message, sender.tab?.windowId)
+                .then(() => sendResponse({ success: true }))
+                .catch(e => sendResponse({ success: false, error: e.message }));
+            return true;
+        case 'fullPageFinish':
+            fullPageFinish()
+                .then(r => sendResponse({ success: true, ...r }))
+                .catch(e => sendResponse({ success: false, error: e.message }));
+            return true;
         case 'captureRegion':
             startRegionCapture();
             return false; // No response needed
@@ -609,6 +625,70 @@ async function captureAndCropRegion(rect, tabId) {
 }
 
 // Process Screenshot
+/** State for the full-page capture in flight.
+ *
+ * The scale is decided once, at begin, and every section is drawn with it —
+ * recomputing per section would make the seams disagree. */
+let fullPageState = null;
+
+/** Starts a full-page capture and answers with the scale that will be applied.
+ *
+ * A page can be larger than the browser will encode: past roughly 115
+ * megapixels the canvas silently yields nothing. budgetedScale decides how far
+ * to shrink so that never happens, and the content script reports it so a
+ * downscaled capture is stated rather than passed off as full resolution. */
+async function fullPageBegin({ pageW, pageH, viewportH, dpr }) {
+    const scale = SnapRecFullPage.budgetedScale({ pageW, pageH, dpr });
+    await createOffscreenDocument();
+
+    const r = await chrome.runtime.sendMessage({
+        action: 'offscreen_fpBegin', pageW, pageH, dpr, scale,
+    });
+    if (!r?.success) throw new Error(r?.error ?? 'could not start full-page capture');
+
+    fullPageState = { dpr, scale, viewportH, sections: 0 };
+    return { scale, width: r.width, height: r.height };
+}
+
+/** Captures the current viewport and forwards it straight to the offscreen
+ * document. The image never travels back through the content script — that
+ * round trip is what used to build a multi-hundred-megabyte string in the page. */
+async function fullPageSection({ sourceYCss, drawHCss, destYCss }, windowId) {
+    if (!fullPageState) throw new Error('No full-page capture in progress');
+
+    const dataUrl = await chrome.tabs.captureVisibleTab(windowId ?? null, { format: 'png' });
+    const r = await chrome.runtime.sendMessage({
+        action: 'offscreen_fpSection',
+        dataUrl, sourceYCss, drawHCss, destYCss,
+        dpr: fullPageState.dpr, scale: fullPageState.scale,
+    });
+    if (!r?.success) throw new Error(r?.error ?? 'section draw failed');
+    fullPageState.sections += 1;
+}
+
+/** Finishes the capture: encode, save to disk, park for the editor, and hand
+ * the content script a thumbnail for its preview. */
+async function fullPageFinish() {
+    if (!fullPageState) throw new Error('No full-page capture in progress');
+    const { scale, sections } = fullPageState;
+    fullPageState = null;
+
+    const done = await chrome.runtime.sendMessage({ action: 'offscreen_fpFinish' });
+    if (!done?.success) throw new Error(done?.error ?? 'encoding failed');
+
+    console.log('[SnapRec] Full-page capture:', sections, 'sections,',
+        done.size, 'bytes, scale', scale);
+    Analytics.track('screenshot_taken', {
+        capture_type: 'fullpage',
+        file_size_mb: Math.round((done.size / (1024 * 1024)) * 100) / 100,
+    });
+
+    await saveImageToDisk();
+    await deliverImageToEditor();
+
+    return { thumbnail: done.thumbnail, scale, size: done.size };
+}
+
 async function processScreenshot(dataUrl, type) {
     try {
         console.log(`Processing screenshot, type: ${type}`);

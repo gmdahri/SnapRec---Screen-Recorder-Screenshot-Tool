@@ -7,7 +7,9 @@ const ContentScriptManager = {
             // content.js reads for the overlay's shape and status rules. Until
             // now nothing injected it, so that tested module had no consumer
             // and the rules lived nowhere.
-            jsFiles = ['content/webcam.js', 'content/content.js'],
+            // fullpage.js before content.js: it defines globalThis.SnapRecFullPage,
+            // which content.js reads for the stitch geometry.
+            jsFiles = ['content/webcam.js', 'background/fullpage.js', 'content/content.js'],
             cssFiles = ['content/content.css']
         } = options;
 

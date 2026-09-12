@@ -247,199 +247,70 @@
         console.log('=== Starting full page capture ===');
         showLoadingIndicator('Preparing capture...');
 
-        try {
-            // Store original scroll position
-            const originalScrollX = window.scrollX;
-            const originalScrollY = window.scrollY;
+        const originalScrollX = window.scrollX;
+        const originalScrollY = window.scrollY;
 
-            // Get dimensions
+        try {
             const viewportHeight = window.innerHeight;
             const viewportWidth = window.innerWidth;
             const totalHeight = document.documentElement.scrollHeight;
+            const dpr = window.devicePixelRatio || 1;
 
-            console.log(`Viewport: ${viewportWidth}x${viewportHeight}`);
-            console.log(`Total page height: ${totalHeight}`);
-            console.log(`Device pixel ratio: ${window.devicePixelRatio}`);
+            const begun = await chrome.runtime.sendMessage({
+                action: 'fullPageBegin',
+                pageW: viewportWidth, pageH: totalHeight, viewportH: viewportHeight, dpr,
+            });
+            if (!begun?.success) throw new Error(begun?.error ?? 'could not start capture');
 
-            // Calculate number of captures needed
-            const numCaptures = Math.ceil(totalHeight / viewportHeight);
-            console.log(`Will capture ${numCaptures} sections`);
-
-            // Scroll to top
             window.scrollTo(0, 0);
             await sleep(500);
 
-            const captures = [];
+            const numCaptures = Math.ceil(totalHeight / viewportHeight);
+            let prevScrollY = null;
 
-            // Capture each section
             for (let i = 0; i < numCaptures; i++) {
-                const targetY = i * viewportHeight;
-
                 updateLoadingIndicator(`Capturing section ${i + 1}/${numCaptures}...`);
-                console.log(`\n--- Section ${i + 1}/${numCaptures} ---`);
-                console.log(`Target scroll Y: ${targetY}`);
-
-                // Scroll to position
-                window.scrollTo(0, targetY);
+                window.scrollTo(0, i * viewportHeight);
                 await sleep(600);
 
-                const actualY = window.scrollY;
-                console.log(`Actual scroll Y: ${actualY}`);
+                const scrollY = window.scrollY;
+                const plan = window.SnapRecFullPage.stitchPlan({
+                    scrollY, prevScrollY, viewportH: viewportHeight, isFirst: i === 0,
+                });
 
-                // Hide UI elements before capture
-                hideLoadingIndicator();
-                if (i > 0) toggleStickyElements(true);
-                await sleep(400);
+                if (plan) {
+                    hideLoadingIndicator();
+                    if (i > 0) toggleStickyElements(true);
+                    await sleep(400);
 
-                // Capture
-                const dataUrl = await new Promise((resolve) => {
-                    chrome.runtime.sendMessage({ action: 'captureVisibleForFullPage' }, (response) => {
-                        resolve(response);
+                    const sent = await chrome.runtime.sendMessage({
+                        action: 'fullPageSection', ...plan,
                     });
-                });
 
-                // Restore UI
-                if (i > 0) toggleStickyElements(false);
-                showLoadingIndicator(`Processing section ${i + 1}/${numCaptures}...`);
-
-                if (!dataUrl) {
-                    console.error(`Failed to capture section ${i + 1}`);
-                    throw new Error(`Capture failed at section ${i + 1}`);
+                    if (i > 0) toggleStickyElements(false);
+                    showLoadingIndicator(`Processing section ${i + 1}/${numCaptures}...`);
+                    if (!sent?.success) throw new Error(sent?.error ?? `section ${i + 1} failed`);
+                    prevScrollY = scrollY;
                 }
 
-                const img = await loadImage(dataUrl);
-                console.log(`Captured image: ${img.width}x${img.height}`);
-
-                captures.push({
-                    img: img,
-                    scrollY: actualY,
-                    sectionIndex: i
-                });
-
-                // Check if we've scrolled as far as possible
-                if (actualY + viewportHeight >= totalHeight - 5) {
-                    console.log(`Reached end of page at section ${i + 1}`);
-                    break;
-                }
+                if (scrollY + viewportHeight >= totalHeight - 5) break;
             }
 
-            // Restore scroll
-            window.scrollTo(originalScrollX, originalScrollY);
+            updateLoadingIndicator('Finishing...');
+            const done = await chrome.runtime.sendMessage({ action: 'fullPageFinish' });
+            if (!done?.success) throw new Error(done?.error ?? 'could not finish capture');
 
-            if (captures.length === 0) {
-                throw new Error('No images captured');
+            // A downscaled capture is stated, never passed off as full size.
+            if (done.scale < 0.999) {
+                console.log(`Page too large for full resolution; captured at ${Math.round(done.scale * 100)}%`);
             }
-
-            console.log(`\n=== Stitching ${captures.length} captures ===`);
-            updateLoadingIndicator('Stitching images...');
-
-            // Get dimensions from first capture
-            const firstImg = captures[0].img;
-            const imgWidth = firstImg.width;
-            const imgHeight = firstImg.height;
-
-            // Calculate the scale between captured image and viewport
-            const scale = imgHeight / viewportHeight;
-            console.log(`Scale factor: ${scale.toFixed(3)} (${imgHeight}px image / ${viewportHeight}px viewport)`);
-
-            // Simple stitching: each section draws exactly viewportHeight worth of content
-            // except the last one which draws whatever is left
-
-            let totalCanvasHeight;
-            if (captures.length === 1) {
-                totalCanvasHeight = imgHeight;
-            } else {
-                // For multiple captures, calculate based on actual page height
-                totalCanvasHeight = Math.ceil(totalHeight * scale);
-            }
-
-            console.log(`Canvas dimensions: ${imgWidth}x${totalCanvasHeight}`);
-
-            // Create canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = imgWidth;
-            canvas.height = totalCanvasHeight;
-            const ctx = canvas.getContext('2d');
-
-            // White background
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, imgWidth, totalCanvasHeight);
-
-            // Draw each capture
-            for (let i = 0; i < captures.length; i++) {
-                const capture = captures[i];
-                const { img, scrollY } = capture;
-
-                console.log(`\n--- Drawing section ${i + 1} ---`);
-
-                if (i === 0) {
-                    // First section: draw the entire image at the top
-                    console.log(`First section: drawing full image (${img.width}x${img.height}) at (0, 0)`);
-                    ctx.drawImage(img, 0, 0);
-                } else {
-                    // Subsequent sections: only draw the new content
-                    const prevCapture = captures[i - 1];
-                    const prevScrollY = prevCapture.scrollY;
-
-                    // Calculate overlap
-                    const expectedNewContentStart = prevScrollY + viewportHeight;
-                    const actualNewContentStart = scrollY;
-                    const overlap = Math.max(0, expectedNewContentStart - actualNewContentStart);
-
-                    console.log(`Previous section scrollY: ${prevScrollY}`);
-                    console.log(`Current section scrollY: ${scrollY}`);
-                    console.log(`Expected new content starts at: ${expectedNewContentStart}`);
-                    console.log(`Actual new content starts at: ${actualNewContentStart}`);
-                    console.log(`Overlap: ${overlap}px (viewport units)`);
-
-                    // Convert overlap to image pixels
-                    const overlapPx = Math.ceil(overlap * scale);
-                    const sourceY = overlapPx;
-                    const heightToDraw = img.height - sourceY;
-
-                    // Destination Y is where previous section ended
-                    const destY = Math.ceil(expectedNewContentStart * scale);
-
-                    console.log(`Source Y in image: ${sourceY}px`);
-                    console.log(`Height to draw: ${heightToDraw}px`);
-                    console.log(`Destination Y on canvas: ${destY}px`);
-
-                    if (heightToDraw > 0) {
-                        ctx.drawImage(
-                            img,
-                            0, sourceY,              // source x, y
-                            img.width, heightToDraw, // source width, height
-                            0, destY,                // dest x, y
-                            img.width, heightToDraw  // dest width, height
-                        );
-                        console.log(`✓ Drew ${heightToDraw}px of content`);
-                    } else {
-                        console.warn(`⚠ Skipped section ${i + 1}: heightToDraw = ${heightToDraw}`);
-                    }
-                }
-            }
-
-            console.log(`\n=== Stitching complete ===`);
-            console.log(`Final canvas: ${canvas.width}x${canvas.height}`);
-
-            // Convert to data URL
-            updateLoadingIndicator('Converting to image...');
-            const finalDataUrl = canvas.toDataURL('image/png', 0.95);
-
-            console.log(`Data URL length: ${finalDataUrl.length} chars`);
-            console.log(`Estimated size: ${(finalDataUrl.length * 0.75 / 1024 / 1024).toFixed(2)} MB`);
-
-            // Send to background
-            chrome.runtime.sendMessage({
-                action: 'processScreenshot',
-                dataUrl: finalDataUrl,
-                type: 'fullpage'
-            });
+            showMiniPreview(done.thumbnail);
 
         } catch (error) {
             console.error('Error capturing full page:', error);
             alert('Failed to capture full page: ' + error.message);
         } finally {
+            window.scrollTo(originalScrollX, originalScrollY);
             hideLoadingIndicator();
         }
     }
