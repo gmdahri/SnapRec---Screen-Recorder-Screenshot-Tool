@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 // @ts-ignore
 import * as pg from 'pg';
+import { sweepConfigWarning } from './recordings/sweep-config';
 
 // Configure pg to parse timestamp (without time zone) as UTC
 // OID 1114 is the OID for 'timestamp' in Postgres
@@ -44,5 +45,10 @@ async function bootstrap() {
 
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
+
+  /* The sweep answers 404 without its secret, by design. Say so at boot, or a
+   * scheduler pointed at a service missing it fails silently forever. */
+  const sweepWarning = sweepConfigWarning(process.env);
+  if (sweepWarning) logger.warn(sweepWarning);
 }
 bootstrap();
