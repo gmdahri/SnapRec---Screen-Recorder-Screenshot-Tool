@@ -1381,7 +1381,13 @@ async function startStreamingUpload() {
  * Serialised by `busy`: parts must not be taken concurrently, because
  * offscreen_streamTakePart drains a single shared buffer. */
 async function uploadNextPart(isFinal = false) {
+    // `finishing` closes the door on parts that arrive while completion is in
+    // flight. Without it a streamPartReady landing between the final drain and
+    // CompleteMultipartUpload tries to add a part to an upload R2 has already
+    // assembled, which answers 500 and logs an error for work that was in fact
+    // finished correctly.
     if (!streamingUpload || streamingUpload.busy) return;
+    if (streamingUpload.finishing && !isFinal) return;
     streamingUpload.busy = true;
     try {
         const taken = await chrome.runtime.sendMessage({
@@ -1437,6 +1443,7 @@ async function uploadNextPart(isFinal = false) {
  * to null by the time anything downstream asks for it. */
 async function finishStreamingUpload() {
     if (!streamingUpload) return null;
+    streamingUpload.finishing = true;
     await uploadNextPart(true);
 
     const upload = streamingUpload;
@@ -1577,7 +1584,18 @@ async function handleRecordingComplete() {
 
         // IMMEDIATELY redirect to /v (generic preview)
         console.log('[SnapRec] Redirecting to share page immediately...');
-        const shareUrl = `${CONFIG.WEB_BASE_URL}/v`;
+        /* ?fresh=true is a cache-buster, not a feature flag.
+         *
+         * Before the _redirects fix, /v answered 308 Permanent Redirect to /.
+         * Browsers cache a 308 indefinitely — that is what "permanent" means —
+         * so every browser that opened a share link during that window still
+         * redirects /v to the landing page without asking the server, and
+         * deploying the fix does not clear it. Redirect caches are keyed on the
+         * full URL, so a query string sidesteps the stale entry.
+         *
+         * ShareView already understands the parameter, and with no id in the
+         * path it changes nothing about what renders. */
+        const shareUrl = `${CONFIG.WEB_BASE_URL}/v?fresh=true`;
         const tab = await chrome.tabs.create({ url: shareUrl });
 
         /* No disk copy on the happy path.
@@ -1673,7 +1691,26 @@ chrome.runtime.onMessage.addListener((message) => {
     const kind = message.kind === 'image' ? 'image' : 'video';
     console.warn('[SnapRec] Handoff was never acknowledged; saving', kind, 'to disk');
 
-    const save = kind === 'image' ? saveImageToDisk() : saveRecordingToDisk();
+    /* The offscreen document that held the capture was closed by
+     * finalizeCleanup long before this fired — ten seconds is an age in that
+     * lifecycle — so the blob: URL the download needs has nowhere to come
+     * from. Reopen a document and reload the capture from the store it was
+     * parked in. Without this the fallback failed with "Receiving end does not
+     * exist", which is a safety net that silently is not one. */
+    const save = (async () => {
+        await createOffscreenDocument();
+        const loaded = await chrome.runtime
+            .sendMessage({ action: 'offscreen_loadParked', kind })
+            .catch((e) => ({ success: false, error: e.message }));
+        if (!loaded?.success) {
+            console.error('[SnapRec] Could not reload the parked capture:', loaded?.error);
+            return null;
+        }
+        const result = kind === 'image' ? await saveImageToDisk() : await saveRecordingToDisk();
+        await closeOffscreenDocument();
+        return result;
+    })();
+
     save.then((saved) => {
         if (!saved) return;
         chrome.notifications.create('snaprec-handoff-fallback', {

@@ -80,6 +80,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
 
+        case 'offscreen_loadParked':
+            loadParkedBlob(message.kind)
+                .then(size => sendResponse({ success: true, size }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+
         case 'offscreen_persistForHandoff':
             persistForHandoff(message.id, message.metadataStr, message.kind)
                 .then(result => sendResponse({ success: true, size: result.size, type: result.type }))
@@ -507,6 +513,40 @@ async function getRecordingBlobBase64() {
  * blob is here, the offscreen document can close immediately and Chrome can
  * reap it — which it wants to do the moment the media tracks stop — without
  * taking the recording with it. handoff/handoff.js, same origin, reads it back. */
+/** Reads a parked capture back out of IndexedDB into this document.
+ *
+ * The disk fallback needs a blob: URL, and only a document can make one —
+ * URL.createObjectURL does not exist in a service worker. By the time the
+ * fallback fires, ten seconds after the handoff went unacknowledged, the
+ * offscreen document that held the recording has long been closed by
+ * finalizeCleanup. So a fresh one is opened and the capture loaded back from
+ * the store it was parked in, which is exactly what parking it was for. */
+async function loadParkedBlob(kind = 'video') {
+    const blobKey = kind === 'image' ? 'latest_image_blob' : 'latest_video_blob';
+
+    const blob = await new Promise((resolve, reject) => {
+        const request = indexedDB.open('SnapRecDB', 2);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('recordings')) db.createObjectStore('recordings');
+        };
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('recordings')) return reject(new Error('no store'));
+            const get = db.transaction(['recordings'], 'readonly')
+                .objectStore('recordings').get(blobKey);
+            get.onsuccess = () => resolve(get.result instanceof Blob ? get.result : null);
+            get.onerror = () => reject(new Error('read failed'));
+        };
+        request.onerror = () => reject(new Error('open failed'));
+    });
+
+    if (!blob) throw new Error('nothing parked');
+    if (kind === 'image') currentImageBlob = blob; else currentRecordingBlob = blob;
+    console.log('[Offscreen] Parked capture reloaded,', blob.size, 'bytes');
+    return blob.size;
+}
+
 async function persistForHandoff(id, metadataStr, kind = 'video') {
     const blob = kind === 'image' ? currentImageBlob : currentRecordingBlob;
     if (!blob) throw new Error('No capture available');
