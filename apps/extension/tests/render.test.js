@@ -86,8 +86,49 @@ describe('screenshot view (A2)', () => {
     for (const a of areas) expect(a.textContent).toMatch(/Cmd\+Shift\+\d/);
   });
 
-  it('does not render the capture action in coral', () => {
-    expect(mount(shot).querySelector('[data-action="primary"]').dataset.tone).toBe('carbon');
+  /* One click, not two.
+   *
+   * These rows carry a title, a description and a keyboard chip — everything
+   * that says "press me" — but they used to only set a radio value, leaving a
+   * separate Capture button to do the work and a hairline border as the sole
+   * evidence anything had happened. A user reported not being able to work out
+   * how to take a screenshot, which is the whole of the diagnosis. */
+  it('captures directly from the row rather than selecting a mode', () => {
+    const dispatch = vi.fn();
+    const captureArea = vi.fn();
+    document.body.innerHTML = '<div id="root"></div>';
+    render(shot, dispatch, { captureArea });
+
+    document.querySelector('[data-area="fullpage"]').click();
+    expect(captureArea).toHaveBeenCalledWith('fullpage');
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('offers no separate capture button to hunt for', () => {
+    expect(mount(shot).querySelector('[data-action="primary"]')).toBeNull();
+  });
+
+  it('gives each row its own shortcut, not one borrowed from another', () => {
+    const withKeys = {
+      ...shot,
+      shortcuts: {
+        'capture-visible': 'Cmd+Shift+3',
+        'capture-region': 'Cmd+Shift+2',
+        'capture-fullpage': 'Cmd+Shift+1',
+      },
+    };
+    const root = mount(withKeys);
+    expect(root.querySelector('[data-area="visible"]').textContent).toContain('Cmd+Shift+3');
+    expect(root.querySelector('[data-area="region"]').textContent).toContain('Cmd+Shift+2');
+    expect(root.querySelector('[data-area="fullpage"]').textContent).toContain('Cmd+Shift+1');
+  });
+
+  /* The panel previews the chosen recording source. A screenshot has no source
+   * to choose, so in this mode it was 190px of a 640px popup showing black. */
+  it('drops the source preview, which has nothing to show here', () => {
+    expect(mount(shot).querySelector('.sr-preview')).toBeNull();
+    // And it is still there for recording, where it shows the chosen source.
+    expect(mount(initialState()).querySelector('.sr-preview')).not.toBeNull();
   });
 });
 

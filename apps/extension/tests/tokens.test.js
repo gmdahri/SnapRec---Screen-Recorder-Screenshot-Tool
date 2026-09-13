@@ -38,3 +38,36 @@ describe('extension tokens', () => {
     expect(css).not.toMatch(/url\(['"]?https?:/);
   });
 });
+
+/* The floating preview after a capture was built entirely in hex.
+ *
+ * Not carelessness: the content script injected content.css alone, never
+ * styles/design-system.css, so var(--sr-*) resolved to nothing in the page and
+ * literals were the only thing that worked. Injecting the tokens is what makes
+ * the plate language available out there; these guard the result. */
+describe('the in-page surfaces use the design system', () => {
+  const css = readFileSync(resolve(__dirname, '../content/content.css'), 'utf8');
+
+  it('carries no hex literals', () => {
+    // Strips comments first: a hex value quoted in prose is not a style.
+    const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(withoutComments.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
+  });
+
+  it('is injected together with the tokens it depends on', () => {
+    const inject = readFileSync(
+      resolve(__dirname, '../background/utils/contentScriptManager.js'), 'utf8');
+    expect(inject).toMatch(/styles\/design-system\.css/);
+    // Order matters: the tokens have to be defined before anything reads them.
+    expect(inject.indexOf('design-system.css')).toBeLessThan(inject.indexOf('content/content.css'));
+  });
+
+  it('ships the fonts those tokens reference to the page', () => {
+    // @font-face in design-system.css points at ../fonts/*.woff2. Without the
+    // fonts being web-accessible the faces fail silently and the page falls
+    // back to system UI — right layout, wrong typeface, no error anywhere.
+    const manifest = JSON.parse(readFileSync(resolve(__dirname, '../manifest.json'), 'utf8'));
+    const resources = manifest.web_accessible_resources[0].resources;
+    expect(resources.some((r) => r.startsWith('fonts/'))).toBe(true);
+  });
+});

@@ -1200,23 +1200,16 @@
             <div class="snaprec-preview-body">
                 <div class="snaprec-preview-img-container">
                     <img src="${dataUrl}" class="snaprec-preview-img" alt="Captured screenshot">
-                    <div class="snaprec-preview-badge">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 7l-7 5 7 5V7z"></path>
-                            <rect x="1" y="5" width="15" height="14" rx="2"></rect>
-                        </svg>
-                        <span>Preview</span>
-                    </div>
                 </div>
             </div>
             <div class="snaprec-preview-footer">
                 <div class="snaprec-footer-top">
                     <div class="snaprec-footer-title">
-                        <h3>Capture Complete</h3>
-                        <p>Last capture • Ready to edit</p>
+                        <h3>Screenshot captured</h3>
+                        <p>Annotate it, or throw it away</p>
                     </div>
                     <button class="snaprec-share-btn" id="snaprec-edit-btn-top">
-                        Edit Clip
+                        Edit
                     </button>
                 </div>
                 <div class="snaprec-actions-grid">
@@ -1229,7 +1222,7 @@
                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                             </svg>
                         </div>
-                        <span class="snaprec-action-label">Discard Image</span>
+                        <span class="snaprec-action-label">Discard</span>
                     </button>
                 </div>
                 ${reviewHtml}

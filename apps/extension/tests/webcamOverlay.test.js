@@ -57,11 +57,11 @@ describe('the camera toggle shows a live overlay', () => {
 
 describe('the ring says whether you are live', () => {
   it('is cyan while framing — focus, not capture', () => {
-    expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*border:\s*3px solid #06A6C0/s);
+    expect(CSS).toMatch(/\.snaprec-webcam\s*\{[^}]*border:\s*3px solid var\(--sr-cyan\)/s);
   });
 
   it('is coral once recording, the one thing coral is reserved for', () => {
-    expect(CSS).toMatch(/\.snaprec-webcam\[data-preview="false"\]\s*\{\s*border-color:\s*#FF3B2E/s);
+    expect(CSS).toMatch(/\.snaprec-webcam\[data-preview="false"\]\s*\{\s*border-color:\s*var\(--sr-coral-mark\)/s);
   });
 
   it('mirrors the picture, and only the picture', () => {
@@ -478,7 +478,7 @@ describe('the camera overlay says how it can be handled', () => {
     // Semi-transparent dark ground: it sits on whatever the camera is
     // pointing at, where plain text with a shadow disappears.
     expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*background:\s*rgba\(4, 7, 8, \.\d+\)/s);
-    expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*color:\s*#F3F6F6/s);
+    expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*color:\s*var\(--sr-text-primary-on-dark\)/s);
     expect(CSS).toMatch(/\.snaprec-webcam-hint\s*\{[^}]*border-radius:\s*4px/s);
   });
 

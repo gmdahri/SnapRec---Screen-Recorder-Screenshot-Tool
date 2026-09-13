@@ -108,7 +108,9 @@
                 "content/content.css",
                 "content/fab.css",
                 "content/fab.js",
-                "styles/design-system.css"
+                "styles/design-system.css",
+                "fonts/schibsted-grotesk-variable.woff2",
+                "fonts/azeret-mono-variable.woff2"
             ],
             "matches": [
                 "<all_urls>"

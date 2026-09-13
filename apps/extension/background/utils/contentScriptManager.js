@@ -10,7 +10,11 @@ const ContentScriptManager = {
             // fullpage.js before content.js: it defines globalThis.SnapRecFullPage,
             // which content.js reads for the stitch geometry.
             jsFiles = ['content/webcam.js', 'background/fullpage.js', 'content/content.js'],
-            cssFiles = ['content/content.css']
+            // design-system.css first: it is only :root custom properties and
+            // two @font-face rules — nothing that can style the host page — and
+            // content.css reads var(--sr-*) from it. Injected alone, as it was,
+            // every one of those resolved to nothing.
+            cssFiles = ['styles/design-system.css', 'content/content.css']
         } = options;
 
         try {

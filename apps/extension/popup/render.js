@@ -131,23 +131,30 @@ const AREAS = [
   ['fullpage', 'Full page', 'Scrolls and stitches the whole page, however long.', 'capture-fullpage'],
 ];
 
-function viewScreenshot(state, d) {
+/** Three actions, not three options.
+ *
+ * These rows carry a title, a description and a keyboard chip — everything
+ * that reads as "press me" — but they used to only set a radio value, leaving
+ * a separate Capture button to do the work and a hairline left border as the
+ * sole evidence that anything had happened. Somebody reported being unable to
+ * work out how to take a screenshot, and that is the whole of the diagnosis.
+ *
+ * No preview panel here either: it shows the source a recording will capture,
+ * and a screenshot has none to choose, so in this mode it was 190px of a 640px
+ * popup showing black. */
+function viewScreenshot(state) {
   return `
     ${header(state)}
     ${modeTabs(state)}
-    ${preview(state)}
     <div class="sr-areas" data-control="area">
       ${AREAS.map(([k, label, body, command]) => `
-        <button type="button" data-area="${k}" aria-pressed="${state.area === k}">
+        <button type="button" class="sr-area" data-area="${k}">
           <span class="sr-area-label">${label}</span>
           <span class="sr-area-body">${body}</span>
           ${shortcutChip(state, command)}
         </button>`).join('')}
     </div>
-    <div class="sr-footer">
-      ${primaryAction(state, d, 'Capture', 'capture-visible')}
-      <p class="sr-footnote">Saves to this device. No account needed.</p>
-    </div>`;
+    <p class="sr-footnote">Saves to this device. No account needed.</p>`;
 }
 
 /* -------------------------------------------------------------- options */
@@ -645,16 +652,13 @@ const on = (root, selector, build) => {
 function bind(root, dispatch, effects = {}) {
   on(root, '[data-mode]', (el) => dispatch({ type: 'SET_MODE', mode: el.dataset.mode }));
   on(root, '[data-source]', (el) => dispatch({ type: 'SET_SOURCE', source: el.dataset.source }));
-  on(root, '[data-area]', (el) => dispatch({ type: 'SET_AREA', area: el.dataset.area }));
+  on(root, '[data-area]', (el) => effects.captureArea?.(el.dataset.area));
   on(root, '[data-toggle]', (el) => dispatch({ type: 'TOGGLE_INPUT', input: el.dataset.toggle }));
   on(root, '[data-nav="options"]', () => dispatch({ type: 'OPEN_OPTIONS' }));
   on(root, '[data-nav="settings"]', () => dispatch({ type: 'OPEN_OPTIONS' }));
   on(root, '[data-nav="back"]', () => dispatch({ type: 'BACK' }));
-  on(root, '[data-action="primary"]', () => {
-    // A screenshot fires immediately; only recording goes through the machine.
-    if (root.querySelector('[data-area]')) effects.captureScreenshot?.();
-    else dispatch({ type: 'START' });
-  });
+  // Recording only: a screenshot is fired by its own row, above.
+  on(root, '[data-action="primary"]', () => dispatch({ type: 'START' }));
   on(root, '[data-action="cancel"]', () => dispatch({ type: 'CANCEL' }));
   on(root, '[data-action="pause"]', () => dispatch({ type: 'PAUSE' }));
   on(root, '[data-action="resume"]', () => dispatch({ type: 'RESUME' }));

@@ -24,7 +24,6 @@ export function initialState() {
     entered: false,
     mode: 'record',
     source: 'tab',
-    area: 'visible',
     inputs: { mic: true, tabAudio: true, camera: false },
     /* `analytics` is the user-facing sense of the flag: true means "share
      * anonymous usage data". The background stores the inverse
@@ -110,9 +109,6 @@ export function transition(state, event) {
 
     case 'SET_SOURCE':
       return set(state, { source: event.source });
-
-    case 'SET_AREA':
-      return set(state, { area: event.area });
 
     case 'SET_OPTION': {
       const value = event.key === 'countdown' ? Number(event.value) : event.value;

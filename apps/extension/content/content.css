@@ -17,14 +17,14 @@
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: #ffffff;
-    color: #0C1011;
+    background: var(--sr-surface-paper);
+    color: var(--sr-text-primary-on-light);
     padding: 12px 24px;
     border-radius: 12px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--sr-font-ui);
     font-size: 14px;
     font-weight: 500;
-    border: 1px solid #EEF1F1;
+    border: 1px solid var(--sr-surface-panel-light);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 2147483647;
 }
@@ -32,7 +32,7 @@
 .snaprec-selection-box {
     position: fixed;
     display: none;
-    border: 2px solid #06A6C0;
+    border: 2px solid var(--sr-cyan);
     background: rgba(6, 166, 192, .12);
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     z-index: 2147483647;
@@ -45,17 +45,17 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #ffffff;
-    color: #0C1011;
+    background: var(--sr-surface-paper);
+    color: var(--sr-text-primary-on-light);
     padding: 20px 32px;
     border-radius: 16px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--sr-font-ui);
     font-size: 14px;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid #EEF1F1;
+    border: 1px solid var(--sr-surface-panel-light);
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
     z-index: 2147483647;
 }
@@ -64,7 +64,7 @@
     width: 20px;
     height: 20px;
     border: 2px solid rgba(6, 166, 192, .3);
-    border-top-color: #06A6C0;
+    border-top-color: var(--sr-cyan);
     border-radius: 50%;
     animation: snaprec-spin 0.8s linear infinite;
 }
@@ -94,19 +94,19 @@
     gap: 10px;
     height: 42px;
     padding: 0 12px;
-    background: #0C1011;            /* --sr-surface-carbon */
-    border: 1px solid #C7CFD0;      /* --sr-border-light */
+    background: var(--sr-surface-carbon);
+    border: 1px solid var(--sr-border-light);
     border-radius: 0;               /* radius is 0 on rails */
     box-shadow: 0 8px 28px rgba(0, 0, 0, .42);
     z-index: 2147483647;
     font-family: 'Schibsted Grotesk Variable', system-ui, -apple-system, sans-serif;
-    color: #F3F6F6;                 /* --sr-text-primary-on-dark */
+    color: var(--sr-text-primary-on-dark);
 }
 
 /* Filled coral means capturing right now; paused empties the fill. */
 .snaprec-recording-bar.paused {
     background: transparent;
-    box-shadow: inset 0 0 0 1px #D8331F, 0 8px 28px rgba(0, 0, 0, .42);
+    box-shadow: inset 0 0 0 1px var(--sr-coral-text), 0 8px 28px rgba(0, 0, 0, .42);
 }
 
 .snaprec-rec-indicator {
@@ -118,7 +118,7 @@
 .snaprec-rec-dot {
     width: 9px;
     height: 9px;
-    background: #FF3B2E;            /* --sr-coral-mark */
+    background: var(--sr-coral-mark);
     border-radius: 50%;
     animation: snaprec-pulse 1.6s ease-in-out infinite;
 }
@@ -127,7 +127,7 @@
 .snaprec-recording-bar.paused .snaprec-rec-dot {
     animation: none;
     background: transparent;
-    box-shadow: inset 0 0 0 1px #FF7A6E;   /* --sr-coral-on-dark */
+    box-shadow: inset 0 0 0 1px var(--sr-coral-on-dark);
 }
 
 @keyframes snaprec-pulse {
@@ -140,7 +140,7 @@
 }
 
 .snaprec-timer {
-    color: #F3F6F6;                 /* --sr-text-primary-on-dark */
+    color: var(--sr-text-primary-on-dark);
     font-family: 'Azeret Mono Variable', ui-monospace, monospace;
     font-size: 13px;
     font-variant-numeric: tabular-nums;
@@ -168,7 +168,7 @@
 
 .snaprec-pause-btn {
     background: rgba(255, 255, 255, 0.1);
-    color: white;
+    color: var(--sr-text-primary-on-dark);
 }
 
 .snaprec-pause-btn:hover {
@@ -176,12 +176,12 @@
 }
 
 .snaprec-stop-btn {
-    background: #D8331F;
-    color: white;
+    background: var(--sr-coral-text);
+    color: var(--sr-coral-text-fg);
 }
 
 .snaprec-stop-btn:hover {
-    background: #B82A18;
+    background: var(--sr-coral-hover);
     transform: scale(1.05);
 }
 
@@ -205,7 +205,7 @@
     /* Cyan is focus: you are framing, nothing is being captured yet. The ring
        is the only thing separating the two states, so it is a 3px edge rather
        than a tint. Was the pre-plate purple, as this whole file was. */
-    border: 3px solid #06A6C0;
+    border: 3px solid var(--sr-cyan);
     box-shadow: 0 8px 32px rgba(4, 7, 8, .45);
     z-index: 2147483646;
     /* It moves, so it says so before it is touched. */
@@ -242,7 +242,7 @@
 
 /* Coral is reserved for live capture, and this is the moment it means it. */
 .snaprec-webcam[data-preview="false"] {
-    border-color: #FF3B2E;
+    border-color: var(--sr-coral-mark);
 }
 
 /* Controls: hidden until wanted, so the overlay is a picture of you and not a
@@ -278,7 +278,7 @@
     border: none;
     border-radius: 2px;              /* radius is 2 on controls */
     background: rgba(243, 246, 246, .16);
-    color: #F3F6F6;                  /* --sr-text-primary-on-dark */
+    color: var(--sr-text-primary-on-dark);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -289,7 +289,7 @@
 }
 
 .snaprec-webcam-btn:hover { background-color: rgba(243, 246, 246, .3); }
-.snaprec-webcam-btn:focus-visible { outline: 2px solid #06A6C0; outline-offset: 1px; }
+.snaprec-webcam-btn:focus-visible { outline: 2px solid var(--sr-cyan); outline-offset: 1px; }
 
 /* Icons are inline data URIs: an MV3 content script cannot pull an icon font
    into an arbitrary page, and the page's own fonts must never be inherited. */
@@ -327,7 +327,7 @@
     font-family: 'Azeret Mono Variable', ui-monospace, monospace;
     font-size: 9px;
     letter-spacing: .04em;
-    color: #FF7A6E;                  /* --sr-coral-on-dark */
+    color: var(--sr-text-muted-on-light);
     /* A chip, not bare text: this sits on whatever the camera happens to be
        pointing at, and a text-shadow alone disappears against a bright or
        busy frame. It has to stay readable when watched back. */
@@ -355,7 +355,7 @@
     font-size: 11px;
     line-height: 1.35;
     letter-spacing: .01em;
-    color: #F3F6F6;                  /* --sr-text-primary-on-dark */
+    color: var(--sr-text-primary-on-dark);
     /* A chip on a dark scrim, not text with a shadow: this sits on whatever
        the camera happens to be pointing at, bright or busy. */
     background: rgba(4, 7, 8, .78);
@@ -388,10 +388,10 @@
 }
 
 .snaprec-countdown-number {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--sr-font-ui);
     font-size: 200px;
     font-weight: 700;
-    color: white;
+    color: var(--sr-text-primary-on-dark);
     /* The countdown is the run-up to a live capture, so its glow is coral —
        the same signal as the recording ring, not a decorative bloom. */
     text-shadow: 0 0 60px rgba(255, 59, 46, .8), 0 0 120px rgba(255, 59, 46, .4);
@@ -438,17 +438,24 @@
     bottom: 32px;
     right: 32px;
     width: 320px;
-    background: rgba(255, 255, 255, 0.7) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 24px !important;
+    /* A plate, not a glass pane.
+     *
+     * This was a translucent 24px-radius card with a 12px backdrop blur, which
+     * is a different visual language from everything else the product draws —
+     * and because it was see-through, whatever sat behind it bled in. The FAB
+     * is bottom-right and coral, so the panel picked up a coral wash it never
+     * asked for, in the one hue the system reserves for live capture.
+     *
+     * Opaque paper, a real border, and the plate radius: 0 on a panel. */
+    background: var(--sr-surface-paper) !important;
+    border: 1px solid var(--sr-border-light) !important;
+    border-radius: var(--sr-radius-none) !important;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
     z-index: 2147483647;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--sr-font-ui);
     overflow: hidden;
     user-select: none;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    transition: transform var(--sr-dur-mid) var(--sr-ease), opacity var(--sr-dur-fast) var(--sr-ease);
 }
 
 .snaprec-preview-header {
@@ -468,8 +475,8 @@
 .snaprec-preview-img-container {
     width: 100%;
     aspect-ratio: 16/9;
-    background: #FAFBFB;
-    border-radius: 16px;
+    background: var(--sr-surface-paper);
+    border-radius: var(--sr-radius-none);
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -484,29 +491,6 @@
     object-fit: cover;
     object-position: top;
     display: block;
-}
-
-.snaprec-preview-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 4px 8px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.snaprec-preview-badge span {
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
 .snaprec-preview-footer {
@@ -526,19 +510,20 @@
     margin: 0;
     font-size: 14px;
     font-weight: 700;
-    color: #0C1011;
+    color: var(--sr-text-primary-on-light);
 }
 
 .snaprec-footer-title p {
     margin: 4px 0 0 0;
     font-size: 11px;
-    color: rgba(12, 16, 17, .5);
+    color: var(--sr-text-muted-on-light);
 }
 
 .snaprec-share-btn {
-    background: #06A6C0;
-    color: white;
-    border-radius: 12px;
+    background: var(--sr-cyan);
+    /* The system pairs cyan with its own dark foreground, not white. */
+    color: var(--sr-cyan-fg);
+    border-radius: var(--sr-radius-control);
     padding: 10px 24px;
     font-size: 14px;
     font-weight: 700;
@@ -590,21 +575,21 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    color: #4B5457;
+    color: var(--sr-text-muted-on-light);
 }
 
 .snaprec-action-item.discard .snaprec-action-icon {
-    color: #D8331F;
+    color: var(--sr-text-muted-on-light);
 }
 
 .snaprec-action-label {
     font-size: 11px;
     font-weight: 500;
-    color: #4B5457;
+    color: var(--sr-text-muted-on-light);
 }
 
 .snaprec-action-item.discard .snaprec-action-label {
-    color: #D8331F;
+    color: var(--sr-text-muted-on-light);
 }
 
 .snaprec-review-cta {
@@ -615,12 +600,12 @@
     margin-top: 6px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
     font-size: 12px;
-    color: #656E71;
-    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--sr-text-faint-on-light);
+    font-family: var(--sr-font-ui);
 }
 
 .snaprec-review-cta a {
-    color: #0A7F94;
+    color: var(--sr-cyan-on-light);
     text-decoration: none;
     font-weight: 600;
 }
@@ -634,6 +619,6 @@
     font-family: 'Azeret Mono Variable', ui-monospace, monospace;
     font-size: 10px;
     letter-spacing: .1em;
-    color: #FF7A6E;                 /* --sr-coral-on-dark */
+    color: var(--sr-text-muted-on-light);
     text-transform: lowercase;
 }

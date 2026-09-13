@@ -38,7 +38,7 @@ function dispatch(event) {
 let ratingShownTracked = 0;
 
 function paint() {
-  render(state, dispatch, { captureScreenshot });
+  render(state, dispatch, { captureArea });
 
   if (state.showRatingPrompt && state.view === 'complete'
       && ratingShownTracked !== state.ratingShowing) {
@@ -214,8 +214,8 @@ chrome.runtime.onMessage.addListener((message) => {
 /** Fires a screenshot. Not routed through the state machine: START no longer
  * transitions in screenshot mode, because there is nothing to count down to
  * and the popup closes the instant the capture starts. */
-function captureScreenshot() {
-  send({ action: AREA_ACTION[state.area] ?? 'captureVisible' });
+function captureArea(area) {
+  send({ action: AREA_ACTION[area] ?? 'captureVisible' });
   window.close();
 }
 
