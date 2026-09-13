@@ -72,7 +72,7 @@ describe('screenshot view (A2)', () => {
     expect(root.querySelector('[disabled]')).toBeNull();
   });
 
-  it('offers three capture areas, each with its shortcut spelled out', () => {
+  it('offers three capture modes, each carrying its own shortcut', () => {
     const withKeys = {
       ...shot,
       shortcuts: {
@@ -83,7 +83,9 @@ describe('screenshot view (A2)', () => {
     };
     const areas = mount(withKeys).querySelectorAll('[data-area]');
     expect(areas).toHaveLength(3);
-    for (const a of areas) expect(a.textContent).toMatch(/Cmd\+Shift\+\d/);
+    // In the title, not the face: three labels plus three chips is the essay
+    // this view exists to remove. A shortcut still has to be discoverable.
+    for (const a of areas) expect(a.getAttribute('title')).toMatch(/Cmd\+Shift\+\d/);
   });
 
   /* One click, not two.
@@ -100,7 +102,7 @@ describe('screenshot view (A2)', () => {
     render(shot, dispatch, { captureArea });
 
     document.querySelector('[data-area="fullpage"]').click();
-    expect(captureArea).toHaveBeenCalledWith('fullpage');
+    expect(captureArea).toHaveBeenCalledWith('fullpage', 0);
     expect(dispatch).not.toHaveBeenCalled();
   });
 
@@ -108,7 +110,7 @@ describe('screenshot view (A2)', () => {
     expect(mount(shot).querySelector('[data-action="primary"]')).toBeNull();
   });
 
-  it('gives each row its own shortcut, not one borrowed from another', () => {
+  it('gives each mode its own shortcut, not one borrowed from another', () => {
     const withKeys = {
       ...shot,
       shortcuts: {
@@ -118,17 +120,56 @@ describe('screenshot view (A2)', () => {
       },
     };
     const root = mount(withKeys);
-    expect(root.querySelector('[data-area="visible"]').textContent).toContain('Cmd+Shift+3');
-    expect(root.querySelector('[data-area="region"]').textContent).toContain('Cmd+Shift+2');
-    expect(root.querySelector('[data-area="fullpage"]').textContent).toContain('Cmd+Shift+1');
+    const t = (k) => root.querySelector(`[data-area="${k}"]`).getAttribute('title');
+    expect(t('visible')).toContain('Cmd+Shift+3');
+    expect(t('region')).toContain('Cmd+Shift+2');
+    expect(t('fullpage')).toContain('Cmd+Shift+1');
   });
 
-  /* The panel previews the chosen recording source. A screenshot has no source
-   * to choose, so in this mode it was 190px of a 640px popup showing black. */
-  it('drops the source preview, which has nothing to show here', () => {
-    expect(mount(shot).querySelector('.sr-preview')).toBeNull();
-    // And it is still there for recording, where it shows the chosen source.
-    expect(mount(initialState()).querySelector('.sr-preview')).not.toBeNull();
+  /* The viewfinder answers "what will I get" with a picture instead of prose.
+   * It used to be the recording source panel, which in this mode had no source
+   * to show and rendered as 190px of black. */
+  it('shows the tab it is about to capture', () => {
+    const withShot = { ...shot, previewSrc: 'data:image/png;base64,AAA' };
+    const img = mount(withShot).querySelector('.sr-viewfinder img');
+    expect(img).not.toBeNull();
+    expect(img.getAttribute('src')).toBe('data:image/png;base64,AAA');
+  });
+
+  /* chrome:// pages, the Web Store and PDF viewer cannot be captured, and
+   * captureVisibleTab is rate-limited besides. Saying so beats a black box —
+   * which is what this panel used to be. */
+  it('says why there is nothing to preview rather than showing a void', () => {
+    const root = mount({ ...shot, previewSrc: null });
+    expect(root.querySelector('.sr-viewfinder img')).toBeNull();
+    expect(root.querySelector('.sr-viewfinder').textContent).toMatch(/can.t be captured/i);
+  });
+
+  it('offers the delay as a control, not a buried setting', () => {
+    const chip = mount(shot).querySelector('[data-action="delay"]');
+    expect(chip).not.toBeNull();
+    expect(chip.textContent).toContain('No delay');
+  });
+
+  it('names the wait once one is set', () => {
+    expect(mount({ ...shot, delaySec: 3 })
+      .querySelector('[data-action="delay"]').textContent).toContain('3s delay');
+  });
+
+  it('cycles the delay rather than opening a picker', () => {
+    const dispatch = vi.fn();
+    document.body.innerHTML = '<div id="root"></div>';
+    render(shot, dispatch, {});
+    document.querySelector('[data-action="delay"]').click();
+    expect(dispatch).toHaveBeenCalledWith({ type: 'CYCLE_DELAY' });
+  });
+
+  it('passes the delay to the capture, or it would be decorative', () => {
+    const captureArea = vi.fn();
+    document.body.innerHTML = '<div id="root"></div>';
+    render({ ...shot, delaySec: 5 }, vi.fn(), { captureArea });
+    document.querySelector('[data-area="region"]').click();
+    expect(captureArea).toHaveBeenCalledWith('region', 5);
   });
 });
 

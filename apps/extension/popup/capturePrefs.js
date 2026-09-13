@@ -14,6 +14,8 @@
  * the popup over: if storage is unavailable the picker simply shows the default.
  */
 
+import { DEFAULT_DELAY, VALID_DELAYS } from './captureDelay.core.js';
+
 const RESOLUTION_KEY = 'captureResolution';
 
 /** Labels the picker offers. Must stay in step with RESOLUTIONS in render.js and
@@ -46,5 +48,35 @@ export async function saveResolution(value) {
     } catch {
         // Storage unavailable — the choice still applies to this session, it
         // just will not survive the popup closing.
+    }
+}
+
+/* ------------------------------------------------------------------ delay */
+
+const DELAY_KEY = 'captureDelaySec';
+
+/** The chosen screenshot delay, or none.
+ *
+ * Persisted for the same reason as resolution: the popup is rebuilt from
+ * initialState() on every open, and a timer the user set deliberately is a
+ * preference, not view state. Validated against the offered set so a value from
+ * another build cannot leave the chip promising a wait the capture path will
+ * not take. */
+export async function loadDelay() {
+    try {
+        const stored = await chrome.storage.local.get(DELAY_KEY);
+        const value = stored?.[DELAY_KEY];
+        return VALID_DELAYS.includes(value) ? value : DEFAULT_DELAY;
+    } catch {
+        return DEFAULT_DELAY;
+    }
+}
+
+export async function saveDelay(value) {
+    if (!VALID_DELAYS.includes(value)) return;
+    try {
+        await chrome.storage.local.set({ [DELAY_KEY]: value });
+    } catch {
+        /* A preference is not worth breaking the popup over. */
     }
 }

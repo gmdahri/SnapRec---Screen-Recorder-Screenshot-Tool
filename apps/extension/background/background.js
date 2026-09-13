@@ -166,10 +166,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Handle other messages (fire-and-forget, no response needed)
     switch (message.action) {
         case 'captureVisible':
-            captureVisibleTab();
+            afterCaptureDelay(message.delaySec).then(captureVisibleTab);
             return false; // No response needed
         case 'captureFullPage':
-            captureFullPage();
+            afterCaptureDelay(message.delaySec).then(captureFullPage);
             return false; // No response needed
         case 'streamPartReady':
             void uploadNextPart(false);
@@ -190,6 +190,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .catch(e => sendResponse({ success: false, error: e.message }));
             return true;
         case 'captureRegion':
+            // No delay here on purpose: the region selector is the user's own
+            // timing, so waiting would postpone the drawing UI rather than the
+            // moment that gets captured.
             startRegionCapture();
             return false; // No response needed
         case 'processScreenshot':
@@ -492,6 +495,30 @@ async function handleSignOut() {
 }
 
 // Capture Visible Tab
+/** Waits before a screenshot, counting down on the toolbar badge.
+ *
+ * The badge rather than a page overlay, for two reasons that both matter: an
+ * element injected into the page can steal focus and dismiss the very menu the
+ * delay exists to capture, and whatever is in the page ends up IN the
+ * screenshot. The badge is outside both.
+ *
+ * Silently a no-op for 0, which is the common case. */
+async function afterCaptureDelay(delaySec) {
+    const seconds = Number(delaySec);
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+
+    try {
+        await chrome.action.setBadgeBackgroundColor({ color: '#06A6C0' });
+        for (let left = Math.min(Math.round(seconds), 10); left > 0; left--) {
+            await chrome.action.setBadgeText({ text: String(left) });
+            await new Promise((r) => setTimeout(r, 1000));
+        }
+    } finally {
+        // Always clear it: a stuck badge reads as a broken extension.
+        await chrome.action.setBadgeText({ text: '' }).catch(() => {});
+    }
+}
+
 async function captureVisibleTab() {
     try {
         const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });

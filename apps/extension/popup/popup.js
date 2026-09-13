@@ -3,7 +3,7 @@ import { render } from './render.js';
 // Analytics: the popup never owns a PostHog client — see popup/analytics.js.
 import { getOptOut, setOptOut } from './analytics.js';
 // The resolution picker is a preference, so it outlives the popup.
-import { loadResolution, saveResolution } from './capturePrefs.js';
+import { loadResolution, saveResolution, loadDelay, saveDelay } from './capturePrefs.js';
 import {
   markRatingPromptRated,
   ratingPromptState,
@@ -162,6 +162,11 @@ function runSideEffects(event, previous) {
       if (event.key === 'analytics') setOptOut(!state.options.analytics);
       break;
 
+    // A timer the user set deliberately outlives the popup, same as resolution.
+    case 'CYCLE_DELAY':
+      void saveDelay(state.delaySec);
+      break;
+
     case 'FINISHED':
       // The background has just incremented the count, so eligibility can only
       // now have become true.
@@ -214,8 +219,8 @@ chrome.runtime.onMessage.addListener((message) => {
 /** Fires a screenshot. Not routed through the state machine: START no longer
  * transitions in screenshot mode, because there is nothing to count down to
  * and the popup closes the instant the capture starts. */
-function captureArea(area) {
-  send({ action: AREA_ACTION[area] ?? 'captureVisible' });
+function captureArea(area, delaySec = 0) {
+  send({ action: AREA_ACTION[area] ?? 'captureVisible', delaySec });
   window.close();
 }
 
@@ -332,7 +337,8 @@ async function refreshRatingPrompt() {
 
 async function loadCapturePreferences() {
   const resolution = await loadResolution();
-  state = { ...state, options: { ...state.options, resolution } };
+  const delaySec = await loadDelay();
+  state = { ...state, delaySec, options: { ...state.options, resolution } };
 }
 
 async function boot() {

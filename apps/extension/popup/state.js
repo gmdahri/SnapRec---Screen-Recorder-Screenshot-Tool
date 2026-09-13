@@ -8,6 +8,8 @@
  * limit, no-link-no-button, offline-is-not-failure. Keeping them here rather
  * than in the renderer is what stops each view re-deciding them. */
 
+import { nextDelay } from './captureDelay.core.js';
+
 export const VIEWS = [
   'ready', 'screenshot', 'options', 'permission', 'denied',
   'arming', 'countdown', 'recording', 'paused', 'finishing',
@@ -41,6 +43,7 @@ export function initialState() {
     /** The recorder's own start time, once it is running. Null until then. */
     startTime: null,
     capture: null,
+    delaySec: 0,
     upload: { pct: 0, bytes: 0, failedAt: null, reason: null },
     link: null,
     pendingPermission: null,
@@ -197,6 +200,12 @@ export function transition(state, event) {
       return state.showRatingPrompt === event.show && state.ratingShowing === (event.showing ?? 0)
         ? state
         : set(state, { showRatingPrompt: event.show, ratingShowing: event.showing ?? 0 });
+
+    case 'SET_DELAY':
+      return set(state, { delaySec: event.delaySec });
+
+    case 'CYCLE_DELAY':
+      return set(state, { delaySec: nextDelay(state.delaySec ?? 0) });
 
     case 'PAUSE':
       return state.view === 'recording' ? set(state, { view: 'paused' }) : state;

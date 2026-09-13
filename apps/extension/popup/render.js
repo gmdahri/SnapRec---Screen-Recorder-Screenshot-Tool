@@ -1,5 +1,6 @@
 import { derive } from './state.js';
 import { icon } from './icons.js';
+import { delayLabel } from './captureDelay.core.js';
 
 /** render(state, dispatch) replaces #root and rebinds listeners.
  *
@@ -126,35 +127,74 @@ function viewReady(state, d) {
 }
 
 const AREAS = [
-  ['visible', 'Visible area', 'Whatever’s on screen, instantly.', 'capture-visible'],
-  ['region', 'Select a region', 'Drag a box with live dimensions and a magnifier.', 'capture-region'],
-  ['fullpage', 'Full page', 'Scrolls and stitches the whole page, however long.', 'capture-fullpage'],
+  ['visible', 'Visible', 'desktop', 'capture-visible'],
+  ['region', 'Region', 'scissor', 'capture-region'],
+  ['fullpage', 'Full page', 'expand', 'capture-fullpage'],
 ];
 
-/** Three actions, not three options.
+/** A viewfinder, three actions and a timer.
  *
- * These rows carry a title, a description and a keyboard chip — everything
- * that reads as "press me" — but they used to only set a radio value, leaving
- * a separate Capture button to do the work and a hairline left border as the
- * sole evidence that anything had happened. Somebody reported being unable to
- * work out how to take a screenshot, and that is the whole of the diagnosis.
+ * Somebody reported being unable to work out how to take a screenshot. The
+ * rows carried a title, a description and a keyboard chip — everything that
+ * reads as "press me" — but they only set a radio value, leaving a separate
+ * Capture button to do the work and a hairline left border as the sole
+ * evidence anything had happened.
  *
- * No preview panel here either: it shows the source a recording will capture,
- * and a screenshot has none to choose, so in this mode it was 190px of a 640px
- * popup showing black. */
+ * So: the prose goes, and a picture of the tab takes its place. "Visible"
+ * stops being a phrase to parse and becomes the thing you are looking at. The
+ * three modes are one strip of unambiguous targets, and each one captures. */
 function viewScreenshot(state) {
   return `
     ${header(state)}
     ${modeTabs(state)}
-    <div class="sr-areas" data-control="area">
-      ${AREAS.map(([k, label, body, command]) => `
-        <button type="button" class="sr-area" data-area="${k}">
-          <span class="sr-area-label">${label}</span>
-          <span class="sr-area-body">${body}</span>
-          ${shortcutChip(state, command)}
-        </button>`).join('')}
-    </div>
-    <p class="sr-footnote">Saves to this device. No account needed.</p>`;
+    <div class="sr-shot">
+      ${viewfinder(state)}
+      <div class="sr-modes" data-control="area">
+        ${AREAS.map(([k, label, ic, command]) => `
+          <button type="button" class="sr-mode" data-area="${k}"
+                  title="${esc(hintFor(state, k, command))}">
+            ${icon(ic, 15)}<span>${label}</span>
+          </button>`).join('')}
+      </div>
+      <div class="sr-shot-foot">
+        <button type="button" class="sr-delay" data-action="delay"
+                title="Capture after a pause, so menus and hover states stay open">
+          ${icon('reload', 12)}${delayLabel(state.delaySec ?? 0)}
+        </button>
+      </div>
+    </div>`;
+}
+
+/** The explanation and the shortcut, on hover.
+ *
+ * Both used to sit in the row, which is what made three choices read as an
+ * essay. A single shortcut chip beside three modes would be worse than none —
+ * that is precisely the bug this view replaced, where one button advertised
+ * the visible-area binding whatever you had picked. */
+function hintFor(state, key, command) {
+  const keys = state.shortcuts?.[command];
+  return keys ? `${AREA_HINT[key]} ${keys}` : AREA_HINT[key];
+}
+
+const AREA_HINT = {
+  visible: 'Whatever’s on screen, instantly.',
+  region: 'Drag a box with live dimensions and a magnifier.',
+  fullpage: 'Scrolls and stitches the whole page, however long.',
+};
+
+/** What you are about to capture, as a picture.
+ *
+ * captureVisibleTab is rate-limited and refuses chrome://, the Web Store and
+ * the PDF viewer outright, so a missing thumbnail is ordinary rather than
+ * exceptional — and saying why beats the black rectangle this panel used to
+ * be on exactly those pages. */
+function viewfinder(state) {
+  return `
+    <div class="sr-viewfinder">
+      ${state.previewSrc
+        ? `<img src="${esc(state.previewSrc)}" alt="">`
+        : '<span class="sr-viewfinder-empty">This page can’t be captured</span>'}
+    </div>`;
 }
 
 /* -------------------------------------------------------------- options */
@@ -640,7 +680,7 @@ export function render(state, dispatch, effects = {}) {
   if (!view) throw new Error(`no renderer for view: ${state.view}`);
 
   root.innerHTML = view(state, derive(state));
-  bind(root, dispatch, effects);
+  bind(root, state, dispatch, effects);
 }
 
 const on = (root, selector, build) => {
@@ -649,10 +689,11 @@ const on = (root, selector, build) => {
   });
 };
 
-function bind(root, dispatch, effects = {}) {
+function bind(root, state, dispatch, effects = {}) {
   on(root, '[data-mode]', (el) => dispatch({ type: 'SET_MODE', mode: el.dataset.mode }));
   on(root, '[data-source]', (el) => dispatch({ type: 'SET_SOURCE', source: el.dataset.source }));
-  on(root, '[data-area]', (el) => effects.captureArea?.(el.dataset.area));
+  on(root, '[data-area]', (el) => effects.captureArea?.(el.dataset.area, state.delaySec ?? 0));
+  on(root, '[data-action="delay"]', () => dispatch({ type: 'CYCLE_DELAY' }));
   on(root, '[data-toggle]', (el) => dispatch({ type: 'TOGGLE_INPUT', input: el.dataset.toggle }));
   on(root, '[data-nav="options"]', () => dispatch({ type: 'OPEN_OPTIONS' }));
   on(root, '[data-nav="settings"]', () => dispatch({ type: 'OPEN_OPTIONS' }));
