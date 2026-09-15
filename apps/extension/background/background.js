@@ -797,8 +797,16 @@ async function openEditor(dataUrl, id = null) {
         console.log('Redirecting to web editor...');
         await chrome.storage.local.set({ editingImage: dataUrl });
 
-        const baseUrl = `${CONFIG.WEB_BASE_URL}/editor`;
-        const editorUrl = id ? `${baseUrl}/${id}` : baseUrl;
+        /* ?fresh=true busts a cached redirect, exactly as on /v.
+         *
+         * Before the _redirects fix, /editor answered 308 Permanent Redirect
+         * to /, and browsers cache a 308 indefinitely — deploying the fix does
+         * not clear it. The first pass at this only covered /v, so recordings
+         * were fixed and screenshots, which come here, still landed on the
+         * marketing page. Redirect caches key on the full URL. */
+        const editorUrl = id
+            ? `${CONFIG.WEB_BASE_URL}/editor/${id}?fresh=true`
+            : `${CONFIG.WEB_BASE_URL}/editor?fresh=true`;
         const tab = await chrome.tabs.create({ url: editorUrl });
 
         // Wait for tab to load and inject data transfer script
@@ -1316,7 +1324,8 @@ async function deliverImageToEditor() {
         return;
     }
 
-    const tab = await chrome.tabs.create({ url: `${CONFIG.WEB_BASE_URL}/editor` });
+    // ?fresh=true busts the cached 308 — see openEditor.
+    const tab = await chrome.tabs.create({ url: `${CONFIG.WEB_BASE_URL}/editor?fresh=true` });
     const frameUrl = chrome.runtime.getURL(
         `handoff/handoff.html?kind=image&id=${encodeURIComponent(imageId)}`);
 
@@ -1794,7 +1803,7 @@ chrome.runtime.onInstalled.addListener((details) => {
             // Trailing slash is load-bearing: the bare path 301s, and a stored
             // uninstall URL that needs a redirect is one more thing that can
             // fail at the only moment this page is ever opened.
-            chrome.runtime.setUninstallURL(`${CONFIG.WEB_BASE_URL}/uninstall-survey/`, () => {
+            chrome.runtime.setUninstallURL(`${CONFIG.WEB_BASE_URL}/uninstall-survey/?fresh=true`, () => {
                 // Reading lastError stops an unchecked-error warning in the
                 // service worker console when the URL is rejected.
                 void chrome.runtime.lastError;
