@@ -11,6 +11,7 @@ import { ShareShell } from './Share/ShareShell';
 import { PendingComment } from './Share/PendingComment';
 import { VideoViewer } from './Share/VideoViewer';
 import { chooseViewerSurface } from './Share/surface';
+import { localUploadCreateInput } from './Share/localUpload';
 import { toShareComments, toShareKind, toShareState } from './Share/toShareProps';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useWatchProgress } from '../hooks/useWatchProgress';
@@ -678,18 +679,9 @@ const ShareView: React.FC = () => {
         }
         const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
         if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
-        const createdRecording = await createRecordingMutation.mutateAsync({
-            id: effectiveId,
-            title: `Video Recording ${new Date().toLocaleString()}`,
-            fileUrl,
-            type: 'video',
-            durationSec: meta.durationSec,
-            widthPx: meta.widthPx,
-            heightPx: meta.heightPx,
-            userId: user?.id,
-            guestId: undefined,
-        });
-        const recordingId = createdRecording?.id || effectiveId;
+        const createdRecording = await createRecordingMutation.mutateAsync(
+            localUploadCreateInput({ fileUrl, userId: user?.id, meta }));
+        const recordingId = createdRecording?.id;
         if (!recordingId) return null;
         try {
             const request = indexedDB.open('SnapRecDB', 2);
