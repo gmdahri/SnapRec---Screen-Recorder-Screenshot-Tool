@@ -158,7 +158,15 @@ export async function fetchBlobWithAuth(videoUrl: string): Promise<Blob> {
 // Query Keys - centralized for cache management
 export const recordingsKeys = {
     all: ['recordings'] as const,
+    /** Every cached copy of one recording, whoever was looking: what
+     * invalidation uses. */
     detail: (id: string) => ['recordings', id] as const,
+    /** One viewer's copy. GET /recordings/:id answers per viewer
+     * (viewerIsOwner, viewerIsAuthor, viewerReacted), so a copy fetched as
+     * one user must not be shown to the next — after a sign-out in the same
+     * tab, the owner's controls would otherwise linger for an anonymous
+     * viewer until the next refetch. */
+    detailFor: (id: string, viewer: string | null) => ['recordings', id, { viewer }] as const,
 };
 
 // ============= PUBLIC STATS =============
@@ -234,10 +242,14 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
 /**
  * Hook to fetch a single recording by ID
  */
-export function useRecording(id: string | undefined, refetchInterval?: number | false, options: { enabled?: boolean } = {}) {
+export function useRecording(
+    id: string | undefined,
+    refetchInterval?: number | false,
+    options: { enabled?: boolean; viewer?: string | null } = {},
+) {
     const isValidId = !!id && id !== 'undefined';
     return useQuery({
-        queryKey: recordingsKeys.detail(id!),
+        queryKey: recordingsKeys.detailFor(id!, options.viewer ?? null),
         queryFn: async ({ signal }) => {
             const recording = await fetchWithAuth<Recording>(`/recordings/${id}`, { signal });
             return {

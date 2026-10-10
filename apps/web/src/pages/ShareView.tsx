@@ -256,7 +256,9 @@ const ShareView: React.FC = () => {
      * copy of it. A miss is cheap: an unstreamed capture 404s once, `recording`
      * stays undefined, and the local-blob path runs exactly as before. */
     const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
-        enabled: (!!isValidId && !isFreshParam) || !!localId || isUploaded || isUploading
+        enabled: (!!isValidId && !isFreshParam) || !!localId || isUploaded || isUploading,
+        // The response is personal to the viewer; so is its cached copy.
+        viewer: user?.id ?? null,
     });
 
     const addReaction = useAddReaction();

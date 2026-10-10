@@ -224,9 +224,21 @@ export class RecordingsController {
         }
     }
 
+    /** Personal to the viewer: viewerIsOwner, viewerIsAuthor and
+     * viewerReacted are computed from their token. Nothing in front of the API
+     * caches it today (the web calls the run.app URL directly, served by
+     * Google Frontend with no CDN), but a browser cache is keyed by URL, not
+     * by Authorization — so it is marked private and unstorable, and varies
+     * on Authorization for anything that ignores no-store. */
     @UseGuards(LenientJwtAuthGuard)
     @Get(':id')
-    async getRecording(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
+    async getRecording(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: any,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        res.set('Cache-Control', 'private, no-store');
+        res.vary('Authorization');
         const recording = await this.recordingsService.findOne(id);
         if (!recording) {
             throw new NotFoundException(`Recording with ID "${id}" not found`);

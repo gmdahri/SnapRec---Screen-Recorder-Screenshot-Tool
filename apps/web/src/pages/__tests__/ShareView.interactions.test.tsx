@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { forwardRef, useSyncExternalStore } from 'react';
@@ -29,6 +29,7 @@ const createRecording = vi.fn();
 const addComment = vi.fn();
 const addReaction = vi.fn();
 let currentRecording: unknown = undefined;
+const recordingCalls: unknown[][] = [];
 const notify = vi.fn();
 const navigateSpy = vi.fn();
 
@@ -48,7 +49,7 @@ vi.mock('../../hooks/useDownload', () => ({ useDownload: () => ({ download: vi.f
 vi.mock('../../hooks/useRecordings', () => {
     const mutation = () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false });
     return {
-        useRecording: () => ({ data: currentRecording, isLoading: false }),
+        useRecording: (...args: unknown[]) => { recordingCalls.push(args); return { data: currentRecording, isLoading: false }; },
         useUpdateRecording: mutation, useResolveComment: mutation, useClaimRecordings: mutation,
         // react-query's mutate(vars, { onSuccess, onError }) over a promise.
         useAddComment: () => ({
@@ -161,5 +162,21 @@ describe('a reaction refused because the session expired', () => {
         expect(screen.getByText(/sign in again to react with "like"/i)).toBeInTheDocument();
         await waitFor(() => expect(auth.expireSession).toHaveBeenCalledTimes(1));
         expect(addReaction).toHaveBeenCalledTimes(1);
+    });
+});
+
+/** GET /recordings/:id answers per viewer, so the page asks for — and caches —
+ * the copy that belongs to whoever is signed in, and a different one once
+ * they are not. */
+describe('whose copy of the recording the page asks for', () => {
+    it('the signed-in viewer’s, then the anonymous one after the session is cleared', async () => {
+        currentRecording = recording({ viewerIsOwner: true });
+        recordingCalls.length = 0;
+        open(`/v/${ID}`);
+        await screen.findByLabelText('Write a comment');
+        expect(recordingCalls.at(-1)?.[2]).toMatchObject({ viewer: 'sb-1' });
+
+        await act(async () => { auth.set(null); });
+        expect(recordingCalls.at(-1)?.[2]).toMatchObject({ viewer: null });
     });
 });

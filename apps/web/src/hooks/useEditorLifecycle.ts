@@ -31,7 +31,7 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
     }, []);
 
     // Use centralized React Query hook to fetch existing recording
-    const { data: recording, isError } = useRecording(id);
+    const { data: recording, isError } = useRecording(id, undefined, { viewer: user?.id ?? null });
     const getUploadUrlMutation = useGetUploadUrl();
     const createRecordingMutation = useCreateRecording();
     const updateRecordingMutation = useUpdateRecording();
