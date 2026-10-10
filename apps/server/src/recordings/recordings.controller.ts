@@ -14,6 +14,7 @@ import {
     Logger,
     NotFoundException,
     ForbiddenException,
+    ConflictException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
@@ -34,8 +35,20 @@ export class RecordingsController {
         private readonly recordingsService: RecordingsService,
     ) { }
 
+    /** Every upload endpoint below signs a key the client names, with no
+     * account required — guests upload too. What they must never do is sign
+     * a key that already holds a file: keys are readable by anyone holding a
+     * share link, so that was a way to replace anybody's recording. Every
+     * legitimate uploader names a fresh key. */
+    private async refuseExistingKey(fileName: string) {
+        if (await this.storageService.checkFileExists(fileName)) {
+            throw new ConflictException('A file already exists at this key');
+        }
+    }
+
     @Post('upload-url')
     async getUploadUrl(@Body() uploadUrlDto: UploadUrlDto) {
+        await this.refuseExistingKey(uploadUrlDto.fileName);
         const uploadUrl = await this.storageService.getUploadPresignedUrl(
             uploadUrlDto.fileName,
             uploadUrlDto.contentType,
@@ -51,6 +64,7 @@ export class RecordingsController {
 
     @Post('upload/begin')
     async beginUpload(@Body() dto: BeginUploadDto) {
+        await this.refuseExistingKey(dto.fileName);
         const uploadId = await this.storageService.createMultipartUpload(
             dto.fileName, dto.contentType);
         return { uploadId };
@@ -65,6 +79,9 @@ export class RecordingsController {
 
     @Post('upload/complete')
     async completeUpload(@Body() dto: CompleteUploadDto) {
+        // Checked again here: completing is what writes the object, and the
+        // key may have been filled since the upload was opened.
+        await this.refuseExistingKey(dto.fileName);
         await this.storageService.completeMultipartUpload(
             dto.fileName, dto.uploadId, dto.parts);
         return { fileUrl: dto.fileName };
