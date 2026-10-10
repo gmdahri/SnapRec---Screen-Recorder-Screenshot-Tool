@@ -20,8 +20,8 @@ const id = params.get('id') || '';
  * exactly as before. */
 const kind = params.get('kind') === 'image' ? 'image' : 'video';
 const KEYS = kind === 'image'
-    ? { blob: 'latest_image_blob', meta: 'latest_image_meta', type: 'SNAPREC_EDIT_IMAGE' }
-    : { blob: 'latest_video_blob', meta: 'latest_metadata', type: 'SNAPREC_VIDEO_DATA' };
+    ? { blob: 'latest_image_blob', meta: 'latest_image_meta', id: 'latest_image_id', type: 'SNAPREC_EDIT_IMAGE' }
+    : { blob: 'latest_video_blob', meta: 'latest_metadata', id: 'latest_id', type: 'SNAPREC_VIDEO_DATA' };
 
 function readParked() {
     return new Promise((resolve, reject) => {
@@ -42,13 +42,15 @@ function readParked() {
             }
             const store = db.transaction(['recordings'], 'readonly').objectStore('recordings');
             const blobReq = store.get(KEYS.blob);
+            const idReq = store.get(KEYS.id);
             blobReq.onsuccess = () => {
                 const metaReq = store.get(KEYS.meta);
                 metaReq.onsuccess = () => resolve({
                     blob: blobReq.result instanceof Blob ? blobReq.result : null,
+                    parkedId: idReq.result ?? null,
                     metadataStr: metaReq.result ?? null,
                 });
-                metaReq.onerror = () => resolve({ blob: blobReq.result ?? null, metadataStr: null });
+                metaReq.onerror = () => resolve({ blob: blobReq.result ?? null, parkedId: idReq.result ?? null, metadataStr: null });
             };
             blobReq.onerror = () => reject(new Error('read failed'));
         };
@@ -80,8 +82,17 @@ const MAX_ATTEMPTS = 40;
 
 (async () => {
     try {
-        const { blob, metadataStr } = await readParked();
+        const { blob, parkedId, metadataStr } = await readParked();
         if (!blob) throw new Error('nothing parked');
+        /* Only the capture this frame was sent for. One slot holds the latest
+         * capture: if this one was never parked (its save failed) or a newer
+         * one has replaced it, the slot holds someone else's recording —
+         * never delivered in its place, and not reported as a failed
+         * handoff either, which would save that other recording to disk. */
+        if (id && parkedId !== id) {
+            console.error('[Handoff] The parked capture belongs to another recording; not delivering it');
+            return;
+        }
 
         for (let attempt = 0; attempt < MAX_ATTEMPTS && !acknowledged; attempt++) {
             parent.postMessage(

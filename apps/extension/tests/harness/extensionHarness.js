@@ -68,7 +68,10 @@ function storageArea(map) {
     };
 }
 
-export function createHarness({ log = false } = {}) {
+/** `tabLoadMs`: how long a new tab takes to report "complete". A page that
+ * loads faster than the extension finishes parking a capture is the race
+ * behind "the share page never got the recording". */
+export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
     const shared = {
         local: new Map(),
         session: new Map(),
@@ -76,6 +79,20 @@ export function createHarness({ log = false } = {}) {
     };
     const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map(), rows: new Map(), refusedTokens: new Set() };
     const notifications = [];
+    /** Every handoff-frame injection: which tab, which frame URL, and whether
+     * a capture was parked under that id at the moment it was injected. */
+    const injections = [];
+    const downloads = [];
+    const parkedId = () => new Promise((resolve) => {
+        const request = shared.idb.open('SnapRecDB', 2);
+        request.onupgradeneeded = (e) => e.target.result.createObjectStore('recordings');
+        request.onsuccess = (e) => {
+            const get = e.target.result.transaction(['recordings']).objectStore('recordings').get('latest_id');
+            get.onsuccess = () => resolve(get.result ?? null);
+            get.onerror = () => resolve(null);
+        };
+        request.onerror = () => resolve(null);
+    });
     const contexts = {};      // name -> { sandbox, listeners, timers, alive }
     let tabSeq = 100;
     const tabs = [];
@@ -241,22 +258,47 @@ export function createHarness({ log = false } = {}) {
             tabs: {
                 ...tabsEvents,
                 query: async () => [{ id: 1, url: 'https://example.com/', active: true, windowId: 1 }, ...tabs],
-                get: async (id) => tabs.find((t) => t.id === id) ?? { id, url: 'https://example.com/', status: 'complete' },
+                get: async (id) => {
+                    const tab = tabs.find((t) => t.id === id);
+                    if (tab) return { ...tab };
+                    if (id === 1) return { id, url: 'https://example.com/', status: 'complete' };
+                    throw new Error(`No tab with id: ${id}.`);
+                },
                 create: async ({ url }) => {
                     const tab = { id: ++tabSeq, url, status: 'loading', windowId: 1 };
                     tabs.push(tab);
                     setTimeout(() => {
+                        if (tab.removed) return;
                         tab.status = 'complete';
                         for (const c of Object.values(contexts)) {
                             if (c.alive && c.tabsEvents) c.tabsEvents.onUpdated.listeners.slice().forEach((fn) => fn(tab.id, { status: 'complete' }, tab));
                         }
-                    }, 5);
-                    return tab;
+                    }, tabLoadMs);
+                    return { ...tab };
+                },
+                remove: async (id) => {
+                    const tab = tabs.find((t) => t.id === id);
+                    if (!tab) return;
+                    tab.removed = true;
+                    tabs.splice(tabs.indexOf(tab), 1);
+                    for (const c of Object.values(contexts)) {
+                        if (c.alive && c.tabsEvents) c.tabsEvents.onRemoved.listeners.slice().forEach((fn) => fn(id, {}));
+                    }
                 },
                 sendMessage: (...args) => { const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null; if (cb) { cb(undefined); return undefined; } return Promise.resolve(undefined); },
                 captureVisibleTab: async () => 'data:image/png;base64,',
             },
-            scripting: { executeScript: async () => [{ result: undefined }], insertCSS: async () => {} },
+            scripting: {
+                executeScript: async (details) => {
+                    const frameUrl = details.args?.[0];
+                    if (typeof frameUrl === 'string' && frameUrl.includes('handoff/handoff.html')) {
+                        const wanted = new URL(frameUrl).searchParams.get('id');
+                        injections.push({ tabId: details.target.tabId, frameUrl, parkedAtInjection: (await parkedId()) === wanted });
+                    }
+                    return [{ result: undefined }];
+                },
+                insertCSS: async () => {},
+            },
             notifications: {
                 create: (...a) => {
                     const id = typeof a[0] === 'string' ? a[0] : `n${notifications.length + 1}`;
@@ -266,7 +308,19 @@ export function createHarness({ log = false } = {}) {
                 },
                 clear: async () => {}, onClicked: makeEvent(), onButtonClicked: makeEvent(),
             },
-            downloads: { download: (opts, cb) => cb?.(1), onChanged: makeEvent() },
+            downloads: (() => {
+                const onChanged = makeEvent();
+                return {
+                    onChanged,
+                    // Starts, then reports "complete" a moment later, as Chrome does.
+                    download: (opts, cb) => {
+                        const id = downloads.length + 1;
+                        downloads.push({ id, ...opts });
+                        cb?.(id);
+                        setTimeout(() => onChanged.listeners.slice().forEach((fn) => fn({ id, state: { current: 'complete' } })), 1);
+                    },
+                };
+            })(),
             alarms: { create: () => {}, clear: async () => true, get: async () => undefined, onAlarm: makeEvent() },
             contextMenus: inert(),
             commands: inert(),
@@ -410,7 +464,7 @@ export function createHarness({ log = false } = {}) {
     bootWorker();
 
     return {
-        shared, net, contexts, tabs, notifications,
+        shared, net, contexts, tabs, notifications, injections, downloads,
         API, R2,
         bootWorker,
         /** What Chrome does after 30 s without an event. The next message boots a new one. */

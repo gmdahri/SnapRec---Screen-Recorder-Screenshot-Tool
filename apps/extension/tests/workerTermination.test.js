@@ -299,3 +299,52 @@ describe('a session that has expired', () => {
         expect(sessionNotice()).toEqual([]);
     });
 });
+
+/** The share page must receive the recording however fast it loads.
+ *
+ * The extension opens /v, saves the capture to IndexedDB, and injects the
+ * handoff frame once the tab reports "complete". It used to start listening
+ * for "complete" only after the save — so a long recording, whose save took
+ * longer than the page took to load, missed the one event it was waiting
+ * for: no frame, no recording, "Preparing your recording…" for ever.
+ * Reproduced in Chrome with a real 36-minute, 2.9 GB recording. */
+describe('handing the recording to the share page', () => {
+    async function recordAndStop(opts) {
+        h = createHarness(opts);
+        await h.sw('startRecording({ microphone: false, systemAudio: false })');
+        await h.waitFor(() => h.recorder()?.state === 'recording', { what: 'recorder to start' });
+        await h.settle();
+        await record(3);
+        await h.fromContent({ action: 'stopRecording' }).catch(() => {});
+        await h.waitFor(() => h.tabs.some((t) => t.url.includes('/v')) || h.downloads.length > 0, { what: 'the share tab' });
+        await h.settle(300);
+    }
+
+    it('a page that loads before the capture is saved still gets the frame — once, and only after the save', async () => {
+        await recordAndStop({ tabLoadMs: 0 });
+        expect(h.injections).toHaveLength(1);
+        expect(h.injections[0].parkedAtInjection).toBe(true);
+    });
+
+    it('a page that loads after the save gets it too', async () => {
+        await recordAndStop({ tabLoadMs: 40 });
+        expect(h.injections).toHaveLength(1);
+        expect(h.injections[0].parkedAtInjection).toBe(true);
+    });
+
+    it('if the capture cannot be saved, it goes to Downloads before the recorder closes, and no frame is injected', async () => {
+        h = createHarness({ tabLoadMs: 0 });
+        await h.sw('startRecording({ microphone: false, systemAudio: false })');
+        await h.waitFor(() => h.recorder()?.state === 'recording', { what: 'recorder to start' });
+        h.offscreen('persistForHandoff = async () => { throw new Error("QuotaExceededError") }');
+        await record(3);
+        await h.fromContent({ action: 'stopRecording' }).catch(() => {});
+        await h.waitFor(() => h.downloads.length > 0, { what: 'the disk copy' });
+        await h.settle(300);
+
+        expect(h.downloads).toEqual([expect.objectContaining({ filename: expect.stringMatching(/^SnapRec\//) })]);
+        expect(h.injections).toEqual([]);                     // nothing parked to deliver
+        expect(h.tabs.some((t) => t.url.includes('/v'))).toBe(false);   // the empty share tab is closed
+        expect(h.notifications.map((n) => n.id)).toContain('snaprec-handoff-fallback');
+    });
+});

@@ -1438,6 +1438,67 @@ async function abortStreamingUpload() {
         .catch(() => { /* nothing to abort, or nobody to ask */ });
 }
 
+/** Resolves true once the tab has loaded, false if it is closed first.
+ *
+ * Checks the tab's current state as well as listening, because by the time
+ * anything awaits this the page may already have finished: "complete" fires
+ * once, and a listener added after it never hears it. `cancel()` stops
+ * watching without injecting anything. */
+function whenTabLoaded(tabId) {
+    let finish;
+    const loaded = new Promise((resolve) => {
+        let done = false;
+        const onUpdated = (id, info) => { if (id === tabId && info.status === 'complete') finish(true); };
+        const onRemoved = (id) => { if (id === tabId) finish(false); };
+        finish = (ok) => {
+            if (done) return;
+            done = true;
+            chrome.tabs.onUpdated.removeListener(onUpdated);
+            chrome.tabs.onRemoved.removeListener(onRemoved);
+            resolve(ok);
+        };
+        chrome.tabs.onUpdated.addListener(onUpdated);
+        chrome.tabs.onRemoved.addListener(onRemoved);
+        chrome.tabs.get(tabId).then(
+            (t) => { if (t.status === 'complete') finish(true); },
+            () => finish(false),
+        );
+    });
+    loaded.cancel = () => finish(false);
+    return loaded;
+}
+
+async function injectHandoffFrame(tabId, frameUrl) {
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: (src) => {
+                const frame = document.createElement('iframe');
+                frame.src = src;
+                frame.setAttribute('aria-hidden', 'true');
+                frame.style.cssText =
+                    'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none';
+                document.documentElement.appendChild(frame);
+            },
+            args: [frameUrl],
+        });
+        console.log('[SnapRec] Handoff frame injected');
+    } catch (err) {
+        console.error('[SnapRec] Could not inject handoff frame:', err.message);
+    }
+}
+
+function notifySavedToDisk(filename) {
+    chrome.notifications.create('snaprec-handoff-fallback', {
+        type: 'basic',
+        iconUrl: '../icons/icon128.png',
+        title: 'Saved to your Downloads folder',
+        message: `SnapRec could not open your capture in the app, so it was `
+            + `saved as ${filename.replace(/^.*\//, '')} instead.`,
+        priority: 2,
+    });
+}
+
 async function handleRecordingComplete() {
     console.log('[SnapRec] handleRecordingComplete called (local-first)');
 
@@ -1511,6 +1572,12 @@ async function handleRecordingComplete() {
          * the offscreen document no longer destroys it. */
         const savedFile = null;
 
+        /* Watched from now, not after the save below. The save can take longer
+         * than the page takes to load — seconds, for a long recording — and
+         * "complete" fires once: a listener added after it never fires, so the
+         * frame was never injected and the page waited for ever. */
+        const tabLoaded = whenTabLoaded(tab.id);
+
         /* Park the capture, then close the recorder. Once the blob is in
          * extension-origin IndexedDB it no longer depends on the offscreen
          * document staying alive, which removes the race this code used to
@@ -1523,38 +1590,26 @@ async function handleRecordingComplete() {
         }).catch((e) => ({ success: false, error: e.message }));
 
         if (!parked?.success) {
+            /* Nothing was parked, so there is nothing for the share page to
+             * receive — and the offscreen document, about to be closed, holds
+             * the only copy. This is the last moment it can be saved. */
             console.error('[SnapRec] Could not park capture for handoff:', parked?.error);
+            const saved = await saveRecordingToDisk();
+            tabLoaded.cancel();
+            chrome.tabs.remove(tab.id).catch(() => { /* already closed */ });
+            await finalizeCleanup();
+            if (saved) notifySavedToDisk(saved.filename);
+            return;
         }
         await finalizeCleanup();
 
         /* The courier is same-origin with the parked blob and can hand it to
-         * the page by reference. Injected on tab load rather than immediately:
-         * an about:blank tab has no document to append to yet. */
+         * the page by reference. Injected once the capture is parked AND the
+         * page has loaded — an about:blank tab has no document to append to —
+         * whichever of the two happens last. */
         const frameUrl = chrome.runtime.getURL(
             `handoff/handoff.html?id=${encodeURIComponent(recordingId)}`);
-
-        const listener = async (tabId, info) => {
-            if (tabId !== tab.id || info.status !== 'complete') return;
-            chrome.tabs.onUpdated.removeListener(listener);
-            try {
-                await chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: (src) => {
-                        const frame = document.createElement('iframe');
-                        frame.src = src;
-                        frame.setAttribute('aria-hidden', 'true');
-                        frame.style.cssText =
-                            'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none';
-                        document.documentElement.appendChild(frame);
-                    },
-                    args: [frameUrl],
-                });
-                console.log('[SnapRec] Handoff frame injected');
-            } catch (err) {
-                console.error('[SnapRec] Could not inject handoff frame:', err.message);
-            }
-        };
-        chrome.tabs.onUpdated.addListener(listener);
+        tabLoaded.then((loaded) => { if (loaded) injectHandoffFrame(tab.id, frameUrl); });
 
         /* The popup's completion view has existed since the plate redesign and
          * has never once been reachable: nothing sent captureFinished. This is
@@ -1610,17 +1665,7 @@ chrome.runtime.onMessage.addListener((message) => {
         return result;
     })();
 
-    save.then((saved) => {
-        if (!saved) return;
-        chrome.notifications.create('snaprec-handoff-fallback', {
-            type: 'basic',
-            iconUrl: '../icons/icon128.png',
-            title: 'Saved to your Downloads folder',
-            message: `SnapRec could not open your capture in the app, so it was `
-                + `saved as ${saved.filename.replace(/^.*\//, '')} instead.`,
-            priority: 2,
-        });
-    });
+    save.then((saved) => { if (saved) notifySavedToDisk(saved.filename); });
 });
 
 // Separate listener for upload completion and audio warnings from offscreen document
