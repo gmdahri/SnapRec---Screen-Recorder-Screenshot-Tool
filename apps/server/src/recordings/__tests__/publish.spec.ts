@@ -26,6 +26,7 @@ function makeService(over: { owner?: string | null; comments?: any[]; durationSe
     // No other recording holds the published key (see assertKeyAvailable).
     find: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockImplementation(async (r: unknown) => r),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
   };
   const service = new RecordingsService(
     recordings as any, {} as any, {} as any, {} as any,
@@ -133,5 +134,18 @@ describe('comments left pointing past the new end', () => {
     const { service } = makeService({ comments, durationSec: 0 });
     const { staleComments } = await service.publish(ID, { fileUrl: 'new.webm' }, OWNER);
     expect(staleComments).toBe(0);
+  });
+});
+
+/** Publishing writes the columns it changes and nothing else.
+ *
+ * Saving the loaded row wrote every column of a possibly stale copy back, so
+ * views counted while the editor was publishing were lost. */
+describe('what publishing writes', () => {
+  it('only the new file and length, never the whole row', async () => {
+    const { service, recordings } = makeService();
+    await service.publish(ID, { fileUrl: 'new.webm', durationSec: 91 }, OWNER);
+    expect(recordings.save).not.toHaveBeenCalled();
+    expect(recordings.update).toHaveBeenCalledWith(ID, { fileUrl: 'new.webm', durationSec: 91 });
   });
 });

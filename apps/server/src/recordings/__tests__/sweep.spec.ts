@@ -7,12 +7,20 @@ import { RecordingsService } from '../recordings.service';
  * it useless: deleting the R2 object as well as the row, and never wedging on
  * an object that has already gone. */
 
-function serviceWithRows(rows: any[]) {
+function serviceWithRows(rows: any[], { beforeDelete }: { beforeDelete?: () => void } = {}) {
   const deletedKeys: string[] = [];
   const removed: any[] = [];
   const repo = {
-    find: async () => rows,
-    remove: async (r: any[]) => { removed.push(...r); return r; },
+    find: async () => rows.map((r) => ({ ...r })),
+    // DELETE … WHERE id = $1 AND "expiresAt" < $2, as the sweep issues it.
+    delete: async (where: any) => {
+      beforeDelete?.();
+      const cutoff = where.expiresAt.value ?? where.expiresAt._value;
+      const i = rows.findIndex((r) => r.id === where.id && r.expiresAt && r.expiresAt < cutoff);
+      if (i < 0) return { affected: 0 };
+      removed.push(...rows.splice(i, 1));
+      return { affected: 1 };
+    },
   };
   const storage = { deleteObject: async (k: string) => { deletedKeys.push(k); } };
   // Positional, matching the constructor exactly: recordings, reactions,
@@ -48,5 +56,17 @@ describe('sweepExpired', () => {
     (svc as any).storageService.deleteObject = async () => { throw new Error('404'); };
     expect((await svc.sweepExpired(new Date('2026-01-02'))).deleted).toBe(1);
     expect(removed).toHaveLength(1);
+  });
+
+  it('spares a recording claimed between reading it and deleting it — row and file', async () => {
+    const row: any = { id: 'r1', fileUrl: 'video-1.webm', expiresAt: new Date('2026-01-01') };
+    // The guest signs in and claims it while the sweep is running.
+    const { svc, deletedKeys, removed } = serviceWithRows([row], {
+      beforeDelete: () => { row.expiresAt = null; row.user = { supabaseId: 'sb-1' }; },
+    });
+    const result = await svc.sweepExpired(new Date('2026-01-02'));
+    expect(result.deleted).toBe(0);
+    expect(removed).toEqual([]);
+    expect(deletedKeys).toEqual([]);
   });
 });

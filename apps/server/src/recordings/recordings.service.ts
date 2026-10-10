@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, ConflictException, L
 import { StorageService } from '../storage/storage.service';
 import { expiresAtForUpload } from './expiry';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan } from 'typeorm';
+import { Repository, In, IsNull, LessThan } from 'typeorm';
 import { Recording } from './entities/recording.entity';
 import { Reaction } from './entities/reaction.entity';
 import { Comment } from './entities/comment.entity';
@@ -27,7 +27,12 @@ export class RecordingsService {
      *
      * Runs every five minutes against a one-hour window. A failure to remove
      * the R2 object must not stop the row going: a stuck sweep would let rows
-     * accumulate silently, which is exactly what this exists to prevent. */
+     * accumulate silently, which is exactly what this exists to prevent.
+     *
+     * Each row is deleted only if it is *still* expired when the DELETE runs,
+     * and its file only once that DELETE removed it. Reading the expired rows
+     * and then removing them unconditionally deleted a recording — and its
+     * file — that its guest had claimed in between. */
     async sweepExpired(now: Date = new Date()): Promise<{ deleted: number }> {
         const due = await this.recordingsRepository.find({
             where: { expiresAt: LessThan(now) },
@@ -43,7 +48,13 @@ export class RecordingsService {
         });
         const stillUsed = new Set(sharers.filter((r) => !dueIds.has(r.id)).map((r) => r.fileUrl));
 
+        let deleted = 0;
         for (const recording of due) {
+            const { affected } = await this.recordingsRepository.delete({
+                id: recording.id, expiresAt: LessThan(now),
+            });
+            if (!affected) continue; // claimed since the read: not ours to delete
+            deleted++;
             if (stillUsed.has(recording.fileUrl)) {
                 this.logger.warn(`Sweep: kept ${recording.fileUrl}, still used by another recording`);
                 continue;
@@ -55,8 +66,7 @@ export class RecordingsService {
                     `Sweep: could not delete ${recording.fileUrl}: ${(e as Error).message}`);
             }
         }
-        await this.recordingsRepository.remove(due);
-        return { deleted: due.length };
+        return { deleted };
     }
 
     constructor(
@@ -195,8 +205,12 @@ export class RecordingsService {
         });
 
         if (recording) {
+            // UPDATE … SET views = views + 1, and nothing else. Saving the loaded
+            // row wrote every column of a possibly stale copy back: a claim that
+            // landed between this read and that save was undone, and the sweep
+            // then deleted the recording its owner had just claimed.
+            await this.recordingsRepository.increment({ id }, 'views', 1);
             recording.views += 1;
-            await this.recordingsRepository.save(recording);
         }
 
         return recording;
@@ -350,27 +364,32 @@ export class RecordingsService {
         });
 
         for (const recording of recordings) {
-            const alreadyMine = recording.user?.supabaseId === userId;
-            const ownerless = recording.user === null || recording.user === undefined;
+            if (recording.user?.supabaseId === userId) {
+                claimed.push(recording.id);
+                continue;
+            }
+            if (recording.user) continue; // another user's
 
             // An ownerless row is only claimable when it is provably this
             // guest's, or when it predates the guestId column entirely.
             const isThisGuests = recording.guestId
                 ? recording.guestId === guestId
                 : true;
+            if (!isThisGuests) continue;
 
-            if (alreadyMine || (ownerless && isThisGuests)) {
-                recording.user = user;
-                // Claiming is what makes a recording permanent — this is the
-                // line that saves it from the sweep.
-                recording.expiresAt = null;
-                recording.guestId = null;
-                claimed.push(recording.id);
-            }
-            // Else: belongs to another user or another guest; skip.
+            /* The conditions travel with the write: still ownerless, still the
+             * same guest. Saving the loaded rows instead wrote every stale
+             * column back (a view counted meanwhile was lost) and let two
+             * concurrent claims both "win". Claiming is what makes a recording
+             * permanent — expiresAt null is the line that saves it from the
+             * sweep. */
+            const { affected } = await this.recordingsRepository.update(
+                { id: recording.id, user: IsNull(), guestId: recording.guestId ?? IsNull() },
+                { user: { id: user.id }, guestId: null, expiresAt: null },
+            );
+            if (affected) claimed.push(recording.id);
         }
 
-        await this.recordingsRepository.save(recordings);
         return { claimed };
     }
 
@@ -474,10 +493,9 @@ export class RecordingsService {
         }
 
         await this.assertKeyAvailable(dto.fileUrl, id);
-        recording.fileUrl = dto.fileUrl;
-        if (typeof dto.durationSec === 'number') {
-            recording.durationSec = dto.durationSec;
-        }
+        const changes: Partial<Recording> = { fileUrl: dto.fileUrl };
+        if (typeof dto.durationSec === 'number') changes.durationSec = dto.durationSec;
+        Object.assign(recording, changes);
 
         // Counted before saving so the number describes the change being made.
         const endMs = (dto.durationSec ?? recording.durationSec ?? 0) * 1000;
@@ -487,9 +505,10 @@ export class RecordingsService {
             ).length
             : 0;
 
-        const saved = await this.recordingsRepository.save(recording);
+        // Only the columns being changed: see update().
+        await this.recordingsRepository.update(id, changes);
         this.logger.log(`Published over recording ${id}; ${staleComments} comment(s) now past the end`);
-        return { recording: saved, staleComments };
+        return { recording, staleComments };
     }
 
     async update(id: string, updateRecordingDto: UpdateRecordingDto, userId: string): Promise<Recording> {
@@ -506,22 +525,27 @@ export class RecordingsService {
             throw new ForbiddenException('You do not have permission to update this recording');
         }
 
+        const changes: Partial<Recording> = {};
         if (updateRecordingDto.title) {
-            recording.title = updateRecordingDto.title;
+            changes.title = updateRecordingDto.title;
         }
 
         if (updateRecordingDto.fileUrl) {
             await this.assertKeyAvailable(updateRecordingDto.fileUrl, id);
-            recording.fileUrl = updateRecordingDto.fileUrl;
+            changes.fileUrl = updateRecordingDto.fileUrl;
         }
 
         // `!== undefined`, not truthiness: an empty string is how a description
         // is cleared, and a truthy check would make removing one impossible.
         if (updateRecordingDto.description !== undefined) {
-            recording.description = updateRecordingDto.description;
+            changes.description = updateRecordingDto.description;
         }
 
-        return this.recordingsRepository.save(recording);
+        /* Only the columns being changed. Saving the loaded row wrote every
+         * column of a possibly stale copy back, so views counted meanwhile
+         * were lost. */
+        if (Object.keys(changes).length) await this.recordingsRepository.update(id, changes);
+        return Object.assign(recording, changes);
     }
 
     async delete(id: string, userId: string): Promise<{ success: boolean }> {

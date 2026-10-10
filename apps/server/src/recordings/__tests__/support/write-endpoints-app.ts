@@ -38,6 +38,7 @@ function matches(row: any, where: any): boolean {
             const op = (v as any).type ?? (v as any)._type;
             const value = (v as any).value ?? (v as any)._value;
             if (op === 'in') return (value as any[]).includes(actual);
+            if (op === 'isNull') return actual === null || actual === undefined;
             if (op === 'lessThan') return actual != null && actual < value;
             throw new Error(`fake repo: unsupported operator ${op}`);
         }
@@ -46,7 +47,7 @@ function matches(row: any, where: any): boolean {
     });
 }
 
-function table(name: string, db: Db) {
+function table(name: string, db: Db, resolveUser: (id: string) => any = () => undefined) {
     const rows = new Map<string, any>();
     const defined = (o: any) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
     const withRelations = (row: any, relations: string[] = []) => {
@@ -96,6 +97,28 @@ function table(name: string, db: Db) {
             for (const e of Array.isArray(entity) ? entity : [entity]) rows.delete(e.id);
             return entity;
         },
+        // UPDATE … WHERE <criteria>: only the matching rows, only the given
+        // columns. A relation set by id reads back as the full row, as it
+        // does from the database.
+        update: async (criteria: any, patch: any) => {
+            const where = typeof criteria === 'string' ? { id: criteria } : criteria;
+            const hits = [...rows.values()].filter((r) => matches(r, where));
+            const resolved = { ...patch };
+            if (resolved.user?.id && !resolved.user.supabaseId) resolved.user = resolveUser(resolved.user.id) ?? resolved.user;
+            for (const r of hits) Object.assign(r, resolved);
+            return { affected: hits.length, raw: [], generatedMaps: [] };
+        },
+        increment: async (criteria: any, column: string, by: number) => {
+            const hits = [...rows.values()].filter((r) => matches(r, criteria));
+            for (const r of hits) r[column] = (r[column] ?? 0) + by;
+            return { affected: hits.length, raw: [], generatedMaps: [] };
+        },
+        delete: async (criteria: any) => {
+            const where = typeof criteria === 'string' ? { id: criteria } : criteria;
+            const hits = [...rows.values()].filter((r) => matches(r, where));
+            for (const r of hits) rows.delete(r.id);
+            return { affected: hits.length, raw: [] };
+        },
     };
 }
 
@@ -139,7 +162,8 @@ export async function writeEndpointsApp() {
     process.env.SUPABASE_URL = `http://127.0.0.1:${(jwks.address() as any).port}`;
 
     const db = {} as Db;
-    db.recordings = table('recordings', db);
+    const usersById = new Map<string, any>();
+    db.recordings = table('recordings', db, (id) => usersById.get(id));
     db.reactions = table('reactions', db);
     db.comments = table('comments', db);
     db.views = table('views', db);
@@ -147,7 +171,7 @@ export async function writeEndpointsApp() {
     // Full rows, as UsersService returns them: the internal id, the auth id,
     // the email and the display fields all travel with every relation.
     const users = {
-        findOrCreateBySupabaseId: async (supabaseId: string) => ({
+        findOrCreateBySupabaseId: async (supabaseId: string) => remember({
             id: `row-${supabaseId}`, supabaseId, email: `${supabaseId}@example.com`,
             // Display fields deliberately do not contain the ids, so a test can
             // tell a leaked id from a legitimately shown name.
@@ -155,6 +179,7 @@ export async function writeEndpointsApp() {
             createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
         }),
     };
+    function remember(user: any) { usersById.set(user.id, user); return user; }
 
     const mod = await Test.createTestingModule({
         imports: [ConfigModule.forRoot({ ignoreEnvFile: true }), PassportModule],
