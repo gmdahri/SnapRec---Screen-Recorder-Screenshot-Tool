@@ -420,16 +420,6 @@ export class RecordingsService {
 
         const user = await this.usersService.findOrCreateBySupabaseId(actorSupabaseId, userMeta);
 
-        let view = await this.viewsRepository.findOne({
-            where: { recording: { id: recordingId }, user: { id: user.id } },
-            relations: ['recording', 'user'],
-        });
-        if (!view) {
-            view = this.viewsRepository.create({
-                recording, user, watchedRangesJson: [], coveredSec: 0,
-            });
-        }
-
         // Clamped to the clip: a client reporting past the end would otherwise
         // push coverage above 100%, which is arithmetically impossible and
         // would hide a real bug behind a clamp at the display layer.
@@ -441,14 +431,41 @@ export class RecordingsService {
             }))
             .filter((r) => r.endSec > r.startSec);
 
-        const merged = mergeIntervals([...(view.watchedRangesJson ?? []), ...incoming]);
-        view.watchedRangesJson = merged;
-        view.coveredSec = Math.round(
-            merged.reduce((sum, r) => sum + (r.endSec - r.startSec), 0),
-        );
+        /* One transaction per heartbeat, serialised on the viewer's row.
+         *
+         * It used to read the row, merge in memory and save it back, so two
+         * heartbeats in flight together each wrote their own merge over the
+         * other's and ranges were lost; and two *first* heartbeats both found
+         * no row and both inserted, so all but one failed on the unique
+         * constraint. Now: make sure the row exists (ON CONFLICT DO NOTHING —
+         * a concurrent first heartbeat is not an error), lock it (FOR UPDATE —
+         * the next heartbeat waits here and then reads this one's merge), and
+         * write back only the two columns that changed. */
+        const coveredSec = await this.viewsRepository.manager.transaction(async (m) => {
+            await m.query(
+                `INSERT INTO "sr_recording_views" ("recordingId", "userId")
+                 VALUES ($1, $2)
+                 ON CONFLICT ON CONSTRAINT "UQ_sr_recording_views_recording_user" DO NOTHING`,
+                [recordingId, user.id],
+            );
+            const [row] = await m.query(
+                `SELECT "id", "watchedRangesJson" FROM "sr_recording_views"
+                 WHERE "recordingId" = $1 AND "userId" = $2
+                 FOR UPDATE`,
+                [recordingId, user.id],
+            );
+            const merged = mergeIntervals([...(row.watchedRangesJson ?? []), ...incoming]);
+            const covered = Math.round(merged.reduce((sum, r) => sum + (r.endSec - r.startSec), 0));
+            await m.query(
+                `UPDATE "sr_recording_views"
+                 SET "watchedRangesJson" = $1, "coveredSec" = $2, "lastSeenAt" = now()
+                 WHERE "id" = $3`,
+                [JSON.stringify(merged), covered, row.id],
+            );
+            return covered;
+        });
 
-        await this.viewsRepository.save(view);
-        return { coveredSec: view.coveredSec, recorded: true };
+        return { coveredSec, recorded: true };
     }
 
     /** Mean coverage across signed-in viewers, 0–100, or null when nobody

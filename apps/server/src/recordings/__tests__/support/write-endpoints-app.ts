@@ -167,6 +167,29 @@ export async function writeEndpointsApp() {
     db.reactions = table('reactions', db);
     db.comments = table('comments', db);
     db.views = table('views', db);
+    // recordWatchProgress runs as one transaction of three statements on
+    // sr_recording_views; this answers them against the same rows. Locking is
+    // modelled in watch-progress.spec.ts, which is where concurrency is tested.
+    (db.views as any).manager = {
+        transaction: async (work: (m: any) => Promise<unknown>) => work({
+            query: async (sql: string, params: any[]) => {
+                const key = (rid: string, uid: string) => [...db.views.rows.values()]
+                    .find((v) => v.recordingId === rid && v.userId === uid);
+                if (sql.includes('INSERT INTO')) {
+                    if (!key(params[0], params[1])) {
+                        await db.views.insert({ recordingId: params[0], userId: params[1], watchedRangesJson: [], coveredSec: 0 });
+                    }
+                    return [];
+                }
+                if (sql.includes('FOR UPDATE')) return [key(params[0], params[1])].filter(Boolean);
+                if (sql.trim().startsWith('UPDATE')) {
+                    Object.assign(db.views.rows.get(params[2]), { watchedRangesJson: JSON.parse(params[0]), coveredSec: params[1] });
+                    return [];
+                }
+                throw new Error(`fake: unexpected SQL ${sql}`);
+            },
+        }),
+    };
     const r2 = bucket();
     // Full rows, as UsersService returns them: the internal id, the auth id,
     // the email and the display fields all travel with every relation.
