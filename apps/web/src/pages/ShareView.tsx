@@ -332,7 +332,7 @@ const ShareView: React.FC = () => {
         viewTrackedFor.current = key;
         capture('share_page_viewed', {
             content_type: recordingData?.type ?? 'unknown',
-            is_owner: Boolean(user && recordingData?.user?.supabaseId === user.id),
+            is_owner: Boolean(user && recordingData?.viewerIsOwner),
         });
         // recordingData is deliberately not a dependency: this fires on arrival,
         // not again when the payload resolves.
@@ -563,7 +563,9 @@ const ShareView: React.FC = () => {
             description: '',
             thumbnailUrl: '',
             location: '',
-            user: null
+            user: null,
+            // Nothing on the server yet, so nobody owns it from the server's point of view.
+            viewerIsOwner: false
         } : null);
 
         if (!base) return null;
@@ -771,7 +773,7 @@ const ShareView: React.FC = () => {
         setVideoEditorLoading(true);
         try {
             let recordingId: string | null = null;
-            if (isValidId && recording?.user?.supabaseId === user.id) {
+            if (isValidId && recording?.viewerIsOwner) {
                 recordingId = id!;
             } else if (isValidId && isUploaded) {
                 recordingId = id!;
@@ -830,7 +832,7 @@ const ShareView: React.FC = () => {
     // Show "Save to your account" only for guest recordings (no owner) or recordings already owned by current user
     const canSaveToAccount =
         recordingData &&
-        (!recordingData.user || (user && recordingData.user.supabaseId === user.id));
+        (!recordingData.user || (user && recordingData.viewerIsOwner));
 
 
 
@@ -984,9 +986,9 @@ const ShareView: React.FC = () => {
                         views: recording.views,
                         watchedPercent: (recording as { watchedPercent?: number | null })
                             .watchedPercent ?? null,
-                        canEdit: !!user && recording.user?.supabaseId === user.id,
+                        canEdit: !!user && !!recording.viewerIsOwner,
                     }}
-                    comments={toShareComments(recording, recording.user?.supabaseId)}
+                    comments={toShareComments(recording)}
                     currentMs={Math.round(sharePlayheadSec * 1000)}
                     onSeek={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
                     /* Commenting needs an account. Refusing returns false, so
@@ -1023,7 +1025,7 @@ const ShareView: React.FC = () => {
                        Navigating with the recording id 404s the editor. */
                     onEdit={handleOpenVideoEditor}
                     onDescriptionChange={
-                        user && recording.user?.supabaseId === user.id
+                        user && recording.viewerIsOwner
                             ? (description: string) =>
                                 updateRecording.mutate({ id: recording.id, data: { description } })
                             : undefined
@@ -1040,9 +1042,9 @@ const ShareView: React.FC = () => {
                        anyone else would only earn them a 403. */
                     canResolve={(c) => {
                         if (!user) return false;
-                        if (recording.user?.supabaseId === user.id) return true;
+                        if (recording.viewerIsOwner) return true;
                         const source = recording.comments?.find((rc) => rc.id === c.id);
-                        return source?.user?.supabaseId === user.id;
+                        return !!source?.viewerIsAuthor;
                     }}
                     onDownload={handleDownload}
                     player={
@@ -1061,7 +1063,7 @@ const ShareView: React.FC = () => {
                                 // accumulate coverage it did not watch.
                                 if (p.playing) observeWatched(p.currentTime);
                             }}
-                            markers={toShareComments(recording, recording.user?.supabaseId)
+                            markers={toShareComments(recording)
                                 .filter(c => c.anchor.kind === 'timecode')
                                 .map(c => ({
                                     id: c.id,
@@ -1115,7 +1117,7 @@ const ShareView: React.FC = () => {
                     disabled={claimMutation.isPending}
                     className="inline-flex items-center gap-2 h-[30px] px-3.5 border border-[var(--sr-border-light)] rounded-[2px] text-[12.5px] font-medium text-[var(--sr-text-secondary-on-light)] hover:border-[var(--sr-text-primary-on-light)] transition-colors disabled:opacity-40"
                 >
-                    {claimMutation.isPending ? 'Saving...' : (user && recordingData?.user?.supabaseId === user.id ? 'Saved in account' : 'Save to your account')}
+                    {claimMutation.isPending ? 'Saving...' : (user && recordingData?.viewerIsOwner ? 'Saved in account' : 'Save to your account')}
                 </button>
             ) : null}
         </div>
@@ -1300,7 +1302,7 @@ const ShareView: React.FC = () => {
                                             curious: 'help'
                                         };
                                         const isActive = (recordingData.reactions || []).some(r =>
-                                            user && r.user?.supabaseId === user.id
+                                            user && r.viewerReacted
                                         );
 
                                         return (

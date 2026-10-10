@@ -21,6 +21,7 @@ import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { LenientJwtAuthGuard } from '../auth/lenient-jwt-auth.guard';
 import { ResolveCommentDto } from './dto/resolve-comment.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
 import { WatchProgressDto } from './dto/watch-progress.dto';
@@ -206,8 +207,9 @@ export class RecordingsController {
         }
     }
 
+    @UseGuards(LenientJwtAuthGuard)
     @Get(':id')
-    async getRecording(@Param('id', ParseUUIDPipe) id: string) {
+    async getRecording(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
         const recording = await this.recordingsService.findOne(id);
         if (!recording) {
             throw new NotFoundException(`Recording with ID "${id}" not found`);
@@ -216,7 +218,7 @@ export class RecordingsController {
         const isReady = await this.storageService.checkFileExists(recording.fileUrl);
 
         return {
-            ...RecordingsController.withoutGuestIds(recording),
+            ...RecordingsController.publicView(recording, req.user?.id),
             isReady,
             fileUrl: isReady
                 ? await this.storageService.getDownloadUrl(recording.fileUrl)
@@ -227,18 +229,37 @@ export class RecordingsController {
         };
     }
 
-    /** The public view of a recording carries no guestIds.
+    /** The recording as anyone holding its link may see it.
      *
-     * A guestId is the only proof a guest has that a capture is theirs —
-     * claiming an ownerless recording requires it, and a guest's reaction is
-     * keyed by it — and this endpoint answers anyone holding the link. It used
-     * to return every one: the recording's, and each reaction's and
-     * comment's, which let a signed-in stranger claim a guest's recording.
-     * Nothing on the web reads them from here. */
-    static withoutGuestIds<T extends { guestId?: unknown; reactions?: any[]; comments?: any[] }>(recording: T) {
-        const { guestId: _guestId, reactions, comments, ...rest } = recording;
-        const strip = (items?: any[]) => items?.map(({ guestId: _g, ...item }) => item);
-        return { ...rest, reactions: strip(reactions), comments: strip(comments) };
+     * People are a display name and an avatar — nothing else. This used to
+     * return each person's full user row: email, internal id, auth id. And no
+     * guestId at all: a guestId is the only proof a guest has that a capture
+     * is theirs (claiming requires it), and this endpoint answers anyone.
+     *
+     * What the page used to work out by comparing ids it now gets as flags,
+     * computed here against the viewer's token: whether they own the
+     * recording, wrote a comment, or left a reaction. `byOwner` does not
+     * depend on the viewer; it is what "needs a reply" is decided from. */
+    static publicView(recording: any, viewerSupabaseId?: string) {
+        const person = (u?: { fullName?: string | null; avatarUrl?: string | null } | null) =>
+            (u ? { fullName: u.fullName ?? null, avatarUrl: u.avatarUrl ?? null } : null);
+        const isViewer = (u?: { supabaseId?: string } | null) =>
+            !!viewerSupabaseId && u?.supabaseId === viewerSupabaseId;
+        const { guestId: _guestId, user, reactions, comments, ...rest } = recording;
+        return {
+            ...rest,
+            user: person(user),
+            viewerIsOwner: isViewer(user),
+            reactions: reactions?.map(({ guestId: _g, user: u, ...reaction }: any) => ({
+                ...reaction, user: person(u), viewerReacted: isViewer(u),
+            })),
+            comments: comments?.map(({ guestId: _g, user: u, resolvedByUserId: _r, ...comment }: any) => ({
+                ...comment,
+                user: person(u),
+                byOwner: !!u && !!user && u.id === user.id,
+                viewerIsAuthor: isViewer(u),
+            })),
+        };
     }
 
     @Get('download-url/:fileName')

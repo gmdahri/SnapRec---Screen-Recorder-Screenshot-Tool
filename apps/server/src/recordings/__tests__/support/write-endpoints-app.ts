@@ -95,6 +95,11 @@ function table(name: string, db: Db) {
 
 type Db = { recordings: ReturnType<typeof table>; reactions: ReturnType<typeof table>; comments: ReturnType<typeof table>; views: ReturnType<typeof table> };
 
+/** 'sb-owner' -> 'Owner Person': a name that does not contain the id. */
+export const displayName = (supabaseId: string) =>
+    `${supabaseId.replace(/^sb-/, '').replace(/^./, (c) => c.toUpperCase())} Person`;
+export const avatarFor = (supabaseId: string) => `https://avatars.test/${Buffer.from(supabaseId).toString('hex')}.png`;
+
 /** R2 as a set of keys. URLs are shaped like real presigned ones — the key is
  * readable in the path — because that is what leaks a key to an attacker. */
 function bucket() {
@@ -133,7 +138,17 @@ export async function writeEndpointsApp() {
     db.comments = table('comments', db);
     db.views = table('views', db);
     const r2 = bucket();
-    const users = { findOrCreateBySupabaseId: async (supabaseId: string) => ({ id: `row-${supabaseId}`, supabaseId }) };
+    // Full rows, as UsersService returns them: the internal id, the auth id,
+    // the email and the display fields all travel with every relation.
+    const users = {
+        findOrCreateBySupabaseId: async (supabaseId: string) => ({
+            id: `row-${supabaseId}`, supabaseId, email: `${supabaseId}@example.com`,
+            // Display fields deliberately do not contain the ids, so a test can
+            // tell a leaked id from a legitimately shown name.
+            fullName: displayName(supabaseId), avatarUrl: avatarFor(supabaseId),
+            createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
+        }),
+    };
 
     const mod = await Test.createTestingModule({
         imports: [ConfigModule.forRoot({ ignoreEnvFile: true }), PassportModule],

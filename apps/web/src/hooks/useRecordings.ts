@@ -23,16 +23,23 @@ export interface Recording {
     isReady?: boolean;
     description?: string;
     location?: string;
+    /** The owner, as far as the page needs: name and avatar. `supabaseId` is
+     * present only on the signed-in user's own list (GET /recordings); the
+     * public view of a recording (GET /recordings/:id) never carries ids. */
     user?: {
-        supabaseId: string;
-        fullName?: string;
-        avatarUrl?: string;
-    };
+        supabaseId?: string;
+        fullName?: string | null;
+        avatarUrl?: string | null;
+    } | null;
+    /** Public view only: the viewer's token belongs to the owner. */
+    viewerIsOwner?: boolean;
     reactions: Array<{
         id: string;
         type: string;
         guestId?: string;
-        user?: { supabaseId: string };
+        user?: { supabaseId?: string; fullName?: string | null; avatarUrl?: string | null } | null;
+        /** Public view only: this reaction is the viewer's. */
+        viewerReacted?: boolean;
     }>;
     comments: Array<{
         id: string;
@@ -48,10 +55,14 @@ export interface Recording {
         /** ISO when settled; absent while the question is still open. */
         resolvedAt?: string | null;
         user?: {
-            supabaseId: string;
-            fullName?: string;
-            avatarUrl?: string;
-        };
+            supabaseId?: string;
+            fullName?: string | null;
+            avatarUrl?: string | null;
+        } | null;
+        /** Public view only: written by the recording's owner. */
+        byOwner?: boolean;
+        /** Public view only: written by the viewer. */
+        viewerIsAuthor?: boolean;
     }>;
 }
 
