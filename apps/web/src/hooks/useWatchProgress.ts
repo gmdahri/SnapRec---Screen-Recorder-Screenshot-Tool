@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { fetchWithAuth } from './useRecordings';
+import { isSessionExpired } from '../lib/sessionExpired';
 import { mergeIntervals, type Interval } from '../lib/intervals';
 
 /** P7 V4 — reports which seconds of a recording were actually watched.
@@ -24,9 +25,16 @@ export function useWatchProgress(recordingId: string | undefined, playing: boole
   const pending = useRef<Interval[]>([]);
   const openFrom = useRef<number | null>(null);
   const lastSeen = useRef<number | null>(null);
+  /** Set once the server refuses the session. Every later beat would carry
+   * the same dead token and get the same 401 every ten seconds; and sent
+   * without one it would be discarded, since only signed-in watching is
+   * counted. So the heartbeat simply stops for this page — quietly: a lost
+   * statistic is not something to tell the viewer about. A fresh sign-in
+   * reloads the page and starts a new one. */
+  const stopped = useRef(false);
 
   const flush = useCallback(() => {
-    if (!recordingId) return;
+    if (!recordingId || stopped.current) return;
     const ranges = mergeIntervals(pending.current);
     if (ranges.length === 0) return;
     pending.current = [];
@@ -35,7 +43,12 @@ export function useWatchProgress(recordingId: string | undefined, playing: boole
     void fetchWithAuth(`/recordings/${recordingId}/progress`, {
       method: 'POST',
       body: JSON.stringify({ ranges }),
-    }).catch(() => {});
+    }, { quiet: true }).catch((error) => {
+      if (isSessionExpired(error)) {
+        stopped.current = true;
+        pending.current = [];
+      }
+    });
   }, [recordingId]);
 
   /** Called on each clock update while playing. */

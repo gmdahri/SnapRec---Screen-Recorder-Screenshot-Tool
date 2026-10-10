@@ -2,7 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { StatusBadge } from '@snaprec/design-system';
 import { SupportButton } from '../../components/SupportButton';
 import type { PointAnchor, ShareComment } from './anchors';
-import { CommentComposer, type NewComment } from './CommentComposer';
+import { CommentComposer, type NewComment, type PostResult } from './CommentComposer';
 import { PendingComment } from './PendingComment';
 import type { ImageCapture } from './ImageShare';
 
@@ -11,7 +11,7 @@ export interface MobileImageShareProps {
   comments: ShareComment[];
   /** Returns `false` when the comment is refused — the sign-in gate does
    * that, and the composer then keeps the draft. */
-  onPost: (comment: NewComment) => void | boolean;
+  onPost: (comment: NewComment) => PostResult;
   /** A comment is in flight; the list holds a skeleton row for it. */
   postingComment?: boolean;
   media?: ReactNode;

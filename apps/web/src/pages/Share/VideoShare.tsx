@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import { CaptureFrame, StatusBadge } from '@snaprec/design-system';
 import { columnPositions, formatTimecode, type ShareComment } from './anchors';
-import { CommentComposer, type NewComment } from './CommentComposer';
+import { CommentComposer, type NewComment, type PostResult } from './CommentComposer';
 
 export interface ShareCapture {
   id: string;
@@ -19,7 +19,7 @@ export interface VideoShareProps {
   onSeek: (ms: number) => void;
   /** Returns `false` when the comment is refused — the sign-in gate does
    * that, and the composer then keeps the draft. */
-  onPost: (comment: NewComment) => void | boolean;
+  onPost: (comment: NewComment) => PostResult;
   player?: ReactNode;
   onDownload?: () => void;
 }

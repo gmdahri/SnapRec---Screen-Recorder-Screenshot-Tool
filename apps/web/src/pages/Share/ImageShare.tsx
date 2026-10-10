@@ -3,7 +3,7 @@ import { Icon } from '@iconify/react';
 import { CaptureFrame, StatusBadge } from '@snaprec/design-system';
 import { SupportButton } from '../../components/SupportButton';
 import { leadersVisible, type PointAnchor, type ShareComment } from './anchors';
-import { CommentComposer, type NewComment } from './CommentComposer';
+import { CommentComposer, type NewComment, type PostResult } from './CommentComposer';
 import { PendingComment } from './PendingComment';
 
 export interface ImageCapture {
@@ -22,7 +22,7 @@ export interface ImageShareProps {
   marginPx: number;
   /** Returns `false` when the comment is refused — the sign-in gate does
    * that, and the composer then keeps the draft. */
-  onPost: (comment: NewComment) => void | boolean;
+  onPost: (comment: NewComment) => PostResult;
   /** A comment is in flight; the margin holds a skeleton note for it. */
   postingComment?: boolean;
   media?: ReactNode;
@@ -239,11 +239,13 @@ export function ImageShare({
           <div style={{ marginTop: 8 }}>
             <CommentComposer
               onPost={comment => {
-                const taken = onPost(comment) !== false;
                 // A viewer sent to sign in comes back to their pin as well as
-                // their words.
-                if (taken) setPending(null);
-                return taken;
+                // their words; a refused post (an expired session) too.
+                const settle = (taken: boolean) => { if (taken) setPending(null); return taken; };
+                const result = onPost(comment);
+                return result instanceof Promise
+                  ? result.then((r) => settle(r !== false))
+                  : settle(result !== false);
               }}
               anchorX={pending?.x}
               anchorY={pending?.y}

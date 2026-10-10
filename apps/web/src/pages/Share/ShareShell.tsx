@@ -12,7 +12,7 @@ import { MobileVideoShare } from './MobileVideoShare';
 import { MobileImageShare } from './MobileImageShare';
 import { PrivateCapture } from './PrivateCapture';
 import { ProcessingCapture } from './ProcessingCapture';
-import type { NewComment } from './CommentComposer';
+import type { NewComment, PostResult } from './CommentComposer';
 
 export type ShareState = 'ready' | 'processing' | 'private';
 
@@ -36,7 +36,7 @@ export interface ShareShellProps {
   onSeek: (ms: number) => void;
   /** Returns `false` when the comment is refused — the sign-in gate does
    * that, and the composer then keeps the draft. */
-  onPost: (comment: NewComment) => void | boolean;
+  onPost: (comment: NewComment) => PostResult;
   onRequestAccess: () => void;
   onDownload?: () => void;
   player?: ReactNode;

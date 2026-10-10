@@ -54,3 +54,19 @@ describe('fetchWithAuth', () => {
         expect(error.message).toMatch(/409/);
     });
 });
+
+describe('fetchWithAuth, quiet', () => {
+    it('says nothing on the console for a refused session when asked to be quiet', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        globalThis.fetch = vi.fn(async () => new Response('{}', { status: 401 })) as typeof fetch;
+        const { fetchWithAuth } = await import('../hooks/useRecordings');
+
+        await fetchWithAuth('/recordings/x/progress', { method: 'POST' }, { quiet: true }).catch(() => {});
+        expect([...error.mock.calls, ...log.mock.calls]).toEqual([]);
+
+        await fetchWithAuth('/recordings/x/comments', { method: 'POST' }).catch(() => {});
+        expect(error).toHaveBeenCalled();   // the default still reports it
+        error.mockRestore(); log.mockRestore();
+    });
+});

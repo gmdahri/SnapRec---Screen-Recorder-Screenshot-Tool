@@ -617,7 +617,7 @@ const ShareView: React.FC = () => {
         }
         if (!id) return;
         capture('reaction_added', { type });
-        addReaction.mutate({ id, type });
+        addReaction.mutate({ id, type }, { onError: onInteractionError(`react with "${type}"`) });
     };
 
     const handlePostComment = () => {
@@ -633,6 +633,8 @@ const ShareView: React.FC = () => {
                 capture('comment_posted', {});
                 setCommentText('');
             },
+            // The draft is only cleared on success, so it survives this.
+            onError: onInteractionError('post a comment'),
         });
     };
 
@@ -711,14 +713,28 @@ const ShareView: React.FC = () => {
      * sign-in" effect waits for a real one instead of firing straight back
      * into the same refusal, and the same action resumes once signed in. It
      * is never retried as a guest. */
-    const recoverFromExpiredSession = async (resume: 'share' | 'videoEditor', description: string) => {
+    const recoverFromExpiredSession = async (
+        description: string,
+        { resume, message = 'Your session expired. Sign in again \u2014 your recording is still on this device.' }:
+            { resume?: 'share' | 'videoEditor'; message?: string } = {},
+    ) => {
         capture('auth_modal_triggered', { trigger: 'session_expired' });
-        showNotification('Your session expired. Sign in again \u2014 your recording is still on this device.', 'error');
+        showNotification(message, 'error');
         await expireSession();
         setLoginAction(description);
         setLoginExpired(true);
-        setPendingAction(resume);
+        if (resume) setPendingAction(resume);
         setIsLoginModalOpen(true);
+    };
+
+    /** Comments and reactions refused because the session lapsed. Same prompt
+     * as an upload; nothing to resume, and a comment's words stay in its box. */
+    const onInteractionError = (description: string) => (error: unknown) => {
+        if (isSessionExpired(error)) {
+            void recoverFromExpiredSession(description, {
+                message: 'Your session expired. Sign in again to ' + description + '.',
+            });
+        }
     };
 
     const handleUploadToCloud = async () => {
@@ -752,7 +768,7 @@ const ShareView: React.FC = () => {
             }
         } catch (error: any) {
             if (isSessionExpired(error)) {
-                await recoverFromExpiredSession('share', 'generate a shareable link');
+                await recoverFromExpiredSession('generate a shareable link', { resume: 'share' });
                 return;
             }
             showNotification(error.message || 'Upload failed. Please try again.', 'error');
@@ -793,7 +809,7 @@ const ShareView: React.FC = () => {
             navigate(`/video-editor/project/${project.id}`);
         } catch (e: unknown) {
             if (isSessionExpired(e)) {
-                await recoverFromExpiredSession('videoEditor', 'open the Video Editor');
+                await recoverFromExpiredSession('open the Video Editor', { resume: 'videoEditor' });
                 return;
             }
             showNotification(e instanceof Error ? e.message : 'Could not open editor', 'error');
@@ -1002,12 +1018,21 @@ const ShareView: React.FC = () => {
                             return false;
                         }
                         if (!recording.id) return false;
-                        addComment.mutate({
+                        // Waited for, so the composer keeps the words if the
+                        // post is refused instead of clearing them up front.
+                        return addComment.mutateAsync({
                             id: recording.id,
                             content,
                             timecodeMs,
                             anchorX,
                             anchorY,
+                        }).then(() => true, (error: unknown) => {
+                            if (isSessionExpired(error)) {
+                                onInteractionError('post a comment')(error);
+                            } else {
+                                showNotification('Could not post your comment. Please try again.', 'error');
+                            }
+                            return false;
                         });
                     }}
                     postingComment={addComment.isPending}
