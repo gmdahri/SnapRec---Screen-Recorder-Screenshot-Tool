@@ -74,7 +74,7 @@ export function createHarness({ log = false } = {}) {
         session: new Map(),
         idb: new IDBFactory(),
     };
-    const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map() };
+    const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map(), rows: new Map() };
     const contexts = {};      // name -> { sandbox, listeners, timers, alive }
     let tabSeq = 100;
     const tabs = [];
@@ -146,7 +146,19 @@ export function createHarness({ log = false } = {}) {
             const fileName = decodeURIComponent(path.slice('/recordings/status/'.length));
             return json({ ready: [...net.uploads.values()].some((u) => u.fileName === fileName && u.state === 'complete') });
         }
-        if (path === '/recordings' && method === 'POST') return json({ id: body.id ?? 'rec-generated', ...body }, 201);
+        if (path === '/recordings' && method === 'POST') {
+            // Insert-only, as the server is: 200 hands an existing row back to
+            // the same guest re-posting the same file; anything else is 409.
+            const id = body.id ?? `rec-${net.rows.size + 1}`;
+            const existing = net.rows.get(id);
+            if (existing) {
+                const retry = !existing.userId && existing.guestId === body.guestId && existing.fileUrl === body.fileUrl;
+                return retry ? json(existing, 200) : json({ statusCode: 409, message: 'A recording with this id already exists' }, 409);
+            }
+            const row = { ...body, id };
+            net.rows.set(id, row);
+            return json(row, 201);
+        }
         return json({ message: 'not found' }, 404);
     }
 

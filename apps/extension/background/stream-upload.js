@@ -438,14 +438,22 @@
                 await store.write({ ...step, completedFileUrl: fileUrl }).catch(() => {});
             }
 
-            if (!(await register(step.recoveryId, fileUrl, durationSec))) {
+            /* 'created' and 'exists' (the server handing back a row an earlier
+             * attempt made) are both success. So is 'conflict': the id is
+             * recovery's own random one, written down before the first
+             * attempt, so the row that holds it is the one an earlier attempt
+             * registered — and the server now refuses it to us because its
+             * owner changed, which is what claiming does. Registering again
+             * under a new id would be exactly the duplicate this avoids. */
+            const registration = await register(step.recoveryId, fileUrl, durationSec);
+            if (registration !== 'created' && registration !== 'exists' && registration !== 'conflict') {
                 track('upload_failed', { error_reason: 'recovery_register_failed', recovered: true });
                 return 'retry';
             }
             await store.remove(record.uploadId).catch(() => {});
             track('upload_completed', {
                 parts: record.parts.length, file_size_mb: mb(record.bytes ?? 0),
-                duration_seconds: durationSec, recovered: true,
+                duration_seconds: durationSec, recovered: true, registration,
             });
             return 'finalized';
         }

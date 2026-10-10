@@ -1398,14 +1398,23 @@ async function registerStreamedRecording(recordingId, fileUrl, durationSec) {
                 guestId: signedIn ? undefined : await getGuestId(),
             }),
         });
+        /* The server is insert-only. 200 is the existing row handed back to
+         * a retry of the same upload by the same guest; 409 is an id that
+         * exists but is no longer ours to post to — see the recovery in
+         * background/stream-upload.js for what that means there. */
+        if (res.status === 409) {
+            console.warn('[SnapRec] Recording id already registered to someone else:', recordingId);
+            return 'conflict';
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         console.log('[SnapRec] Recording registered as', recordingId,
-            signedIn ? '(owned)' : '(guest, expires in an hour)');
-        return true;
+            signedIn ? '(owned)' : '(guest, expires in an hour)',
+            res.status === 200 ? '— already there' : '');
+        return res.status === 200 ? 'exists' : 'created';
     } catch (e) {
         console.warn('[SnapRec] Could not register the recording:', e.message);
-        return false;
+        return 'failed';
     }
 }
 
@@ -1930,7 +1939,8 @@ async function recoverInterruptedRecording() {
         fetch: (...args) => fetch(...args),
         liveUploadId: status?.uploadId ?? null,
         // The id is recovery's own, persisted before the first attempt, so a
-        // retried registration lands on the same row.
+        // retried registration lands on the same row. Returns 'created',
+        // 'exists', 'conflict' or 'failed'.
         register: registerStreamedRecording,
         track: (event, properties) => Analytics.track(event, properties),
     });

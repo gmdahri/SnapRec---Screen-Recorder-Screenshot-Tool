@@ -87,13 +87,13 @@ function uploader({ api = server(), store = memoryStore(), now, setTimer = fast 
     return { up, api, store, events, lib };
 }
 
-function recover({ lib = load(), api, store, now, ...opts }) {
+function recover({ lib = load(), api, store, now, registration = 'created', ...opts }) {
     const events = []; const registered = [];
     // Absent means "no upload in progress"; an explicit undefined means "could not ask".
     const liveUploadId = 'liveUploadId' in opts ? opts.liveUploadId : null;
     return lib.recoverInterruptedUploads({
         store, apiBase: 'https://api.test', fetch: api.fetch, liveUploadId,
-        register: async (id, fileUrl) => { registered.push({ id, fileUrl }); return true; },
+        register: async (id, fileUrl) => { registered.push({ id, fileUrl }); return registration; },
         track: (event, props) => events.push({ event, ...props }),
         ...(now ? { now } : {}),
     }).then((outcomes) => ({ outcomes, events, registered }));
@@ -168,11 +168,58 @@ describe('recovery never loses or duplicates a recording', () => {
         const ids = [];
         const attempt = (ok) => lib.recoverInterruptedUploads({
             store, apiBase: 'https://api.test', fetch: api.fetch, liveUploadId: null,
-            register: async (id) => { ids.push(id); return ok; }, track: () => {},
+            register: async (id) => { ids.push(id); return ok ? 'created' : 'failed'; }, track: () => {},
         });
         expect(await attempt(false)).toEqual(['retry']);
         expect(await attempt(true)).toEqual(['finalized']);
         expect(new Set(ids).size).toBe(1);
+        expect(store.map.size).toBe(0);
+    });
+
+    it('takes a 200 — the server handing back the row an earlier attempt made — as done', async () => {
+        const api = server(); const store = memoryStore();
+        await orphan(api, store);
+        const { outcomes, events } = await recover({ api, store, registration: 'exists' });
+        expect(outcomes).toEqual(['finalized']);
+        expect(store.map.size).toBe(0);
+        expect(events.at(-1)).toMatchObject({ event: 'upload_completed', recovered: true, registration: 'exists' });
+    });
+
+    it('takes a 409 as already registered, and does not register a second row under a new id', async () => {
+        // The id is recovery's own; a 409 means an earlier attempt registered
+        // it and the user has since claimed it, so the guest can no longer post to it.
+        const api = server(); const store = memoryStore();
+        await orphan(api, store);
+        const { outcomes, registered, events } = await recover({ api, store, registration: 'conflict' });
+        expect(outcomes).toEqual(['finalized']);
+        expect(registered).toHaveLength(1);
+        expect(store.map.size).toBe(0);
+        expect(events.at(-1)).toMatchObject({ event: 'upload_completed', registration: 'conflict' });
+    });
+
+    it('registered, killed before cleaning up, claimed meanwhile: the next start ends it with no duplicate', async () => {
+        const api = server(); const store = memoryStore();
+        await orphan(api, store);
+        const lib = load();
+        // The server, insert-only: the first POST creates; after the claim the
+        // guest's retry of the same id is refused.
+        const rows = new Map();
+        const register = async (id) => {
+            if (!rows.has(id)) { rows.set(id, { owner: 'guest' }); return 'created'; }
+            return rows.get(id).owner === 'guest' ? 'exists' : 'conflict';
+        };
+        const removeOnce = store.remove;
+        let killed = true;
+        store.remove = async (id) => { if (killed) { killed = false; throw new Error('worker killed'); } return removeOnce(id); };
+        const run = () => lib.recoverInterruptedUploads({
+            store, apiBase: 'https://api.test', fetch: api.fetch, liveUploadId: null, register, track: () => {},
+        });
+
+        expect(await run()).toEqual(['finalized']);   // registered; the cleanup "died"
+        expect(store.map.size).toBe(1);
+        [...rows.values()][0].owner = 'sb-user';      // the user signs in and claims it
+        expect(await run()).toEqual(['finalized']);   // 409 -> already registered
+        expect(rows.size).toBe(1);
         expect(store.map.size).toBe(0);
     });
 
