@@ -16,6 +16,11 @@
     <!-- upload-parts.js defines globalThis.SnapRecParts, which offscreen.js
          reads to decide when a buffer has become a part. -->
     <script src="../background/upload-parts.js"></script>
+    <!-- config.js defines CONFIG (the API base URL) and stream-upload.js
+         globalThis.SnapRecStreamUpload: this document owns the upload, because
+         it is the context that lives as long as the recording. -->
+    <script src="../background/config.js"></script>
+    <script src="../background/stream-upload.js"></script>
     <script src="offscreen.js"></script>
 </body>
 
