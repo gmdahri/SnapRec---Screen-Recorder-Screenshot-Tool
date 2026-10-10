@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { StorageService } from '../storage/storage.service';
 import { expiresAtForUpload } from './expiry';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -217,6 +217,11 @@ export class RecordingsService {
     }
 
     async addReaction(recordingId: string, type: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Reaction> {
+        // Never look one up without an identity: TypeORM drops an undefined
+        // guestId from the WHERE, which then matches any reaction on the
+        // recording. The controller refuses this first; this is the backstop.
+        if (!userId && !guestId) throw new BadRequestException('A reaction needs a signed-in user or a guestId');
+
         const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
         if (!recording) throw new NotFoundException('Recording not found');
 

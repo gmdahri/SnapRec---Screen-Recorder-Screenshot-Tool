@@ -16,6 +16,7 @@ import {
     ForbiddenException,
     ConflictException,
     UseInterceptors,
+    BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
@@ -295,6 +296,13 @@ export class RecordingsController {
         @Body() addReactionDto: AddReactionDto,
         @Req() req: any,
     ) {
+        // A reaction belongs to someone: a signed-in user, or a guest by guest
+        // id. With neither, the lookup for "your existing reaction" had nothing
+        // to key on and matched whoever's came first — a signed-in user's
+        // included — and toggled it off.
+        if (!req.user && !addReactionDto.guestId) {
+            throw new BadRequestException('A reaction needs a signed-in user or a guestId');
+        }
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
         return this.recordingsService.addReaction(
             id,
