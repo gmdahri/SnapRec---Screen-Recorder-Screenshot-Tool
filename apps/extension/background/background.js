@@ -4,7 +4,7 @@ importScripts('analytics.js');   // must follow config.js — reads CONFIG.POSTH
 importScripts('queue.js');
 importScripts('recording-file.js');
 importScripts('fullpage.js');
-importScripts('upload-parts.js');
+importScripts('stream-upload.js'); // recovery of uploads the offscreen document could not finish
 importScripts('storage.js');
 importScripts('utils/tabs.js');
 importScripts('utils/messaging.js');
@@ -16,7 +16,6 @@ importScripts('auth.js');
 const INSTALL_FLUSH_ALARM = 'snaprec-flush-install';
 
 // Single consolidated message listener
-let recordingMetadata = []; // Store metadata chunks during recording
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const version = chrome.runtime.getManifest().version;
@@ -171,9 +170,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'captureFullPage':
             afterCaptureDelay(message.delaySec).then(captureFullPage);
             return false; // No response needed
-        case 'streamPartReady':
-            void uploadNextPart(false);
-            return false;
         case 'fullPageBegin':
             fullPageBegin(message)
                 .then(r => sendResponse({ success: true, ...r }))
@@ -247,11 +243,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false;
         case 'offscreen_uploadError':
             console.error('[SnapRec] Offscreen encountered upload error:', message.error);
-            return false;
-        case 'recordMetadataChunks':
-            if (message.chunks && Array.isArray(message.chunks)) {
-                recordingMetadata.push(...message.chunks);
-            }
             return false;
         default:
             // Unknown action - don't keep channel open
@@ -950,7 +941,6 @@ async function startRecording(options) {
 
         // Store the recording tab ID for navigation tracking
         recordingTabId = tab.id;
-        recordingMetadata = []; // Reset metadata for new recording
 
         try {
             // Step 1: Create offscreen document and show screen picker
@@ -1008,9 +998,8 @@ async function startRecording(options) {
             if (recorderResponse?.success) {
                 console.log('[SnapRec] Recording started at:', recorderResponse.startTime);
 
-                // Upload as we record. Not awaited: a slow or failed open must
-                // never delay the recorder, and the fallback path still works.
-                void startStreamingUpload();
+                // The offscreen document opens the streaming upload itself as
+                // the recorder starts — see background/stream-upload.js.
 
                 // Analytics: not awaited — the recorder is live and the overlay
                 // must not wait on a network call. `format` is the container the
@@ -1173,7 +1162,7 @@ async function broadcastHideOverlay() {
 
 async function finalizeCleanup() {
     console.log('[SnapRec] Finalizing cleanup');
-    /* A no-op after a successful completion, which clears the slot. It only
+    /* A no-op after a successful completion, which clears the upload. It only
      * bites on the failure paths that reach cleanup with an upload still open
      * — and an upload that is neither completed nor aborted bills for its
      * parts invisibly until the bucket's lifecycle rule sweeps it. */
@@ -1352,153 +1341,31 @@ async function deliverImageToEditor() {
     chrome.tabs.onUpdated.addListener(listener);
 }
 
-/** The streaming upload in flight, or null.
+/** Longer than the offscreen document's own two-minute drain deadline, and
+ * well inside the five minutes Chrome allows a worker on one event — past
+ * which it would be killed before opening the share tab. */
+const STREAM_FINISH_TIMEOUT_MS = 200_000;
+
+/** Asks the offscreen document to drain the last part and complete.
  *
- * Only one recording runs at a time, so one slot is enough. Held in the worker
- * rather than the offscreen document because the worker is what talks to the
- * API — and because the offscreen document is closed at the end of a
- * recording, while completing the upload may outlive it. */
-let streamingUpload = null;
-
-/** Opens the upload. Failure here is not fatal: the recording continues and
- * falls back to the existing upload-on-demand path. */
-async function startStreamingUpload() {
-    try {
-        const fileName = `video-${crypto.randomUUID()}-${Date.now()}.webm`;
-        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/begin`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName, contentType: 'video/webm' }),
-        });
-        if (!res.ok) throw new Error(`begin failed: HTTP ${res.status}`);
-
-        const { uploadId } = await res.json();
-        streamingUpload = {
-            fileName, uploadId, state: SnapRecParts.createUploadState(), busy: false,
-            startedAt: Date.now(),
-        };
-        await chrome.runtime.sendMessage({ action: 'offscreen_streamBegin' });
-        console.log('[SnapRec] Streaming upload opened:', fileName);
-    } catch (e) {
-        console.warn('[SnapRec] Could not open streaming upload:', e.message);
-        streamingUpload = null;
-    }
-}
-
-/** Uploads one part if one is ready.
- *
- * Serialised by `busy`: parts must not be taken concurrently, because
- * offscreen_streamTakePart drains a single shared buffer. */
-async function uploadNextPart(isFinal = false) {
-    // `finishing` closes the door on parts that arrive while completion is in
-    // flight. Without it a streamPartReady landing between the final drain and
-    // CompleteMultipartUpload tries to add a part to an upload R2 has already
-    // assembled, which answers 500 and logs an error for work that was in fact
-    // finished correctly.
-    if (!streamingUpload || streamingUpload.busy) return;
-    if (streamingUpload.finishing && !isFinal) return;
-    streamingUpload.busy = true;
-    try {
-        const taken = await chrome.runtime.sendMessage({
-            action: 'offscreen_streamTakePart', isFinal,
-        });
-        if (!taken?.success || !taken.hasPart) return;
-
-        /* Reuse the number for a part that is being retried. Taking a fresh one
-         * would leave a gap, and R2 rejects a completion whose part numbers are
-         * not contiguous. */
-        const partNumber = streamingUpload.pendingPartNumber
-            ?? SnapRecParts.takePartNumber(streamingUpload.state);
-        streamingUpload.pendingPartNumber = partNumber;
-        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/part`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fileName: streamingUpload.fileName,
-                uploadId: streamingUpload.uploadId,
-                partNumber,
-            }),
-        });
-        if (!res.ok) throw new Error(`part url failed: HTTP ${res.status}`);
-
-        const { uploadUrl } = await res.json();
-        const put = await chrome.runtime.sendMessage({
-            action: 'offscreen_streamPutPart', uploadUrl,
-        });
-        if (!put?.success) throw new Error(put?.error ?? 'part PUT failed');
-
-        SnapRecParts.recordPart(streamingUpload.state, { partNumber, etag: put.etag });
-        streamingUpload.pendingPartNumber = null;
-        console.log('[SnapRec] Part', partNumber, 'uploaded,', taken.bytes, 'bytes');
-
-        /* Drain a backlog rather than waiting for the next chunk. After a
-         * network drop several parts' worth can be buffered, and one part per
-         * incoming chunk would never catch up. */
-        if (!isFinal && taken.remaining >= SnapRecParts.PART_MIN_BYTES) {
-            queueMicrotask(() => { void uploadNextPart(false); });
-        }
-    } catch (e) {
-        console.warn('[SnapRec] Part upload failed:', e.message);
-    } finally {
-        if (streamingUpload) streamingUpload.busy = false;
-    }
-}
-
-/** Drains the last part and completes.
- *
- * Returns the fileUrl and the recording's length, or null. The length is
- * measured from when the upload opened rather than from
- * storage.recordingStartTime, which broadcastHideOverlay has already cleared
- * to null by the time anything downstream asks for it. */
+ * Returns { fileUrl, durationSec }, or null. The upload itself lives in the
+ * offscreen document — background/stream-upload.js explains why — so all the
+ * worker does here is ask. Must run before finalizeCleanup, which closes that
+ * document. A null is never a lost recording: the share page receives the
+ * local capture either way. */
 async function finishStreamingUpload() {
-    if (!streamingUpload) return null;
-    streamingUpload.finishing = true;
-    await uploadNextPart(true);
-
-    const upload = streamingUpload;
-    streamingUpload = null;
-
-    if (!SnapRecParts.isUsable(upload.state)) {
-        console.warn('[SnapRec] No parts uploaded; aborting');
-        await abortUpload(upload);
+    if (!(await hasOffscreenDocument())) return null;
+    const reply = await Promise.race([
+        chrome.runtime.sendMessage({ action: 'offscreen_streamFinish' })
+            .catch((e) => ({ success: false, error: e.message })),
+        new Promise((resolve) => setTimeout(
+            () => resolve({ success: false, error: 'timed out' }), STREAM_FINISH_TIMEOUT_MS)),
+    ]);
+    if (!reply?.success) {
+        console.warn('[SnapRec] Could not finish the streaming upload:', reply?.error);
         return null;
     }
-
-    try {
-        const res = await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/complete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fileName: upload.fileName,
-                uploadId: upload.uploadId,
-                parts: SnapRecParts.completionPayload(upload.state),
-            }),
-        });
-        if (!res.ok) throw new Error(`complete failed: HTTP ${res.status}`);
-        const { fileUrl } = await res.json();
-        const durationSec = Math.max(1, Math.round((Date.now() - upload.startedAt) / 1000));
-        console.log('[SnapRec] Streaming upload complete:', fileUrl, durationSec, 'seconds');
-        return { fileUrl, durationSec };
-    } catch (e) {
-        console.error('[SnapRec] Could not complete upload:', e.message);
-        await abortUpload(upload);
-        return null;
-    }
-}
-
-/** Abort is what stops orphaned parts billing. Best-effort by design: the
- * bucket's 1-day lifecycle rule is the backstop for the cases where this
- * cannot run at all. */
-async function abortUpload(upload) {
-    try {
-        await fetch(`${CONFIG.API_BASE_URL}/recordings/upload/abort`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName: upload.fileName, uploadId: upload.uploadId }),
-        });
-    } catch (e) {
-        console.warn('[SnapRec] Abort request failed:', e.message);
-    }
+    return reply.result ?? null;
 }
 
 /** Creates the recording row for a file that is already on R2.
@@ -1514,6 +1381,15 @@ async function abortUpload(upload) {
  * claimable later. */
 async function registerStreamedRecording(recordingId, fileUrl, durationSec) {
     try {
+        /* A signed-in recording is never quietly filed as a guest one. A
+         * session that has already lapsed is not sent at all; one the server
+         * refuses comes back as 401. Either way the user is told, and the
+         * capture stays where it is — the share page already has it. */
+        const session = await getSession();
+        if (session?.accessToken && !(await isSessionValid())) {
+            console.warn('[SnapRec] Session expired; not registering', recordingId, 'as a guest');
+            return 'unauthorized';
+        }
         const authHeaders = await getAuthHeaders();
         const signedIn = Boolean(authHeaders.Authorization);
 
@@ -1531,22 +1407,96 @@ async function registerStreamedRecording(recordingId, fileUrl, durationSec) {
                 guestId: signedIn ? undefined : await getGuestId(),
             }),
         });
+        /* The server is insert-only. 200 is the existing row handed back to
+         * a retry of the same upload by the same guest; 409 is an id that
+         * exists but is no longer ours to post to — see the recovery in
+         * background/stream-upload.js for what that means there. */
+        if (res.status === 409) {
+            console.warn('[SnapRec] Recording id already registered to someone else:', recordingId);
+            return 'conflict';
+        }
+        if (res.status === 401 || res.status === 403) {
+            console.warn('[SnapRec] Server refused the session; not registering', recordingId, 'as a guest');
+            return 'unauthorized';
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         console.log('[SnapRec] Recording registered as', recordingId,
-            signedIn ? '(owned)' : '(guest, expires in an hour)');
-        return true;
+            signedIn ? '(owned)' : '(guest, expires in an hour)',
+            res.status === 200 ? '— already there' : '');
+        return res.status === 200 ? 'exists' : 'created';
     } catch (e) {
         console.warn('[SnapRec] Could not register the recording:', e.message);
-        return false;
+        return 'failed';
     }
 }
 
+/** See finalizeCleanup, its only caller. */
 async function abortStreamingUpload() {
-    if (!streamingUpload) return;
-    const upload = streamingUpload;
-    streamingUpload = null;
-    await abortUpload(upload);
+    if (!(await hasOffscreenDocument())) return;
+    await chrome.runtime.sendMessage({ action: 'offscreen_streamAbort', reason: 'recording_failed' })
+        .catch(() => { /* nothing to abort, or nobody to ask */ });
+}
+
+/** Resolves true once the tab has loaded, false if it is closed first.
+ *
+ * Checks the tab's current state as well as listening, because by the time
+ * anything awaits this the page may already have finished: "complete" fires
+ * once, and a listener added after it never hears it. `cancel()` stops
+ * watching without injecting anything. */
+function whenTabLoaded(tabId) {
+    let finish;
+    const loaded = new Promise((resolve) => {
+        let done = false;
+        const onUpdated = (id, info) => { if (id === tabId && info.status === 'complete') finish(true); };
+        const onRemoved = (id) => { if (id === tabId) finish(false); };
+        finish = (ok) => {
+            if (done) return;
+            done = true;
+            chrome.tabs.onUpdated.removeListener(onUpdated);
+            chrome.tabs.onRemoved.removeListener(onRemoved);
+            resolve(ok);
+        };
+        chrome.tabs.onUpdated.addListener(onUpdated);
+        chrome.tabs.onRemoved.addListener(onRemoved);
+        chrome.tabs.get(tabId).then(
+            (t) => { if (t.status === 'complete') finish(true); },
+            () => finish(false),
+        );
+    });
+    loaded.cancel = () => finish(false);
+    return loaded;
+}
+
+async function injectHandoffFrame(tabId, frameUrl) {
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: (src) => {
+                const frame = document.createElement('iframe');
+                frame.src = src;
+                frame.setAttribute('aria-hidden', 'true');
+                frame.style.cssText =
+                    'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none';
+                document.documentElement.appendChild(frame);
+            },
+            args: [frameUrl],
+        });
+        console.log('[SnapRec] Handoff frame injected');
+    } catch (err) {
+        console.error('[SnapRec] Could not inject handoff frame:', err.message);
+    }
+}
+
+function notifySavedToDisk(filename) {
+    chrome.notifications.create('snaprec-handoff-fallback', {
+        type: 'basic',
+        iconUrl: '../icons/icon128.png',
+        title: 'Saved to your Downloads folder',
+        message: `SnapRec could not open your capture in the app, so it was `
+            + `saved as ${filename.replace(/^.*\//, '')} instead.`,
+        priority: 2,
+    });
 }
 
 async function handleRecordingComplete() {
@@ -1587,8 +1537,9 @@ async function handleRecordingComplete() {
          * recording. */
         const streamed = await finishStreamingUpload();
         if (streamed) {
-            await registerStreamedRecording(
+            const registration = await registerStreamedRecording(
                 recordingId, streamed.fileUrl, streamed.durationSec);
+            if (registration === 'unauthorized') notifySessionExpired();
         }
 
         // IMMEDIATELY redirect to /v (generic preview)
@@ -1621,6 +1572,12 @@ async function handleRecordingComplete() {
          * the offscreen document no longer destroys it. */
         const savedFile = null;
 
+        /* Watched from now, not after the save below. The save can take longer
+         * than the page takes to load — seconds, for a long recording — and
+         * "complete" fires once: a listener added after it never fires, so the
+         * frame was never injected and the page waited for ever. */
+        const tabLoaded = whenTabLoaded(tab.id);
+
         /* Park the capture, then close the recorder. Once the blob is in
          * extension-origin IndexedDB it no longer depends on the offscreen
          * document staying alive, which removes the race this code used to
@@ -1629,42 +1586,30 @@ async function handleRecordingComplete() {
         const parked = await chrome.runtime.sendMessage({
             action: 'offscreen_persistForHandoff',
             id: recordingId,
-            metadataStr: JSON.stringify(recordingMetadata),
+            // The click trail is the offscreen document's own; see recordingMetadata there.
         }).catch((e) => ({ success: false, error: e.message }));
 
         if (!parked?.success) {
+            /* Nothing was parked, so there is nothing for the share page to
+             * receive — and the offscreen document, about to be closed, holds
+             * the only copy. This is the last moment it can be saved. */
             console.error('[SnapRec] Could not park capture for handoff:', parked?.error);
+            const saved = await saveRecordingToDisk();
+            tabLoaded.cancel();
+            chrome.tabs.remove(tab.id).catch(() => { /* already closed */ });
+            await finalizeCleanup();
+            if (saved) notifySavedToDisk(saved.filename);
+            return;
         }
         await finalizeCleanup();
 
         /* The courier is same-origin with the parked blob and can hand it to
-         * the page by reference. Injected on tab load rather than immediately:
-         * an about:blank tab has no document to append to yet. */
+         * the page by reference. Injected once the capture is parked AND the
+         * page has loaded — an about:blank tab has no document to append to —
+         * whichever of the two happens last. */
         const frameUrl = chrome.runtime.getURL(
             `handoff/handoff.html?id=${encodeURIComponent(recordingId)}`);
-
-        const listener = async (tabId, info) => {
-            if (tabId !== tab.id || info.status !== 'complete') return;
-            chrome.tabs.onUpdated.removeListener(listener);
-            try {
-                await chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: (src) => {
-                        const frame = document.createElement('iframe');
-                        frame.src = src;
-                        frame.setAttribute('aria-hidden', 'true');
-                        frame.style.cssText =
-                            'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none';
-                        document.documentElement.appendChild(frame);
-                    },
-                    args: [frameUrl],
-                });
-                console.log('[SnapRec] Handoff frame injected');
-            } catch (err) {
-                console.error('[SnapRec] Could not inject handoff frame:', err.message);
-            }
-        };
-        chrome.tabs.onUpdated.addListener(listener);
+        tabLoaded.then((loaded) => { if (loaded) injectHandoffFrame(tab.id, frameUrl); });
 
         /* The popup's completion view has existed since the plate redesign and
          * has never once been reachable: nothing sent captureFinished. This is
@@ -1720,17 +1665,7 @@ chrome.runtime.onMessage.addListener((message) => {
         return result;
     })();
 
-    save.then((saved) => {
-        if (!saved) return;
-        chrome.notifications.create('snaprec-handoff-fallback', {
-            type: 'basic',
-            iconUrl: '../icons/icon128.png',
-            title: 'Saved to your Downloads folder',
-            message: `SnapRec could not open your capture in the app, so it was `
-                + `saved as ${saved.filename.replace(/^.*\//, '')} instead.`,
-            priority: 2,
-        });
-    });
+    save.then((saved) => { if (saved) notifySavedToDisk(saved.filename); });
 });
 
 // Separate listener for upload completion and audio warnings from offscreen document
@@ -1764,7 +1699,37 @@ chrome.runtime.onMessage.addListener((message) => {
     }
 });
 
+/** The session lapsed and a recording could not be saved to the account.
+ *
+ * The recording itself is not at risk: the share page holds it locally, and
+ * it can be uploaded from there once signed in. What the user needs is to
+ * know that, and a way to sign in. */
+const SESSION_EXPIRED_NOTIFICATION = 'snaprec-session-expired';
+
+function notifySessionExpired() {
+    chrome.notifications.create(SESSION_EXPIRED_NOTIFICATION, {
+        type: 'basic',
+        iconUrl: '../icons/icon128.png',
+        title: 'Your session expired',
+        message: 'Sign in again to save recordings to your account. '
+            + 'This recording is still on this device, open in the share tab.',
+        buttons: [{ title: 'Sign in' }],
+        requireInteraction: true,
+        priority: 2,
+    });
+}
+
+chrome.notifications.onButtonClicked.addListener((notificationId) => {
+    if (notificationId !== SESSION_EXPIRED_NOTIFICATION) return;
+    openLoginPage();
+    chrome.notifications.clear(SESSION_EXPIRED_NOTIFICATION);
+});
+
 chrome.notifications.onClicked.addListener((notificationId) => {
+    if (notificationId === SESSION_EXPIRED_NOTIFICATION) {
+        openLoginPage();
+        chrome.notifications.clear(SESSION_EXPIRED_NOTIFICATION);
+    }
     if (notificationId === 'snaprec-mic-denied') {
         chrome.tabs.create({ url: 'chrome://settings/content/microphone' });
         chrome.notifications.clear('snaprec-mic-denied');
@@ -2020,3 +1985,62 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 // Cold start: pick up anything a previous worker left undelivered.
 Analytics.flushPendingInstall();
+
+/** What the offscreen document says about the recording it holds.
+ *
+ * null: there is no document, so no recording and no upload in progress.
+ * undefined: there is one but it did not answer — still loading its scripts,
+ * busy, or closing. Nothing it might still own is touched; a later start will
+ * know. Treating a failed answer as "nothing in progress" would let recovery
+ * complete a live upload and register a truncated copy of it. */
+async function offscreenRecordingStatus() {
+    if (!(await hasOffscreenDocument())) return null;
+    return Promise.race([
+        chrome.runtime.sendMessage({ action: 'offscreen_streamStatus' })
+            .then((reply) => (reply?.success ? reply : undefined))
+            .catch(() => undefined),
+        new Promise((resolve) => setTimeout(() => resolve(undefined), 3000)),
+    ]);
+}
+
+/** Finishes what an interrupted recording left behind.
+ *
+ * Runs every time the worker starts. A worker restarted mid-recording finds
+ * the offscreen document still recording and its upload still live, and does
+ * nothing — the document owns both. A worker starting after the document died
+ * (a renderer crash, the browser quitting mid-recording) finds the upload's
+ * persisted record with no owner, and completes it from the parts already on
+ * R2; and finds isRecording still set with nothing recording, and clears it,
+ * or the popup and the in-page bar would show a recording that is gone. */
+async function recoverInterruptedRecording() {
+    const status = await offscreenRecordingStatus();
+    if (status === undefined) return;
+
+    const { isRecording } = await chrome.storage.local.get('isRecording');
+    if (isRecording && !status?.recording) {
+        console.warn('[SnapRec] Recording state outlived its recorder; clearing it');
+        await broadcastHideOverlay();
+    }
+
+    const outcomes = await SnapRecStreamUpload.recoverInterruptedUploads({
+        store: SnapRecStreamUpload.idbUploadStore(indexedDB),
+        apiBase: CONFIG.API_BASE_URL,
+        fetch: (...args) => fetch(...args),
+        liveUploadId: status?.uploadId ?? null,
+        // The id is recovery's own, persisted before the first attempt, so a
+        // retried registration lands on the same row. Returns 'created',
+        // 'exists', 'conflict', 'unauthorized' or 'failed'.
+        register: async (id, fileUrl, durationSec) => {
+            const registration = await registerStreamedRecording(id, fileUrl, durationSec);
+            if (registration === 'unauthorized') notifySessionExpired();
+            return registration;
+        },
+        track: (event, properties) => Analytics.track(event, properties),
+    });
+    const notable = outcomes.filter((o) => o !== 'live');
+    if (notable.length) console.log('[SnapRec] Interrupted upload recovery:', notable.join(', '));
+}
+
+recoverInterruptedRecording().catch((e) => {
+    console.warn('[SnapRec] Recovery check failed:', e.message);
+});

@@ -10,9 +10,37 @@ let audioContext = null;
 let originalDisplayStream = null;
 let originalMicStream = null;
 
+/** The recording's click and scroll trail, for auto-zoom.
+ *
+ * Kept here rather than in the service worker, which Chrome terminates
+ * mid-recording and which then came back with an empty array. Content scripts
+ * broadcast these batches to every extension context, this one included. */
+let recordingMetadata = [];
+
+/** The streaming upload. Owned here, not in the service worker: see
+ * background/stream-upload.js. */
+const streamUploader = globalThis.SnapRecStreamUpload.createStreamUploader({
+    apiBase: CONFIG.API_BASE_URL,
+    // Wrapped: window.fetch throws "Illegal invocation" when called unbound.
+    fetch: (...args) => fetch(...args),
+    store: globalThis.SnapRecStreamUpload.idbUploadStore(indexedDB),
+    // An offscreen document has only chrome.runtime, so analytics goes
+    // through the worker's existing trackEvent route.
+    track: (event, properties) => chrome.runtime
+        .sendMessage({ action: 'trackEvent', event, properties })
+        .catch(() => { /* telemetry is best-effort */ }),
+    partSliceLength: globalThis.SnapRecParts.partSliceLength,
+    partMinBytes: globalThis.SnapRecParts.PART_MIN_BYTES,
+});
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Offscreen] Received message:', message.action);
+
+    if (message.action === 'recordMetadataChunks') {
+        if (Array.isArray(message.chunks)) recordingMetadata.push(...message.chunks);
+        return false;
+    }
 
     // Only handle messages prefixed with 'offscreen_'
     if (!message.action || !message.action.startsWith('offscreen_')) {
@@ -131,58 +159,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false;
         }
 
-        case 'offscreen_streamBegin':
-            streamBuffer = [];
-            streamBufferedBytes = 0;
-            streamPendingPart = null;
-            streaming = true;
-            sendResponse({ success: true });
-            return false;
-
-        case 'offscreen_streamTakePart': {
-            /* Sliced to an exact boundary, not flushed wholesale.
-             *
-             * R2 requires every non-trailing part to be EXACTLY the same
-             * length and only says so at CompleteMultipartUpload, after the
-             * whole recording is uploaded — "InvalidPart: All non-trailing
-             * parts must have the same length." Taking the buffer as-is gave
-             * parts of 5 MB plus a bit, all different, and failed every
-             * completion. The remainder stays buffered for the next part. */
-            /* A part that failed to upload is still pending. Hand the SAME
-             * one back rather than slicing a new one on top of it — otherwise
-             * a network blip silently drops those bytes out of the recording
-             * and leaves a hole in the part numbering. */
-            if (streamPendingPart) {
-                sendResponse({
-                    success: true, hasPart: true,
-                    bytes: streamPendingPart.size, pending: true,
-                });
-                return false;
-            }
-
-            const take = globalThis.SnapRecParts.partSliceLength(
-                streamBufferedBytes, !!message.isFinal);
-            if (take <= 0) {
-                sendResponse({ success: true, hasPart: false, bytes: 0 });
-                return false;
-            }
-            const buffered = new Blob(streamBuffer, { type: 'application/octet-stream' });
-            streamPendingPart = buffered.slice(0, take);
-            const remainder = buffered.slice(take);
-            streamBuffer = remainder.size > 0 ? [remainder] : [];
-            streamBufferedBytes = remainder.size;
-            sendResponse({
-                success: true, hasPart: true,
-                bytes: streamPendingPart.size, remaining: streamBufferedBytes,
-            });
-            return false;
-        }
-
-        case 'offscreen_streamPutPart':
-            putPendingPart(message.uploadUrl)
-                .then(etag => sendResponse({ success: true, etag }))
+        /* The worker asks this document to finish the upload it has been
+         * running since the recorder started. Drains every remaining byte,
+         * completes, and answers { fileUrl, durationSec } or null. */
+        case 'offscreen_streamFinish':
+            streamUploader.finish()
+                .then(result => sendResponse({ success: true, result }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
+
+        case 'offscreen_streamAbort':
+            streamUploader.abort(message.reason)
+                .then(() => sendResponse({ success: true }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+
+        /* What the worker asks on startup before it finalizes anything: is
+         * there still a recording here, and which upload does it own? */
+        case 'offscreen_streamStatus':
+            sendResponse({
+                success: true,
+                ...streamUploader.status(),
+                recording: mediaRecorder !== null && mediaRecorder.state !== 'inactive',
+            });
+            return false;
 
         case 'offscreen_fpBegin':
             try {
@@ -381,21 +381,14 @@ async function startMediaRecorder() {
     console.log('[Offscreen] MediaRecorder created with mimeType:', recorderOptions.mimeType);
 
     recordedChunks = [];
+    recordingMetadata = [];
 
     mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
             recordedChunks.push(e.data);
-            if (streaming) {
-                streamBuffer.push(e.data);
-                streamBufferedBytes += e.data.size;
-                // The service worker owns the upload; it only needs to know a
-                // part's worth has accumulated. The bytes stay here.
-                if (streamBufferedBytes >= globalThis.SnapRecParts.PART_MIN_BYTES) {
-                    chrome.runtime.sendMessage({
-                        action: 'streamPartReady', bytes: streamBufferedBytes,
-                    }).catch(() => { /* worker asleep; the next chunk retries */ });
-                }
-            }
+            // The uploader keeps its own reference to each chunk; the
+            // recording above is untouched by uploading.
+            streamUploader.push(e.data);
         }
     };
 
@@ -424,6 +417,10 @@ async function startMediaRecorder() {
     const startTime = Date.now();
     console.log('[Offscreen] Recording started at:', startTime);
 
+    // Upload as we record. Not awaited: a slow or failed open must never delay
+    // the recorder, and the share page can still upload the local capture.
+    void streamUploader.begin({ contentType: 'video/webm' });
+
     // Clear pending state
     pendingStream = null;
     pendingVideoTracks = null;
@@ -443,15 +440,6 @@ let fpCanvas = null;
 let fpCtx = null;
 let fpMimeType = 'image/webp';
 
-/** Chunks waiting to become the next upload part.
- *
- * Separate from recordedChunks, which is the whole recording and is still what
- * the local blob and the handoff are built from. This buffer is drained as it
- * fills; the recording itself is untouched by uploading. */
-let streamBuffer = [];
-let streamBufferedBytes = 0;
-let streamPendingPart = null;
-let streaming = false;
 let currentImageBlob = null;
 
 async function stopRecording() {
@@ -550,6 +538,8 @@ async function loadParkedBlob(kind = 'video') {
 async function persistForHandoff(id, metadataStr, kind = 'video') {
     const blob = kind === 'image' ? currentImageBlob : currentRecordingBlob;
     if (!blob) throw new Error('No capture available');
+    // A recording's trail is collected here; the worker no longer holds one.
+    if (metadataStr === undefined && kind === 'video') metadataStr = JSON.stringify(recordingMetadata);
 
     // Images and recordings use separate keys so a screenshot can never
     // overwrite a recording that has not reached the share page yet. There is
@@ -667,28 +657,6 @@ async function finishFullPage() {
 
     console.log('[Offscreen] Full-page encoded,', blob.size, 'bytes');
     return { size: blob.size, mimeType: blob.type || fpMimeType, thumbnail };
-}
-
-/** PUTs the pending part straight to R2.
- *
- * This function existing here is the whole design: the part is several
- * megabytes and it never enters a chrome.runtime message. The service worker
- * sends a signed URL — a string — and gets back an ETag — a string.
- *
- * The ETag is quoted by R2 and must be handed back to CompleteMultipartUpload
- * exactly as received, quotes included. */
-async function putPendingPart(uploadUrl) {
-    if (!streamPendingPart) throw new Error('No part pending');
-
-    const response = await fetch(uploadUrl, { method: 'PUT', body: streamPendingPart });
-    if (!response.ok) throw new Error(`Part upload failed: HTTP ${response.status}`);
-
-    const etag = response.headers.get('ETag');
-    if (!etag) throw new Error('R2 returned no ETag for the part');
-
-    streamPendingPart = null;
-    console.log('[Offscreen] Part uploaded,', etag);
-    return etag;
 }
 
 async function cropImage(dataUrl, rect) {
