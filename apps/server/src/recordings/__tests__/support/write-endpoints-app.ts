@@ -62,9 +62,15 @@ function table(name: string, db: Db) {
         }
         return out;
     };
+    // One-to-many collections are not columns: TypeORM does not store a
+    // loaded `comments` or `reactions` array on the row when it saves it.
+    const columnsOf = (entity: any) => {
+        const { reactions: _r, comments: _c, ...columns } = defined(entity);
+        return name === 'recordings' ? columns : defined(entity);
+    };
     const put = (entity: any) => {
         const id = entity.id ?? crypto.randomUUID();
-        const merged = { createdAt: new Date(), ...(rows.get(id) ?? {}), ...defined(entity), id };
+        const merged = { createdAt: new Date(), ...(rows.get(id) ?? {}), ...columnsOf(entity), id };
         rows.set(id, merged);
         Object.assign(entity, { id });
         return merged;

@@ -15,6 +15,7 @@ import {
     NotFoundException,
     ForbiddenException,
     ConflictException,
+    UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
@@ -22,11 +23,14 @@ import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { LenientJwtAuthGuard } from '../auth/lenient-jwt-auth.guard';
+import { StripGuestIdsInterceptor } from './strip-guest-ids.interceptor';
 import { ResolveCommentDto } from './dto/resolve-comment.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
 import { WatchProgressDto } from './dto/watch-progress.dto';
 import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto, BeginUploadDto, PartUrlDto, CompleteUploadDto, AbortUploadDto } from './dto';
 
+// No response from this controller carries a guest id: see the interceptor.
+@UseInterceptors(StripGuestIdsInterceptor)
 @Controller('recordings')
 export class RecordingsController {
     private readonly logger = new Logger(RecordingsController.name);
