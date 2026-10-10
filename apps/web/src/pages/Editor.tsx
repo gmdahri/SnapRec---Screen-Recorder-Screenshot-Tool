@@ -17,7 +17,7 @@ const EditorContent: React.FC = () => {
     const {
         canvasRef, fabricCanvas, capturedImage, setCapturedImage,
         isUploaded, isUploading,
-        showLoginPrompt, setShowLoginPrompt,
+        showLoginPrompt, setShowLoginPrompt, loginExpired, setLoginExpired,
         setupCanvasEvents, initCanvas, isCanvasReady, isInitializing,
         undo, redo, historyIndex, history, handleActionClick,
         title, setTitle, user, loading,
@@ -227,8 +227,9 @@ const EditorContent: React.FC = () => {
 
                 <LoginModal
                     isOpen={showLoginPrompt}
-                    onClose={() => setShowLoginPrompt(false)}
+                    onClose={() => { setShowLoginPrompt(false); setLoginExpired(false); }}
                     actionDescription="upload and share"
+                    sessionExpired={loginExpired}
                 />
             </EditorChrome>
         </>

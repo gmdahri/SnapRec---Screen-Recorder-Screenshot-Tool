@@ -19,6 +19,7 @@ import { useVideoFrames } from '../hooks/useVideoFrames';
 import { useStableMediaUrl } from '../hooks/useStableMediaUrl';
 import { useUpdateRecording, useResolveComment, useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { readHandoffMessage } from '../lib/handoffMessage';
+import { isSessionExpired } from '../lib/sessionExpired';
 import { describeExpiry } from '../lib/expiryCountdown';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -81,7 +82,7 @@ function filenameFor(rec: { title?: string; type?: string } | null | undefined):
 const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, expireSession } = useAuth();
     const { showNotification } = useNotification();
     const isFreshParam = new URLSearchParams(window.location.search).get('fresh') === 'true';
     const isValidId = id && id !== 'undefined';
@@ -301,6 +302,8 @@ const ShareView: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    // The modal is asking because a session lapsed, not because there never was one.
+    const [loginExpired, setLoginExpired] = useState(false);
     const [loginAction, setLoginAction] = useState('continue');
     const [pendingAction, setPendingActionState] = useState<string | null>(localStorage.getItem('share_pending_action'));
 
@@ -698,6 +701,24 @@ const ShareView: React.FC = () => {
         return recordingId;
     };
 
+    /** The session lapsed partway through an upload.
+     *
+     * Says so, and keeps the capture: it never leaves this page, and it is
+     * already in this origin's IndexedDB, so the sign-in redirect does not
+     * lose it either. The dead session is cleared so the "resume after
+     * sign-in" effect waits for a real one instead of firing straight back
+     * into the same refusal, and the same action resumes once signed in. It
+     * is never retried as a guest. */
+    const recoverFromExpiredSession = async (resume: 'share' | 'videoEditor', description: string) => {
+        capture('auth_modal_triggered', { trigger: 'session_expired' });
+        showNotification('Your session expired. Sign in again \u2014 your recording is still on this device.', 'error');
+        await expireSession();
+        setLoginAction(description);
+        setLoginExpired(true);
+        setPendingAction(resume);
+        setIsLoginModalOpen(true);
+    };
+
     const handleUploadToCloud = async () => {
         if (!user) {
             capture('auth_modal_triggered', { trigger: 'share_link' });
@@ -728,6 +749,10 @@ const ShareView: React.FC = () => {
                 showNotification('Shareable link generated successfully!', 'success');
             }
         } catch (error: any) {
+            if (isSessionExpired(error)) {
+                await recoverFromExpiredSession('share', 'generate a shareable link');
+                return;
+            }
             showNotification(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
             setIsUploading(false);
@@ -765,6 +790,10 @@ const ShareView: React.FC = () => {
             });
             navigate(`/video-editor/project/${project.id}`);
         } catch (e: unknown) {
+            if (isSessionExpired(e)) {
+                await recoverFromExpiredSession('videoEditor', 'open the Video Editor');
+                return;
+            }
             showNotification(e instanceof Error ? e.message : 'Could not open editor', 'error');
         } finally {
             setVideoEditorLoading(false);
@@ -900,6 +929,14 @@ const ShareView: React.FC = () => {
                             onPlaybackUpdate={(p) => setSharePlayheadSec(p.currentTime)}
                         />
                     }
+                />
+                {/* This surface's "Generate shareable link" and "Edit" open the
+                    sign-in modal; it used to have none to open. */}
+                <LoginModal
+                    isOpen={isLoginModalOpen}
+                    onClose={() => { setIsLoginModalOpen(false); setLoginExpired(false); }}
+                    actionDescription={loginAction}
+                    sessionExpired={loginExpired}
                 />
             </>
         );
@@ -1043,8 +1080,9 @@ const ShareView: React.FC = () => {
                 />
                 <LoginModal
                     isOpen={isLoginModalOpen}
-                    onClose={() => setIsLoginModalOpen(false)}
+                    onClose={() => { setIsLoginModalOpen(false); setLoginExpired(false); }}
                     actionDescription={loginAction}
+                    sessionExpired={loginExpired}
                 />
             </>
         );
@@ -1464,8 +1502,9 @@ const ShareView: React.FC = () => {
 
 <LoginModal
                 isOpen={isLoginModalOpen}
-                onClose={() => setIsLoginModalOpen(false)}
+                onClose={() => { setIsLoginModalOpen(false); setLoginExpired(false); }}
                 actionDescription={loginAction}
+                sessionExpired={loginExpired}
             />
         </FreshCaptureChrome>
     );

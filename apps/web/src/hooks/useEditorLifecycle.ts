@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { isSessionExpired } from '../lib/sessionExpired';
 import { useNotification } from '../contexts/NotificationContext';
 import { useRecording, useGetUploadUrl, useCreateRecording, useUpdateRecording, uploadFile, addGuestRecordingId } from './useRecordings';
 import { fabric } from 'fabric';
@@ -8,12 +9,14 @@ import { fabric } from 'fabric';
 export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.Canvas | null>) => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, expireSession } = useAuth();
     const { showNotification } = useNotification();
     const [title, setTitle] = useState(`Screenshot ${new Date().toLocaleString()}`);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [isUploaded, setIsUploaded] = useState(!!id);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    // The prompt is asking because a session lapsed, not because there never was one.
+    const [loginExpired, setLoginExpired] = useState(false);
     const [pendingAction, setPendingActionState] = useState<string | null>(localStorage.getItem('editor_pending_action'));
     const [isUploading, setIsUploading] = useState(false);
 
@@ -121,11 +124,22 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
             }
             setIsUploaded(true);
         } catch (error: any) {
+            if (isSessionExpired(error)) {
+                // Never retried as a guest. The canvas stays as it is; the dead
+                // session is cleared so the resume-after-sign-in effect waits
+                // for a real one, and "share" runs again once signed in.
+                showNotification('Your session expired. Sign in again to share this screenshot.', 'error');
+                await expireSession();
+                setLoginExpired(true);
+                setPendingAction('share');
+                setShowLoginPrompt(true);
+                return;
+            }
             showNotification(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
             setIsUploading(false);
         }
-    }, [id, title, user, isUploading, fabricCanvas, navigate, showNotification, getUploadUrlMutation, createRecordingMutation, updateRecordingMutation]);
+    }, [id, title, user, isUploading, fabricCanvas, navigate, showNotification, getUploadUrlMutation, createRecordingMutation, updateRecordingMutation, expireSession, setPendingAction]);
 
     return {
         id,
@@ -138,6 +152,8 @@ export const useEditorLifecycle = (fabricCanvas: React.MutableRefObject<fabric.C
         isUploading,
         showLoginPrompt,
         setShowLoginPrompt,
+        loginExpired,
+        setLoginExpired,
         pendingAction,
         setPendingAction,
         handleUploadToCloud,

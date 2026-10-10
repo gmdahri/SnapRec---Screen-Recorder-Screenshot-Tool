@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SessionExpiredError, sessionExpiredResponse } from '../lib/sessionExpired';
 import { supabase } from '../lib/supabase';
 
 // Types
@@ -108,11 +109,11 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
     });
 
     if (!response.ok) {
-        if (response.status === 401) {
-            console.error('401 Unauthorized - Token may be expired or invalid');
-            throw new Error('Session expired. Please log in again.');
-        }
         const errorText = await response.text().catch(() => '');
+        if (sessionExpiredResponse(response.status, errorText)) {
+            console.error(`${response.status} - session expired or invalid`);
+            throw new SessionExpiredError();
+        }
         // Don't log 404 as a full error to reduce console noise during polling/fresh registration
         if (response.status !== 404) {
             console.error(`API Error: ${response.status}`, errorText);

@@ -6,12 +6,16 @@ interface LoginModalProps {
     isOpen: boolean;
     onClose: () => void;
     actionDescription?: string;
+    /** The session lapsed mid-task, rather than never existing. Says so, and
+     * says the work is safe, instead of a generic "Sign in Required". */
+    sessionExpired?: boolean;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
     isOpen,
     onClose,
     actionDescription = 'continue',
+    sessionExpired = false,
 }) => {
     const { signInWithGoogle, loading } = useAuth();
 
@@ -30,10 +34,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                         <span className="material-symbols-outlined text-[var(--sr-cyan-on-light)] text-3xl">lock</span>
                     </div>
                     <h3 className="text-xl font-bold text-[var(--sr-text-primary-on-light)] mb-2">
-                        Sign in Required
+                        {sessionExpired ? 'Your session expired' : 'Sign in Required'}
                     </h3>
                     <p className="text-[var(--sr-text-faint-on-light)] text-sm">
-                        Sign in with your Google account to {actionDescription}.
+                        {sessionExpired
+                            ? `Sign in again to ${actionDescription}. Your recording is still here on this device.`
+                            : `Sign in with your Google account to ${actionDescription}.`}
                     </p>
                 </div>
                 <div className="space-y-3">
