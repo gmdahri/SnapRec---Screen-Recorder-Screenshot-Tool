@@ -23,6 +23,8 @@ function makeService(over: { owner?: string | null; comments?: any[]; durationSe
   };
   const recordings = {
     findOne: jest.fn().mockResolvedValue(recording),
+    // No other recording holds the published key (see assertKeyAvailable).
+    find: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockImplementation(async (r: unknown) => r),
   };
   const service = new RecordingsService(

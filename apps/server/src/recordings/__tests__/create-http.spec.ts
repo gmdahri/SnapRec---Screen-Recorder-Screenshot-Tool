@@ -41,6 +41,7 @@ function fakeDb() {
     const repo = {
         rows,
         findOne: async ({ where: { id } }: any) => (rows.has(id) ? structuredClone(rows.get(id)) : null),
+        find: async ({ where: { fileUrl } }: any) => [...rows.values()].filter((r) => r.fileUrl === fileUrl),
         insert: async (entity: any) => {
             const id = entity.id ?? crypto.randomUUID();
             if (rows.has(id)) throw Object.assign(new Error('duplicate key value violates unique constraint'), { code: '23505' });

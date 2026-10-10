@@ -17,6 +17,8 @@ function service({ raceWinner }: { raceWinner?: any } = {}) {
         // The first lookup sees nothing — the other request has not committed
         // yet — and every later one sees its row.
         findOne: async () => { lookups++; return lookups === 1 ? null : raceWinner ?? null; },
+        // No other recording holds the key (see assertKeyAvailable).
+        find: async () => [],
         insert: async () => {
             calls.push('insert');
             if (raceWinner) throw Object.assign(new Error('duplicate key'), { code: '23505' });

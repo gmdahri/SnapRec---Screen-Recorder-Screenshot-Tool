@@ -34,7 +34,20 @@ export class RecordingsService {
         });
         if (!due.length) return { deleted: 0 };
 
+        // A key another recording still uses is not this row's to delete.
+        // Rows pointing at someone else's file were registrable until the
+        // key rule in assertKeyAvailable existed, so some may already be here.
+        const dueIds = new Set(due.map((r) => r.id));
+        const sharers = await this.recordingsRepository.find({
+            where: { fileUrl: In([...new Set(due.map((r) => r.fileUrl))]) },
+        });
+        const stillUsed = new Set(sharers.filter((r) => !dueIds.has(r.id)).map((r) => r.fileUrl));
+
         for (const recording of due) {
+            if (stillUsed.has(recording.fileUrl)) {
+                this.logger.warn(`Sweep: kept ${recording.fileUrl}, still used by another recording`);
+                continue;
+            }
             try {
                 await this.storageService.deleteObject(recording.fileUrl);
             } catch (e) {
@@ -77,6 +90,7 @@ export class RecordingsService {
             const existing = await this.findForCreate(createRecordingDto.id);
             if (existing) return this.resolveExistingId(existing, createRecordingDto);
         }
+        await this.assertKeyAvailable(createRecordingDto.fileUrl);
 
         const recording = new Recording();
         if (createRecordingDto.id) {
@@ -121,6 +135,19 @@ export class RecordingsService {
             return this.resolveExistingId(existing, createRecordingDto);
         }
         return { recording: (await this.findForCreate(id))!, created: true };
+    }
+
+    /** A key belongs to the recording that first registered it.
+     *
+     * Nothing used to tie a fileUrl to the upload that created it, so a
+     * recording could be registered — anonymously — on someone else's key,
+     * and when it expired the sweep deleted their file. `exceptId` is the
+     * recording being changed, which may keep its own key. */
+    private async assertKeyAvailable(fileUrl: string, exceptId?: string): Promise<void> {
+        const holders = await this.recordingsRepository.find({ where: { fileUrl } });
+        if (holders.some((r) => r.id !== exceptId)) {
+            throw new ConflictException('This file belongs to another recording');
+        }
     }
 
     private findForCreate(id: string): Promise<Recording | null> {
@@ -446,6 +473,7 @@ export class RecordingsService {
             throw new ForbiddenException('You do not have permission to publish over this recording');
         }
 
+        await this.assertKeyAvailable(dto.fileUrl, id);
         recording.fileUrl = dto.fileUrl;
         if (typeof dto.durationSec === 'number') {
             recording.durationSec = dto.durationSec;
@@ -483,6 +511,7 @@ export class RecordingsService {
         }
 
         if (updateRecordingDto.fileUrl) {
+            await this.assertKeyAvailable(updateRecordingDto.fileUrl, id);
             recording.fileUrl = updateRecordingDto.fileUrl;
         }
 
