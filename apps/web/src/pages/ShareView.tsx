@@ -255,7 +255,7 @@ const ShareView: React.FC = () => {
      * "Generate shareable link" for something already on R2 and upload a second
      * copy of it. A miss is cheap: an unstreamed capture 404s once, `recording`
      * stays undefined, and the local-blob path runs exactly as before. */
-    const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
+    const { data: recording, isLoading, isFetched } = useRecording(effectiveId, pollInterval, {
         enabled: (!!isValidId && !isFreshParam) || !!localId || isUploaded || isUploading,
         // The response is personal to the viewer; so is its cached copy.
         viewer: user?.id ?? null,
@@ -854,8 +854,16 @@ const ShareView: React.FC = () => {
 
 
 
-    // Show loader if we are fetching data, OR if this is a "fresh" redirect and we have nothing yet
-    // Improved condition: Only show loader if we have NO data to show at all
+    /* The full-page loader is for the first load only, and never covers a
+     * capture the page already holds.
+     *
+     * In TanStack Query v5 every refetch of a query with no data goes back to
+     * `pending`, so `isLoading` turns true on each poll. A fresh capture whose
+     * row does not exist yet (a 404 polled every three seconds) used to swap
+     * its player for this loader and back on every poll, for two minutes,
+     * remounting the video each time. `isFetched` is set once the first answer
+     * — data or error — has arrived. */
+    const loading = isLoading && !isFetched && !localVideoBlob;
     const hasNothingToShow = isFresh && !recording && !localVideoBlob;
     if (loading || (hasNothingToShow && !isUploaded)) {
         return (
