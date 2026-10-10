@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { StorageService } from '../storage/storage.service';
 import { expiresAtForUpload } from './expiry';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,6 +12,12 @@ import { UsersService } from '../users/users.service';
 import { CreateRecordingDto } from './dto/create-recording.dto';
 import { UpdateRecordingDto } from './dto/update-recording.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
+
+/** What create() did: made the row, or recognised a retry of one it had made. */
+export interface CreateRecordingResult {
+    recording: Recording;
+    created: boolean;
+}
 
 @Injectable()
 export class RecordingsService {
@@ -54,7 +60,24 @@ export class RecordingsService {
         private readonly storageService: StorageService,
     ) { }
 
-    async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Recording> {
+    /** Creates a recording. Never updates one.
+     *
+     * This used to end in repository.save(), which TypeORM turns into an
+     * UPDATE when the id already exists — and ids are not secret, every share
+     * link carries one. Anyone could POST a victim's id with no token and a
+     * guestId and the row was rewritten as a guest upload expiring in an hour,
+     * after which the sweep deleted it. Now an existing id is never written:
+     * a retry of the same upload by the same owner gets the existing row back,
+     * and anything else is a conflict.
+     *
+     * The caller must already have settled ownership: dto.userId is trusted
+     * here, so the controller only ever passes the token's subject. */
+    async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<CreateRecordingResult> {
+        if (createRecordingDto.id) {
+            const existing = await this.findForCreate(createRecordingDto.id);
+            if (existing) return this.resolveExistingId(existing, createRecordingDto);
+        }
+
         const recording = new Recording();
         if (createRecordingDto.id) {
             recording.id = createRecordingDto.id;
@@ -85,7 +108,38 @@ export class RecordingsService {
         // claiming clears this; a signed-in recording never carries it.
         recording.expiresAt = expiresAtForUpload(Boolean(createRecordingDto.userId));
 
-        return this.recordingsRepository.save(recording);
+        let id: string;
+        try {
+            // insert(), not save(): an INSERT that cannot become an UPDATE.
+            const result = await this.recordingsRepository.insert(recording);
+            id = result.identifiers[0].id;
+        } catch (error: any) {
+            // Two requests for the same id raced past the lookup above.
+            if (error?.code !== '23505' || !createRecordingDto.id) throw error;
+            const existing = await this.findForCreate(createRecordingDto.id);
+            if (!existing) throw error;
+            return this.resolveExistingId(existing, createRecordingDto);
+        }
+        return { recording: (await this.findForCreate(id))!, created: true };
+    }
+
+    private findForCreate(id: string): Promise<Recording | null> {
+        return this.recordingsRepository.findOne({ where: { id }, relations: ['user'] });
+    }
+
+    /** An existing id is answered, never written.
+     *
+     * A retry — the same owner, or the same guest on an ownerless row, sending
+     * the same file — gets the row back, so an uploader that lost the first
+     * response can safely ask again. Everyone else gets a conflict that says
+     * nothing about who owns the id. */
+    private resolveExistingId(existing: Recording, dto: CreateRecordingDto): CreateRecordingResult {
+        const sameOwner = dto.userId
+            ? existing.user?.supabaseId === dto.userId
+            : !existing.user && !!dto.guestId && existing.guestId === dto.guestId;
+        const sameUpload = existing.fileUrl === dto.fileUrl && existing.type === dto.type;
+        if (sameOwner && sameUpload) return { recording: existing, created: false };
+        throw new ConflictException('A recording with this id already exists');
     }
 
     async findAll(userId?: string): Promise<Recording[]> {

@@ -13,6 +13,7 @@ import {
     ParseUUIDPipe,
     Logger,
     NotFoundException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
@@ -101,14 +102,28 @@ export class RecordingsController {
         return result;
     }
 
+    /** 201 for a new recording; 200 with the existing row for a retry of
+     * one; 409 for an id that is someone else's. See RecordingsService.create.
+     *
+     * Ownership comes from the token and nowhere else. A body userId used to
+     * be taken at its word, so an anonymous caller could create recordings in
+     * anyone's library. It is still accepted when it names the caller — the
+     * web app sends one alongside its token — and refused otherwise. */
     @UseGuards(OptionalJwtAuthGuard)
     @Post()
-    async createRecording(@Req() req: any, @Body() createRecordingDto: CreateRecordingDto) {
-        if (req.user && !createRecordingDto.userId) {
-            createRecordingDto.userId = req.user.id;
+    async createRecording(
+        @Req() req: any,
+        @Body() createRecordingDto: CreateRecordingDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        if (createRecordingDto.userId && createRecordingDto.userId !== req.user?.id) {
+            throw new ForbiddenException('userId does not match the signed-in user');
         }
+        createRecordingDto.userId = req.user?.id;
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
-        return this.recordingsService.create(createRecordingDto, userMeta);
+        const { recording, created } = await this.recordingsService.create(createRecordingDto, userMeta);
+        if (!created) res.status(200);
+        return recording;
     }
 
     @UseGuards(JwtAuthGuard)
