@@ -17,6 +17,7 @@ import {
     ConflictException,
     UseInterceptors,
     BadRequestException,
+    ServiceUnavailableException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
@@ -47,8 +48,19 @@ export class RecordingsController {
      * share link, so that was a way to replace anybody's recording. Every
      * legitimate uploader names a fresh key. */
     private async refuseExistingKey(fileName: string) {
-        if (await this.storageService.checkFileExists(fileName)) {
+        if (await this.fileExistsOr503(fileName)) {
             throw new ConflictException('A file already exists at this key');
+        }
+    }
+
+    /** Fails closed: when R2 cannot say whether the key exists, nothing is
+     * signed or completed, and the caller is told to try again later. */
+    private async fileExistsOr503(fileName: string): Promise<boolean> {
+        try {
+            return await this.storageService.checkFileExists(fileName);
+        } catch (e) {
+            this.logger.warn(`Could not check ${fileName}: ${(e as Error).message}`);
+            throw new ServiceUnavailableException('Storage is unavailable; try again shortly');
         }
     }
 
@@ -189,7 +201,7 @@ export class RecordingsController {
     @Get('status/:fileName')
     async getFileStatus(@Param('fileName') fileName: string, @Res({ passthrough: true }) res: Response) {
         res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        const exists = await this.storageService.checkFileExists(fileName);
+        const exists = await this.fileExistsOr503(fileName);
         return { ready: exists };
     }
 
@@ -220,7 +232,10 @@ export class RecordingsController {
             throw new NotFoundException(`Recording with ID "${id}" not found`);
         }
 
-        const isReady = await this.storageService.checkFileExists(recording.fileUrl);
+        // The one reader that degrades rather than failing closed: isReady
+        // decides nothing, and a 503 here would take every share page down
+        // with R2. The page shows "processing" and polls again.
+        const isReady = await this.storageService.checkFileExists(recording.fileUrl).catch(() => false);
 
         return {
             ...RecordingsController.publicView(recording, req.user?.id),
