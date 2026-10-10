@@ -136,6 +136,11 @@ export class StorageService implements OnModuleInit {
         };
     }
 
+    /** true if the key holds an object, false only if R2 clearly says it
+     * does not (404). Anything else — throttling, a 5xx, a 403 from rotated
+     * credentials, a timeout — throws: "R2 could not answer" is not "absent",
+     * and the upload endpoints' refusal to write over an existing file is
+     * only as good as this distinction. */
     async checkFileExists(fileName: string): Promise<boolean> {
         try {
             const command = new HeadObjectCommand({
@@ -144,8 +149,10 @@ export class StorageService implements OnModuleInit {
             });
             await this.s3Client.send(command);
             return true;
-        } catch (err) {
-            return false;
+        } catch (err: any) {
+            const status = err?.$metadata?.httpStatusCode;
+            if (status === 404 || err?.name === 'NotFound' || err?.name === 'NoSuchKey') return false;
+            throw err;
         }
     }
 

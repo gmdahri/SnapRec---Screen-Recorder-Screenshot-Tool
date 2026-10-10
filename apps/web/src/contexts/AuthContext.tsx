@@ -16,6 +16,13 @@ interface AuthContextType {
      * success — the caller shows it inline rather than a thrown exception. */
     signInWithMagicLink: (email: string) => Promise<string | null>;
     signOut: () => Promise<void>;
+    /** Forget a session the server has stopped accepting.
+     *
+     * Local only: the session is already dead server-side, and a network
+     * sign-out can fail offline and leave the stale user in place — which is
+     * what would keep "resume after sign-in" firing against a session that
+     * cannot be used. */
+    expireSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -167,6 +174,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     }, []);
 
+    const expireSession = useCallback(async () => {
+        hasClaimedRef.current = false;
+        const { error } = await supabase.auth.signOut({ scope: 'local' });
+        if (error) console.error('Error clearing an expired session:', error);
+    }, []);
+
     const value = useMemo(() => ({
         user,
         session,
@@ -174,8 +187,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loading,
         signInWithGoogle,
         signInWithMagicLink,
-        signOut
-    }), [user, session, guestId, loading, signInWithGoogle, signInWithMagicLink, signOut]);
+        signOut,
+        expireSession,
+    }), [user, session, guestId, loading, signInWithGoogle, signInWithMagicLink, signOut, expireSession]);
 
     return (
         <AuthContext.Provider value={value}>

@@ -6,7 +6,7 @@ import { CaptureFrame, StatusBadge, type StatusWord } from '@snaprec/design-syst
 import { SupportButton } from '../../components/SupportButton';
 import { formatTimecode, type ShareComment } from './anchors';
 import type { VideoFrame } from '../../hooks/useVideoFrames';
-import { CommentComposer, type NewComment } from './CommentComposer';
+import { CommentComposer, type NewComment, type PostResult } from './CommentComposer';
 import { PendingComment } from './PendingComment';
 import { Sweep } from './Sweep';
 
@@ -54,7 +54,7 @@ export interface VideoViewerProps {
   onSeek: (ms: number) => void;
   /** Returns `false` when the comment is refused — the sign-in gate does
    * that, and the composer then keeps the draft. */
-  onPost: (comment: NewComment) => void | boolean;
+  onPost: (comment: NewComment) => PostResult;
   onCopyLink: () => void;
   onDownload?: () => void;
   onEdit?: () => void;

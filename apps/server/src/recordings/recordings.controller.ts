@@ -13,17 +13,26 @@ import {
     ParseUUIDPipe,
     Logger,
     NotFoundException,
+    ForbiddenException,
+    ConflictException,
+    UseInterceptors,
+    BadRequestException,
+    ServiceUnavailableException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
 import { RecordingsService } from './recordings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { LenientJwtAuthGuard } from '../auth/lenient-jwt-auth.guard';
+import { StripGuestIdsInterceptor } from './strip-guest-ids.interceptor';
 import { ResolveCommentDto } from './dto/resolve-comment.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
 import { WatchProgressDto } from './dto/watch-progress.dto';
 import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto, BeginUploadDto, PartUrlDto, CompleteUploadDto, AbortUploadDto } from './dto';
 
+// No response from this controller carries a guest id: see the interceptor.
+@UseInterceptors(StripGuestIdsInterceptor)
 @Controller('recordings')
 export class RecordingsController {
     private readonly logger = new Logger(RecordingsController.name);
@@ -33,8 +42,31 @@ export class RecordingsController {
         private readonly recordingsService: RecordingsService,
     ) { }
 
+    /** Every upload endpoint below signs a key the client names, with no
+     * account required — guests upload too. What they must never do is sign
+     * a key that already holds a file: keys are readable by anyone holding a
+     * share link, so that was a way to replace anybody's recording. Every
+     * legitimate uploader names a fresh key. */
+    private async refuseExistingKey(fileName: string) {
+        if (await this.fileExistsOr503(fileName)) {
+            throw new ConflictException('A file already exists at this key');
+        }
+    }
+
+    /** Fails closed: when R2 cannot say whether the key exists, nothing is
+     * signed or completed, and the caller is told to try again later. */
+    private async fileExistsOr503(fileName: string): Promise<boolean> {
+        try {
+            return await this.storageService.checkFileExists(fileName);
+        } catch (e) {
+            this.logger.warn(`Could not check ${fileName}: ${(e as Error).message}`);
+            throw new ServiceUnavailableException('Storage is unavailable; try again shortly');
+        }
+    }
+
     @Post('upload-url')
     async getUploadUrl(@Body() uploadUrlDto: UploadUrlDto) {
+        await this.refuseExistingKey(uploadUrlDto.fileName);
         const uploadUrl = await this.storageService.getUploadPresignedUrl(
             uploadUrlDto.fileName,
             uploadUrlDto.contentType,
@@ -50,6 +82,7 @@ export class RecordingsController {
 
     @Post('upload/begin')
     async beginUpload(@Body() dto: BeginUploadDto) {
+        await this.refuseExistingKey(dto.fileName);
         const uploadId = await this.storageService.createMultipartUpload(
             dto.fileName, dto.contentType);
         return { uploadId };
@@ -64,6 +97,9 @@ export class RecordingsController {
 
     @Post('upload/complete')
     async completeUpload(@Body() dto: CompleteUploadDto) {
+        // Checked again here: completing is what writes the object, and the
+        // key may have been filled since the upload was opened.
+        await this.refuseExistingKey(dto.fileName);
         await this.storageService.completeMultipartUpload(
             dto.fileName, dto.uploadId, dto.parts);
         return { fileUrl: dto.fileName };
@@ -101,14 +137,28 @@ export class RecordingsController {
         return result;
     }
 
+    /** 201 for a new recording; 200 with the existing row for a retry of
+     * one; 409 for an id that is someone else's. See RecordingsService.create.
+     *
+     * Ownership comes from the token and nowhere else. A body userId used to
+     * be taken at its word, so an anonymous caller could create recordings in
+     * anyone's library. It is still accepted when it names the caller — the
+     * web app sends one alongside its token — and refused otherwise. */
     @UseGuards(OptionalJwtAuthGuard)
     @Post()
-    async createRecording(@Req() req: any, @Body() createRecordingDto: CreateRecordingDto) {
-        if (req.user && !createRecordingDto.userId) {
-            createRecordingDto.userId = req.user.id;
+    async createRecording(
+        @Req() req: any,
+        @Body() createRecordingDto: CreateRecordingDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        if (createRecordingDto.userId && createRecordingDto.userId !== req.user?.id) {
+            throw new ForbiddenException('userId does not match the signed-in user');
         }
+        createRecordingDto.userId = req.user?.id;
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
-        return this.recordingsService.create(createRecordingDto, userMeta);
+        const { recording, created } = await this.recordingsService.create(createRecordingDto, userMeta);
+        if (!created) res.status(200);
+        return recording;
     }
 
     @UseGuards(JwtAuthGuard)
@@ -151,7 +201,7 @@ export class RecordingsController {
     @Get('status/:fileName')
     async getFileStatus(@Param('fileName') fileName: string, @Res({ passthrough: true }) res: Response) {
         res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        const exists = await this.storageService.checkFileExists(fileName);
+        const exists = await this.fileExistsOr503(fileName);
         return { ready: exists };
     }
 
@@ -174,17 +224,33 @@ export class RecordingsController {
         }
     }
 
+    /** Personal to the viewer: viewerIsOwner, viewerIsAuthor and
+     * viewerReacted are computed from their token. Nothing in front of the API
+     * caches it today (the web calls the run.app URL directly, served by
+     * Google Frontend with no CDN), but a browser cache is keyed by URL, not
+     * by Authorization — so it is marked private and unstorable, and varies
+     * on Authorization for anything that ignores no-store. */
+    @UseGuards(LenientJwtAuthGuard)
     @Get(':id')
-    async getRecording(@Param('id', ParseUUIDPipe) id: string) {
+    async getRecording(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: any,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        res.set('Cache-Control', 'private, no-store');
+        res.vary('Authorization');
         const recording = await this.recordingsService.findOne(id);
         if (!recording) {
             throw new NotFoundException(`Recording with ID "${id}" not found`);
         }
 
-        const isReady = await this.storageService.checkFileExists(recording.fileUrl);
+        // The one reader that degrades rather than failing closed: isReady
+        // decides nothing, and a 503 here would take every share page down
+        // with R2. The page shows "processing" and polls again.
+        const isReady = await this.storageService.checkFileExists(recording.fileUrl).catch(() => false);
 
         return {
-            ...recording,
+            ...RecordingsController.publicView(recording, req.user?.id),
             isReady,
             fileUrl: isReady
                 ? await this.storageService.getDownloadUrl(recording.fileUrl)
@@ -192,6 +258,39 @@ export class RecordingsController {
             // Null when no signed-in viewer has watched — the viewer hides the
             // tile rather than showing 0%.
             watchedPercent: await this.recordingsService.watchedPercent(id),
+        };
+    }
+
+    /** The recording as anyone holding its link may see it.
+     *
+     * People are a display name and an avatar — nothing else. This used to
+     * return each person's full user row: email, internal id, auth id. And no
+     * guestId at all: a guestId is the only proof a guest has that a capture
+     * is theirs (claiming requires it), and this endpoint answers anyone.
+     *
+     * What the page used to work out by comparing ids it now gets as flags,
+     * computed here against the viewer's token: whether they own the
+     * recording, wrote a comment, or left a reaction. `byOwner` does not
+     * depend on the viewer; it is what "needs a reply" is decided from. */
+    static publicView(recording: any, viewerSupabaseId?: string) {
+        const person = (u?: { fullName?: string | null; avatarUrl?: string | null } | null) =>
+            (u ? { fullName: u.fullName ?? null, avatarUrl: u.avatarUrl ?? null } : null);
+        const isViewer = (u?: { supabaseId?: string } | null) =>
+            !!viewerSupabaseId && u?.supabaseId === viewerSupabaseId;
+        const { guestId: _guestId, user, reactions, comments, ...rest } = recording;
+        return {
+            ...rest,
+            user: person(user),
+            viewerIsOwner: isViewer(user),
+            reactions: reactions?.map(({ guestId: _g, user: u, ...reaction }: any) => ({
+                ...reaction, user: person(u), viewerReacted: isViewer(u),
+            })),
+            comments: comments?.map(({ guestId: _g, user: u, resolvedByUserId: _r, ...comment }: any) => ({
+                ...comment,
+                user: person(u),
+                byOwner: !!u && !!user && u.id === user.id,
+                viewerIsAuthor: isViewer(u),
+            })),
         };
     }
 
@@ -224,6 +323,13 @@ export class RecordingsController {
         @Body() addReactionDto: AddReactionDto,
         @Req() req: any,
     ) {
+        // A reaction belongs to someone: a signed-in user, or a guest by guest
+        // id. With neither, the lookup for "your existing reaction" had nothing
+        // to key on and matched whoever's came first — a signed-in user's
+        // included — and toggled it off.
+        if (!req.user && !addReactionDto.guestId) {
+            throw new BadRequestException('A reaction needs a signed-in user or a guestId');
+        }
         const userMeta = req.user ? { email: req.user.email, fullName: req.user.fullName, avatarUrl: req.user.avatarUrl } : undefined;
         return this.recordingsService.addReaction(
             id,

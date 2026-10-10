@@ -1,8 +1,10 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsInt, IsUUID, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateRecordingDto {
-    @IsString()
+    /** The column is a uuid. Anything else used to reach Postgres and come
+     * back as a 500. */
+    @IsUUID()
     @IsOptional()
     id?: string;
 

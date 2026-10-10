@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { StorageService } from '../storage/storage.service';
 import { expiresAtForUpload } from './expiry';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan } from 'typeorm';
+import { Repository, In, IsNull, LessThan } from 'typeorm';
 import { Recording } from './entities/recording.entity';
 import { Reaction } from './entities/reaction.entity';
 import { Comment } from './entities/comment.entity';
@@ -13,6 +13,12 @@ import { CreateRecordingDto } from './dto/create-recording.dto';
 import { UpdateRecordingDto } from './dto/update-recording.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
 
+/** What create() did: made the row, or recognised a retry of one it had made. */
+export interface CreateRecordingResult {
+    recording: Recording;
+    created: boolean;
+}
+
 @Injectable()
 export class RecordingsService {
     private readonly logger = new Logger(RecordingsService.name);
@@ -21,14 +27,38 @@ export class RecordingsService {
      *
      * Runs every five minutes against a one-hour window. A failure to remove
      * the R2 object must not stop the row going: a stuck sweep would let rows
-     * accumulate silently, which is exactly what this exists to prevent. */
+     * accumulate silently, which is exactly what this exists to prevent.
+     *
+     * Each row is deleted only if it is *still* expired when the DELETE runs,
+     * and its file only once that DELETE removed it. Reading the expired rows
+     * and then removing them unconditionally deleted a recording — and its
+     * file — that its guest had claimed in between. */
     async sweepExpired(now: Date = new Date()): Promise<{ deleted: number }> {
         const due = await this.recordingsRepository.find({
             where: { expiresAt: LessThan(now) },
         });
         if (!due.length) return { deleted: 0 };
 
+        // A key another recording still uses is not this row's to delete.
+        // Rows pointing at someone else's file were registrable until the
+        // key rule in assertKeyAvailable existed, so some may already be here.
+        const dueIds = new Set(due.map((r) => r.id));
+        const sharers = await this.recordingsRepository.find({
+            where: { fileUrl: In([...new Set(due.map((r) => r.fileUrl))]) },
+        });
+        const stillUsed = new Set(sharers.filter((r) => !dueIds.has(r.id)).map((r) => r.fileUrl));
+
+        let deleted = 0;
         for (const recording of due) {
+            const { affected } = await this.recordingsRepository.delete({
+                id: recording.id, expiresAt: LessThan(now),
+            });
+            if (!affected) continue; // claimed since the read: not ours to delete
+            deleted++;
+            if (stillUsed.has(recording.fileUrl)) {
+                this.logger.warn(`Sweep: kept ${recording.fileUrl}, still used by another recording`);
+                continue;
+            }
             try {
                 await this.storageService.deleteObject(recording.fileUrl);
             } catch (e) {
@@ -36,8 +66,7 @@ export class RecordingsService {
                     `Sweep: could not delete ${recording.fileUrl}: ${(e as Error).message}`);
             }
         }
-        await this.recordingsRepository.remove(due);
-        return { deleted: due.length };
+        return { deleted };
     }
 
     constructor(
@@ -54,7 +83,25 @@ export class RecordingsService {
         private readonly storageService: StorageService,
     ) { }
 
-    async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Recording> {
+    /** Creates a recording. Never updates one.
+     *
+     * This used to end in repository.save(), which TypeORM turns into an
+     * UPDATE when the id already exists — and ids are not secret, every share
+     * link carries one. Anyone could POST a victim's id with no token and a
+     * guestId and the row was rewritten as a guest upload expiring in an hour,
+     * after which the sweep deleted it. Now an existing id is never written:
+     * a retry of the same upload by the same owner gets the existing row back,
+     * and anything else is a conflict.
+     *
+     * The caller must already have settled ownership: dto.userId is trusted
+     * here, so the controller only ever passes the token's subject. */
+    async create(createRecordingDto: CreateRecordingDto, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<CreateRecordingResult> {
+        if (createRecordingDto.id) {
+            const existing = await this.findForCreate(createRecordingDto.id);
+            if (existing) return this.resolveExistingId(existing, createRecordingDto);
+        }
+        await this.assertKeyAvailable(createRecordingDto.fileUrl);
+
         const recording = new Recording();
         if (createRecordingDto.id) {
             recording.id = createRecordingDto.id;
@@ -85,7 +132,51 @@ export class RecordingsService {
         // claiming clears this; a signed-in recording never carries it.
         recording.expiresAt = expiresAtForUpload(Boolean(createRecordingDto.userId));
 
-        return this.recordingsRepository.save(recording);
+        let id: string;
+        try {
+            // insert(), not save(): an INSERT that cannot become an UPDATE.
+            const result = await this.recordingsRepository.insert(recording);
+            id = result.identifiers[0].id;
+        } catch (error: any) {
+            // Two requests for the same id raced past the lookup above.
+            if (error?.code !== '23505' || !createRecordingDto.id) throw error;
+            const existing = await this.findForCreate(createRecordingDto.id);
+            if (!existing) throw error;
+            return this.resolveExistingId(existing, createRecordingDto);
+        }
+        return { recording: (await this.findForCreate(id))!, created: true };
+    }
+
+    /** A key belongs to the recording that first registered it.
+     *
+     * Nothing used to tie a fileUrl to the upload that created it, so a
+     * recording could be registered — anonymously — on someone else's key,
+     * and when it expired the sweep deleted their file. `exceptId` is the
+     * recording being changed, which may keep its own key. */
+    private async assertKeyAvailable(fileUrl: string, exceptId?: string): Promise<void> {
+        const holders = await this.recordingsRepository.find({ where: { fileUrl } });
+        if (holders.some((r) => r.id !== exceptId)) {
+            throw new ConflictException('This file belongs to another recording');
+        }
+    }
+
+    private findForCreate(id: string): Promise<Recording | null> {
+        return this.recordingsRepository.findOne({ where: { id }, relations: ['user'] });
+    }
+
+    /** An existing id is answered, never written.
+     *
+     * A retry — the same owner, or the same guest on an ownerless row, sending
+     * the same file — gets the row back, so an uploader that lost the first
+     * response can safely ask again. Everyone else gets a conflict that says
+     * nothing about who owns the id. */
+    private resolveExistingId(existing: Recording, dto: CreateRecordingDto): CreateRecordingResult {
+        const sameOwner = dto.userId
+            ? existing.user?.supabaseId === dto.userId
+            : !existing.user && !!dto.guestId && existing.guestId === dto.guestId;
+        const sameUpload = existing.fileUrl === dto.fileUrl && existing.type === dto.type;
+        if (sameOwner && sameUpload) return { recording: existing, created: false };
+        throw new ConflictException('A recording with this id already exists');
     }
 
     async findAll(userId?: string): Promise<Recording[]> {
@@ -114,14 +205,23 @@ export class RecordingsService {
         });
 
         if (recording) {
+            // UPDATE … SET views = views + 1, and nothing else. Saving the loaded
+            // row wrote every column of a possibly stale copy back: a claim that
+            // landed between this read and that save was undone, and the sweep
+            // then deleted the recording its owner had just claimed.
+            await this.recordingsRepository.increment({ id }, 'views', 1);
             recording.views += 1;
-            await this.recordingsRepository.save(recording);
         }
 
         return recording;
     }
 
     async addReaction(recordingId: string, type: string, userId?: string, guestId?: string, userMeta?: { email?: string; fullName?: string; avatarUrl?: string }): Promise<Reaction> {
+        // Never look one up without an identity: TypeORM drops an undefined
+        // guestId from the WHERE, which then matches any reaction on the
+        // recording. The controller refuses this first; this is the backstop.
+        if (!userId && !guestId) throw new BadRequestException('A reaction needs a signed-in user or a guestId');
+
         const recording = await this.recordingsRepository.findOne({ where: { id: recordingId } });
         if (!recording) throw new NotFoundException('Recording not found');
 
@@ -269,27 +369,32 @@ export class RecordingsService {
         });
 
         for (const recording of recordings) {
-            const alreadyMine = recording.user?.supabaseId === userId;
-            const ownerless = recording.user === null || recording.user === undefined;
-
-            // An ownerless row is only claimable when it is provably this
-            // guest's, or when it predates the guestId column entirely.
-            const isThisGuests = recording.guestId
-                ? recording.guestId === guestId
-                : true;
-
-            if (alreadyMine || (ownerless && isThisGuests)) {
-                recording.user = user;
-                // Claiming is what makes a recording permanent — this is the
-                // line that saves it from the sweep.
-                recording.expiresAt = null;
-                recording.guestId = null;
+            if (recording.user?.supabaseId === userId) {
                 claimed.push(recording.id);
+                continue;
             }
-            // Else: belongs to another user or another guest; skip.
+            if (recording.user) continue; // another user's
+
+            /* An ownerless row is claimable only with its own guest id. One
+             * with no guest id — from before the column existed, or registered
+             * anonymously without one — proves nothing about who made it, and
+             * used to be claimable by anyone holding its link. Those are
+             * assigned by an admin instead: src/scripts/assign-legacy-recording.ts. */
+            if (!recording.guestId || !guestId || recording.guestId !== guestId) continue;
+
+            /* The conditions travel with the write: still ownerless, still the
+             * same guest. Saving the loaded rows instead wrote every stale
+             * column back (a view counted meanwhile was lost) and let two
+             * concurrent claims both "win". Claiming is what makes a recording
+             * permanent — expiresAt null is the line that saves it from the
+             * sweep. */
+            const { affected } = await this.recordingsRepository.update(
+                { id: recording.id, user: IsNull(), guestId: recording.guestId },
+                { user: { id: user.id }, guestId: null, expiresAt: null },
+            );
+            if (affected) claimed.push(recording.id);
         }
 
-        await this.recordingsRepository.save(recordings);
         return { claimed };
     }
 
@@ -315,16 +420,6 @@ export class RecordingsService {
 
         const user = await this.usersService.findOrCreateBySupabaseId(actorSupabaseId, userMeta);
 
-        let view = await this.viewsRepository.findOne({
-            where: { recording: { id: recordingId }, user: { id: user.id } },
-            relations: ['recording', 'user'],
-        });
-        if (!view) {
-            view = this.viewsRepository.create({
-                recording, user, watchedRangesJson: [], coveredSec: 0,
-            });
-        }
-
         // Clamped to the clip: a client reporting past the end would otherwise
         // push coverage above 100%, which is arithmetically impossible and
         // would hide a real bug behind a clamp at the display layer.
@@ -336,14 +431,41 @@ export class RecordingsService {
             }))
             .filter((r) => r.endSec > r.startSec);
 
-        const merged = mergeIntervals([...(view.watchedRangesJson ?? []), ...incoming]);
-        view.watchedRangesJson = merged;
-        view.coveredSec = Math.round(
-            merged.reduce((sum, r) => sum + (r.endSec - r.startSec), 0),
-        );
+        /* One transaction per heartbeat, serialised on the viewer's row.
+         *
+         * It used to read the row, merge in memory and save it back, so two
+         * heartbeats in flight together each wrote their own merge over the
+         * other's and ranges were lost; and two *first* heartbeats both found
+         * no row and both inserted, so all but one failed on the unique
+         * constraint. Now: make sure the row exists (ON CONFLICT DO NOTHING —
+         * a concurrent first heartbeat is not an error), lock it (FOR UPDATE —
+         * the next heartbeat waits here and then reads this one's merge), and
+         * write back only the two columns that changed. */
+        const coveredSec = await this.viewsRepository.manager.transaction(async (m) => {
+            await m.query(
+                `INSERT INTO "sr_recording_views" ("recordingId", "userId")
+                 VALUES ($1, $2)
+                 ON CONFLICT ON CONSTRAINT "UQ_sr_recording_views_recording_user" DO NOTHING`,
+                [recordingId, user.id],
+            );
+            const [row] = await m.query(
+                `SELECT "id", "watchedRangesJson" FROM "sr_recording_views"
+                 WHERE "recordingId" = $1 AND "userId" = $2
+                 FOR UPDATE`,
+                [recordingId, user.id],
+            );
+            const merged = mergeIntervals([...(row.watchedRangesJson ?? []), ...incoming]);
+            const covered = Math.round(merged.reduce((sum, r) => sum + (r.endSec - r.startSec), 0));
+            await m.query(
+                `UPDATE "sr_recording_views"
+                 SET "watchedRangesJson" = $1, "coveredSec" = $2, "lastSeenAt" = now()
+                 WHERE "id" = $3`,
+                [JSON.stringify(merged), covered, row.id],
+            );
+            return covered;
+        });
 
-        await this.viewsRepository.save(view);
-        return { coveredSec: view.coveredSec, recorded: true };
+        return { coveredSec, recorded: true };
     }
 
     /** Mean coverage across signed-in viewers, 0–100, or null when nobody
@@ -392,10 +514,10 @@ export class RecordingsService {
             throw new ForbiddenException('You do not have permission to publish over this recording');
         }
 
-        recording.fileUrl = dto.fileUrl;
-        if (typeof dto.durationSec === 'number') {
-            recording.durationSec = dto.durationSec;
-        }
+        await this.assertKeyAvailable(dto.fileUrl, id);
+        const changes: Partial<Recording> = { fileUrl: dto.fileUrl };
+        if (typeof dto.durationSec === 'number') changes.durationSec = dto.durationSec;
+        Object.assign(recording, changes);
 
         // Counted before saving so the number describes the change being made.
         const endMs = (dto.durationSec ?? recording.durationSec ?? 0) * 1000;
@@ -405,9 +527,10 @@ export class RecordingsService {
             ).length
             : 0;
 
-        const saved = await this.recordingsRepository.save(recording);
+        // Only the columns being changed: see update().
+        await this.recordingsRepository.update(id, changes);
         this.logger.log(`Published over recording ${id}; ${staleComments} comment(s) now past the end`);
-        return { recording: saved, staleComments };
+        return { recording, staleComments };
     }
 
     async update(id: string, updateRecordingDto: UpdateRecordingDto, userId: string): Promise<Recording> {
@@ -424,21 +547,27 @@ export class RecordingsService {
             throw new ForbiddenException('You do not have permission to update this recording');
         }
 
+        const changes: Partial<Recording> = {};
         if (updateRecordingDto.title) {
-            recording.title = updateRecordingDto.title;
+            changes.title = updateRecordingDto.title;
         }
 
         if (updateRecordingDto.fileUrl) {
-            recording.fileUrl = updateRecordingDto.fileUrl;
+            await this.assertKeyAvailable(updateRecordingDto.fileUrl, id);
+            changes.fileUrl = updateRecordingDto.fileUrl;
         }
 
         // `!== undefined`, not truthiness: an empty string is how a description
         // is cleared, and a truthy check would make removing one impossible.
         if (updateRecordingDto.description !== undefined) {
-            recording.description = updateRecordingDto.description;
+            changes.description = updateRecordingDto.description;
         }
 
-        return this.recordingsRepository.save(recording);
+        /* Only the columns being changed. Saving the loaded row wrote every
+         * column of a possibly stale copy back, so views counted meanwhile
+         * were lost. */
+        if (Object.keys(changes).length) await this.recordingsRepository.update(id, changes);
+        return Object.assign(recording, changes);
     }
 
     async delete(id: string, userId: string): Promise<{ success: boolean }> {

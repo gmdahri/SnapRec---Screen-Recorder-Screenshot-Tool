@@ -90,3 +90,35 @@ describe('a refused comment on an image', () => {
     expect(screen.queryByTestId('pending-pin')).not.toBeInTheDocument();
   });
 });
+
+/** A post the server refuses — an expired session — must not cost the words.
+ * onPost may return a promise; the draft clears only once it is accepted. */
+describe('a post that is waited for', () => {
+  it('keeps the words when the promise resolves to false', async () => {
+    render(<CommentComposer onPost={() => Promise.resolve(false)} />);
+    await userEvent.type(screen.getByLabelText('Write a comment'), 'Is this the final cut?');
+    await userEvent.click(screen.getByRole('button', { name: 'Post comment' }));
+    expect(screen.getByLabelText('Write a comment')).toHaveValue('Is this the final cut?');
+  });
+
+  it('clears once the promise resolves to anything else', async () => {
+    render(<CommentComposer onPost={() => Promise.resolve(true)} />);
+    await userEvent.type(screen.getByLabelText('Write a comment'), 'Looks good');
+    await userEvent.click(screen.getByRole('button', { name: 'Post comment' }));
+    expect(screen.getByLabelText('Write a comment')).toHaveValue('');
+  });
+
+  it('on an image, keeps the pin too when the post is refused', async () => {
+    const capture = { id: 'c', title: 'T', owner: 'O', width: 1600, height: 1000, allowDownload: true };
+    render(<ImageShare capture={capture} comments={[]} marginPx={360} onPost={() => Promise.resolve(false)} />);
+    const canvas = screen.getByTestId('image-canvas');
+    vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
+      x: 0, y: 0, left: 0, top: 0, right: 800, bottom: 500, width: 800, height: 500, toJSON: () => ({}),
+    } as DOMRect);
+    await userEvent.click(canvas);
+    await userEvent.type(screen.getByLabelText('Write a comment'), 'Column 3');
+    await userEvent.click(screen.getByRole('button', { name: 'Post comment' }));
+    expect(screen.getByTestId('pending-pin')).toBeInTheDocument();
+    expect(screen.getByLabelText('Write a comment')).toHaveValue('Column 3');
+  });
+});

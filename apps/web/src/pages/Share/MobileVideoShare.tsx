@@ -5,7 +5,7 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { PATREON_URL } from '../../lib/patreon';
 import type { VideoFrame } from '../../hooks/useVideoFrames';
 import { formatTimecode, type ShareComment } from './anchors';
-import { CommentComposer, type NewComment } from './CommentComposer';
+import { CommentComposer, type NewComment, type PostResult } from './CommentComposer';
 import { PendingComment } from './PendingComment';
 import type { ShareCapture } from './VideoShare';
 
@@ -24,7 +24,7 @@ export interface MobileVideoShareProps {
   onSeek: (ms: number) => void;
   /** Returns `false` when the comment is refused — the sign-in gate does
    * that, and the composer then keeps the draft. */
-  onPost: (comment: NewComment) => void | boolean;
+  onPost: (comment: NewComment) => PostResult;
   /** A comment is in flight; the list holds a skeleton row for it. */
   postingComment?: boolean;
   player?: ReactNode;

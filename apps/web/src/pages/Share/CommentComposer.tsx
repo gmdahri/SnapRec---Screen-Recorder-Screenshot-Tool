@@ -7,11 +7,15 @@ export interface NewComment {
   anchorY?: number;
 }
 
+/** `false` refuses the comment and keeps the draft — the sign-in gate does
+ * that. A promise is waited for: the draft clears only if it resolves to
+ * anything but `false`, so a post the server refuses (an expired session)
+ * leaves the viewer's words in the box. */
+export type PostResult = void | boolean | Promise<void | boolean>;
+
 export interface CommentComposerProps {
-  /** Returning `false` refuses the comment and keeps the draft — that is what
-   * the sign-in gate does. Anything else is taken as accepted and the field
-   * clears, because the row is on its way. */
-  onPost: (comment: NewComment) => void | boolean;
+  /** See PostResult. */
+  onPost: (comment: NewComment) => PostResult;
   /** Shown so the viewer knows where their comment will land. */
   anchorLabel?: string;
   timecodeMs?: number;
@@ -37,14 +41,14 @@ export function CommentComposer({
   const controlHeight = touch ? 44 : 'var(--sr-h-2xs)';
   const [content, setContent] = useState('');
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = content.trim();
     if (!trimmed) return;
 
     // Cleared only once the comment has been taken. A viewer who is sent to
     // sign in comes back to the words they wrote rather than an empty box.
-    if (onPost({ content: trimmed, timecodeMs, anchorX, anchorY }) !== false) {
+    if (await onPost({ content: trimmed, timecodeMs, anchorX, anchorY }) !== false) {
       setContent('');
     }
   };

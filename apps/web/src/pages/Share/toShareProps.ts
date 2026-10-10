@@ -36,18 +36,17 @@ function anchorOf(comment: ServerComment): Anchor {
  *
  * Only the *newest* non-owner comment needs a reply. Marking every unanswered
  * comment would put four coral bars on a four-message thread and make the
- * signal useless. */
-export function toShareComments(
-  recording: ServerRecording,
-  ownerSupabaseId: string | undefined,
-): ShareComment[] {
+ * signal useless. A guest recording has no owner to owe anything.
+ *
+ * Who wrote what comes from the server's `byOwner` flag. This used to compare
+ * the owner's and each commenter's auth ids, which meant the public view had
+ * to send everyone's. */
+export function toShareComments(recording: ServerRecording): ShareComment[] {
   const sorted = [...(recording.comments ?? [])]
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)) as ServerComment[];
 
   const newest = sorted.at(-1);
-  const owed = Boolean(
-    ownerSupabaseId && newest && newest.user?.supabaseId !== ownerSupabaseId,
-  );
+  const owed = Boolean(recording.user && newest && !newest.byOwner);
 
   return sorted.map((comment, i) => ({
     id: comment.id,

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SessionExpiredError, sessionExpiredResponse } from '../lib/sessionExpired';
 import { supabase } from '../lib/supabase';
 
 // Types
@@ -22,16 +23,23 @@ export interface Recording {
     isReady?: boolean;
     description?: string;
     location?: string;
+    /** The owner, as far as the page needs: name and avatar. `supabaseId` is
+     * present only on the signed-in user's own list (GET /recordings); the
+     * public view of a recording (GET /recordings/:id) never carries ids. */
     user?: {
-        supabaseId: string;
-        fullName?: string;
-        avatarUrl?: string;
-    };
+        supabaseId?: string;
+        fullName?: string | null;
+        avatarUrl?: string | null;
+    } | null;
+    /** Public view only: the viewer's token belongs to the owner. */
+    viewerIsOwner?: boolean;
     reactions: Array<{
         id: string;
         type: string;
         guestId?: string;
-        user?: { supabaseId: string };
+        user?: { supabaseId?: string; fullName?: string | null; avatarUrl?: string | null } | null;
+        /** Public view only: this reaction is the viewer's. */
+        viewerReacted?: boolean;
     }>;
     comments: Array<{
         id: string;
@@ -47,10 +55,14 @@ export interface Recording {
         /** ISO when settled; absent while the question is still open. */
         resolvedAt?: string | null;
         user?: {
-            supabaseId: string;
-            fullName?: string;
-            avatarUrl?: string;
-        };
+            supabaseId?: string;
+            fullName?: string | null;
+            avatarUrl?: string | null;
+        } | null;
+        /** Public view only: written by the recording's owner. */
+        byOwner?: boolean;
+        /** Public view only: written by the viewer. */
+        viewerIsAuthor?: boolean;
     }>;
 }
 
@@ -79,7 +91,13 @@ interface UploadUrlResponse {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://snaprec-489525905608.us-central1.run.app';
 
 // Base fetch function with auth - exported for use by AuthContext
-export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+/** `quiet` is for background calls — the watch heartbeat — whose failures
+ * are expected and handled, and must not fill the console every few seconds. */
+export async function fetchWithAuth<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    { quiet = false }: { quiet?: boolean } = {},
+): Promise<T> {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
@@ -90,7 +108,7 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
     const token = session?.access_token;
 
     // Debug logging
-    console.log('API Request:', endpoint, {
+    if (!quiet) console.log('API Request:', endpoint, {
         hasToken: !!token,
         tokenPrefix: token ? token.substring(0, 20) + '...' : 'none',
         aborted: options.signal?.aborted
@@ -108,13 +126,13 @@ export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = 
     });
 
     if (!response.ok) {
-        if (response.status === 401) {
-            console.error('401 Unauthorized - Token may be expired or invalid');
-            throw new Error('Session expired. Please log in again.');
-        }
         const errorText = await response.text().catch(() => '');
+        if (sessionExpiredResponse(response.status, errorText)) {
+            if (!quiet) console.error(`${response.status} - session expired or invalid`);
+            throw new SessionExpiredError();
+        }
         // Don't log 404 as a full error to reduce console noise during polling/fresh registration
-        if (response.status !== 404) {
+        if (response.status !== 404 && !quiet) {
             console.error(`API Error: ${response.status}`, errorText);
         }
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
@@ -140,7 +158,15 @@ export async function fetchBlobWithAuth(videoUrl: string): Promise<Blob> {
 // Query Keys - centralized for cache management
 export const recordingsKeys = {
     all: ['recordings'] as const,
+    /** Every cached copy of one recording, whoever was looking: what
+     * invalidation uses. */
     detail: (id: string) => ['recordings', id] as const,
+    /** One viewer's copy. GET /recordings/:id answers per viewer
+     * (viewerIsOwner, viewerIsAuthor, viewerReacted), so a copy fetched as
+     * one user must not be shown to the next — after a sign-out in the same
+     * tab, the owner's controls would otherwise linger for an anonymous
+     * viewer until the next refetch. */
+    detailFor: (id: string, viewer: string | null) => ['recordings', id, { viewer }] as const,
 };
 
 // ============= PUBLIC STATS =============
@@ -216,10 +242,14 @@ export function useRecordings(isAuthenticated: boolean = true, isLoading: boolea
 /**
  * Hook to fetch a single recording by ID
  */
-export function useRecording(id: string | undefined, refetchInterval?: number | false, options: { enabled?: boolean } = {}) {
+export function useRecording(
+    id: string | undefined,
+    refetchInterval?: number | false,
+    options: { enabled?: boolean; viewer?: string | null } = {},
+) {
     const isValidId = !!id && id !== 'undefined';
     return useQuery({
-        queryKey: recordingsKeys.detail(id!),
+        queryKey: recordingsKeys.detailFor(id!, options.viewer ?? null),
         queryFn: async ({ signal }) => {
             const recording = await fetchWithAuth<Recording>(`/recordings/${id}`, { signal });
             return {

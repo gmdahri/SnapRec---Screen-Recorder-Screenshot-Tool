@@ -11,6 +11,7 @@ import { ShareShell } from './Share/ShareShell';
 import { PendingComment } from './Share/PendingComment';
 import { VideoViewer } from './Share/VideoViewer';
 import { chooseViewerSurface } from './Share/surface';
+import { localUploadCreateInput } from './Share/localUpload';
 import { toShareComments, toShareKind, toShareState } from './Share/toShareProps';
 import { parseUTCDate } from '../lib/dateUtils';
 import { useWatchProgress } from '../hooks/useWatchProgress';
@@ -18,6 +19,7 @@ import { useVideoFrames } from '../hooks/useVideoFrames';
 import { useStableMediaUrl } from '../hooks/useStableMediaUrl';
 import { useUpdateRecording, useResolveComment, useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { readHandoffMessage } from '../lib/handoffMessage';
+import { isSessionExpired } from '../lib/sessionExpired';
 import { describeExpiry } from '../lib/expiryCountdown';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -80,7 +82,7 @@ function filenameFor(rec: { title?: string; type?: string } | null | undefined):
 const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, expireSession } = useAuth();
     const { showNotification } = useNotification();
     const isFreshParam = new URLSearchParams(window.location.search).get('fresh') === 'true';
     const isValidId = id && id !== 'undefined';
@@ -253,8 +255,10 @@ const ShareView: React.FC = () => {
      * "Generate shareable link" for something already on R2 and upload a second
      * copy of it. A miss is cheap: an unstreamed capture 404s once, `recording`
      * stays undefined, and the local-blob path runs exactly as before. */
-    const { data: recording, isLoading: loading } = useRecording(effectiveId, pollInterval, {
-        enabled: (!!isValidId && !isFreshParam) || !!localId || isUploaded || isUploading
+    const { data: recording, isLoading, isFetched } = useRecording(effectiveId, pollInterval, {
+        enabled: (!!isValidId && !isFreshParam) || !!localId || isUploaded || isUploading,
+        // The response is personal to the viewer; so is its cached copy.
+        viewer: user?.id ?? null,
     });
 
     const addReaction = useAddReaction();
@@ -300,6 +304,8 @@ const ShareView: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    // The modal is asking because a session lapsed, not because there never was one.
+    const [loginExpired, setLoginExpired] = useState(false);
     const [loginAction, setLoginAction] = useState('continue');
     const [pendingAction, setPendingActionState] = useState<string | null>(localStorage.getItem('share_pending_action'));
 
@@ -328,7 +334,7 @@ const ShareView: React.FC = () => {
         viewTrackedFor.current = key;
         capture('share_page_viewed', {
             content_type: recordingData?.type ?? 'unknown',
-            is_owner: Boolean(user && recordingData?.user?.supabaseId === user.id),
+            is_owner: Boolean(user && recordingData?.viewerIsOwner),
         });
         // recordingData is deliberately not a dependency: this fires on arrival,
         // not again when the payload resolves.
@@ -559,7 +565,9 @@ const ShareView: React.FC = () => {
             description: '',
             thumbnailUrl: '',
             location: '',
-            user: null
+            user: null,
+            // Nothing on the server yet, so nobody owns it from the server's point of view.
+            viewerIsOwner: false
         } : null);
 
         if (!base) return null;
@@ -611,7 +619,7 @@ const ShareView: React.FC = () => {
         }
         if (!id) return;
         capture('reaction_added', { type });
-        addReaction.mutate({ id, type });
+        addReaction.mutate({ id, type }, { onError: onInteractionError(`react with "${type}"`) });
     };
 
     const handlePostComment = () => {
@@ -627,6 +635,8 @@ const ShareView: React.FC = () => {
                 capture('comment_posted', {});
                 setCommentText('');
             },
+            // The draft is only cleared on success, so it survives this.
+            onError: onInteractionError('post a comment'),
         });
     };
 
@@ -678,18 +688,9 @@ const ShareView: React.FC = () => {
         }
         const guestId = localStorage.getItem('snaprec_guest_id') || `guest_${Math.random().toString(36).substring(7)}`;
         if (!localStorage.getItem('snaprec_guest_id')) localStorage.setItem('snaprec_guest_id', guestId);
-        const createdRecording = await createRecordingMutation.mutateAsync({
-            id: effectiveId,
-            title: `Video Recording ${new Date().toLocaleString()}`,
-            fileUrl,
-            type: 'video',
-            durationSec: meta.durationSec,
-            widthPx: meta.widthPx,
-            heightPx: meta.heightPx,
-            userId: user?.id,
-            guestId: undefined,
-        });
-        const recordingId = createdRecording?.id || effectiveId;
+        const createdRecording = await createRecordingMutation.mutateAsync(
+            localUploadCreateInput({ fileUrl, userId: user?.id, meta }));
+        const recordingId = createdRecording?.id;
         if (!recordingId) return null;
         try {
             const request = indexedDB.open('SnapRecDB', 2);
@@ -704,6 +705,38 @@ const ShareView: React.FC = () => {
         setIsUploaded(true);
         navigate(`/v/${recordingId}`, { replace: true });
         return recordingId;
+    };
+
+    /** The session lapsed partway through an upload.
+     *
+     * Says so, and keeps the capture: it never leaves this page, and it is
+     * already in this origin's IndexedDB, so the sign-in redirect does not
+     * lose it either. The dead session is cleared so the "resume after
+     * sign-in" effect waits for a real one instead of firing straight back
+     * into the same refusal, and the same action resumes once signed in. It
+     * is never retried as a guest. */
+    const recoverFromExpiredSession = async (
+        description: string,
+        { resume, message = 'Your session expired. Sign in again \u2014 your recording is still on this device.' }:
+            { resume?: 'share' | 'videoEditor'; message?: string } = {},
+    ) => {
+        capture('auth_modal_triggered', { trigger: 'session_expired' });
+        showNotification(message, 'error');
+        await expireSession();
+        setLoginAction(description);
+        setLoginExpired(true);
+        if (resume) setPendingAction(resume);
+        setIsLoginModalOpen(true);
+    };
+
+    /** Comments and reactions refused because the session lapsed. Same prompt
+     * as an upload; nothing to resume, and a comment's words stay in its box. */
+    const onInteractionError = (description: string) => (error: unknown) => {
+        if (isSessionExpired(error)) {
+            void recoverFromExpiredSession(description, {
+                message: 'Your session expired. Sign in again to ' + description + '.',
+            });
+        }
     };
 
     const handleUploadToCloud = async () => {
@@ -736,6 +769,10 @@ const ShareView: React.FC = () => {
                 showNotification('Shareable link generated successfully!', 'success');
             }
         } catch (error: any) {
+            if (isSessionExpired(error)) {
+                await recoverFromExpiredSession('generate a shareable link', { resume: 'share' });
+                return;
+            }
             showNotification(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
             setIsUploading(false);
@@ -754,7 +791,7 @@ const ShareView: React.FC = () => {
         setVideoEditorLoading(true);
         try {
             let recordingId: string | null = null;
-            if (isValidId && recording?.user?.supabaseId === user.id) {
+            if (isValidId && recording?.viewerIsOwner) {
                 recordingId = id!;
             } else if (isValidId && isUploaded) {
                 recordingId = id!;
@@ -773,6 +810,10 @@ const ShareView: React.FC = () => {
             });
             navigate(`/video-editor/project/${project.id}`);
         } catch (e: unknown) {
+            if (isSessionExpired(e)) {
+                await recoverFromExpiredSession('open the Video Editor', { resume: 'videoEditor' });
+                return;
+            }
             showNotification(e instanceof Error ? e.message : 'Could not open editor', 'error');
         } finally {
             setVideoEditorLoading(false);
@@ -809,12 +850,20 @@ const ShareView: React.FC = () => {
     // Show "Save to your account" only for guest recordings (no owner) or recordings already owned by current user
     const canSaveToAccount =
         recordingData &&
-        (!recordingData.user || (user && recordingData.user.supabaseId === user.id));
+        (!recordingData.user || (user && recordingData.viewerIsOwner));
 
 
 
-    // Show loader if we are fetching data, OR if this is a "fresh" redirect and we have nothing yet
-    // Improved condition: Only show loader if we have NO data to show at all
+    /* The full-page loader is for the first load only, and never covers a
+     * capture the page already holds.
+     *
+     * In TanStack Query v5 every refetch of a query with no data goes back to
+     * `pending`, so `isLoading` turns true on each poll. A fresh capture whose
+     * row does not exist yet (a 404 polled every three seconds) used to swap
+     * its player for this loader and back on every poll, for two minutes,
+     * remounting the video each time. `isFetched` is set once the first answer
+     * — data or error — has arrived. */
+    const loading = isLoading && !isFetched && !localVideoBlob;
     const hasNothingToShow = isFresh && !recording && !localVideoBlob;
     if (loading || (hasNothingToShow && !isUploaded)) {
         return (
@@ -909,6 +958,14 @@ const ShareView: React.FC = () => {
                         />
                     }
                 />
+                {/* This surface's "Generate shareable link" and "Edit" open the
+                    sign-in modal; it used to have none to open. */}
+                <LoginModal
+                    isOpen={isLoginModalOpen}
+                    onClose={() => { setIsLoginModalOpen(false); setLoginExpired(false); }}
+                    actionDescription={loginAction}
+                    sessionExpired={loginExpired}
+                />
             </>
         );
     }
@@ -955,9 +1012,9 @@ const ShareView: React.FC = () => {
                         views: recording.views,
                         watchedPercent: (recording as { watchedPercent?: number | null })
                             .watchedPercent ?? null,
-                        canEdit: !!user && recording.user?.supabaseId === user.id,
+                        canEdit: !!user && !!recording.viewerIsOwner,
                     }}
-                    comments={toShareComments(recording, recording.user?.supabaseId)}
+                    comments={toShareComments(recording)}
                     currentMs={Math.round(sharePlayheadSec * 1000)}
                     onSeek={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
                     /* Commenting needs an account. Refusing returns false, so
@@ -971,12 +1028,21 @@ const ShareView: React.FC = () => {
                             return false;
                         }
                         if (!recording.id) return false;
-                        addComment.mutate({
+                        // Waited for, so the composer keeps the words if the
+                        // post is refused instead of clearing them up front.
+                        return addComment.mutateAsync({
                             id: recording.id,
                             content,
                             timecodeMs,
                             anchorX,
                             anchorY,
+                        }).then(() => true, (error: unknown) => {
+                            if (isSessionExpired(error)) {
+                                onInteractionError('post a comment')(error);
+                            } else {
+                                showNotification('Could not post your comment. Please try again.', 'error');
+                            }
+                            return false;
                         });
                     }}
                     postingComment={addComment.isPending}
@@ -994,7 +1060,7 @@ const ShareView: React.FC = () => {
                        Navigating with the recording id 404s the editor. */
                     onEdit={handleOpenVideoEditor}
                     onDescriptionChange={
-                        user && recording.user?.supabaseId === user.id
+                        user && recording.viewerIsOwner
                             ? (description: string) =>
                                 updateRecording.mutate({ id: recording.id, data: { description } })
                             : undefined
@@ -1011,9 +1077,9 @@ const ShareView: React.FC = () => {
                        anyone else would only earn them a 403. */
                     canResolve={(c) => {
                         if (!user) return false;
-                        if (recording.user?.supabaseId === user.id) return true;
+                        if (recording.viewerIsOwner) return true;
                         const source = recording.comments?.find((rc) => rc.id === c.id);
-                        return source?.user?.supabaseId === user.id;
+                        return !!source?.viewerIsAuthor;
                     }}
                     onDownload={handleDownload}
                     player={
@@ -1032,7 +1098,7 @@ const ShareView: React.FC = () => {
                                 // accumulate coverage it did not watch.
                                 if (p.playing) observeWatched(p.currentTime);
                             }}
-                            markers={toShareComments(recording, recording.user?.supabaseId)
+                            markers={toShareComments(recording)
                                 .filter(c => c.anchor.kind === 'timecode')
                                 .map(c => ({
                                     id: c.id,
@@ -1051,8 +1117,9 @@ const ShareView: React.FC = () => {
                 />
                 <LoginModal
                     isOpen={isLoginModalOpen}
-                    onClose={() => setIsLoginModalOpen(false)}
+                    onClose={() => { setIsLoginModalOpen(false); setLoginExpired(false); }}
                     actionDescription={loginAction}
+                    sessionExpired={loginExpired}
                 />
             </>
         );
@@ -1085,7 +1152,7 @@ const ShareView: React.FC = () => {
                     disabled={claimMutation.isPending}
                     className="inline-flex items-center gap-2 h-[30px] px-3.5 border border-[var(--sr-border-light)] rounded-[2px] text-[12.5px] font-medium text-[var(--sr-text-secondary-on-light)] hover:border-[var(--sr-text-primary-on-light)] transition-colors disabled:opacity-40"
                 >
-                    {claimMutation.isPending ? 'Saving...' : (user && recordingData?.user?.supabaseId === user.id ? 'Saved in account' : 'Save to your account')}
+                    {claimMutation.isPending ? 'Saving...' : (user && recordingData?.viewerIsOwner ? 'Saved in account' : 'Save to your account')}
                 </button>
             ) : null}
         </div>
@@ -1270,7 +1337,7 @@ const ShareView: React.FC = () => {
                                             curious: 'help'
                                         };
                                         const isActive = (recordingData.reactions || []).some(r =>
-                                            user && r.user?.supabaseId === user.id
+                                            user && r.viewerReacted
                                         );
 
                                         return (
@@ -1472,8 +1539,9 @@ const ShareView: React.FC = () => {
 
 <LoginModal
                 isOpen={isLoginModalOpen}
-                onClose={() => setIsLoginModalOpen(false)}
+                onClose={() => { setIsLoginModalOpen(false); setLoginExpired(false); }}
                 actionDescription={loginAction}
+                sessionExpired={loginExpired}
             />
         </FreshCaptureChrome>
     );
