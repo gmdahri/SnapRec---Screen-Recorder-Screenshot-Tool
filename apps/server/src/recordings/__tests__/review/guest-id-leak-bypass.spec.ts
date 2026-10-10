@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { writeEndpointsApp } from '../support/write-endpoints-app';
 
 /** Adversarial review of 7387ab2 ("stop exposing guestIds on the public
@@ -45,5 +46,25 @@ describe('guestId leak through child-creation responses', () => {
         const row = t.db.recordings.rows.get(id);
         expect(row.user ?? null).toBeNull();
         expect(row.guestId).toBe('guest_victim');
+    });
+});
+
+/** POST /recordings still accepts an anonymous registration with no guestId
+ * (the extension's uploadToR2 path in background/storage.js sends none). The
+ * row is ownerless with guestId null, and claimRecordings treats a null
+ * guestId as "predates the column" — claimable by anyone who knows the id,
+ * i.e. anyone holding the share link. The claim rule's own comment says that
+ * residue only exists for pre-migration rows; create() keeps minting new ones. */
+describe('ownerless rows minted today without a guestId', () => {
+    it('a signed-in stranger cannot claim a guest recording registered without a guestId', async () => {
+        const key = `video-${crypto.randomUUID()}.webm`;
+        t.r2.objects.set(key, 'guest file');
+        const reg = await t.call('post', '/recordings',
+            { title: 'mine', fileUrl: key, type: 'video' });
+        expect(reg.status).toBe(201);
+
+        const res = await t.call('post', '/recordings/claim',
+            { recordingIds: [reg.body.id] }, t.token('sb-stranger'));
+        expect(res.body.claimed ?? []).toEqual([]);
     });
 });

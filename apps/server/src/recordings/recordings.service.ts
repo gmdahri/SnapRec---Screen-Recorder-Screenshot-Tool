@@ -375,12 +375,12 @@ export class RecordingsService {
             }
             if (recording.user) continue; // another user's
 
-            // An ownerless row is only claimable when it is provably this
-            // guest's, or when it predates the guestId column entirely.
-            const isThisGuests = recording.guestId
-                ? recording.guestId === guestId
-                : true;
-            if (!isThisGuests) continue;
+            /* An ownerless row is claimable only with its own guest id. One
+             * with no guest id — from before the column existed, or registered
+             * anonymously without one — proves nothing about who made it, and
+             * used to be claimable by anyone holding its link. Those are
+             * assigned by an admin instead: src/scripts/assign-legacy-recording.ts. */
+            if (!recording.guestId || !guestId || recording.guestId !== guestId) continue;
 
             /* The conditions travel with the write: still ownerless, still the
              * same guest. Saving the loaded rows instead wrote every stale
@@ -389,7 +389,7 @@ export class RecordingsService {
              * permanent — expiresAt null is the line that saves it from the
              * sweep. */
             const { affected } = await this.recordingsRepository.update(
-                { id: recording.id, user: IsNull(), guestId: recording.guestId ?? IsNull() },
+                { id: recording.id, user: IsNull(), guestId: recording.guestId },
                 { user: { id: user.id }, guestId: null, expiresAt: null },
             );
             if (affected) claimed.push(recording.id);
