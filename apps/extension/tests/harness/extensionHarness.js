@@ -74,7 +74,8 @@ export function createHarness({ log = false } = {}) {
         session: new Map(),
         idb: new IDBFactory(),
     };
-    const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map(), rows: new Map() };
+    const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map(), rows: new Map(), refusedTokens: new Set() };
+    const notifications = [];
     const contexts = {};      // name -> { sandbox, listeners, timers, alive }
     let tabSeq = 100;
     const tabs = [];
@@ -146,6 +147,10 @@ export function createHarness({ log = false } = {}) {
             const fileName = decodeURIComponent(path.slice('/recordings/status/'.length));
             return json({ ready: [...net.uploads.values()].some((u) => u.fileName === fileName && u.state === 'complete') });
         }
+        // A token the server no longer accepts: 401, as OptionalJwtAuthGuard answers.
+        const bearer = (init.headers?.Authorization ?? '').replace(/^Bearer /, '');
+        call.authorization = bearer || null;
+        if (bearer && net.refusedTokens.has(bearer)) return json({ statusCode: 401, message: 'Your session has expired. Sign in again.' }, 401);
         if (path === '/recordings' && method === 'POST') {
             // Insert-only, as the server is: 200 hands an existing row back to
             // the same guest re-posting the same file; anything else is 409.
@@ -252,7 +257,15 @@ export function createHarness({ log = false } = {}) {
                 captureVisibleTab: async () => 'data:image/png;base64,',
             },
             scripting: { executeScript: async () => [{ result: undefined }], insertCSS: async () => {} },
-            notifications: { create: (...a) => { const cb = a.find((x) => typeof x === 'function'); cb?.('n'); }, clear: async () => {}, onClicked: makeEvent() },
+            notifications: {
+                create: (...a) => {
+                    const id = typeof a[0] === 'string' ? a[0] : `n${notifications.length + 1}`;
+                    const options = a.find((x) => x && typeof x === 'object');
+                    notifications.push({ id, ...options });
+                    a.find((x) => typeof x === 'function')?.(id);
+                },
+                clear: async () => {}, onClicked: makeEvent(), onButtonClicked: makeEvent(),
+            },
             downloads: { download: (opts, cb) => cb?.(1), onChanged: makeEvent() },
             alarms: { create: () => {}, clear: async () => true, get: async () => undefined, onAlarm: makeEvent() },
             contextMenus: inert(),
@@ -397,7 +410,7 @@ export function createHarness({ log = false } = {}) {
     bootWorker();
 
     return {
-        shared, net, contexts, tabs,
+        shared, net, contexts, tabs, notifications,
         API, R2,
         bootWorker,
         /** What Chrome does after 30 s without an event. The next message boots a new one. */

@@ -242,3 +242,60 @@ describe('the upload itself', () => {
         expect(await readParked('latest_video_blob')).toBeDefined();
     });
 });
+
+/** A signed-in recording is never quietly filed as a guest one.
+ *
+ * Today the extension never holds a session — no web build has ever sent it
+ * one — so this guards a path that is unreachable in practice. It is here so
+ * that a stale stored session, or a future handoff, cannot turn a signed-in
+ * upload into an anonymous row the sweep deletes an hour later. */
+describe('a session that has expired', () => {
+    const SESSION_KEY = 'snaprecSession';
+    const session = (expiresAt, accessToken = 'token-1') => ({
+        accessToken, refreshToken: 'r', expiresAt,
+        user: { id: 'sb-1', email: 'u@example.com', fullName: 'U', avatarUrl: null },
+    });
+    const sessionNotice = () => h.notifications.filter((n) => n.id === 'snaprec-session-expired');
+
+    it('expired locally: nothing is registered, the user is told, and the recording stays on the device', async () => {
+        await startRecording();
+        h.shared.local.set(SESSION_KEY, session(Math.floor(Date.now() / 1000) - 60));
+        await record(7);
+        await stopFromPage();
+
+        expect(h.apiCalls('/recordings')).toEqual([]);            // not as a guest, not at all
+        expect(sessionNotice()).toEqual([expect.objectContaining({
+            title: 'Your session expired',
+            buttons: [{ title: 'Sign in' }],
+        })]);
+        expect(sessionNotice()[0].message).toMatch(/still on this device/);
+        expect(h.tabs.some((t) => t.url.includes('/v'))).toBe(true);
+        expect(await readParked('latest_video_blob')).toBeDefined();
+    });
+
+    it('refused by the server (401): one attempt with the token, no guest retry, the user is told', async () => {
+        await startRecording();
+        h.shared.local.set(SESSION_KEY, session(Math.floor(Date.now() / 1000) + 3600, 'revoked-token'));
+        h.net.refusedTokens.add('revoked-token');
+        await record(7);
+        await stopFromPage();
+
+        const attempts = h.apiCalls('/recordings');
+        expect(attempts).toHaveLength(1);
+        expect(attempts[0]).toMatchObject({ status: 401, authorization: 'revoked-token' });
+        expect(h.net.rows.size).toBe(0);                          // no row, guest or otherwise
+        expect(sessionNotice()).toHaveLength(1);
+        expect(await readParked('latest_video_blob')).toBeDefined();
+    });
+
+    it('a valid session still registers as the signed-in user', async () => {
+        await startRecording();
+        h.shared.local.set(SESSION_KEY, session(Math.floor(Date.now() / 1000) + 3600));
+        await record(7);
+        await stopFromPage();
+
+        expect(h.apiCalls('/recordings')[0].authorization).toBe('token-1');
+        expect(h.apiCalls('/recordings')[0].body.guestId).toBeUndefined();
+        expect(sessionNotice()).toEqual([]);
+    });
+});

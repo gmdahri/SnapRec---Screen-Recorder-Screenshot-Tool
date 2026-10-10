@@ -446,6 +446,12 @@
              * owner changed, which is what claiming does. Registering again
              * under a new id would be exactly the duplicate this avoids. */
             const registration = await register(step.recoveryId, fileUrl, durationSec);
+            if (registration === 'unauthorized') {
+                // Kept, not registered as a guest: the next start tries again,
+                // after the user has signed in.
+                track('upload_failed', { error_reason: 'recovery_session_expired', recovered: true });
+                return 'retry';
+            }
             if (registration !== 'created' && registration !== 'exists' && registration !== 'conflict') {
                 track('upload_failed', { error_reason: 'recovery_register_failed', recovered: true });
                 return 'retry';

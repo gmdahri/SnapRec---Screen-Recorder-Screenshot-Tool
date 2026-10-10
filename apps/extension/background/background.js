@@ -1381,6 +1381,15 @@ async function finishStreamingUpload() {
  * claimable later. */
 async function registerStreamedRecording(recordingId, fileUrl, durationSec) {
     try {
+        /* A signed-in recording is never quietly filed as a guest one. A
+         * session that has already lapsed is not sent at all; one the server
+         * refuses comes back as 401. Either way the user is told, and the
+         * capture stays where it is — the share page already has it. */
+        const session = await getSession();
+        if (session?.accessToken && !(await isSessionValid())) {
+            console.warn('[SnapRec] Session expired; not registering', recordingId, 'as a guest');
+            return 'unauthorized';
+        }
         const authHeaders = await getAuthHeaders();
         const signedIn = Boolean(authHeaders.Authorization);
 
@@ -1405,6 +1414,10 @@ async function registerStreamedRecording(recordingId, fileUrl, durationSec) {
         if (res.status === 409) {
             console.warn('[SnapRec] Recording id already registered to someone else:', recordingId);
             return 'conflict';
+        }
+        if (res.status === 401 || res.status === 403) {
+            console.warn('[SnapRec] Server refused the session; not registering', recordingId, 'as a guest');
+            return 'unauthorized';
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -1463,8 +1476,9 @@ async function handleRecordingComplete() {
          * recording. */
         const streamed = await finishStreamingUpload();
         if (streamed) {
-            await registerStreamedRecording(
+            const registration = await registerStreamedRecording(
                 recordingId, streamed.fileUrl, streamed.durationSec);
+            if (registration === 'unauthorized') notifySessionExpired();
         }
 
         // IMMEDIATELY redirect to /v (generic preview)
@@ -1640,7 +1654,37 @@ chrome.runtime.onMessage.addListener((message) => {
     }
 });
 
+/** The session lapsed and a recording could not be saved to the account.
+ *
+ * The recording itself is not at risk: the share page holds it locally, and
+ * it can be uploaded from there once signed in. What the user needs is to
+ * know that, and a way to sign in. */
+const SESSION_EXPIRED_NOTIFICATION = 'snaprec-session-expired';
+
+function notifySessionExpired() {
+    chrome.notifications.create(SESSION_EXPIRED_NOTIFICATION, {
+        type: 'basic',
+        iconUrl: '../icons/icon128.png',
+        title: 'Your session expired',
+        message: 'Sign in again to save recordings to your account. '
+            + 'This recording is still on this device, open in the share tab.',
+        buttons: [{ title: 'Sign in' }],
+        requireInteraction: true,
+        priority: 2,
+    });
+}
+
+chrome.notifications.onButtonClicked.addListener((notificationId) => {
+    if (notificationId !== SESSION_EXPIRED_NOTIFICATION) return;
+    openLoginPage();
+    chrome.notifications.clear(SESSION_EXPIRED_NOTIFICATION);
+});
+
 chrome.notifications.onClicked.addListener((notificationId) => {
+    if (notificationId === SESSION_EXPIRED_NOTIFICATION) {
+        openLoginPage();
+        chrome.notifications.clear(SESSION_EXPIRED_NOTIFICATION);
+    }
     if (notificationId === 'snaprec-mic-denied') {
         chrome.tabs.create({ url: 'chrome://settings/content/microphone' });
         chrome.notifications.clear('snaprec-mic-denied');
@@ -1940,8 +1984,12 @@ async function recoverInterruptedRecording() {
         liveUploadId: status?.uploadId ?? null,
         // The id is recovery's own, persisted before the first attempt, so a
         // retried registration lands on the same row. Returns 'created',
-        // 'exists', 'conflict' or 'failed'.
-        register: registerStreamedRecording,
+        // 'exists', 'conflict', 'unauthorized' or 'failed'.
+        register: async (id, fileUrl, durationSec) => {
+            const registration = await registerStreamedRecording(id, fileUrl, durationSec);
+            if (registration === 'unauthorized') notifySessionExpired();
+            return registration;
+        },
         track: (event, properties) => Analytics.track(event, properties),
     });
     const notable = outcomes.filter((o) => o !== 'live');

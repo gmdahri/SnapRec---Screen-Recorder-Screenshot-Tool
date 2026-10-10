@@ -223,6 +223,16 @@ describe('recovery never loses or duplicates a recording', () => {
         expect(store.map.size).toBe(0);
     });
 
+    it('an expired session keeps the upload for a later start, and never registers it as a guest', async () => {
+        const api = server(); const store = memoryStore();
+        await orphan(api, store);
+        const { outcomes, registered, events } = await recover({ api, store, registration: 'unauthorized' });
+        expect(outcomes).toEqual(['retry']);
+        expect(registered).toHaveLength(1);                 // the one signed-in attempt, nothing after it
+        expect(store.map.size).toBe(1);
+        expect(events.at(-1)).toMatchObject({ event: 'upload_failed', error_reason: 'recovery_session_expired' });
+    });
+
     it('gives up on an upload R2 has already swept, instead of retrying forever', async () => {
         const api = server(); const store = memoryStore();
         const rec = await orphan(api, store);
