@@ -216,7 +216,7 @@ export class RecordingsController {
         const isReady = await this.storageService.checkFileExists(recording.fileUrl);
 
         return {
-            ...recording,
+            ...RecordingsController.withoutGuestIds(recording),
             isReady,
             fileUrl: isReady
                 ? await this.storageService.getDownloadUrl(recording.fileUrl)
@@ -225,6 +225,20 @@ export class RecordingsController {
             // tile rather than showing 0%.
             watchedPercent: await this.recordingsService.watchedPercent(id),
         };
+    }
+
+    /** The public view of a recording carries no guestIds.
+     *
+     * A guestId is the only proof a guest has that a capture is theirs —
+     * claiming an ownerless recording requires it, and a guest's reaction is
+     * keyed by it — and this endpoint answers anyone holding the link. It used
+     * to return every one: the recording's, and each reaction's and
+     * comment's, which let a signed-in stranger claim a guest's recording.
+     * Nothing on the web reads them from here. */
+    static withoutGuestIds<T extends { guestId?: unknown; reactions?: any[]; comments?: any[] }>(recording: T) {
+        const { guestId: _guestId, reactions, comments, ...rest } = recording;
+        const strip = (items?: any[]) => items?.map(({ guestId: _g, ...item }) => item);
+        return { ...rest, reactions: strip(reactions), comments: strip(comments) };
     }
 
     @Get('download-url/:fileName')

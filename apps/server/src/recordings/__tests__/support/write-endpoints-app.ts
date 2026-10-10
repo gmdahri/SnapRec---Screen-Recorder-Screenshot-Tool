@@ -51,9 +51,14 @@ function table(name: string, db: Db) {
     const defined = (o: any) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
     const withRelations = (row: any, relations: string[] = []) => {
         const out = { ...row };
+        // As TypeORM loads them: a child's own `recording` relation is not
+        // loaded unless asked for, so it is not on the child.
+        const children = (t: ReturnType<typeof table>) => [...t.rows.values()]
+            .filter((c) => c.recording?.id === row.id)
+            .map(({ recording: _parent, ...c }) => c);
         if (name === 'recordings') {
-            if (relations.includes('reactions')) out.reactions = [...db.reactions.rows.values()].filter((r) => r.recording?.id === row.id);
-            if (relations.includes('comments')) out.comments = [...db.comments.rows.values()].filter((c) => c.recording?.id === row.id);
+            if (relations.includes('reactions')) out.reactions = children(db.reactions);
+            if (relations.includes('comments')) out.comments = children(db.comments);
         }
         return out;
     };
