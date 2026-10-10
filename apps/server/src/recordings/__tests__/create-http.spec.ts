@@ -148,10 +148,10 @@ describe('POST /recordings', () => {
             expect(db.rows.get(VICTIM_ID).expiresAt).toBeNull();
         });
 
-        it('the same attack with an expired token is anonymous too -> 409, untouched', async () => {
+        it('the same attack with an expired token -> 401 (see expired-token.spec.ts), untouched', async () => {
             const before = await ownedRecording();
             const res = await post(video({ id: VICTIM_ID, fileUrl: 'evil.webm', guestId: 'guest_attacker' }), token(OWNER, -60));
-            expect(res.status).toBe(409);
+            expect(res.status).toBe(401);
             expect(db.rows.get(VICTIM_ID)).toEqual(before);
         });
 
