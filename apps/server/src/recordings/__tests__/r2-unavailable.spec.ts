@@ -27,11 +27,15 @@ describe('R2 cannot answer', () => {
         expect(t.r2.signedPuts).toEqual([]);
     });
 
-    it('upload/begin -> 503, nothing opened', async () => {
+    it('upload/begin does not depend on the existence check; completing is what is refused', async () => {
         r2Down();
-        const res = await t.call('post', '/recordings/upload/begin', { fileName: 'video-new.webm', contentType: 'video/webm' });
+        const begun = await t.call('post', '/recordings/upload/begin', { fileName: 'video-new.webm', contentType: 'video/webm' });
+        expect(begun.status).toBe(201);
+        const res = await t.call('post', '/recordings/upload/complete', {
+            fileName: 'video-new.webm', uploadId: begun.body.uploadId, parts: [{ PartNumber: 1, ETag: '"e1"' }],
+        });
         expect(res.status).toBe(503);
-        expect(t.r2.uploads.size).toBe(0);
+        expect(t.r2.objects.has('video-new.webm')).toBe(false);
     });
 
     it('upload/complete -> 503, nothing written', async () => {

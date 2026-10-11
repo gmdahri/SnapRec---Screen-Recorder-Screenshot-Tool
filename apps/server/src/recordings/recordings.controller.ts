@@ -80,9 +80,13 @@ export class RecordingsController {
      * straight to R2, and completes at the end. Part bytes never reach this
      * server — it only signs and bookkeeps. */
 
+    /** No existence check here: opening an upload writes nothing, and
+     * complete below refuses a key that holds a file. Extension v2.0.9 drops
+     * every chunk recorded before this answers — including the first one, which
+     * carries the WebM header — so an extra R2 round trip here cost recordings
+     * their header. */
     @Post('upload/begin')
     async beginUpload(@Body() dto: BeginUploadDto) {
-        await this.refuseExistingKey(dto.fileName);
         const uploadId = await this.storageService.createMultipartUpload(
             dto.fileName, dto.contentType);
         return { uploadId };
