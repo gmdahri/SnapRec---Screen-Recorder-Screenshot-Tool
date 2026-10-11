@@ -74,7 +74,7 @@ const quiet = { log() {}, warn() {}, error() {}, info() {} };
 describe('the offscreen uploader (stream-upload.js)', () => {
     function uploader(server) {
         const sandbox = {
-            console: quiet, Blob: NodeBlob, AbortSignal, Promise, Error, JSON, Math, Number, String, Array, Object,
+            console: quiet, Blob: NodeBlob, AbortSignal, AbortController, Promise, Error, JSON, Math, Number, String, Array, Object,
             crypto: webcrypto, setTimeout, clearTimeout,
         };
         sandbox.globalThis = sandbox;

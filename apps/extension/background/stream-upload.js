@@ -39,11 +39,14 @@
     /** Non-final part failures reported per streak. Offline, a part fails on
      * every retry for as long as the network is gone; the first few say so. */
     const REPORTED_RETRIES = 3;
-    /** Stop must hand the user their recording promptly, and the worker that
-     * waits on this is killed by Chrome after five minutes on one event. A
-     * drain that cannot finish in this time is abandoned: the share page has
-     * the whole capture and can upload it itself. */
-    const FINISH_DEADLINE_MS = 120_000;
+    /** After Stop the share page already has the recording and shows the
+     * upload's progress, so a slow upload is allowed to finish. What ends it
+     * is a stall: no bytes moving for this long. */
+    const STALL_LIMIT_MS = 60_000;
+    /** Failed attempts allowed across the whole drain after Stop, so a dead
+     * connection that fails fast cannot keep the upload open on retries. */
+    const FINISH_RETRY_CAP = 10;
+    const STALL_CHECK_MS = 1_000;
     const API_TIMEOUT_MS = 30_000;
     /** Generous: a 5 MB part on a 0.5 Mbit/s uplink takes 80 seconds. */
     const PART_TIMEOUT_MS = 180_000;
@@ -130,9 +133,22 @@
      * push() takes each MediaRecorder chunk; a part goes up as soon as a full
      * one has accumulated. finish() drains everything that is left — the
      * pending retry AND the buffer behind it — and completes. */
+    /** A part upload over fetch: done or failed, with no progress in between.
+     * The offscreen document passes one built on XMLHttpRequest, which
+     * reports bytes as they leave — what the stall limit needs on a slow
+     * uplink, where one 5 MB part can take over a minute. */
+    const fetchPut = (fetchFn) => async (url, blob, { signal } = {}) => {
+        const res = await fetchFn(url, { method: 'PUT', body: blob, signal });
+        return { ok: res.ok, status: res.status, etag: res.headers.get('ETag') };
+    };
+
     function createStreamUploader({
         apiBase, fetch: fetchFn, store, track, partSliceLength, partMinBytes,
         now = () => Date.now(), setTimer = setTimeout, clearTimer = clearTimeout,
+        putPart = fetchPut(fetchFn),
+        /** Called with { state, uploadedBytes, totalBytes, reason? } once the
+         * recording has stopped: 'uploading', 'completing', 'done', 'failed'. */
+        onProgress = () => {},
     }) {
         const post = apiPoster(apiBase, fetchFn);
         let record = null;        // what is persisted: enough to finalize without us
@@ -145,6 +161,14 @@
         let retryTimer = null;
         let beginning = null;
         let saveFailures = 0;
+        /** Set by finish(). A regular drain in progress stops after its current
+         * part and hands over to the final one, which has the limits below;
+         * without it the final drain queued behind a drain with none. */
+        let finishing = false;
+        let lastProgressAt = 0;
+        let inFlightBytes = 0;
+        let inFlight = null;      // AbortController of the request under way
+        let stalled = false;
 
         /** Never fatal, never blocking: the live upload does not depend on
          * its own persistence. A failure only costs recoverability. */
@@ -163,8 +187,11 @@
         function reset() {
             accepting = false;
             buffer = []; buffered = 0; pending = null; failures = 0;
+            finishing = false; stalled = false; inFlightBytes = 0;
             if (retryTimer) { clearTimer(retryTimer); retryTimer = null; }
         }
+
+        const moved = () => { lastProgressAt = now(); };
 
         function begin(options) {
             beginning = openUpload(options);
@@ -210,7 +237,12 @@
          * exactly the length R2 demands. */
         function takePart(isFinal) {
             if (pending) return pending;
-            const take = partSliceLength(buffered, isFinal);
+            /* A backlog at Stop goes up in ordinary parts, not as one trailing
+             * part of hundreds of megabytes: a failure then re-sends 5 MB, not
+             * all of it. Only the remainder is the short trailing part. */
+            const take = isFinal && buffered > partMinBytes
+                ? partSliceLength(buffered, false)
+                : partSliceLength(buffered, isFinal);
             if (take <= 0) return null;
             const all = new Blob(buffer);
             const rest = all.slice(take);
@@ -224,14 +256,29 @@
             const { uploadUrl } = await post('/recordings/upload/part', {
                 fileName: record.fileName, uploadId: record.uploadId, partNumber: part.partNumber,
             });
-            const res = await fetchFn(uploadUrl, {
-                method: 'PUT', body: part.blob, signal: AbortSignal.timeout(PART_TIMEOUT_MS),
-            });
+            const controller = new AbortController();
+            const timer = setTimer(() => controller.abort(new Error('part PUT timed out')), PART_TIMEOUT_MS);
+            inFlight = controller;
+            inFlightBytes = 0;
+            let res;
+            try {
+                res = await putPart(uploadUrl, part.blob, {
+                    signal: controller.signal,
+                    onProgress: (loaded) => {
+                        if (loaded > inFlightBytes) { inFlightBytes = loaded; moved(); report('uploading'); }
+                    },
+                });
+            } finally {
+                clearTimer(timer);
+                inFlight = null;
+                inFlightBytes = 0;
+            }
             if (!res.ok) throw new Error(`part PUT failed: HTTP ${res.status}`);
             // Quoted by R2, and handed back to CompleteMultipartUpload as received.
-            const etag = res.headers.get('ETag');
+            const etag = res.etag;
             if (!etag) throw new Error('R2 returned no ETag');
             if (!record) return; // aborted while the part was in flight
+            moved();
 
             record.parts = record.parts.filter((p) => p.partNumber !== part.partNumber);
             record.parts.push({ partNumber: part.partNumber, etag, bytes: part.blob.size });
@@ -239,7 +286,15 @@
             record.lastPartAt = now();
             pending = null;
             failures = 0;
+            report('uploading');
             await save();
+        }
+
+        let totalBytes = 0;
+        function report(state, reason) {
+            if (!finishing) return;
+            const uploadedBytes = (record?.bytes ?? 0) + inFlightBytes;
+            onProgress({ state, uploadedBytes, totalBytes, ...(reason ? { reason } : {}) });
         }
 
         function scheduleRetry() {
@@ -249,28 +304,32 @@
 
         /** Serialised: parts are sliced from one buffer. A final drain requested
          * while a part is in flight runs straight after it. */
-        function pump(isFinal, deadline = Infinity) {
-            if (pumping) return isFinal ? pumping.then(() => pump(true, deadline)) : pumping;
+        let finishFailures = 0;
+        function pump(isFinal) {
+            if (pumping) return isFinal ? pumping.then(() => pump(true)) : pumping;
             pumping = (async () => {
                 try {
-                    while (record && now() < deadline) {
+                    while (record && !stalled) {
+                        // Stop arrived: the final drain takes over from here.
+                        if (!isFinal && finishing) return;
                         const part = takePart(isFinal);
                         if (!part) return;
                         try {
                             await uploadPart(part);
                         } catch (e) {
                             failures++;
+                            if (isFinal) finishFailures++;
                             if (isFinal || failures <= REPORTED_RETRIES) {
                                 track('upload_part_failed', {
                                     part_number: part.partNumber, attempt: failures,
                                     final: isFinal, error_reason: reasonOf(e),
                                 });
                             }
-                            if (isFinal && failures < FINAL_ATTEMPTS) {
+                            if (isFinal && failures < FINAL_ATTEMPTS && finishFailures < FINISH_RETRY_CAP && !stalled) {
                                 await new Promise((r) => setTimer(r, backoffMs(failures)));
                                 continue;
                             }
-                            if (!isFinal) scheduleRetry();
+                            if (!isFinal && !finishing) scheduleRetry();
                             return;
                         }
                     }
@@ -292,14 +351,41 @@
             if (retryTimer) { clearTimer(retryTimer); retryTimer = null; }
             if (!record) return null;
             failures = 0;
-            const deadline = now() + FINISH_DEADLINE_MS;
-            await pump(true, deadline);
+            finishFailures = 0;
+            finishing = true;
+            stalled = false;
+            totalBytes = record.bytes + buffered + (pending?.blob.size ?? 0);
+            moved();
+            report('uploading');
+            /* The stall limit: no bytes moving for STALL_LIMIT_MS ends the
+             * drain, and the request under way is cancelled so it cannot hang
+             * on. A slow upload that keeps moving is never cut off. */
+            let watchdog = null;
+            const watch = () => {
+                watchdog = setTimer(() => {
+                    if (now() - lastProgressAt >= STALL_LIMIT_MS) {
+                        stalled = true;
+                        inFlight?.abort(new Error('upload stalled'));
+                        return;
+                    }
+                    watch();
+                }, STALL_CHECK_MS);
+            };
+            watch();
+            try {
+                await pump(true);
+            } finally {
+                clearTimer(watchdog);
+            }
 
             if (pending || buffered > 0 || record.parts.length === 0) {
                 // Completing now would publish a recording with its end cut
                 // off. Abandoned, not truncated.
-                const reason = record.parts.length === 0 ? 'empty'
-                    : now() >= deadline ? 'finish_timeout' : 'part_failed';
+                const nothingToSend = !pending && buffered === 0 && record.parts.length === 0;
+                const reason = nothingToSend ? 'empty'
+                    : stalled ? 'stalled'
+                        : finishFailures >= FINISH_RETRY_CAP ? 'retries_exhausted' : 'part_failed';
+                report('failed', reason);
                 await abort(reason);
                 return null;
             }
@@ -312,13 +398,16 @@
             // recordingStartTime has already been cleared by the time anything
             // downstream asks.
             const durationSec = Math.max(1, Math.round((now() - finished.startedAt) / 1000));
+            report('completing');
             for (let attempt = 1; ; attempt++) {
                 try {
                     const { fileUrl } = await post('/recordings/upload/complete', {
                         fileName: finished.fileName, uploadId: finished.uploadId,
                         parts: completionPayload(finished.parts),
                     });
+                    report('done');
                     record = null;
+                    finishing = false;
                     track('upload_completed', {
                         parts: finished.parts.length, file_size_mb: mb(finished.bytes),
                         duration_seconds: durationSec, recovered: false,
@@ -326,7 +415,8 @@
                     });
                     return { fileUrl, durationSec };
                 } catch (e) {
-                    if (attempt >= FINAL_ATTEMPTS || now() >= deadline) {
+                    if (attempt >= FINAL_ATTEMPTS) {
+                        report('failed', 'complete_failed');
                         await abort('complete_failed');
                         return null;
                     }

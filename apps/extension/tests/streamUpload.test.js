@@ -16,7 +16,7 @@ const fast = (fn, ms) => setTimeout(fn, ms / 1000);
 function load() {
     const sandbox = {
         console: { log() {}, warn() {}, error() {} },
-        Blob, AbortSignal, Promise, Error, JSON, Math, Number, String, Array, Object,
+        Blob, AbortSignal, AbortController, Promise, Error, JSON, Math, Number, String, Array, Object,
         crypto: webcrypto,
         setTimeout, clearTimeout,
     };
