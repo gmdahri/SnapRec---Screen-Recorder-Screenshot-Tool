@@ -341,6 +341,29 @@ const ShareView: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
+    /* The shareable address of this capture, once the server has its row.
+     *
+     * The extension registers a streamed recording itself, under the id it
+     * hands this page, so the page usually finds the row by polling rather
+     * than by uploading. It then said "link ready" while still sitting at
+     * /v?fresh=true, and Copy link copied that address — which has no
+     * recording in it. */
+    const shareUrl = isUploaded && recording?.id
+        ? `${window.location.origin}/v/${recording.id}`
+        : null;
+
+    /* Show the shareable address without a reload, and without leaving the
+     * fresh-capture surface the user is on: the history entry is rewritten
+     * directly rather than through the router, so the page is not re-routed
+     * to the shared view under them. Reloading then opens the canonical page.
+     * (Generating a link navigates through the router; that path is unchanged.) */
+    useEffect(() => {
+        if (!isFresh || !shareUrl) return;
+        const canonical = new URL(shareUrl).pathname;
+        if (window.location.pathname === canonical && !window.location.search) return;
+        window.history.replaceState(window.history.state, '', canonical);
+    }, [isFresh, shareUrl]);
+
     // Stop polling once ready or if it's a new local-only recording
     useEffect(() => {
         if (recording?.isReady || (recording?.type === 'screenshot' && recording)) {
@@ -645,6 +668,25 @@ const ShareView: React.FC = () => {
         captureType: recordingData?.type ?? undefined,
     });
 
+    /** Saves the capture that is on this device, straight from its blob URL:
+     * no account needed, nothing re-read into memory (a long recording is
+     * gigabytes). Offered while there is no server copy, which is also when it
+     * is the only copy there is. */
+    const saveLocalCopy = () => {
+        if (!localVideoBlob) return;
+        capture('recording_downloaded', {
+            capture_type: recordingData?.type ?? 'unknown',
+            surface: 'share_page_local',
+        });
+        const a = document.createElement('a');
+        a.href = localVideoBlob;
+        a.download = filenameFor(recordingData);
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    };
+
     const handleDownload = () => {
         if (!user) {
             capture('auth_modal_triggered', { trigger: 'download' });
@@ -908,6 +950,11 @@ const ShareView: React.FC = () => {
 
     if (surface === 'fresh' && recordingData) {
         const waitingForVideo = !localVideoBlob && !isUploaded;
+        /* Until the first lookup answers, the page cannot tell "already has a
+         * link" from "needs one generated"; offering Generate here could upload
+         * a second copy of a recording the extension already registered. */
+        const checkingForLink = !!localId && !isUploaded && !isUploading && !isFetched;
+        const canSaveLocally = !isUploaded && !!localVideoBlob;
         return (
             <>
                 <SEO title={recordingData.title} description="Your new recording." noIndex />
@@ -922,7 +969,7 @@ const ShareView: React.FC = () => {
                         status: isUploaded ? 'link ready' : 'on this device',
                         views: recordingData.views ?? 0,
                         watchedPercent: null,
-                        allowDownload: isUploaded,
+                        allowDownload: isUploaded || canSaveLocally,
                         canEdit: true,
                     }}
                     comments={[]}
@@ -934,19 +981,20 @@ const ShareView: React.FC = () => {
                     onBack={() => navigate('/library')}
                     onSeek={(ms) => sharePlayerRef.current?.seek(ms / 1000)}
                     onPost={() => {}}
-                    onCopyLink={isUploaded
+                    onCopyLink={shareUrl
                         ? () => {
-                            navigator.clipboard.writeText(window.location.href)
+                            navigator.clipboard.writeText(shareUrl)
                                 .then(() => showNotification('Link copied', 'success'))
                                 .catch(() => showNotification('Could not copy the link', 'error'));
                         }
                         : handleUploadToCloud}
                     copyLinkLabel={isUploading
                         ? 'Generating\u2026'
-                        : isUploaded ? 'Copy link'
-                            : waitingForVideo ? 'Waiting for video\u2026' : 'Generate shareable link'}
-                    copyLinkDisabled={isUploading || waitingForVideo}
-                    onDownload={isUploaded ? handleDownload : undefined}
+                        : shareUrl ? 'Copy link'
+                            : checkingForLink ? 'Checking for your link\u2026'
+                                : waitingForVideo ? 'Waiting for video\u2026' : 'Generate shareable link'}
+                    copyLinkDisabled={isUploading || waitingForVideo || checkingForLink}
+                    onDownload={isUploaded ? handleDownload : canSaveLocally ? saveLocalCopy : undefined}
                     onEdit={handleOpenVideoEditor}
                     player={
                         <VideoPlayer

@@ -43,7 +43,8 @@ vi.mock('../../hooks/useDownload', () => ({ useDownload: () => ({ download: vi.f
 vi.mock('../../hooks/useRecordings', () => {
     const mutation = () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false });
     return {
-        useRecording: () => ({ data: undefined, isLoading: false }),
+        // The lookup has answered: the server has no row for this capture.
+        useRecording: () => ({ data: undefined, isLoading: false, isFetched: true }),
         useUpdateRecording: mutation, useResolveComment: mutation, useAddReaction: mutation,
         useAddComment: mutation, useClaimRecordings: mutation,
         useGetUploadUrl: () => ({ mutateAsync: async () => ({ uploadUrl: 'https://r2.test/put', fileUrl: 'video-new.webm' }) }),
