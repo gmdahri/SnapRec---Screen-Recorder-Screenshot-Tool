@@ -191,7 +191,8 @@
             if (retryTimer) { clearTimer(retryTimer); retryTimer = null; }
         }
 
-        const moved = () => { lastProgressAt = now(); };
+        let idleTicks = 0;
+        const moved = () => { lastProgressAt = now(); idleTicks = 0; };
 
         function begin(options) {
             beginning = openUpload(options);
@@ -361,9 +362,13 @@
              * drain, and the request under way is cancelled so it cannot hang
              * on. A slow upload that keeps moving is never cut off. */
             let watchdog = null;
+            /* Counted two ways: by the clock, and by this check's own ticks.
+             * Ticks can only run late, never early, so they cannot report a
+             * stall that has not happened; the clock covers a throttled timer. */
             const watch = () => {
                 watchdog = setTimer(() => {
-                    if (now() - lastProgressAt >= STALL_LIMIT_MS) {
+                    idleTicks++;
+                    if (now() - lastProgressAt >= STALL_LIMIT_MS || idleTicks * STALL_CHECK_MS >= STALL_LIMIT_MS) {
                         stalled = true;
                         inFlight?.abort(new Error('upload stalled'));
                         return;
@@ -464,6 +469,9 @@
         store, apiBase, fetch: fetchFn, liveUploadId, register, track, now = () => Date.now(),
     }) {
         if (liveUploadId === undefined) return ['unknown'];
+        // One id, or every upload the document still owns (a recording that
+        // is finishing after Stop while the next one records).
+        const live = new Set([liveUploadId].flat().filter(Boolean));
         const records = await store.list().catch(() => []);
         const post = apiPoster(apiBase, fetchFn);
         const objectExists = async (fileName) => {
@@ -483,7 +491,7 @@
                 outcomes.push('invalid');
                 continue;
             }
-            if (record.uploadId === liveUploadId) { outcomes.push('live'); continue; }
+            if (live.has(record.uploadId)) { outcomes.push('live'); continue; }
             outcomes.push(await recoverOne(record));
         }
         return outcomes;

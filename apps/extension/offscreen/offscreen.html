@@ -21,6 +21,9 @@
          it is the context that lives as long as the recording. -->
     <script src="../background/config.js"></script>
     <script src="../background/stream-upload.js"></script>
+    <!-- handoff-host.js defines globalThis.SnapRecHandoffHost, which offscreen.js
+         uses to hold stopped recordings for the share page. -->
+    <script src="handoff-host.js"></script>
     <script src="offscreen.js"></script>
 </body>
 

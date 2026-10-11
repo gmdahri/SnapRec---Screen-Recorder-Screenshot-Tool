@@ -219,10 +219,14 @@ describe('the upload itself', () => {
         await record(7);
         h.net.hang = 'r2.test/';     // the connection black-holes mid-recording
         await record(6);
-        await stopFromPage();        // the share tab still opens
+        await stopFromPage();        // the share tab opens at once, before the upload is settled
+        expect(theUpload().state).toBe('open');
 
-        expect(theUpload().state).toBe('aborted');
+        // After a minute with no bytes moving, the drain ends and the upload is aborted.
+        await h.waitFor(() => theUpload().state === 'aborted', { what: 'the stalled upload to be aborted', timeout: 8000 });
         expect(registered()).toEqual([]);
+        await h.waitFor(() => h.channelLog.some((m) => m.data.type === 'progress' && m.data.state === 'failed'), { what: 'the page to be told' });
+        expect(h.channelLog.find((m) => m.data.state === 'failed').data.reason).toBe('stalled');
         expect(await readParked('latest_video_blob')).toBeDefined();
     }, 15000);
 
@@ -320,31 +324,52 @@ describe('handing the recording to the share page', () => {
         await h.settle(300);
     }
 
-    it('a page that loads before the capture is saved still gets the frame — once, and only after the save', async () => {
+    it('a page that loads at once gets the frame, once', async () => {
         await recordAndStop({ tabLoadMs: 0 });
         expect(h.injections).toHaveLength(1);
-        expect(h.injections[0].parkedAtInjection).toBe(true);
     });
 
-    it('a page that loads after the save gets it too', async () => {
+    it('a page that loads later gets it too, once', async () => {
         await recordAndStop({ tabLoadMs: 40 });
         expect(h.injections).toHaveLength(1);
-        expect(h.injections[0].parkedAtInjection).toBe(true);
     });
 
-    it('if the capture cannot be saved, it goes to Downloads before the recorder closes, and no frame is injected', async () => {
+    it('the frame does not wait for the background save, and the recording reaches it while the save is still running', async () => {
+        h = createHarness({ tabLoadMs: 0 });
+        await h.sw('startRecording({ microphone: false, systemAudio: false })');
+        await h.waitFor(() => h.recorder()?.state === 'recording', { what: 'recorder to start' });
+        h.offscreen('persistForHandoff = () => new Promise(() => {})');   // a save that never finishes
+        await record(3);
+        await h.fromContent({ action: 'stopRecording' }).catch(() => {});
+        await h.waitFor(() => h.injections.length === 1, { what: 'the courier frame' });
+        expect(h.injections[0].parkedAtInjection).toBe(false);
+        const id = new URL(h.injections[0].frameUrl).searchParams.get('id');
+        const courier = h.channel('snaprec-handoff');
+        courier.postMessage({ type: 'want', id });
+        await h.waitFor(() => courier.received.some((m) => m.type === 'recording'), { what: 'the recording over the channel' });
+        courier.close();
+    });
+
+    it('if the background save fails, the page still gets the recording, and is told', async () => {
         h = createHarness({ tabLoadMs: 0 });
         await h.sw('startRecording({ microphone: false, systemAudio: false })');
         await h.waitFor(() => h.recorder()?.state === 'recording', { what: 'recorder to start' });
         h.offscreen('persistForHandoff = async () => { throw new Error("QuotaExceededError") }');
         await record(3);
         await h.fromContent({ action: 'stopRecording' }).catch(() => {});
-        await h.waitFor(() => h.downloads.length > 0, { what: 'the disk copy' });
-        await h.settle(300);
+        await h.waitFor(() => h.injections.length === 1, { what: 'the courier frame' });
+        const id = new URL(h.injections[0].frameUrl).searchParams.get('id');
 
-        expect(h.downloads).toEqual([expect.objectContaining({ filename: expect.stringMatching(/^SnapRec\//) })]);
-        expect(h.injections).toEqual([]);                     // nothing parked to deliver
-        expect(h.tabs.some((t) => t.url.includes('/v'))).toBe(false);   // the empty share tab is closed
-        expect(h.notifications.map((n) => n.id)).toContain('snaprec-handoff-fallback');
+        // The courier asks the offscreen document, not IndexedDB.
+        const courier = h.channel('snaprec-handoff');
+        courier.postMessage({ type: 'want', id });
+        await h.waitFor(() => courier.received.some((m) => m.type === 'recording'), { what: 'the recording over the channel' });
+        expect(courier.received.find((m) => m.type === 'recording').blob.size).toBeGreaterThan(0);
+        await h.waitFor(() => courier.received.some((m) => m.type === 'saved'), { what: 'the save result' });
+        expect(courier.received.find((m) => m.type === 'saved')).toMatchObject({ ok: false });
+
+        expect(h.downloads).toEqual([]);
+        expect(h.tabs.some((t) => t.url.includes('/v'))).toBe(true);
+        courier.close();
     });
 });

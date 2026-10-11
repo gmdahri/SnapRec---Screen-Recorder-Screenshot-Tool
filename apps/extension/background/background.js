@@ -1170,6 +1170,14 @@ async function finalizeCleanup() {
     await closeOffscreenDocument();
     // Overlay hiding already happened in broadcastHideOverlay
     // Just ensure state is clean
+    await endRecordingState();
+}
+
+/** The recording is over, as far as the browser's UI is concerned. After a
+ * normal Stop the offscreen document stays open — it is still finishing the
+ * upload and handing the recording to the share page — and closes itself
+ * through 'handoffIdle'. */
+async function endRecordingState() {
     recordingTabId = null;
     await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
 }
@@ -1193,10 +1201,13 @@ const DISK_SAVE_TIMEOUT_MS = 600_000;
  * Awaits settling rather than starting, because the blob: URL belongs to the
  * offscreen document and Chrome is still reading through it. finalizeCleanup
  * must not run until this returns. */
-async function saveRecordingToDisk() {
+async function saveRecordingToDisk({ id = null, quietIfMissing = false } = {}) {
     const info = await chrome.runtime
-        .sendMessage({ action: 'offscreen_getBlobUrl' })
+        .sendMessage({ action: 'offscreen_getBlobUrl', ...(id ? { id } : {}) })
         .catch((e) => ({ success: false, error: e.message }));
+    // Asked for one recording by id and the document no longer holds it: the
+    // caller has another place to look, so this is not yet a failure.
+    if (quietIfMissing && !info?.success) return null;
 
     const fail = (reason) => {
         console.error('[SnapRec] Could not save recording to disk:', reason);
@@ -1341,32 +1352,31 @@ async function deliverImageToEditor() {
     chrome.tabs.onUpdated.addListener(listener);
 }
 
-/** Longer than the offscreen document's own two-minute drain deadline, and
- * well inside the five minutes Chrome allows a worker on one event — past
- * which it would be killed before opening the share tab. */
-const STREAM_FINISH_TIMEOUT_MS = 200_000;
-
-/** Asks the offscreen document to drain the last part and complete.
+/** The offscreen document finished a stopped recording's upload: register it.
  *
- * Returns { fileUrl, durationSec }, or null. The upload itself lives in the
- * offscreen document — background/stream-upload.js explains why — so all the
- * worker does here is ask. Must run before finalizeCleanup, which closes that
- * document. A null is never a lost recording: the share page receives the
- * local capture either way. */
-async function finishStreamingUpload() {
-    if (!(await hasOffscreenDocument())) return null;
-    const reply = await Promise.race([
-        chrome.runtime.sendMessage({ action: 'offscreen_streamFinish' })
-            .catch((e) => ({ success: false, error: e.message })),
-        new Promise((resolve) => setTimeout(
-            () => resolve({ success: false, error: 'timed out' }), STREAM_FINISH_TIMEOUT_MS)),
-    ]);
-    if (!reply?.success) {
-        console.warn('[SnapRec] Could not finish the streaming upload:', reply?.error);
-        return null;
+ * Registration stays here because it needs the session, which lives in
+ * chrome.storage — an offscreen document only has chrome.runtime. The message
+ * wakes this worker if Chrome had stopped it. */
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.action === 'streamFinished') {
+        registerStreamedRecording(message.id, message.fileUrl, message.durationSec)
+            .then((outcome) => {
+                if (outcome === 'unauthorized') notifySessionExpired();
+                sendResponse({ outcome });
+            });
+        return true;
     }
-    return reply.result ?? null;
-}
+    if (message.action === 'handoffIdle') {
+        // Everything after Stop is settled. Not while a new recording is
+        // under way: it uses the same document.
+        (async () => {
+            const { isRecording } = await chrome.storage.local.get('isRecording');
+            if (!isRecording && recordingTabId === null) await closeOffscreenDocument();
+        })();
+        return false;
+    }
+    return false;
+});
 
 /** Creates the recording row for a file that is already on R2.
  *
@@ -1529,71 +1539,40 @@ async function handleRecordingComplete() {
         // Generate a UUID for the recording immediately
         const recordingId = crypto.randomUUID();
 
-        /* Drain the last part, close the upload, and register the row.
+        /* The share tab first, before any network work.
          *
-         * Must happen before finalizeCleanup below: taking the final part needs
-         * the offscreen document, and cleanup closes it. Registering uses the
-         * same id the courier gives the share page, so both refer to one
-         * recording. */
-        const streamed = await finishStreamingUpload();
-        if (streamed) {
-            const registration = await registerStreamedRecording(
-                recordingId, streamed.fileUrl, streamed.durationSec);
-            if (registration === 'unauthorized') notifySessionExpired();
-        }
-
-        // IMMEDIATELY redirect to /v (generic preview)
-        console.log('[SnapRec] Redirecting to share page immediately...');
-        /* ?fresh=true is a cache-buster, not a feature flag.
+         * Stop used to drain the last parts, complete the upload and register
+         * the row before opening this tab — seconds normally, and up to the
+         * worker's 200 s cap when the uplink was slower than the recording,
+         * long enough to look as if the recording had been lost. The page now
+         * opens at once, plays the recording from this device, and shows the
+         * upload finishing in the background.
          *
-         * Before the _redirects fix, /v answered 308 Permanent Redirect to /.
-         * Browsers cache a 308 indefinitely — that is what "permanent" means —
-         * so every browser that opened a share link during that window still
-         * redirects /v to the landing page without asking the server, and
-         * deploying the fix does not clear it. Redirect caches are keyed on the
-         * full URL, so a query string sidesteps the stale entry.
-         *
-         * ShareView already understands the parameter, and with no id in the
-         * path it changes nothing about what renders. */
-        const shareUrl = `${CONFIG.WEB_BASE_URL}/v?fresh=true`;
+         * ?fresh=true is a cache-buster, not a feature flag: before the
+         * _redirects fix /v answered 308 to /, browsers cache a 308 for good,
+         * and a query string sidesteps the stale entry. `r` is this
+         * recording's id: the page accepts a recording only for the id it was
+         * opened with. */
+        const shareUrl = `${CONFIG.WEB_BASE_URL}/v?fresh=true&r=${encodeURIComponent(recordingId)}`;
         const tab = await chrome.tabs.create({ url: shareUrl });
 
-        /* No disk copy on the happy path.
-         *
-         * This used to write every recording to Downloads unconditionally,
-         * which was the fastest way to stop captures vanishing but filled the
-         * user's folder with files they never asked for. The courier now waits
-         * for the page to acknowledge the capture, so a failed handoff is
-         * detectable — and the disk write happens then, and only then. See
-         * the 'handoffFailed' handler.
-         *
-         * The capture is not at risk in the meantime: it is parked in
-         * extension-origin IndexedDB before finalizeCleanup runs, so closing
-         * the offscreen document no longer destroys it. */
-        const savedFile = null;
-
-        /* Watched from now, not after the save below. The save can take longer
-         * than the page takes to load — seconds, for a long recording — and
-         * "complete" fires once: a listener added after it never fires, so the
-         * frame was never injected and the page waited for ever. */
+        /* Watched from now: "complete" fires once, and a listener added after
+         * it never hears it. */
         const tabLoaded = whenTabLoaded(tab.id);
 
-        /* Park the capture, then close the recorder. Once the blob is in
-         * extension-origin IndexedDB it no longer depends on the offscreen
-         * document staying alive, which removes the race this code used to
-         * lose: Chrome reaps an offscreen document once its media tracks stop,
-         * and the old chunked transfer took minutes. */
-        const parked = await chrome.runtime.sendMessage({
-            action: 'offscreen_persistForHandoff',
+        /* The offscreen document takes it from here: it serves the recording
+         * to the courier frame, finishes the upload (asking this worker to
+         * register it — see 'streamFinished'), writes the IndexedDB copy in the
+         * background, and reports 'handoffIdle' when all of that is settled. */
+        const started = await chrome.runtime.sendMessage({
+            action: 'offscreen_finishInBackground',
             id: recordingId,
-            // The click trail is the offscreen document's own; see recordingMetadata there.
         }).catch((e) => ({ success: false, error: e.message }));
 
-        if (!parked?.success) {
-            /* Nothing was parked, so there is nothing for the share page to
-             * receive — and the offscreen document, about to be closed, holds
-             * the only copy. This is the last moment it can be saved. */
-            console.error('[SnapRec] Could not park capture for handoff:', parked?.error);
+        if (!started?.success) {
+            /* The offscreen document holds no recording to hand over. If it
+             * holds anything at all, this is the last moment to save it. */
+            console.error('[SnapRec] Could not start the background finish:', started?.error);
             const saved = await saveRecordingToDisk();
             tabLoaded.cancel();
             chrome.tabs.remove(tab.id).catch(() => { /* already closed */ });
@@ -1601,12 +1580,10 @@ async function handleRecordingComplete() {
             if (saved) notifySavedToDisk(saved.filename);
             return;
         }
-        await finalizeCleanup();
+        await endRecordingState();
 
-        /* The courier is same-origin with the parked blob and can hand it to
-         * the page by reference. Injected once the capture is parked AND the
-         * page has loaded — an about:blank tab has no document to append to —
-         * whichever of the two happens last. */
+        /* The courier asks the offscreen document for this recording by id,
+         * and falls back to the IndexedDB copy if the document is gone. */
         const frameUrl = chrome.runtime.getURL(
             `handoff/handoff.html?id=${encodeURIComponent(recordingId)}`);
         tabLoaded.then((loaded) => { if (loaded) injectHandoffFrame(tab.id, frameUrl); });
@@ -1616,12 +1593,7 @@ async function handleRecordingComplete() {
          * the sender. Best-effort — the popup is usually closed, which is fine. */
         notifyPopup({
             action: 'captureFinished',
-            capture: {
-                id: recordingId,
-                bytes: savedFile?.bytes ?? 0,
-                mimeType: savedFile?.mimeType ?? 'video/webm',
-                filename: savedFile?.filename ?? null,
-            },
+            capture: { id: recordingId, bytes: started.size ?? 0, mimeType: 'video/webm', filename: null },
         });
 
         // We skip all backend calls here - web app will handle it now.
@@ -1652,6 +1624,19 @@ chrome.runtime.onMessage.addListener((message) => {
      * parked in. Without this the fallback failed with "Receiving end does not
      * exist", which is a safety net that silently is not one. */
     const save = (async () => {
+        /* After a normal Stop the offscreen document still holds the
+         * recording until the page has it: saved from memory, by id. */
+        if (kind === 'video' && message.id && (await hasOffscreenDocument())) {
+            const fromMemory = await saveRecordingToDisk({ id: message.id, quietIfMissing: true });
+            if (fromMemory) {
+                chrome.runtime.sendMessage({ action: 'offscreen_handoffSettled', id: message.id }).catch(() => {});
+                return fromMemory;
+            }
+        }
+        // Opened here only if it is not already open: a document that exists
+        // may be recording again, or finishing another upload, and is not
+        // this handler's to close.
+        const existed = await hasOffscreenDocument();
         await createOffscreenDocument();
         const loaded = await chrome.runtime
             .sendMessage({ action: 'offscreen_loadParked', kind })
@@ -1661,7 +1646,7 @@ chrome.runtime.onMessage.addListener((message) => {
             return null;
         }
         const result = kind === 'image' ? await saveImageToDisk() : await saveRecordingToDisk();
-        await closeOffscreenDocument();
+        if (!existed) await closeOffscreenDocument();
         return result;
     })();
 
@@ -2026,7 +2011,7 @@ async function recoverInterruptedRecording() {
         store: SnapRecStreamUpload.idbUploadStore(indexedDB),
         apiBase: CONFIG.API_BASE_URL,
         fetch: (...args) => fetch(...args),
-        liveUploadId: status?.uploadId ?? null,
+        liveUploadId: status?.uploadIds ?? status?.uploadId ?? null,
         // The id is recovery's own, persisted before the first attempt, so a
         // retried registration lands on the same row. Returns 'created',
         // 'exists', 'conflict', 'unauthorized' or 'failed'.

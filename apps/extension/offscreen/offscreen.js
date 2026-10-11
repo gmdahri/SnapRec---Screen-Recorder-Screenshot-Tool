@@ -17,20 +17,71 @@ let originalMicStream = null;
  * broadcast these batches to every extension context, this one included. */
 let recordingMetadata = [];
 
+/** One part PUT over XMLHttpRequest, which reports bytes as they leave —
+ * fetch reports nothing until the part is done. After Stop the uploader ends
+ * a drain only when no bytes have moved for a minute, and on a slow uplink a
+ * single 5 MB part can take longer than that. */
+function xhrPutPart(url, blob, { signal, onProgress } = {}) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', url);
+        xhr.upload.onprogress = (e) => onProgress?.(e.loaded);
+        xhr.onload = () => resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            etag: xhr.getResponseHeader('ETag'),
+        });
+        xhr.onerror = () => reject(new TypeError('Failed to fetch'));
+        xhr.onabort = () => reject(signal?.reason ?? new Error('part PUT aborted'));
+        if (signal) {
+            if (signal.aborted) { reject(signal.reason); return; }
+            signal.addEventListener('abort', () => xhr.abort(), { once: true });
+        }
+        xhr.send(blob);
+    });
+}
+
 /** The streaming upload. Owned here, not in the service worker: see
- * background/stream-upload.js. */
-const streamUploader = globalThis.SnapRecStreamUpload.createStreamUploader({
-    apiBase: CONFIG.API_BASE_URL,
-    // Wrapped: window.fetch throws "Illegal invocation" when called unbound.
-    fetch: (...args) => fetch(...args),
-    store: globalThis.SnapRecStreamUpload.idbUploadStore(indexedDB),
-    // An offscreen document has only chrome.runtime, so analytics goes
-    // through the worker's existing trackEvent route.
-    track: (event, properties) => chrome.runtime
-        .sendMessage({ action: 'trackEvent', event, properties })
-        .catch(() => { /* telemetry is best-effort */ }),
-    partSliceLength: globalThis.SnapRecParts.partSliceLength,
-    partMinBytes: globalThis.SnapRecParts.PART_MIN_BYTES,
+ * background/stream-upload.js.
+ *
+ * One per recording. After Stop a recording's upload finishes in the
+ * background while the user may already be recording again; a single shared
+ * uploader would have been reset by the new recording's begin(). */
+function makeUploader() {
+    let sink = () => {};
+    const uploader = globalThis.SnapRecStreamUpload.createStreamUploader({
+        apiBase: CONFIG.API_BASE_URL,
+        // Wrapped: window.fetch throws "Illegal invocation" when called unbound.
+        fetch: (...args) => fetch(...args),
+        store: globalThis.SnapRecStreamUpload.idbUploadStore(indexedDB),
+        // An offscreen document has only chrome.runtime, so analytics goes
+        // through the worker's existing trackEvent route.
+        track: (event, properties) => chrome.runtime
+            .sendMessage({ action: 'trackEvent', event, properties })
+            .catch(() => { /* telemetry is best-effort */ }),
+        partSliceLength: globalThis.SnapRecParts.partSliceLength,
+        partMinBytes: globalThis.SnapRecParts.PART_MIN_BYTES,
+        putPart: typeof XMLHttpRequest === 'function' ? xhrPutPart : undefined,
+        onProgress: (p) => sink(p),
+    });
+    uploader.reportTo = (fn) => { sink = fn; };
+    return uploader;
+}
+let streamUploader = makeUploader();
+/** Uploads still finishing after their recording stopped. */
+const finishingUploaders = new Set();
+
+/** Holds stopped recordings for the share page; see handoff-host.js. */
+const handoffHost = globalThis.SnapRecHandoffHost.createHandoffHost({
+    channel: new BroadcastChannel(globalThis.SnapRecHandoffHost.CHANNEL),
+    onIdle: () => {
+        // Nothing left to deliver, upload or save. The worker closes this
+        // document unless a new recording is using it.
+        // Not while a recording is running, or set up and counting down.
+        if (pendingStream || (mediaRecorder && mediaRecorder.state !== 'inactive')) return;
+        chrome.runtime.sendMessage({ action: 'handoffIdle' }).catch(() => { /* worker wakes on the next event */ });
+    },
+    log: (...args) => console.warn('[Offscreen] Handoff:', ...args),
 });
 
 // Listen for messages from background script
@@ -114,6 +165,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
 
+        /* Stop, from here on: the share tab is already open. Start the
+         * background work for this recording and answer at once. */
+        case 'offscreen_finishInBackground': {
+            const blob = currentRecordingBlob;
+            if (!blob) {
+                sendResponse({ success: false, error: 'No capture available' });
+                return false;
+            }
+            const id = message.id;
+            const uploader = streamUploader;
+            const metadataStr = JSON.stringify(recordingMetadata);
+            finishingUploaders.add(uploader);
+            handoffHost.start({
+                id, blob, metadataStr,
+                persist: () => persistForHandoff(id, metadataStr, 'video', blob),
+                finish: (onProgress) => {
+                    uploader.reportTo(onProgress);
+                    return uploader.finish().finally(() => finishingUploaders.delete(uploader));
+                },
+                register: (result) => chrome.runtime
+                    .sendMessage({ action: 'streamFinished', id, fileUrl: result.fileUrl, durationSec: result.durationSec })
+                    .then((reply) => reply?.outcome ?? 'failed'),
+            });
+            sendResponse({ success: true, size: blob.size });
+            return false;
+        }
+
+        case 'offscreen_handoffSettled':
+            handoffHost.handoffSettled(message.id);
+            sendResponse({ success: true });
+            return false;
+
         case 'offscreen_persistForHandoff':
             persistForHandoff(message.id, message.metadataStr, message.kind)
                 .then(result => sendResponse({ success: true, size: result.size, type: result.type }))
@@ -145,7 +228,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
          * settle rather than merely to start. Not revoked here for the same
          * reason; closing the document releases it. */
         case 'offscreen_getBlobUrl': {
-            const blob = message.kind === 'image' ? currentImageBlob : currentRecordingBlob;
+            // A recording named by id is only ever that recording: a newer
+            // one may already be in currentRecordingBlob.
+            const blob = message.kind === 'image' ? currentImageBlob
+                : message.id ? handoffHost.recordingFor(message.id) : currentRecordingBlob;
             if (!blob) {
                 sendResponse({ success: false, error: 'No capture available' });
             } else {
@@ -169,6 +255,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true;
 
         case 'offscreen_streamAbort':
+            /* For a recording that is still running. An upload already
+             * finishing after Stop is not this message's to end: it has its
+             * own stall limit, and the page is showing its progress. */
+            if (finishingUploaders.has(streamUploader)) {
+                sendResponse({ success: true, skipped: 'finishing' });
+                return false;
+            }
             streamUploader.abort(message.reason)
                 .then(() => sendResponse({ success: true }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
@@ -180,6 +273,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({
                 success: true,
                 ...streamUploader.status(),
+                // Every upload this document still owns, the finishing ones
+                // included: recovery must leave all of them alone.
+                uploadIds: [streamUploader, ...finishingUploaders]
+                    .map((u) => u.status().uploadId).filter(Boolean),
                 recording: mediaRecorder !== null && mediaRecorder.state !== 'inactive',
             });
             return false;
@@ -419,6 +516,8 @@ async function startMediaRecorder() {
 
     // Upload as we record. Not awaited: a slow or failed open must never delay
     // the recorder, and the share page can still upload the local capture.
+    // A fresh uploader if the previous recording's is still finishing.
+    if (finishingUploaders.has(streamUploader)) streamUploader = makeUploader();
     void streamUploader.begin({ contentType: 'video/webm' });
 
     // Clear pending state
@@ -535,8 +634,8 @@ async function loadParkedBlob(kind = 'video') {
     return blob.size;
 }
 
-async function persistForHandoff(id, metadataStr, kind = 'video') {
-    const blob = kind === 'image' ? currentImageBlob : currentRecordingBlob;
+async function persistForHandoff(id, metadataStr, kind = 'video', blobOverride = null) {
+    const blob = blobOverride ?? (kind === 'image' ? currentImageBlob : currentRecordingBlob);
     if (!blob) throw new Error('No capture available');
     // A recording's trail is collected here; the worker no longer holds one.
     if (metadataStr === undefined && kind === 'video') metadataStr = JSON.stringify(recordingMetadata);

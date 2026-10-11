@@ -71,13 +71,18 @@ function storageArea(map) {
 /** `tabLoadMs`: how long a new tab takes to report "complete". A page that
  * loads faster than the extension finishes parking a capture is the race
  * behind "the share page never got the recording". */
-export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
+/** `byteScale`: each real byte stands for this many, so a multi-gigabyte
+ * recording runs in megabytes: parts are cut at 5 MB / byteScale, and the
+ * upload bandwidth model counts bytes * byteScale. */
+export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1 } = {}) {
     const shared = {
         local: new Map(),
         session: new Map(),
         idb: new IDBFactory(),
     };
-    const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map(), rows: new Map(), refusedTokens: new Set() };
+    /* `uploadBps`: R2 part uploads take bytes * 8 / uploadBps seconds of
+     * (scaled) time, one at a time, as on a real uplink. Null: instant. */
+    const net = { calls: [], failNext: {}, offline: false, hang: null, uploads: new Map(), rows: new Map(), refusedTokens: new Set(), uploadBps: null };
     const notifications = [];
     /** Every handoff-frame injection: which tab, which frame URL, and whether
      * a capture was parked under that id at the moment it was injected. */
@@ -94,6 +99,29 @@ export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
         request.onerror = () => resolve(null);
     });
     const contexts = {};      // name -> { sandbox, listeners, timers, alive }
+    /** BroadcastChannel among this harness's contexts only. Messages arrive
+     * on a later turn, as in Chrome, and never at a context that has died. */
+    const channels = new Map();   // name -> Set of { owner, instance }
+    const channelLog = [];        // every broadcast: { name, data }
+    function broadcastChannelFor(ctx) {
+        return class BroadcastChannel {
+            constructor(name) {
+                this.name = name; this.onmessage = null; this.closed = false;
+                if (!channels.has(name)) channels.set(name, new Set());
+                this.entry = { owner: ctx, instance: this };
+                channels.get(name).add(this.entry);
+            }
+            postMessage(data) {
+                if (this.closed || !ctx.alive) return;
+                channelLog.push({ name: this.name, data });
+                for (const { owner, instance } of channels.get(this.name)) {
+                    if (instance === this || instance.closed) continue;
+                    setTimeout(() => { if (owner.alive && !instance.closed) instance.onmessage?.({ data }); }, 0);
+                }
+            }
+            close() { this.closed = true; channels.get(this.name)?.delete(this.entry); }
+        };
+    }
     let tabSeq = 100;
     const tabs = [];
 
@@ -111,7 +139,11 @@ export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
         }
         if (net.offline) throw new TypeError('Failed to fetch');
         // A request that is never answered: a black-holed connection.
-        if (net.hang && url.includes(net.hang)) return new Promise(() => {});
+        // Never answered, but cancellable, as a real fetch is.
+        if (net.hang && url.includes(net.hang)) {
+            return new Promise((_, reject) => init.signal?.addEventListener('abort',
+                () => reject(init.signal.reason ?? new Error('aborted')), { once: true }));
+        }
         for (const [pattern, n] of Object.entries(net.failNext)) {
             if (n > 0 && url.includes(pattern)) {
                 net.failNext[pattern] = n - 1;
@@ -124,6 +156,11 @@ export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
         if (url.startsWith(R2) && method === 'PUT') {
             const [uploadId, partNumber] = new URL(url).pathname.split('/').filter(Boolean);
             const size = body?.size ?? body?.byteLength ?? 0;
+            if (net.uploadBps) {
+                const ms = (size * byteScale * 8 / net.uploadBps) * 1000 / TIME_SCALE;
+                await new Promise((r) => setTimeout(r, ms));
+                if (net.offline) throw new TypeError('Failed to fetch');
+            }
             call.partNumber = Number(partNumber); call.bytes = size;
             const up = net.uploads.get(uploadId);
             if (!up) return json({ message: 'NoSuchUpload' }, 404);
@@ -360,6 +397,7 @@ export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
             addEventListener: () => {},
             removeEventListener: () => {},
         };
+        sandbox.BroadcastChannel = broadcastChannelFor(ctx);
         sandbox.globalThis = sandbox;
         sandbox.self = sandbox;
         vm.createContext(sandbox);
@@ -369,7 +407,14 @@ export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
     }
 
     function runFile(ctx, file) {
-        vm.runInContext(readFileSync(file, 'utf8'), ctx.sandbox, { filename: file });
+        let code = readFileSync(file, 'utf8');
+        if (byteScale !== 1 && file.endsWith('/upload-parts.js')) {
+            const scaled = code.replace('const PART_MIN_BYTES = 5 * 1024 * 1024;',
+                `const PART_MIN_BYTES = ${Math.round((5 * 1024 * 1024) / byteScale)};`);
+            if (scaled === code) throw new Error('harness: PART_MIN_BYTES not found to scale');
+            code = scaled;
+        }
+        vm.runInContext(code, ctx.sandbox, { filename: file });
     }
 
     function bootWorker() {
@@ -464,8 +509,17 @@ export function createHarness({ log = false, tabLoadMs = 5 } = {}) {
     bootWorker();
 
     return {
-        shared, net, contexts, tabs, notifications, injections, downloads,
-        API, R2,
+        shared, net, contexts, tabs, notifications, injections, downloads, channelLog,
+        API, R2, TIME_SCALE,
+        /** A test-side BroadcastChannel: what the courier frame would open. */
+        channel: (name) => {
+            const testCtx = { alive: true };
+            const Channel = broadcastChannelFor(testCtx);
+            const c = new Channel(name);
+            c.received = [];
+            c.onmessage = (e) => c.received.push(e.data);
+            return c;
+        },
         bootWorker,
         /** What Chrome does after 30 s without an event. The next message boots a new one. */
         terminateWorker: () => kill('sw'),
