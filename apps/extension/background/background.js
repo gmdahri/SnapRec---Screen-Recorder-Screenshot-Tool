@@ -913,9 +913,22 @@ async function createOffscreenDocument() {
     console.log('[SnapRec] Offscreen document created');
 }
 
+/** Closes the offscreen document — unless it is still finishing an earlier
+ * recording (its upload, or handing it to its page). Then only the capture it
+ * was opened for is released, and it closes itself through 'handoffIdle'.
+ * A document that does not answer is closed, as before. */
 async function closeOffscreenDocument() {
     try {
         if (await hasOffscreenDocument()) {
+            const busy = await Promise.race([
+                chrome.runtime.sendMessage({ action: 'offscreen_isBusy' }).then((r) => r?.busy === true).catch(() => false),
+                new Promise((resolve) => setTimeout(() => resolve(false), 1000)),
+            ]);
+            if (busy) {
+                console.log('[SnapRec] Offscreen document still finishing a recording; releasing the capture only');
+                await chrome.runtime.sendMessage({ action: 'offscreen_releaseCapture' }).catch(() => {});
+                return;
+            }
             console.log('[SnapRec] Closing offscreen document');
             await chrome.offscreen.closeDocument();
             console.log('[SnapRec] Offscreen document closed');

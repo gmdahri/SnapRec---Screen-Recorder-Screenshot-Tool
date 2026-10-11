@@ -198,6 +198,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return false;
         }
 
+        /* Asked before the worker closes this document: is an earlier
+         * recording still finishing here? */
+        case 'offscreen_isBusy':
+            sendResponse({ busy: handoffHost.busy() || finishingUploaders.size > 0 });
+            return false;
+
+        /* The worker would have closed this document to end a capture, but
+         * it is still finishing an earlier recording: end the capture only. */
+        case 'offscreen_releaseCapture':
+            recordingIndex = null;
+            cleanup();
+            sendResponse({ success: true });
+            return false;
+
         case 'offscreen_handoffSettled':
             handoffHost.handoffSettled(message.id);
             sendResponse({ success: true });

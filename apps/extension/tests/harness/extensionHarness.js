@@ -25,7 +25,7 @@ const POSTHOG = 'https://posthog.test';
 /** Timers run this many times faster than written. Scaled rather than capped,
  * so every timeout keeps its proportion to the others — a cap made a
  * 200-second guard fire as soon as a 1-second backoff. */
-const TIME_SCALE = 100;
+const DEFAULT_TIME_SCALE = 100;
 
 function makeEvent() {
     const listeners = [];
@@ -74,7 +74,12 @@ function storageArea(map) {
 /** `byteScale`: each real byte stands for this many, so a multi-gigabyte
  * recording runs in megabytes: parts are cut at 5 MB / byteScale, and the
  * upload bandwidth model counts bytes * byteScale. */
-export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injectionFails = false } = {}) {
+export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injectionFails = false, timeScale = DEFAULT_TIME_SCALE } = {}) {
+    const TIME_SCALE = timeScale;
+    /** What the worker sent to tabs: { tabId, message }. */
+    const tabMessages = [];
+    /** The constraints each capture was asked for, in the offscreen document. */
+    const media = { display: [], user: [], dismissPicker: false };
     const shared = {
         local: new Map(),
         session: new Map(),
@@ -326,7 +331,7 @@ export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injec
                         if (c.alive && c.tabsEvents) c.tabsEvents.onRemoved.listeners.slice().forEach((fn) => fn(id, {}));
                     }
                 },
-                sendMessage: (...args) => { const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null; if (cb) { cb(undefined); return undefined; } return Promise.resolve(undefined); },
+                sendMessage: (...args) => { const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null; tabMessages.push({ tabId: args[0], message: args[1] }); if (cb) { cb(undefined); return undefined; } return Promise.resolve(undefined); },
                 captureVisibleTab: async () => 'data:image/png;base64,',
             },
             scripting: {
@@ -469,8 +474,12 @@ export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injec
         sandbox.MediaRecorder = FakeRecorder;
         sandbox.navigator = {
             mediaDevices: {
-                getDisplayMedia: async () => new FakeStream([new FakeTrack('video')]),
-                getUserMedia: async () => new FakeStream([new FakeTrack('audio')]),
+                getDisplayMedia: async (constraints) => {
+                    media.display.push(constraints);
+                    if (media.dismissPicker) throw Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' });
+                    return new FakeStream([new FakeTrack('video')]);
+                },
+                getUserMedia: async (constraints) => { media.user.push(constraints); return new FakeStream([new FakeTrack('audio')]); },
             },
         };
         sandbox.URL = Object.assign(Object.create(URL), URL, { createObjectURL: () => 'blob:chrome-extension://ext/x', revokeObjectURL: () => {} });
@@ -517,7 +526,7 @@ export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injec
 
     return {
         shared, net, contexts, tabs, notifications, injections, downloads, channelLog,
-        API, R2, TIME_SCALE,
+        API, R2, TIME_SCALE, tabMessages, media,
         /** A test-side BroadcastChannel: what the courier frame would open. */
         channel: (name) => {
             const testCtx = { alive: true };
