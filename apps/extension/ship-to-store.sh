@@ -4,6 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# ── Refuse a development build ───────────────────────────────────────────────
+# config.js is switched to localhost by hand for development. Checked before
+# anything else, so a refused run changes no version file.
+
+node scripts/check-release-config.mjs
+
 # ── Resolve new version ──────────────────────────────────────────────────────
 
 CURRENT_VERSION=$(node -p "require('./version.json').version")
