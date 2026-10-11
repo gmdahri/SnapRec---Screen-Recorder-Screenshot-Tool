@@ -101,6 +101,16 @@
     // Content scripts in inactive tabs may miss direct messages, but storage
     // listeners fire reliably across all tabs
     chrome.storage.onChanged.addListener((changes, areaName) => {
+        // Dragged in another tab: every tab shows the same bar, so it moves
+        // here too, unless it is being dragged here right now.
+        if (areaName === 'local' && changes.recordingBarPosition && recordingOverlay
+            && !recordingOverlay.dataset.dragging) {
+            const pos = changes.recordingBarPosition.newValue;
+            const own = recordingBarSavedHere;
+            if (!(own && pos && pos.xPct === own.xPct && pos.yPct === own.yPct)) {
+                placeRecordingBarAt(recordingOverlay, pos);
+            }
+        }
         if (areaName === 'local' && changes.isRecording) {
             if (changes.isRecording.newValue === false && recordingOverlay) {
                 console.log('[SnapRec Content] Recording stopped (via storage), hiding overlay');
@@ -426,6 +436,8 @@
       </div>
     `;
         document.body.appendChild(recordingOverlay);
+        makeRecordingBarDraggable(recordingOverlay);
+        void restoreRecordingBarPosition(recordingOverlay);
 
         // Start timer
         const timerEl = recordingOverlay.querySelector('.snaprec-timer');
@@ -968,6 +980,96 @@
         chrome.runtime.sendMessage({ action: 'stopRecording' });
         hideRecordingOverlay();
     }
+
+    /** Where the user last dragged the recording bar, in viewport
+     * percentages like the webcam overlay's, so a spot survives a different
+     * window size. Unset: the stylesheet's bottom-centre, which is also where
+     * Chrome puts its own "sharing your screen" bar — hence the drag. */
+    const RECORDING_BAR_POS_KEY = 'recordingBarPosition';
+    const RECORDING_BAR_MARGIN = 8;
+    /** The last position this tab saved. Its own write comes back through
+     * storage.onChanged, and re-applying it would nudge the bar by a fraction
+     * of a pixel from where it was dropped. */
+    let recordingBarSavedHere = null;
+
+    /** Fully on screen, unlike the webcam overlay: this bar is the only way to
+     * stop from the page, so it can never be parked half out of reach. */
+    function clampRecordingBar(value, size, limit) {
+        return Math.max(RECORDING_BAR_MARGIN, Math.min(value, limit - size - RECORDING_BAR_MARGIN));
+    }
+
+    function placeRecordingBar(el, left, top) {
+        const { width, height } = el.getBoundingClientRect();
+        el.style.left = `${clampRecordingBar(left, width, window.innerWidth)}px`;
+        el.style.top = `${clampRecordingBar(top, height, window.innerHeight)}px`;
+        // Placed by the user: the stylesheet's centring must stop applying.
+        el.style.bottom = 'auto';
+        el.style.transform = 'none';
+    }
+
+    function placeRecordingBarAt(el, pos) {
+        if (!pos || typeof pos.xPct !== 'number' || typeof pos.yPct !== 'number') return;
+        placeRecordingBar(el, (pos.xPct / 100) * window.innerWidth, (pos.yPct / 100) * window.innerHeight);
+    }
+
+    async function restoreRecordingBarPosition(el) {
+        try {
+            const { [RECORDING_BAR_POS_KEY]: pos } = await chrome.storage.local.get(RECORDING_BAR_POS_KEY);
+            // The bar may have been torn down or replaced during the await.
+            if (el === recordingOverlay) placeRecordingBarAt(el, pos);
+        } catch { /* the default spot is fine */ }
+    }
+
+    /** Drag anywhere on the bar except its buttons. Pointer events with
+     * pointer capture, as the webcam overlay does. Cancelling pointerdown also
+     * stops the browser sending the mousedown the click trail records, so
+     * moving the bar is not mistaken for a click to zoom on. */
+    function makeRecordingBarDraggable(el) {
+        let drag = null;
+
+        el.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 || e.target.closest?.('button')) return;
+            const rect = el.getBoundingClientRect();
+            drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
+            try { el.setPointerCapture(e.pointerId); } catch { /* still drags while over the bar */ }
+            el.dataset.dragging = 'true';
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        el.addEventListener('pointermove', (e) => {
+            if (!drag) return;
+            drag.moved = true;
+            placeRecordingBar(el, e.clientX - drag.dx, e.clientY - drag.dy);
+            e.preventDefault();
+        });
+
+        const end = (e) => {
+            if (!drag) return;
+            const { moved } = drag;
+            drag = null;
+            delete el.dataset.dragging;
+            try { el.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+            if (!moved) return;
+            const rect = el.getBoundingClientRect();
+            recordingBarSavedHere = {
+                xPct: (rect.left / window.innerWidth) * 100,
+                yPct: (rect.top / window.innerHeight) * 100,
+            };
+            try {
+                chrome.storage.local.set({ [RECORDING_BAR_POS_KEY]: recordingBarSavedHere });
+            } catch { /* the bar still moved; remembering it is a nicety */ }
+        };
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
+    }
+
+    // A window that shrinks past the bar would otherwise hide the Stop button.
+    window.addEventListener('resize', () => {
+        if (!recordingOverlay?.style.left) return;
+        const rect = recordingOverlay.getBoundingClientRect();
+        placeRecordingBar(recordingOverlay, rect.left, rect.top);
+    });
 
     function hideRecordingOverlay() {
         if (timerInterval) {
