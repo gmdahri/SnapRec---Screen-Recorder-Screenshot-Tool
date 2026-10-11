@@ -61,6 +61,7 @@ function fakeDb() {
 
 describe('POST /recordings', () => {
     let app: INestApplication;
+    let base: string;
     let jwks: http.Server;
     let db: ReturnType<typeof fakeDb>;
     const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
@@ -73,7 +74,7 @@ describe('POST /recordings', () => {
             res.setHeader('content-type', 'application/json');
             res.end(JSON.stringify({ keys: [{ ...publicKey.export({ format: 'jwk' }), kid: 'k1', alg: 'ES256', use: 'sig' }] }));
         });
-        await new Promise<void>((r) => jwks.listen(0, r));
+        await new Promise<void>((r) => jwks.listen(0, '127.0.0.1', r));
         process.env.SUPABASE_URL = `http://127.0.0.1:${(jwks.address() as any).port}`;
     });
     afterAll(() => { jwks.close(); });
@@ -92,12 +93,13 @@ describe('POST /recordings', () => {
         }).compile();
         app = mod.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-        await app.init();
+        await app.listen(0, '127.0.0.1');
+        base = await app.getUrl();
     });
     afterEach(async () => { await app.close(); });
 
     const post = (body: object, bearer?: string) => {
-        const r = request(app.getHttpServer()).post('/recordings');
+        const r = request(base).post('/recordings');
         if (bearer) r.set('Authorization', `Bearer ${bearer}`);
         return r.send(body);
     };
