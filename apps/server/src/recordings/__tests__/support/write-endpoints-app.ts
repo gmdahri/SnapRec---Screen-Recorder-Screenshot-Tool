@@ -174,7 +174,7 @@ export async function writeEndpointsApp() {
         res.setHeader('content-type', 'application/json');
         res.end(JSON.stringify({ keys: [{ ...publicKey.export({ format: 'jwk' }), kid: 'k1', alg: 'ES256', use: 'sig' }] }));
     });
-    await new Promise<void>((r) => jwks.listen(0, r));
+    await new Promise<void>((r) => jwks.listen(0, '127.0.0.1', r));
     process.env.SUPABASE_URL = `http://127.0.0.1:${(jwks.address() as any).port}`;
 
     const db = {} as Db;
@@ -233,14 +233,15 @@ export async function writeEndpointsApp() {
     }).compile();
     const app: INestApplication = mod.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-    await app.init();
+    await app.listen(0, '127.0.0.1');
+    const base = await app.getUrl();
 
     const token = (sub: string, expOffsetSec = 3600) => jwt.sign(
         { sub, email: `${sub}@example.com`, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + expOffsetSec },
         privateKey.export({ type: 'pkcs8', format: 'pem' }), { algorithm: 'ES256', keyid: 'k1' });
 
     const call = (method: 'get' | 'post' | 'patch' | 'delete', path: string, body?: object, bearer?: string) => {
-        const r = request(app.getHttpServer())[method](path);
+        const r = request(base)[method](path);
         if (bearer) r.set('Authorization', `Bearer ${bearer}`);
         return body ? r.send(body) : r;
     };
