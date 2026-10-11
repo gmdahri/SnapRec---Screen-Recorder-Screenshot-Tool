@@ -103,6 +103,34 @@
   grid-row: 1;
 }
 
+/* A new recording's status above the player: its upload finishing in the
+   background, slow, failed, or not received. Coral only where the user has to
+   act (needs-a-response). */
+.sr-capture-notice {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--sr-cyan);
+  background: var(--sr-surface-carbon);
+  color: var(--sr-text-primary-on-dark);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.sr-capture-notice[data-tone='slow'] { border-left-color: var(--sr-border-dark-strong); }
+.sr-capture-notice[data-tone='error'] { border-left-color: var(--sr-coral-text); }
+.sr-capture-notice-bar {
+  display: block;
+  height: 3px;
+  margin-top: 6px;
+  background: var(--sr-border-dark);
+}
+.sr-capture-notice-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--sr-cyan);
+  /* --sr-dur-mid is 0ms under prefers-reduced-motion. */
+  transition: width var(--sr-dur-mid) linear;
+}
+
 .sr-viewer-media {
   width: 100%;
   height: 100%;

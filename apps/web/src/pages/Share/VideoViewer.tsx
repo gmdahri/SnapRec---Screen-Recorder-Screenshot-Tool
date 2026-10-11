@@ -66,6 +66,9 @@ export interface VideoViewerProps {
    * rather than copying it. Same button, different promise. */
   copyLinkLabel?: string;
   copyLinkDisabled?: boolean;
+  /** Status shown above the player: a new recording's upload finishing, or
+   * why it could not. */
+  notice?: ReactNode;
   /** Replaces "No comments yet" when commenting is not possible yet. */
   commentsNote?: string;
   /** Fresh captures have nowhere to post a comment to. */
@@ -127,7 +130,7 @@ function relative(iso: string): string {
 export function VideoViewer({
   capture, comments, currentMs = 0, player,
   onBack, onSeek, onPost, onCopyLink, onDownload, onEdit, onResolve, canResolve,
-  copyLinkLabel, copyLinkDisabled, commentsNote, hideComposer, postingComment,
+  copyLinkLabel, copyLinkDisabled, commentsNote, hideComposer, postingComment, notice,
   onDescriptionChange, descriptionSaving,
   frames = [], framesGenerating, framesBlocked,
 }: VideoViewerProps) {
@@ -258,6 +261,7 @@ export function VideoViewer({
               remains object-contain so an off-ratio frame letterboxes instead
               of being cropped. */}
           <div className="sr-viewer-stage">
+            {notice}
             <CaptureFrame
               treatment="focused"
               style={{

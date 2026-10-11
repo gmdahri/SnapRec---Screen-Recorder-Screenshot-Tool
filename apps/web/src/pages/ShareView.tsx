@@ -19,6 +19,7 @@ import { useVideoFrames } from '../hooks/useVideoFrames';
 import { useStableMediaUrl } from '../hooks/useStableMediaUrl';
 import { useUpdateRecording, useResolveComment, useRecording, useAddReaction, useAddComment, useClaimRecordings, useGetUploadUrl, useCreateRecording, uploadFile, fetchWithAuth } from '../hooks/useRecordings';
 import { readHandoffMessage } from '../lib/handoffMessage';
+import { describeUpload, type UploadReport, type UploadSample } from '../lib/uploadStatus';
 import { isSessionExpired } from '../lib/sessionExpired';
 import { describeExpiry } from '../lib/expiryCountdown';
 import { useAuth } from '../contexts/AuthContext';
@@ -79,6 +80,13 @@ function filenameFor(rec: { title?: string; type?: string } | null | undefined):
     return `${base}.${ext}`;
 }
 
+/** How long a new capture's page waits for the recording without hearing
+ * from the extension at all, before saying it did not arrive. The extension's
+ * frame sends "still coming" every second while it fetches the recording, so a
+ * slow machine resets this rather than tripping it. */
+const HANDOFF_TIMEOUT_MS = Number(import.meta.env.VITE_HANDOFF_TIMEOUT_MS) > 0
+    ? Number(import.meta.env.VITE_HANDOFF_TIMEOUT_MS) : 15_000;
+
 const ShareView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -89,7 +97,24 @@ const ShareView: React.FC = () => {
     const isFresh = !isValidId || isFreshParam;
     const [fallbackDate] = useState(() => new Date().toISOString());
 
-    const [localId, setLocalId] = useState<string | undefined>(() => sessionStorage.getItem('snaprec_local_video_id') || undefined);
+    /* The capture's id: the one the extension put in the URL (r=), so the page
+     * can look its row up from the start, else the one a delivery left in
+     * this tab's session. */
+    const [localId, setLocalId] = useState<string | undefined>(() =>
+        new URLSearchParams(window.location.search).get('r')
+        || sessionStorage.getItem('snaprec_local_video_id') || undefined);
+    /* The recording this tab was opened for. The extension puts its id in the
+     * share URL (r=) and this page accepts a recording, and reports about one,
+     * only for that id. Read once: the address is rewritten later. Absent for
+     * extensions before the background finish, which are accepted as before. */
+    const [expectedRecordingId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('r'));
+    /* The upload finishing after Stop, as the extension reports it. */
+    const [uploadReport, setUploadReport] = useState<UploadReport | null>(null);
+    const uploadSamples = React.useRef<UploadSample[]>([]);
+    const [statusNow, setStatusNow] = useState(() => Date.now());
+    const [handoffHeardAt, setHandoffHeardAt] = useState(() => Date.now());
+    const [handoffTimedOut, setHandoffTimedOut] = useState(false);
+    const [localSaveFailed, setLocalSaveFailed] = useState(false);
     const [localVideoBlob, setLocalVideoBlob] = useState<string | null>(null);
     const [, setLocalMetadata] = useState<any[] | null>(null);
     // Guard against race condition: if the message handler has already set the blob,
@@ -352,6 +377,25 @@ const ShareView: React.FC = () => {
         ? `${window.location.origin}/v/${recording.id}`
         : null;
 
+    /* The recording did not arrive. Only for a tab the extension opened with
+     * an id (r=), whose frame says "still coming" every second while it
+     * fetches the recording: each of those, and each progress report, resets
+     * this, so it fires only after HANDOFF_TIMEOUT_MS of silence. The
+     * extension then saves the recording to Downloads itself. */
+    useEffect(() => {
+        if (!expectedRecordingId || localVideoBlob || handoffTimedOut) return;
+        const t = setTimeout(() => setHandoffTimedOut(true), HANDOFF_TIMEOUT_MS);
+        return () => clearTimeout(t);
+    }, [expectedRecordingId, localVideoBlob, handoffTimedOut, handoffHeardAt]);
+
+    // Keeps "uploading slowly" honest between progress reports.
+    const uploadFinishing = !!uploadReport && ['uploading', 'completing', 'registering'].includes(uploadReport.state);
+    useEffect(() => {
+        if (!uploadFinishing) return;
+        const t = setInterval(() => setStatusNow(Date.now()), 1000);
+        return () => clearInterval(t);
+    }, [uploadFinishing]);
+
     /* Show the shareable address without a reload, and without leaving the
      * fresh-capture surface the user is on: the history entry is rewritten
      * directly rather than through the router, so the page is not re-routed
@@ -456,7 +500,7 @@ const ShareView: React.FC = () => {
          * concern here the way it was for the base64 path this replaced. */
         const persistBlobToIDB = (
             blob: Blob, id: string | null, metadataStr: string | null,
-        ): Promise<void> =>
+        ): Promise<boolean> =>
             new Promise((resolve) => {
                 try {
                     const request = indexedDB.open('SnapRecDB', 2);
@@ -475,18 +519,45 @@ const ShareView: React.FC = () => {
                         if (id) store.put(id, 'latest_id');
                         if (metadataStr) store.put(metadataStr, 'latest_metadata');
                         store.put(Date.now(), 'latest_video_timestamp');
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => resolve();
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                        // A full disk aborts the transaction rather than failing a request.
+                        tx.onabort = () => resolve(false);
                     };
-                    request.onerror = () => resolve();
+                    request.onerror = () => resolve(false);
                 } catch {
-                    resolve();
+                    resolve(false);
                 }
             });
 
         const handleMessage = async (event: MessageEvent) => {
             const payload = readHandoffMessage(event.origin, event.data, window.location.origin);
             if (!payload) return;
+            // Only the recording this tab was opened for.
+            if (expectedRecordingId && payload.id !== expectedRecordingId) return;
+
+            if (payload.kind === 'pending') {
+                setHandoffHeardAt(Date.now());
+                return;
+            }
+            if (payload.kind === 'progress') {
+                setHandoffHeardAt(Date.now());
+                const { kind: _kind, id: _id, ...report } = payload;
+                setUploadReport(report);
+                if (typeof report.uploadedBytes === 'number') {
+                    uploadSamples.current = [...uploadSamples.current, { at: Date.now(), uploadedBytes: report.uploadedBytes }].slice(-120);
+                }
+                // Registered: look the row up again, even if polling had given up.
+                if (report.state === 'registered') {
+                    setPollAttempts(0);
+                    setPollInterval(3000);
+                }
+                return;
+            }
+            if (payload.kind === 'localSave') {
+                if (!payload.ok) setLocalSaveFailed(true);
+                return;
+            }
             // The courier re-sends until acknowledged; it begins before React
             // has mounted. Ack once, then ignore the retries.
             if (videoBlobSetByMessage.current) return;
@@ -517,7 +588,10 @@ const ShareView: React.FC = () => {
                     }
                 }
 
-                void persistBlobToIDB(payload.blob, payload.id ?? null, payload.metadataStr ?? null);
+                // The page's own copy, for a reload. If it cannot be written the
+                // page still works; it says so, and offers the download.
+                void persistBlobToIDB(payload.blob, payload.id ?? null, payload.metadataStr ?? null)
+                    .then((ok) => { if (!ok) setLocalSaveFailed(true); });
             } else if (payload.kind === 'idb') {
                 console.log('Loading video blob from IndexedDB (legacy extension)...');
                 const { blob, metadata } = await loadBlobAndMetadataFromIDB();
@@ -907,6 +981,22 @@ const ShareView: React.FC = () => {
      * — data or error — has arrived. */
     const loading = isLoading && !isFetched && !localVideoBlob;
     const hasNothingToShow = isFresh && !recording && !localVideoBlob;
+    /* The extension's frame went quiet and no recording came. Said once, plainly,
+     * instead of "Preparing" for ever; the extension saves the recording to
+     * Downloads. If its upload still finishes, the row turns up through the
+     * lookup and the page shows that copy instead. */
+    if (handoffTimedOut && hasNothingToShow && !isUploaded) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-background-light p-6">
+                <div role="alert" data-testid="capture-notice" className="text-center max-w-md">
+                    <h2 className="text-xl font-bold text-[var(--sr-text-primary-on-light)]">Your recording didn&rsquo;t reach this page.</h2>
+                    <p className="text-[var(--sr-text-muted-on-light)] text-sm mt-2">
+                        SnapRec is saving it to your Downloads folder instead. If the upload finishes, its link will appear here.
+                    </p>
+                </div>
+            </div>
+        );
+    }
     if (loading || (hasNothingToShow && !isUploaded)) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-background-light">
@@ -953,8 +1043,40 @@ const ShareView: React.FC = () => {
         /* Until the first lookup answers, the page cannot tell "already has a
          * link" from "needs one generated"; offering Generate here could upload
          * a second copy of a recording the extension already registered. */
-        const checkingForLink = !!localId && !isUploaded && !isUploading && !isFetched;
+        // Once the extension has reported on the upload, that report is the answer.
+        const checkingForLink = !uploadReport && !!localId && !isUploaded && !isUploading && !isFetched;
         const canSaveLocally = !isUploaded && !!localVideoBlob;
+        /* The extension is still uploading this recording (or has registered
+         * it and the page has not seen the row yet). Generating a link now
+         * would upload a second copy. A tab opened with an id is in this state
+         * until the first report says otherwise. */
+        const finishingUpload = !shareUrl && !handoffTimedOut && (
+            uploadFinishing
+            || uploadReport?.state === 'registered'
+            || (!!expectedRecordingId && !uploadReport));
+        const uploadView = uploadReport ? describeUpload(uploadReport, uploadSamples.current, statusNow) : null;
+        const notice = (handoffTimedOut && !localVideoBlob) ? (
+            <div role="alert" data-testid="capture-notice" className="sr-capture-notice" data-tone="error">
+                <strong>Your recording didn&rsquo;t reach this page.</strong>{' '}
+                SnapRec is saving it to your Downloads folder instead.
+            </div>
+        ) : (uploadView && !shareUrl) ? (
+            <div role={uploadView.phase === 'failed' ? 'alert' : 'status'} data-testid="capture-notice" className="sr-capture-notice"
+                data-tone={uploadView.phase === 'failed' ? 'error' : uploadView.slow ? 'slow' : 'info'}>
+                <strong>{uploadView.label}</strong>
+                {uploadView.detail && <span> {uploadView.detail}</span>}
+                {uploadView.phase === 'finishing' && uploadView.percent !== null && (
+                    <span className="sr-capture-notice-bar" aria-hidden="true">
+                        <span style={{ width: `${uploadView.percent}%` }} />
+                    </span>
+                )}
+            </div>
+        ) : null;
+        const saveNotice = localSaveFailed && !isUploaded ? (
+            <div role="status" data-testid="capture-save-notice" className="sr-capture-notice" data-tone="slow">
+                This recording isn&rsquo;t stored on this device yet. Keep this tab open until the link is ready, or download a copy now.
+            </div>
+        ) : null;
         return (
             <>
                 <SEO title={recordingData.title} description="Your new recording." noIndex />
@@ -991,9 +1113,11 @@ const ShareView: React.FC = () => {
                     copyLinkLabel={isUploading
                         ? 'Generating\u2026'
                         : shareUrl ? 'Copy link'
-                            : checkingForLink ? 'Checking for your link\u2026'
-                                : waitingForVideo ? 'Waiting for video\u2026' : 'Generate shareable link'}
-                    copyLinkDisabled={isUploading || waitingForVideo || checkingForLink}
+                            : finishingUpload ? 'Finishing upload\u2026'
+                                : checkingForLink ? 'Checking for your link\u2026'
+                                    : waitingForVideo ? 'Waiting for video\u2026' : 'Generate shareable link'}
+                    copyLinkDisabled={isUploading || waitingForVideo || checkingForLink || finishingUpload}
+                    notice={(notice || saveNotice) ? <>{notice}{saveNotice}</> : undefined}
                     onDownload={isUploaded ? handleDownload : canSaveLocally ? saveLocalCopy : undefined}
                     onEdit={handleOpenVideoEditor}
                     player={
