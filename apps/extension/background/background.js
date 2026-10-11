@@ -1493,8 +1493,10 @@ async function injectHandoffFrame(tabId, frameUrl) {
             args: [frameUrl],
         });
         console.log('[SnapRec] Handoff frame injected');
+        return true;
     } catch (err) {
         console.error('[SnapRec] Could not inject handoff frame:', err.message);
+        return false;
     }
 }
 
@@ -1586,7 +1588,16 @@ async function handleRecordingComplete() {
          * and falls back to the IndexedDB copy if the document is gone. */
         const frameUrl = chrome.runtime.getURL(
             `handoff/handoff.html?id=${encodeURIComponent(recordingId)}`);
-        tabLoaded.then((loaded) => { if (loaded) injectHandoffFrame(tab.id, frameUrl); });
+        tabLoaded.then(async (loaded) => {
+            if (!loaded) {
+                /* Closed before it loaded: nobody will ask for the recording.
+                 * Its upload and IndexedDB copy carry on; the document just
+                 * stops waiting to hand it over. */
+                chrome.runtime.sendMessage({ action: 'offscreen_handoffSettled', id: recordingId }).catch(() => {});
+                return;
+            }
+            if (!(await injectHandoffFrame(tab.id, frameUrl))) await saveUndeliveredCapture('video', recordingId);
+        });
 
         /* The popup's completion view has existed since the plate redesign and
          * has never once been reachable: nothing sent captureFinished. This is
@@ -1613,45 +1624,49 @@ async function handleRecordingComplete() {
  * This is the one path that writes to Downloads. */
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action !== 'handoffFailed') return;
+    void saveUndeliveredCapture(message.kind === 'image' ? 'image' : 'video', message.id);
+});
 
-    const kind = message.kind === 'image' ? 'image' : 'video';
+/** The capture never reached a page: write it to Downloads, the one place left.
+ *
+ * Whatever happens, the offscreen document is then told this recording's
+ * delivery is over, so it stops holding it once its upload and save settle. */
+async function saveUndeliveredCapture(kind, id) {
     console.warn('[SnapRec] Handoff was never acknowledged; saving', kind, 'to disk');
-
-    /* The offscreen document that held the capture was closed by
-     * finalizeCleanup long before this fired — ten seconds is an age in that
-     * lifecycle — so the blob: URL the download needs has nowhere to come
-     * from. Reopen a document and reload the capture from the store it was
-     * parked in. Without this the fallback failed with "Receiving end does not
-     * exist", which is a safety net that silently is not one. */
-    const save = (async () => {
+    let saved = null;
+    try {
         /* After a normal Stop the offscreen document still holds the
          * recording until the page has it: saved from memory, by id. */
-        if (kind === 'video' && message.id && (await hasOffscreenDocument())) {
-            const fromMemory = await saveRecordingToDisk({ id: message.id, quietIfMissing: true });
-            if (fromMemory) {
-                chrome.runtime.sendMessage({ action: 'offscreen_handoffSettled', id: message.id }).catch(() => {});
-                return fromMemory;
+        if (kind === 'video' && id && (await hasOffscreenDocument())) {
+            saved = await saveRecordingToDisk({ id, quietIfMissing: true });
+        }
+        if (!saved) {
+            /* Otherwise from the IndexedDB copy, through a document opened
+             * for it. Opened here only if it is not already open: a document
+             * that exists may be recording again, or finishing another upload,
+             * and is not this function's to close. Without the reopen, a
+             * closed document left the fallback failing with "Receiving end
+             * does not exist" — a safety net that silently was not one. */
+            const existed = await hasOffscreenDocument();
+            await createOffscreenDocument();
+            const loaded = await chrome.runtime
+                .sendMessage({ action: 'offscreen_loadParked', kind })
+                .catch((e) => ({ success: false, error: e.message }));
+            if (!loaded?.success) {
+                console.error('[SnapRec] Could not reload the parked capture:', loaded?.error);
+            } else {
+                saved = kind === 'image' ? await saveImageToDisk() : await saveRecordingToDisk();
             }
+            if (!existed) await closeOffscreenDocument();
         }
-        // Opened here only if it is not already open: a document that exists
-        // may be recording again, or finishing another upload, and is not
-        // this handler's to close.
-        const existed = await hasOffscreenDocument();
-        await createOffscreenDocument();
-        const loaded = await chrome.runtime
-            .sendMessage({ action: 'offscreen_loadParked', kind })
-            .catch((e) => ({ success: false, error: e.message }));
-        if (!loaded?.success) {
-            console.error('[SnapRec] Could not reload the parked capture:', loaded?.error);
-            return null;
+    } finally {
+        if (kind === 'video' && id && (await hasOffscreenDocument())) {
+            chrome.runtime.sendMessage({ action: 'offscreen_handoffSettled', id }).catch(() => {});
         }
-        const result = kind === 'image' ? await saveImageToDisk() : await saveRecordingToDisk();
-        if (!existed) await closeOffscreenDocument();
-        return result;
-    })();
-
-    save.then((saved) => { if (saved) notifySavedToDisk(saved.filename); });
-});
+    }
+    if (saved) notifySavedToDisk(saved.filename);
+    return saved;
+}
 
 // Separate listener for upload completion and audio warnings from offscreen document
 chrome.runtime.onMessage.addListener((message) => {

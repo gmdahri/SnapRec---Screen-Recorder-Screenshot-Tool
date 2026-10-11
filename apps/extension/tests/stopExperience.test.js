@@ -182,3 +182,26 @@ describe('recording again while the last one is still finishing', () => {
         firstCourier.close();
     }, 60_000);
 });
+
+describe('a page that never takes the recording', () => {
+    it('closed before it loaded: the document stops waiting, finishes the upload, and closes', async () => {
+        await start({ tabLoadMs: 2_000 });
+        await record(6);
+        const { shareTab } = await stop();
+        await h.sw(`chrome.tabs.remove(${shareTab.id})`);
+        await h.waitFor(() => lastState() === 'registered', { what: 'registration' });
+        await h.waitFor(() => !h.contexts.offscreen?.alive, { what: 'the offscreen document to close' });
+        expect(h.injections).toEqual([]);
+        expect(h.downloads).toEqual([]);
+    });
+
+    it('a frame that cannot be injected: the recording goes to Downloads, from memory', async () => {
+        await start({ tabLoadMs: 0, injectionFails: true });
+        await record(6);
+        await stop();
+        await h.waitFor(() => h.downloads.length === 1, { what: 'the disk copy' });
+        // The notice follows the download finishing, not starting.
+        await h.waitFor(() => h.notifications.some((n) => n.id === 'snaprec-handoff-fallback'), { what: 'the saved-to-disk notice' });
+        await h.waitFor(() => !h.contexts.offscreen?.alive, { what: 'the offscreen document to close' });
+    });
+});

@@ -12,18 +12,18 @@ import { Blob as NodeBlob } from 'node:buffer';
  * the hand-off — and is idle only once all three are settled. */
 
 function load() {
-    const sandbox = { Promise, Map, Error, console };
+    const sandbox = { Promise, Map, Error, console, setTimeout };
     sandbox.globalThis = sandbox;
     vm.createContext(sandbox);
     vm.runInContext(readFileSync(resolve(__dirname, '../offscreen/handoff-host.js'), 'utf8'), sandbox);
     return sandbox.SnapRecHandoffHost;
 }
 
-function rig() {
+function rig({ deliveryGraceMs } = {}) {
     const sent = [];
     const channel = { onmessage: null, postMessage: (m) => sent.push(m) };
     const onIdle = vi.fn();
-    const host = load().createHandoffHost({ channel, onIdle });
+    const host = load().createHandoffHost({ channel, onIdle, ...(deliveryGraceMs ? { deliveryGraceMs } : {}) });
     const from = (data) => channel.onmessage({ data });
     return { host, sent, onIdle, from };
 }
@@ -171,5 +171,29 @@ describe('idle', () => {
         await settleAll(a, from);
         expect(onIdle).not.toHaveBeenCalled();
         expect(host.busy()).toBe(true);
+    });
+});
+
+describe('a recording nobody comes for', () => {
+    it('is let go after the grace period, once its upload and save have settled', async () => {
+        const { host, onIdle } = rig({ deliveryGraceMs: 30 });
+        const one = startOne(host);
+        one.save.resolve(); one.upload.resolve(null);
+        await flush(); await flush();
+        expect(onIdle).not.toHaveBeenCalled();
+        await new Promise((r) => setTimeout(r, 50));
+        expect(onIdle).toHaveBeenCalledTimes(1);
+        expect(host.busy()).toBe(false);
+    });
+
+    it('a delivered recording is not affected by the grace timer', async () => {
+        const { host, onIdle, from } = rig({ deliveryGraceMs: 30 });
+        const one = startOne(host);
+        from({ type: 'delivered', id: 'rec-A' });
+        await new Promise((r) => setTimeout(r, 50));
+        expect(onIdle).not.toHaveBeenCalled();       // still uploading and saving
+        one.save.resolve(); one.upload.resolve(null);
+        await flush(); await flush();
+        expect(onIdle).toHaveBeenCalledTimes(1);
     });
 });

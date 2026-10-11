@@ -74,7 +74,7 @@ function storageArea(map) {
 /** `byteScale`: each real byte stands for this many, so a multi-gigabyte
  * recording runs in megabytes: parts are cut at 5 MB / byteScale, and the
  * upload bandwidth model counts bytes * byteScale. */
-export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1 } = {}) {
+export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injectionFails = false } = {}) {
     const shared = {
         local: new Map(),
         session: new Map(),
@@ -329,6 +329,8 @@ export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1 } = {}
                 executeScript: async (details) => {
                     const frameUrl = details.args?.[0];
                     if (typeof frameUrl === 'string' && frameUrl.includes('handoff/handoff.html')) {
+                        // A tab that navigated somewhere scripts cannot run.
+                        if (injectionFails) throw new Error('Cannot access contents of the page.');
                         const wanted = new URL(frameUrl).searchParams.get('id');
                         injections.push({ tabId: details.target.tabId, frameUrl, parkedAtInjection: (await parkedId()) === wanted });
                     }

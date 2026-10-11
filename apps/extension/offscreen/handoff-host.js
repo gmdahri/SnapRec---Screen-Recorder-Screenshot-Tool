@@ -17,11 +17,19 @@
  * Classic script, loaded by offscreen.html before offscreen.js. */
 (() => {
     const CHANNEL = 'snaprec-handoff';
+    /** A recording nobody has taken this long after Stop is not waited for
+     * any more: the worker that would have said "the tab closed" may itself
+     * have been stopped, and this document must not hold gigabytes for ever.
+     * Its upload and IndexedDB copy still finish. */
+    const DELIVERY_GRACE_MS = 10 * 60 * 1000;
 
     /** `channel` is a BroadcastChannel (or a stand-in with postMessage and
      * onmessage). Everything that touches the outside is passed in, so the
      * whole lifecycle runs under test. */
-    function createHandoffHost({ channel, onIdle = () => {}, log = () => {} }) {
+    function createHandoffHost({
+        channel, onIdle = () => {}, log = () => {},
+        deliveryGraceMs = DELIVERY_GRACE_MS, setTimer = setTimeout,
+    }) {
         const sessions = new Map();   // recording id -> session
 
         const send = (message) => { try { channel.postMessage(message); } catch (e) { log('channel post failed', e?.message); } };
@@ -62,6 +70,12 @@
                 uploadSettled: false, parkSettled: false, lastProgress: null, saved: undefined,
             };
             sessions.set(id, s);
+            setTimer(() => {
+                if (!sessions.has(id) || s.delivered) return;
+                log('not delivered in time; no longer holding it for a page', id);
+                s.handoffGaveUp = true;
+                maybeIdle();
+            }, deliveryGraceMs);
             const progress = (p) => {
                 s.lastProgress = p;
                 send({ type: 'progress', id, ...p });
