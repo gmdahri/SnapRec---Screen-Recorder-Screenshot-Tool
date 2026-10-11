@@ -10,8 +10,13 @@ interface AuthContextType {
     user: User | null;
     session: Session | null;
     guestId: string | null;
+    /** The saved session is still being restored. Never true for longer than
+     * AUTH_RESTORE_TIMEOUT_MS: past that the app shows the signed-out state,
+     * and a session that turns up later still signs the user in. */
     loading: boolean;
-    signInWithGoogle: () => Promise<void>;
+    /** Sends the browser to Google. Resolves with an error message if sign-in
+     * could not start, or null once the redirect is under way. */
+    signInWithGoogle: () => Promise<string | null>;
     /** Passwordless one-time link. Resolves with an error message, or null on
      * success — the caller shows it inline rather than a thrown exception. */
     signInWithMagicLink: (email: string) => Promise<string | null>;
@@ -26,6 +31,14 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** How long to wait for the saved session before showing the app signed out.
+ *
+ * Supabase restores it inside a lock shared by every tab. The restore can
+ * fail (another tab held the lock past Supabase's own 10 s timeout) or hang
+ * (its token refresh has no timeout); either used to leave every sign-in
+ * button disabled on "Loading..." for good. */
+export const AUTH_RESTORE_TIMEOUT_MS = 10_000;
 
 interface AuthProviderProps {
     children: ReactNode;
@@ -76,10 +89,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.setItem('guestId', id);
         }
         setGuestId(id);
+        const restoreTimer = setTimeout(() => setLoading(false), AUTH_RESTORE_TIMEOUT_MS);
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
+        }).catch((error) => {
+            // Signed out as far as this page can tell. Supabase caches a
+            // failed start, so sign-in itself will fail and say so (see
+            // LoginModal) until the page is reloaded.
+            console.error('Could not restore the saved session:', error);
+        }).finally(() => {
+            clearTimeout(restoreTimer);
             setLoading(false);
         });
 
@@ -119,7 +140,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
         );
 
-        return () => subscription.unsubscribe();
+        return () => {
+            clearTimeout(restoreTimer);
+            subscription.unsubscribe();
+        };
     }, []); // Stability: removing claimMutation dependency to avoid re-subscribing on every render
 
     const signInWithGoogle = useCallback(async () => {
@@ -131,15 +155,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         rememberAuthMethod('google');
         capture('auth_google_started', {});
 
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: redirectTo,
-                skipBrowserRedirect: false
-            },
-        });
-        if (error) {
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: redirectTo,
+                    skipBrowserRedirect: false
+                },
+            });
+            if (error) {
+                console.error('Error signing in with Google:', error);
+                return error.message;
+            }
+            return null;
+        } catch (error) {
+            // Rejects rather than returning an error when Supabase failed to
+            // start at all (the shared lock timed out). Returned, not thrown,
+            // so the caller can say so instead of an unhandled rejection.
             console.error('Error signing in with Google:', error);
+            return error instanceof Error ? error.message : 'Sign-in could not start';
         }
     }, []);
 
