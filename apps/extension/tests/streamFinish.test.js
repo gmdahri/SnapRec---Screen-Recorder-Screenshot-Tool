@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -198,5 +199,114 @@ describe('progress', () => {
         up.push(chunk(PART * 2));
         await vi.advanceTimersByTimeAsync(1_000);
         expect(s.progress).toEqual([]);
+    });
+});
+
+/** At Stop the recorder hands over a patched header (same length as part 1's
+ * start) and an index to append (background/webm-cues.js). The upload must
+ * end up byte-for-byte what the local copy is. */
+describe('the duration and seek index', () => {
+    const HEADER = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 9, 9, 9]);   // stands for the patched header
+    const TRAILER = new Uint8Array([0x1c, 0x53, 0xbb, 0x6b, 7, 7]);
+
+    /** An R2 that keeps the bytes of each part, so the assembled file can be read. */
+    function storingRig(opts = {}) {
+        const bodies = new Map();
+        const puts = [];
+        const r = rig({
+            put: async (n, blob) => {
+                puts.push(n);
+                if (opts.failReupload && n === 1 && bodies.has(1)) throw new TypeError('Failed to fetch');
+                bodies.set(n, Buffer.from(await blob.arrayBuffer()));
+                return { ok: true, status: 200, etag: `"e${n}-${puts.length}"` };
+            },
+        });
+        r.assembled = () => Buffer.concat(r.s.completed.map((n) => bodies.get(n)));
+        r.puts = puts;
+        return r;
+    }
+    const startsWith = (buf, bytes) => Buffer.from(bytes).equals(buf.subarray(0, bytes.length));
+    const endsWith = (buf, bytes) => Buffer.from(bytes).equals(buf.subarray(buf.length - bytes.length));
+
+    it('part 1 already uploaded: it is sent again with the patched header, once, and the index goes at the end', async () => {
+        const { up, s, assembled, puts } = storingRig();
+        await up.begin();
+        up.push(new Blob([new Uint8Array(PART).fill(1)]));      // part 1, uploaded while recording
+        await vi.advanceTimersByTimeAsync(100);
+        up.push(new Blob([new Uint8Array(1000).fill(2)]));
+        const result = up.finish({ header: HEADER, trailer: TRAILER });
+        await vi.advanceTimersByTimeAsync(30_000);
+        expect(await result).toMatchObject({ fileUrl: expect.any(String) });
+        const file = assembled();
+        expect(startsWith(file, HEADER)).toBe(true);
+        expect(endsWith(file, TRAILER)).toBe(true);
+        expect(file.length).toBe(PART + 1000 + TRAILER.length);
+        expect(puts.filter((n) => n === 1)).toHaveLength(2);
+        expect(s.completed).toEqual([1, 2]);
+    });
+
+    it('part 1 not yet uploaded (a short recording): patched in place, nothing sent twice', async () => {
+        const { up, assembled, puts } = storingRig();
+        await up.begin();
+        up.push(new Blob([new Uint8Array(3000).fill(1)]));
+        const result = up.finish({ header: HEADER, trailer: TRAILER });
+        await vi.advanceTimersByTimeAsync(30_000);
+        await result;
+        const file = assembled();
+        expect(startsWith(file, HEADER)).toBe(true);
+        expect(endsWith(file, TRAILER)).toBe(true);
+        expect(file.length).toBe(3000 + TRAILER.length);
+        expect(puts).toEqual([1]);
+    });
+
+    it('part 1 still in flight at Stop: once it lands it is sent again patched', async () => {
+        let release;
+        const gate = new Promise((r) => { release = r; });
+        const bodies = new Map(); const puts = [];
+        const r = rig({
+            put: async (n, blob) => {
+                puts.push(n);
+                if (n === 1 && puts.length === 1) await gate;
+                bodies.set(n, Buffer.from(await blob.arrayBuffer()));
+                return { ok: true, status: 200, etag: `"e${n}-${puts.length}"` };
+            },
+        });
+        await r.up.begin();
+        r.up.push(new Blob([new Uint8Array(PART).fill(1)]));
+        await vi.advanceTimersByTimeAsync(10);
+        const result = r.up.finish({ header: HEADER, trailer: TRAILER });
+        release();
+        await vi.advanceTimersByTimeAsync(30_000);
+        await result;
+        const file = Buffer.concat(r.s.completed.map((n) => bodies.get(n)));
+        expect(startsWith(file, HEADER)).toBe(true);
+        expect(endsWith(file, TRAILER)).toBe(true);
+    });
+
+    it('if sending part 1 again keeps failing, the recording is completed without the index rather than lost', async () => {
+        const { up, s, assembled } = storingRig({ failReupload: true });
+        await up.begin();
+        up.push(new Blob([new Uint8Array(PART).fill(1)]));
+        await vi.advanceTimersByTimeAsync(100);
+        up.push(new Blob([new Uint8Array(1000).fill(2)]));
+        const result = up.finish({ header: HEADER, trailer: TRAILER });
+        await vi.advanceTimersByTimeAsync(120_000);
+        expect(await result).toMatchObject({ fileUrl: expect.any(String) });
+        expect(s.aborted).toBe(false);
+        expect(assembled()[0]).toBe(1);                         // the original part 1
+        expect(s.events.some((e) => e.event === 'upload_index_skipped')).toBe(true);
+    });
+
+    it('without an index the upload is exactly as before', async () => {
+        const { up, assembled, puts } = storingRig();
+        await up.begin();
+        up.push(new Blob([new Uint8Array(PART).fill(1)]));
+        await vi.advanceTimersByTimeAsync(100);
+        up.push(new Blob([new Uint8Array(1000).fill(2)]));
+        const result = up.finish();
+        await vi.advanceTimersByTimeAsync(30_000);
+        await result;
+        expect(assembled().length).toBe(PART + 1000);
+        expect(puts).toEqual([1, 2]);
     });
 });

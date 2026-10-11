@@ -165,6 +165,10 @@ export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injec
             const up = net.uploads.get(uploadId);
             if (!up) return json({ message: 'NoSuchUpload' }, 404);
             up.parts.set(Number(partNumber), size);
+            if (net.keepBodies && typeof body?.arrayBuffer === 'function') {
+                up.bodies ??= new Map();
+                up.bodies.set(Number(partNumber), new Uint8Array(await body.arrayBuffer()));
+            }
             call.status = 200;
             return new Response('', { status: 200, headers: { ETag: `"etag-${partNumber}-${size}"` } });
         }
@@ -458,7 +462,8 @@ export function createHarness({ log = false, tabLoadMs = 5, byteScale = 1, injec
                 this.state = 'inactive';
                 setTimeout(() => this.onstop?.(), 0);
             }
-            emit(bytes) { this.ondataavailable?.({ data: new Blob([new Uint8Array(bytes)]) }); }
+            /** A number: that many zero bytes. Bytes: those bytes. */
+            emit(bytes) { this.ondataavailable?.({ data: new Blob([typeof bytes === 'number' ? new Uint8Array(bytes) : bytes]) }); }
         }
         sandbox.MediaStream = FakeStream;
         sandbox.MediaRecorder = FakeRecorder;

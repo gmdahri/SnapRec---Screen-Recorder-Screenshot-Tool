@@ -68,6 +68,10 @@ function makeUploader() {
     return uploader;
 }
 let streamUploader = makeUploader();
+/** The running recording's duration and seek index (background/webm-cues.js),
+ * and, once it has stopped, what it produced: { header, trailer } to apply. */
+let recordingIndex = null;
+let indexFix = null;
 /** Uploads still finishing after their recording stopped. */
 const finishingUploaders = new Set();
 
@@ -176,13 +180,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const id = message.id;
             const uploader = streamUploader;
             const metadataStr = JSON.stringify(recordingMetadata);
+            const fix = indexFix;
+            indexFix = null;
             finishingUploaders.add(uploader);
             handoffHost.start({
                 id, blob, metadataStr,
                 persist: () => persistForHandoff(id, metadataStr, 'video', blob),
                 finish: (onProgress) => {
                     uploader.reportTo(onProgress);
-                    return uploader.finish().finally(() => finishingUploaders.delete(uploader));
+                    return uploader.finish(fix ?? undefined).finally(() => finishingUploaders.delete(uploader));
                 },
                 register: (result) => chrome.runtime
                     .sendMessage({ action: 'streamFinished', id, fileUrl: result.fileUrl, durationSec: result.durationSec })
@@ -480,13 +486,20 @@ async function startMediaRecorder() {
     recordedChunks = [];
     recordingMetadata = [];
 
+    /* Each chunk goes through the index first, which rewrites the header
+     * once (reserving room for a Duration and a seek index) and passes every
+     * later chunk on as the same Blob. The uploader keeps its own reference
+     * to each chunk; the recording is untouched by uploading. */
+    const uploaderForThis = streamUploader;
+    indexFix = null;
+    recordingIndex = globalThis.SnapRecWebm.createRecordingIndex({
+        emit: (blob) => {
+            recordedChunks.push(blob);
+            uploaderForThis.push(blob);
+        },
+    });
     mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-            recordedChunks.push(e.data);
-            // The uploader keeps its own reference to each chunk; the
-            // recording above is untouched by uploading.
-            streamUploader.push(e.data);
-        }
+        if (e.data.size > 0) recordingIndex.push(e.data);
     };
 
     mediaRecorder.onerror = (e) => {
@@ -558,8 +571,19 @@ async function stopRecording() {
                 // Stop tracks immediately to remove the "Sharing screen" banner
                 cleanupTracks();
 
-                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
-                console.log('[Offscreen] Blob created, size:', blob.size);
+                /* The last chunks are still being indexed: wait for them, then
+                 * build the recording with its Duration and seek index — the
+                 * patched header, the recorded bytes after it and the index,
+                 * as one Blob of references, never a copy in memory. */
+                const type = mediaRecorder.mimeType || 'video/webm';
+                const fix = recordingIndex ? await recordingIndex.finish().catch(() => null) : null;
+                recordingIndex = null;
+                indexFix = fix ? { header: fix.header, trailer: fix.trailer } : null;
+                const recorded = new Blob(recordedChunks, { type });
+                const blob = fix
+                    ? new Blob([fix.header, recorded.slice(fix.header.length), fix.trailer], { type })
+                    : recorded;
+                console.log('[Offscreen] Blob created, size:', blob.size, fix ? `duration ${Math.round(fix.durationMs / 1000)} s, ${fix.cuePoints} seek points` : '(no index)');
                 currentRecordingBlob = blob;
 
                 // Notify background that we have the blob

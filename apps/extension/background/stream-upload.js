@@ -169,6 +169,11 @@
         let inFlightBytes = 0;
         let inFlight = null;      // AbortController of the request under way
         let stalled = false;
+        /** Part 1 as it went up, and the part on its way now: at Stop the
+         * recording's header is patched (webm-cues.js), and part 1 may need
+         * sending again with it. */
+        let firstPartSent = null;
+        let uploadingPart = null;
 
         /** Never fatal, never blocking: the live upload does not depend on
          * its own persistence. A failure only costs recoverability. */
@@ -261,9 +266,11 @@
             const timer = setTimer(() => controller.abort(new Error('part PUT timed out')), PART_TIMEOUT_MS);
             inFlight = controller;
             inFlightBytes = 0;
+            const sent = part.blob;
+            uploadingPart = part;
             let res;
             try {
-                res = await putPart(uploadUrl, part.blob, {
+                res = await putPart(uploadUrl, sent, {
                     signal: controller.signal,
                     onProgress: (loaded) => {
                         if (loaded > inFlightBytes) { inFlightBytes = loaded; moved(); report('uploading'); }
@@ -273,6 +280,7 @@
                 clearTimer(timer);
                 inFlight = null;
                 inFlightBytes = 0;
+                uploadingPart = null;
             }
             if (!res.ok) throw new Error(`part PUT failed: HTTP ${res.status}`);
             // Quoted by R2, and handed back to CompleteMultipartUpload as received.
@@ -280,6 +288,7 @@
             if (!etag) throw new Error('R2 returned no ETag');
             if (!record) return; // aborted while the part was in flight
             moved();
+            if (part.partNumber === 1) firstPartSent = sent;
 
             record.parts = record.parts.filter((p) => p.partNumber !== part.partNumber);
             record.parts.push({ partNumber: part.partNumber, etag, bytes: part.blob.size });
@@ -344,13 +353,68 @@
         /** Returns { fileUrl, durationSec }, or null when there is no complete
          * upload to register — in which case the share page's local copy is
          * the recording, and it can upload that itself. */
-        async function finish() {
+        /** Puts the patched header into part 1 if part 1 has not gone up yet:
+         * in the slice waiting to go, or at the front of the buffer. */
+        function patchUnsentHeader(header) {
+            if (record.parts.some((p) => p.partNumber === 1)) return;   // sent: fixed after the drain
+            if (pending && pending.partNumber === 1) {
+                if (uploadingPart === pending) return;                   // on its way: fixed after the drain
+                pending.blob = new Blob([header, pending.blob.slice(header.length)]);
+                return;
+            }
+            if (record.nextPart === 1 && buffered >= header.length) {
+                const all = new Blob(buffer);
+                buffer = [new Blob([header, all.slice(header.length)])];
+            }
+        }
+
+        /** One PUT of `blob` as part 1, with retries. Resolves the ETag or null. */
+        async function putFirstPart(target, blob) {
+            for (let attempt = 1; attempt <= FINAL_ATTEMPTS; attempt++) {
+                try {
+                    const { uploadUrl } = await post('/recordings/upload/part', {
+                        fileName: target.fileName, uploadId: target.uploadId, partNumber: 1,
+                    });
+                    const controller = new AbortController();
+                    const timer = setTimer(() => controller.abort(new Error('part PUT timed out')), PART_TIMEOUT_MS);
+                    let res;
+                    try { res = await putPart(uploadUrl, blob, { signal: controller.signal }); } finally { clearTimer(timer); }
+                    if (!res.ok || !res.etag) throw new Error(`part PUT failed: HTTP ${res.status}`);
+                    return res.etag;
+                } catch (e) {
+                    if (attempt < FINAL_ATTEMPTS) await new Promise((r) => setTimer(r, backoffMs(attempt)));
+                }
+            }
+            return null;
+        }
+
+        /** Part 1 went up before the header could be patched: send it again
+         * with the patched header — the same length, so R2's equal-size rule
+         * holds. If that keeps failing the recording is completed without the
+         * index, never lost: the original part 1 is put back under a known
+         * ETag first, in case a failed attempt did reach R2. */
+        async function applyHeaderToSentPart(target, header) {
+            if (!firstPartSent) return;
+            const head = new Uint8Array(await firstPartSent.slice(0, header.length).arrayBuffer());
+            if (head.length === header.length && head.every((v, i) => v === header[i])) return;
+            const setEtag = (etag) => { target.parts = target.parts.map((p) => (p.partNumber === 1 ? { ...p, etag } : p)); };
+            const patched = await putFirstPart(target, new Blob([header, firstPartSent.slice(header.length)]));
+            if (patched) { setEtag(patched); return; }
+            const restored = await putFirstPart(target, firstPartSent);
+            if (restored) setEtag(restored);
+            track('upload_index_skipped', { error_reason: restored ? 'reupload_failed' : 'reupload_and_restore_failed' });
+        }
+
+        async function finish({ header = null, trailer = null } = {}) {
             // A recording stopped within moments of starting can get here
             // before the upload has even opened.
             if (beginning) await beginning;
             accepting = false;
             if (retryTimer) { clearTimer(retryTimer); retryTimer = null; }
             if (!record) return null;
+            // The index goes at the very end; the header fix-up into part 1.
+            if (trailer?.length) { buffer.push(new Blob([trailer])); buffered += trailer.length; }
+            if (header?.length) patchUnsentHeader(header);
             failures = 0;
             finishFailures = 0;
             finishing = true;
@@ -399,6 +463,7 @@
             // From here the user's recording is safe locally, so recovery must
             // never pick this upload up: see the header.
             await forget(finished.uploadId);
+            if (header?.length) await applyHeaderToSentPart(finished, header);
             // The length is measured from when the upload opened: storage's
             // recordingStartTime has already been cleared by the time anything
             // downstream asks.
