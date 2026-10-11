@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readHandoffMessage } from '../lib/handoffMessage';
+import { readHandoffMessage, trustedExtensionOrigins } from '../lib/handoffMessage';
 
 /** The gate every capture passes through on its way into the share view.
  *
@@ -116,5 +116,57 @@ describe('readHandoffMessage — screenshots', () => {
   it('keeps video and image messages distinct', () => {
     const blob = new Blob(['x'], { type: 'video/webm' });
     expect(readHandoffMessage(EXT, { type: 'SNAPREC_VIDEO_DATA', blob }, SELF)?.kind).toBe('blob');
+  });
+});
+
+describe('in a production build: only SnapRec\'s own extension', () => {
+  const STORE = 'chrome-extension://lgafjgnifbjeafallnkkfpljgbilfajg';
+  const prod = trustedExtensionOrigins({ DEV: false, VITE_EXTENSION_ID: 'lgafjgnifbjeafallnkkfpljgbilfajg' });
+  const blob = new Blob(['x']);
+
+  it('accepts the store extension', () => {
+    expect(readHandoffMessage(STORE, { type: 'SNAPREC_VIDEO_DATA', blob, id: 'r1' }, SELF, prod))
+      .toMatchObject({ kind: 'blob', id: 'r1' });
+  });
+
+  it('refuses any other extension, with every message type', () => {
+    for (const data of [
+      { type: 'SNAPREC_VIDEO_DATA', blob, id: 'r1' },
+      { type: 'SNAPREC_HANDOFF_PENDING', id: 'r1' },
+      { type: 'SNAPREC_UPLOAD_PROGRESS', id: 'r1', state: 'registered' },
+      { type: 'SNAPREC_LOCAL_SAVE', id: 'r1', ok: true },
+    ]) expect(readHandoffMessage(EXT, data, SELF, prod)).toBeNull();
+  });
+
+  it('accepts extra ids listed for testing an unpacked build', () => {
+    const withDev = trustedExtensionOrigins({ DEV: false, VITE_EXTENSION_IDS: 'abcdefghijklmnopabcdefghijklmnop, not-an-id' });
+    expect(withDev?.has(EXT)).toBe(true);
+    expect(withDev?.has(STORE)).toBe(true);
+    expect(withDev?.size).toBe(2);
+  });
+
+  it('a development build accepts any extension', () => {
+    expect(trustedExtensionOrigins({ DEV: true })).toBeNull();
+  });
+});
+
+describe('the courier\'s status messages', () => {
+  it('reads upload progress, keeping only well-formed numbers and a short reason', () => {
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_UPLOAD_PROGRESS', id: 'r1', state: 'uploading', uploadedBytes: 5, totalBytes: 'ten', reason: 'x'.repeat(200) }, SELF))
+      .toEqual({ kind: 'progress', id: 'r1', state: 'uploading', uploadedBytes: 5, totalBytes: undefined, reason: 'x'.repeat(40) });
+  });
+
+  it('refuses an unknown upload state', () => {
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_UPLOAD_PROGRESS', id: 'r1', state: 'pwned' }, SELF)).toBeNull();
+  });
+
+  it('reads "still coming" and the save result', () => {
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_HANDOFF_PENDING', id: 'r1' }, SELF)).toEqual({ kind: 'pending', id: 'r1' });
+    expect(readHandoffMessage(EXT, { type: 'SNAPREC_LOCAL_SAVE', id: 'r1', ok: false }, SELF)).toEqual({ kind: 'localSave', id: 'r1', ok: false });
+  });
+
+  it('never takes them from the page itself', () => {
+    expect(readHandoffMessage(SELF, { type: 'SNAPREC_UPLOAD_PROGRESS', id: 'r1', state: 'registered' }, SELF)).toBeNull();
+    expect(readHandoffMessage(SELF, { type: 'SNAPREC_HANDOFF_PENDING', id: 'r1' }, SELF)).toBeNull();
   });
 });
