@@ -197,6 +197,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'startRecording':
             startRecording(message.options);
             return false; // No response needed
+        case 'cancelCountdown':
+            // Only a start that is still counting down; afterwards it is a recording.
+            if (pendingStart) { pendingStart.cancelled = true; pendingStart.wake?.(); }
+            sendResponse?.({ success: true });
+            return false;
         case 'stopRecording':
             stopRecording();
             return false; // No response needed
@@ -942,6 +947,9 @@ async function closeOffscreenDocument() {
 let recordingTabId = null;
 
 // Start Recording using Offscreen Document
+/** The start whose countdown is running, so 'cancelCountdown' can end it. */
+let pendingStart = null;
+
 async function startRecording(options) {
     try {
         console.log('[SnapRec] startRecording called with options:', JSON.stringify(options));
@@ -999,8 +1007,21 @@ async function startRecording(options) {
                 }
             });
 
-            // Wait for countdown to complete (3 seconds for numbers + 0.5s buffer)
-            await new Promise(resolve => setTimeout(resolve, 3500));
+            // Wait for countdown to complete (3 seconds for numbers + 0.5s buffer).
+            // Cancellable: 'cancelCountdown' ends the wait early and nothing is recorded.
+            const start = { cancelled: false, wake: null };
+            pendingStart = start;
+            await new Promise((resolve) => { start.wake = resolve; setTimeout(resolve, 3500); });
+            pendingStart = null;
+            if (start.cancelled) {
+                console.log('[SnapRec] Countdown cancelled');
+                chrome.tabs.sendMessage(tab.id, { action: 'hideCountdown' }, () => { void chrome.runtime.lastError; });
+                recordingTabId = null;
+                await closeOffscreenDocument();
+                Analytics.track('recording_cancelled', { stage: 'countdown', reason: 'user' });
+                notifyPopup({ action: 'startFailed', reason: 'cancelled' });
+                return;
+            }
             console.log('[SnapRec] Countdown complete');
 
             // Step 3: Start the MediaRecorder

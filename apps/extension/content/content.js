@@ -60,6 +60,12 @@
                     sendResponse({ success: true });
                 });
                 return true; // Keep channel open for async response
+            case 'hideCountdown':
+                // The start was cancelled during the countdown.
+                countdownCancelled = true;
+                document.querySelectorAll('.snaprec-countdown-overlay').forEach((el) => el.remove());
+                sendResponse({ success: true });
+                return false;
             case 'micMutedChanged':
                 // The popup's switch and this overlay are two views of one
                 // setting; whichever moved, both have to show it.
@@ -1242,7 +1248,9 @@
     }
 
     // Countdown Timer
+    let countdownCancelled = false;
     function showCountdown() {
+        countdownCancelled = false;
         return new Promise((resolve) => {
             const overlay = document.createElement('div');
             overlay.className = 'snaprec-countdown-overlay';
@@ -1252,7 +1260,7 @@
             let index = 0;
 
             function showNumber() {
-                if (index >= numbers.length) {
+                if (countdownCancelled || index >= numbers.length) {
                     overlay.remove();
                     resolve();
                     return;
