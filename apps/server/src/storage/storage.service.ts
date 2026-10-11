@@ -171,6 +171,19 @@ export class StorageService implements OnModuleInit {
         }
     }
 
+    /** The first `length` bytes of an object and its stored Content-Type, by
+     * one ranged GET: checking a recording's header never downloads the
+     * recording. R2 errors are thrown. */
+    async readHead(fileName: string, length: number): Promise<{ contentType?: string; bytes: Uint8Array }> {
+        const out = await this.s3Client.send(new GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: fileName,
+            Range: `bytes=0-${length - 1}`,
+        }));
+        const bytes = out.Body ? await out.Body.transformToByteArray() : new Uint8Array();
+        return { contentType: out.ContentType, bytes: bytes.subarray(0, length) };
+    }
+
     /** Delete a file from R2 by key (fileName). Used for cleanup and wipe scripts. */
     async deleteObject(key: string): Promise<void> {
         const command = new DeleteObjectCommand({

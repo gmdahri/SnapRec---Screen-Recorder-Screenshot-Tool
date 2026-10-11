@@ -18,6 +18,7 @@ import {
     UseInterceptors,
     BadRequestException,
     ServiceUnavailableException,
+    UnprocessableEntityException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { StorageService } from '../storage/storage.service';
@@ -30,6 +31,9 @@ import { ResolveCommentDto } from './dto/resolve-comment.dto';
 import { PublishRecordingDto } from './dto/publish-recording.dto';
 import { WatchProgressDto } from './dto/watch-progress.dto';
 import { UploadUrlDto, CreateRecordingDto, UpdateRecordingDto, ClaimRecordingsDto, AddReactionDto, AddCommentDto, SharedQueryDto, BeginUploadDto, PartUrlDto, CompleteUploadDto, AbortUploadDto } from './dto';
+
+/** Every WebM file starts with the EBML element ID. */
+const EBML_MAGIC = Buffer.from([0x1a, 0x45, 0xdf, 0xa3]);
 
 // No response from this controller carries a guest id: see the interceptor.
 @UseInterceptors(StripGuestIdsInterceptor)
@@ -80,9 +84,13 @@ export class RecordingsController {
      * straight to R2, and completes at the end. Part bytes never reach this
      * server — it only signs and bookkeeps. */
 
+    /** No existence check here: opening an upload writes nothing, and
+     * complete below refuses a key that holds a file. Extension v2.0.9 drops
+     * every chunk recorded before this answers — including the first one, which
+     * carries the WebM header — so an extra R2 round trip here cost recordings
+     * their header. */
     @Post('upload/begin')
     async beginUpload(@Body() dto: BeginUploadDto) {
-        await this.refuseExistingKey(dto.fileName);
         const uploadId = await this.storageService.createMultipartUpload(
             dto.fileName, dto.contentType);
         return { uploadId };
@@ -102,7 +110,43 @@ export class RecordingsController {
         await this.refuseExistingKey(dto.fileName);
         await this.storageService.completeMultipartUpload(
             dto.fileName, dto.uploadId, dto.parts);
+        // Only reached when the key was verified empty above, so the object
+        // there now is the one this request just wrote.
+        await this.refuseHeaderlessWebm(dto.fileName);
         return { fileUrl: dto.fileName };
+    }
+
+    /** A completed video/webm must start with the WebM (EBML) header.
+     *
+     * Extension v2.0.9 drops what it records before upload/begin answers, and
+     * the first chunk carries the header; its upload still completes, and it
+     * registered a recording that plays nowhere. Deleting that file and
+     * answering 422 makes it abort and register nothing, so the share page
+     * keeps the local copy, which plays and can still be uploaded.
+     *
+     * Only the extension uses the multipart endpoints. Anything that is not
+     * video/webm, and any file R2 cannot read back, is left alone.
+     * WEBM_HEADER_CHECK=off turns this off. */
+    private async refuseHeaderlessWebm(fileName: string) {
+        if ((process.env.WEBM_HEADER_CHECK ?? '').trim().toLowerCase() === 'off') return;
+
+        let head: { contentType?: string; bytes: Uint8Array };
+        try {
+            head = await this.storageService.readHead(fileName, EBML_MAGIC.length);
+        } catch (e) {
+            this.logger.warn(`Header check skipped for ${fileName}: ${(e as Error).message}`);
+            return;
+        }
+        if (!(head.contentType ?? '').toLowerCase().startsWith('video/webm')) return;
+        if (Buffer.from(head.bytes).equals(EBML_MAGIC)) return;
+
+        try {
+            await this.storageService.deleteObject(fileName);
+            this.logger.warn(`Deleted ${fileName}: a completed video/webm that does not start with the WebM header`);
+        } catch (e) {
+            this.logger.warn(`Refused ${fileName} (no WebM header) but could not delete it: ${(e as Error).message}`);
+        }
+        throw new UnprocessableEntityException('The uploaded recording is missing its header');
     }
 
     /** Abort is what stops orphaned parts billing. It must never throw at the
