@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import GoogleSignInButton from './GoogleSignInButton';
 
@@ -11,17 +11,54 @@ interface LoginModalProps {
     sessionExpired?: boolean;
 }
 
+/** How long "Opening Google…" may last before the modal says sign-in did not
+ * start. A working sign-in has left the page well before this. */
+export const SIGN_IN_START_TIMEOUT_MS = 15_000;
+
 export const LoginModal: React.FC<LoginModalProps> = ({
     isOpen,
     onClose,
     actionDescription = 'continue',
     sessionExpired = false,
 }) => {
-    const { signInWithGoogle, loading } = useAuth();
+    const { signInWithGoogle } = useAuth();
+    // Disabled only while this click is in flight. It used to follow the
+    // auth context's `loading` (the saved session being restored), which can
+    // hang or fail and left the button on "Loading..." for good.
+    const [signingIn, setSigningIn] = useState(false);
+    const [failed, setFailed] = useState(false);
+    const giveUp = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const stopWaiting = () => {
+        if (giveUp.current) clearTimeout(giveUp.current);
+        giveUp.current = null;
+    };
+
+    useEffect(() => {
+        if (!isOpen) {
+            stopWaiting();
+            setSigningIn(false);
+            setFailed(false);
+        }
+        return stopWaiting;
+    }, [isOpen]);
 
     const handleSignIn = async () => {
-        await signInWithGoogle();
-        onClose();
+        setFailed(false);
+        setSigningIn(true);
+        stopWaiting();
+        // On success the browser leaves for Google. Still here this long
+        // after means it never did.
+        giveUp.current = setTimeout(() => {
+            setSigningIn(false);
+            setFailed(true);
+        }, SIGN_IN_START_TIMEOUT_MS);
+        const error = await signInWithGoogle();
+        if (error) {
+            stopWaiting();
+            setSigningIn(false);
+            setFailed(true);
+        }
     };
 
     if (!isOpen) return null;
@@ -45,9 +82,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <div className="space-y-3">
                     <GoogleSignInButton
                         onClick={handleSignIn}
-                        loading={loading}
+                        loading={signingIn}
+                        loadingLabel="Opening Google…"
                         fullWidth
                     />
+                    {failed && (
+                        <p role="alert" className="text-sm text-center text-[var(--sr-coral-hover)]">
+                            Couldn't start sign-in. Reload the page and try again.{' '}
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                className="underline font-medium cursor-pointer"
+                            >
+                                Reload
+                            </button>
+                        </p>
+                    )}
                     <button
                         onClick={onClose}
                         className="w-full px-4 py-3 text-[var(--sr-text-faint-on-light)] hover:text-[var(--sr-text-primary-on-light)] font-medium text-sm transition-colors cursor-pointer"
