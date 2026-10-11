@@ -132,23 +132,39 @@ export const avatarFor = (supabaseId: string) => `https://avatars.test/${Buffer.
 /** R2 as a set of keys. URLs are shaped like real presigned ones — the key is
  * readable in the path — because that is what leaks a key to an attacker. */
 function bucket() {
-    const objects = new Map<string, string>();
+    const objects = new Map<string, string | Buffer>();
+    const contentTypes = new Map<string, string>();
     const uploads = new Map<string, string>(); // uploadId -> key
+    const uploadTypes = new Map<string, string>(); // uploadId -> content type given at begin
+    /** What CompleteMultipartUpload assembles, by uploadId. Unset: a WebM
+     * that starts with its EBML header, as every complete recording does. */
+    const assembled = new Map<string, Buffer>();
     const signedPuts: string[] = [];
     return {
-        objects, uploads, signedPuts,
+        objects, contentTypes, uploads, assembled, signedPuts,
         async getUploadPresignedUrl(key: string) { signedPuts.push(key); return `${R2}/${key}?X-Amz-Signature=put`; },
-        async createMultipartUpload(key: string) { const id = `mp-${uploads.size + 1}`; uploads.set(id, key); return id; },
+        async createMultipartUpload(key: string, contentType: string) {
+            const id = `mp-${uploads.size + 1}`; uploads.set(id, key); uploadTypes.set(id, contentType); return id;
+        },
         async getUploadPartUrl(key: string, uploadId: string, n: number) { return `${R2}/${key}?uploadId=${uploadId}&partNumber=${n}`; },
         async completeMultipartUpload(key: string, uploadId: string) {
             if (uploads.get(uploadId) !== key) throw Object.assign(new Error('NoSuchUpload'), { name: 'NoSuchUpload' });
             uploads.delete(uploadId);
-            objects.set(key, `multipart:${uploadId}`);
+            objects.set(key, assembled.get(uploadId) ?? Buffer.from('1a45dfa39f4286810142f7810142f2', 'hex'));
+            contentTypes.set(key, uploadTypes.get(uploadId) ?? 'application/octet-stream');
         },
-        async abortMultipartUpload(key: string, uploadId: string) { uploads.delete(uploadId); },
+        async abortMultipartUpload(key: string, uploadId: string) {
+            if (!uploads.has(uploadId)) throw Object.assign(new Error('NoSuchUpload'), { name: 'NoSuchUpload' });
+            uploads.delete(uploadId);
+        },
         async getDownloadUrl(key: string) { return `${R2}/${key}?X-Amz-Signature=get`; },
         async checkFileExists(key: string) { return objects.has(key); },
-        async deleteObject(key: string) { objects.delete(key); },
+        async readHead(key: string, length: number) {
+            const body = objects.get(key);
+            if (body === undefined) throw Object.assign(new Error('NoSuchKey'), { name: 'NoSuchKey' });
+            return { contentType: contentTypes.get(key), bytes: new Uint8Array(Buffer.from(body).subarray(0, length)) };
+        },
+        async deleteObject(key: string) { objects.delete(key); contentTypes.delete(key); },
     };
 }
 

@@ -35,8 +35,8 @@ function timeslices(n) {
 
 /** API + R2 in one: begin waits on a gate, parts are kept by number, and
  * complete assembles them the way R2 does. */
-function api() {
-    const s = { parts: new Map(), object: null, completed: false };
+function api({ headerCheck = false } = {}) {
+    const s = { parts: new Map(), object: null, completed: false, calls: [] };
     let open;
     s.beginGate = new Promise((r) => { open = r; });
     s.answerBegin = () => open();
@@ -49,10 +49,17 @@ function api() {
             return new Response('', { status: 200, headers: { ETag: `"e${n}"` } });
         }
         const body = JSON.parse(init.body);
+        s.calls.push(u.replace('https://api.test', ''));
         if (u.endsWith('/recordings/upload/begin')) { await s.beginGate; return json({ uploadId: 'up-1' }); }
         if (u.endsWith('/recordings/upload/part')) return json({ uploadUrl: `https://r2.test/obj?partNumber=${body.partNumber}` });
         if (u.endsWith('/recordings/upload/complete')) {
-            s.object = Buffer.concat(body.parts.map((p) => s.parts.get(p.PartNumber)));
+            const object = Buffer.concat(body.parts.map((p) => s.parts.get(p.PartNumber)));
+            // The server's post-complete check: a headerless webm is deleted
+            // and refused.
+            if (headerCheck && object.subarray(0, 4).toString('hex') !== EBML) {
+                return new Response(JSON.stringify({ statusCode: 422 }), { status: 422 });
+            }
+            s.object = object;
             s.completed = true;
             return json({ fileUrl: body.fileName });
         }
@@ -103,9 +110,11 @@ describe('the offscreen uploader (stream-upload.js)', () => {
 /* ── Known issue: extension v2.0.9 (a0039d3) ────────────────────────────────
  * Runs that release's own offscreen.js, upload-parts.js and the upload
  * functions from its background.js, read from git. It asserts the bug, so it
- * documents what users of v2.0.9 hit until they update; the server narrows
- * the window by answering upload/begin without an R2 round trip. Skipped
- * where the history is not available (a shallow clone). */
+ * documents what users of v2.0.9 hit until they update. The server narrows
+ * the window by answering upload/begin without an R2 round trip, and refuses
+ * a completed webm without its header (422), which v2.0.9 answers by
+ * aborting and registering nothing. Skipped where the history is not
+ * available (a shallow clone). */
 
 const REPO = resolve(__dirname, '../../..');
 function fromV209(path) {
@@ -149,6 +158,8 @@ function v209Extension(server) {
     const w = {
         console: quiet, fetch: server.fetch, crypto: webcrypto, setTimeout, queueMicrotask, Date, JSON,
         CONFIG: { API_BASE_URL: 'https://api.test' },
+        getAuthHeaders: async () => ({}),
+        getGuestId: async () => 'guest-test',
         chrome: { runtime: { sendMessage: (msg) => new Promise((done) => {
             let answered = false;
             const keepOpen = offscreenListener(msg, {}, (r) => { answered = true; done(r); });
@@ -159,7 +170,13 @@ function v209Extension(server) {
     vm.createContext(w);
     vm.runInContext(parts, w);
     vm.runInContext(bg.slice(from, bg.indexOf('\n}\n', last) + 3), w);
+    /* handleRecordingComplete's own lines, verbatim: register only what
+     * finishStreamingUpload returned. */
+    const gateFrom = bg.indexOf('const streamed = await finishStreamingUpload();');
+    const gate = bg.slice(gateFrom, bg.indexOf('\n        }\n', gateFrom) + 10);
     worker = {
+        stopAndRegister: (recordingId) => vm.runInContext(
+            `(async () => { const recordingId = ${JSON.stringify(recordingId)}; ${gate} return streamed; })()`, w),
         uploadNextPart: (isFinal) => vm.runInContext(`uploadNextPart(${isFinal})`, w),
         start: () => vm.runInContext('startStreamingUpload()', w),
         finish: () => vm.runInContext('finishStreamingUpload()', w),
@@ -173,7 +190,47 @@ function v209Extension(server) {
     };
 }
 
+async function recordWithLateBegin(server) {
+    const ext = v209Extension(server);
+    const slices = timeslices(400);
+    await ext.startRecorder();
+    const opening = ext.worker.start();       // background.js: void startStreamingUpload()
+    ext.emit(slices[0]);                      // the first timeslice lands first
+    server.answerBegin();
+    await opening;
+    for (const b of slices.slice(1)) { ext.emit(b); await settle(); }
+    while (ext.worker.state()?.busy || ext.buffered() >= PART) await settle();
+    return { ext, slices };
+}
+
 describe.skipIf(!haveV209)('known issue: extension v2.0.9 loses what it records before begin answers', () => {
+    it('with the server refusing a headerless webm (422), it aborts and registers nothing', async () => {
+        const server = api({ headerCheck: true });
+        const { ext } = await recordWithLateBegin(server);
+        const streamed = await ext.worker.stopAndRegister('rec-1');
+
+        expect(streamed).toBeNull();
+        expect(server.calls).toContain('/recordings/upload/abort');
+        expect(server.calls).not.toContain('/recordings');
+        expect(server.completed).toBe(false);
+    });
+
+    it('a complete recording still registers with the check on', async () => {
+        const server = api({ headerCheck: true });
+        server.answerBegin();
+        const ext = v209Extension(server);
+        const slices = timeslices(100);
+        await ext.startRecorder();
+        await ext.worker.start();
+        for (const b of slices) { ext.emit(b); await settle(); }
+        while (ext.worker.state()?.busy || ext.buffered() >= PART) await settle();
+        const streamed = await ext.worker.stopAndRegister('rec-2');
+
+        expect(streamed?.fileUrl).toBeTruthy();
+        expect(server.calls).toContain('/recordings');
+        expect(server.object.equals(Buffer.concat(slices))).toBe(true);
+    });
+
     it('the stored file starts mid-stream, yet the upload completes', async () => {
         const server = api();
         const ext = v209Extension(server);
