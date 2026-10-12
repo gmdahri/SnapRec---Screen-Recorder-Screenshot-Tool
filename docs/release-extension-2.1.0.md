@@ -2,7 +2,7 @@
 
 The first store release since v2.0.9 (`a0039d3`). It carries every extension change since then: the ones already on `main` (offscreen-owned upload with recovery, session-expiry handling, the handoff race fix) and the ones on the stacked branches `fix/copy-link` → `fix/stop-experience` → `fix/webm-duration-seek` → `chore/extension-release`.
 
-**Cut the release from `chore/extension-release`.** Besides the upload and playback work, it carries these fixes:
+**Cut the release from `fix/review-phase-2-3`**, which is stacked on `chore/extension-release` and holds the fixes from a review of the stop, handoff and recovery paths (listed below). Besides the upload and playback work, `chore/extension-release` carries these fixes:
 - **Pause and Resume** reach the recorder again (`561a9cc`, cherry-picked from `c3d1b5c` on `ui/recording-panel`). They were broken in v2.0.9: the bar showed "paused" while the recorder kept recording.
 - **Cancel during the countdown** (from the popup) stops the recording from starting (`49eb193`).
 - **Dismissing the picker** no longer closes an offscreen document that is still finishing the last recording (`3014f44`).
@@ -11,9 +11,18 @@ The first store release since v2.0.9 (`a0039d3`). It carries every extension cha
 
 Package it with an explicit version: `./ship-to-store.sh 2.1.0`.
 
+From the review (`fix/review-phase-2-3`):
+- A recording started while the previous one is still uploading gets its own upload (it used to be dropped).
+- A crash after Stop no longer lets recovery publish a cut-off file that claims to be whole.
+- A part from an aborted upload never joins the next recording's upload.
+- The background IndexedDB copy always settles, so a full disk no longer pins the recording in memory.
+- A recording the page never took stays held until it is saved to Downloads, and the fallback saves only that recording.
+- A completion whose answer was lost is recognised as done instead of aborted.
+- While uploading, the extension repeats its last report every 10 s. A share page that hears nothing for 45 s stops showing "Finishing upload…" and offers Download and Generate.
+
 ## Order
 
-1. **Merge** `fix/copy-link`, `fix/stop-experience`, `fix/webm-duration-seek`, `chore/extension-release` into `main`, in that order. Each is stacked on the one before, so each merge is a fast-forward.
+1. **Merge** `fix/copy-link`, `fix/stop-experience`, `fix/webm-duration-seek`, `chore/extension-release`, `fix/review-phase-2-3` into `main`, in that order. Each is stacked on the one before, so each merge is a fast-forward.
 2. **Check the Cloudflare Pages build environment:** `VITE_EXTENSION_ID` must be `lgafjgnifbjeafallnkkfpljgbilfajg`. A production build of the web now accepts a recording only from that id (plus `VITE_EXTENSION_IDS`, if set); a wrong value would refuse every recording.
 3. **Deploy the web and the server** (a push to `main` deploys both). The web must be live **before** the store release: the new extension opens the share page while the upload is still running, and the current production page would neither show the progress nor wait for it — it could offer "Generate shareable link" and upload a second copy. The new page works with v2.0.9 too.
 4. **Run the manual QA** in `docs/qa-recording-reliability.md` against production, on the unpacked build. Also check that **Pause / Resume** from the in-page bar and the popup stops and restarts the timer, and that the share page's recording has no paused section.
