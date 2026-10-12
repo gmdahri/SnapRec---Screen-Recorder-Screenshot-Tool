@@ -946,6 +946,30 @@ async function closeOffscreenDocument() {
 // Track active recording tab
 let recordingTabId = null;
 
+/** Pause and resume, from the popup, the in-page bar and the shortcut.
+ *
+ * The message handler has always called these, but a refactor removed them
+ * (bc074ca): the call threw, the bar showed "paused", and the recorder kept
+ * recording. The recorder lives in the offscreen document; isPaused is kept
+ * so a shortcut can toggle and the popup can show it. */
+async function pauseRecording() {
+    try {
+        await chrome.runtime.sendMessage({ action: 'offscreen_pauseRecording' });
+        await chrome.storage.local.set({ isPaused: true });
+    } catch (error) {
+        console.error('[SnapRec] Error pausing recording:', error);
+    }
+}
+
+async function resumeRecording() {
+    try {
+        await chrome.runtime.sendMessage({ action: 'offscreen_resumeRecording' });
+        await chrome.storage.local.set({ isPaused: false });
+    } catch (error) {
+        console.error('[SnapRec] Error resuming recording:', error);
+    }
+}
+
 // Start Recording using Offscreen Document
 /** The start whose countdown is running, so 'cancelCountdown' can end it. */
 let pendingStart = null;
@@ -1175,7 +1199,7 @@ async function broadcastRecordingState(action) {
 async function broadcastHideOverlay() {
     console.log('[SnapRec] Broadcasting hide overlay to all tabs');
     recordingTabId = null;
-    await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
+    await chrome.storage.local.set({ isRecording: false, recordingStartTime: null, isPaused: false });
 
     const tabs = await chrome.tabs.query({});
     // Fire all messages in parallel - don't wait for individual responses
@@ -1213,7 +1237,7 @@ async function finalizeCleanup() {
  * through 'handoffIdle'. */
 async function endRecordingState() {
     recordingTabId = null;
-    await chrome.storage.local.set({ isRecording: false, recordingStartTime: null });
+    await chrome.storage.local.set({ isRecording: false, recordingStartTime: null, isPaused: false });
 }
 
 // ... existing code ...
