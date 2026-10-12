@@ -2,6 +2,13 @@
 
 The first store release since v2.0.9 (`a0039d3`). It carries every extension change since then: the ones already on `main` (offscreen-owned upload with recovery, session-expiry handling, the handoff race fix) and the ones on the stacked branches `fix/copy-link` → `fix/stop-experience` → `fix/webm-duration-seek` → `chore/extension-release`.
 
+**Cut the release from `chore/extension-release`.** Besides the upload and playback work, it carries these fixes:
+- **Pause and Resume** reach the recorder again (`561a9cc`, cherry-picked from `c3d1b5c` on `ui/recording-panel`). They were broken in v2.0.9: the bar showed "paused" while the recorder kept recording.
+- **Cancel during the countdown** (from the popup) stops the recording from starting (`49eb193`).
+- **Dismissing the picker** no longer closes an offscreen document that is still finishing the last recording (`3014f44`).
+
+`ui/recording-panel` (the panel and new control bar, behind a flag) is **not** in this release. Nothing else on it is needed for 2.1.0. `300064f` would make the popup's Screen / Window / Tab choice open the picker on that view, but v2.0.9 ignores that choice too, so it can wait for the next release.
+
 Package it with an explicit version: `./ship-to-store.sh 2.1.0`.
 
 ## Order
@@ -9,7 +16,7 @@ Package it with an explicit version: `./ship-to-store.sh 2.1.0`.
 1. **Merge** `fix/copy-link`, `fix/stop-experience`, `fix/webm-duration-seek`, `chore/extension-release` into `main`, in that order. Each is stacked on the one before, so each merge is a fast-forward.
 2. **Check the Cloudflare Pages build environment:** `VITE_EXTENSION_ID` must be `lgafjgnifbjeafallnkkfpljgbilfajg`. A production build of the web now accepts a recording only from that id (plus `VITE_EXTENSION_IDS`, if set); a wrong value would refuse every recording.
 3. **Deploy the web and the server** (a push to `main` deploys both). The web must be live **before** the store release: the new extension opens the share page while the upload is still running, and the current production page would neither show the progress nor wait for it — it could offer "Generate shareable link" and upload a second copy. The new page works with v2.0.9 too.
-4. **Run the manual QA** in `docs/qa-recording-reliability.md` against production, on the unpacked build.
+4. **Run the manual QA** in `docs/qa-recording-reliability.md` against production, on the unpacked build. Also check that **Pause / Resume** from the in-page bar and the popup stops and restarts the timer, and that the share page's recording has no paused section.
 5. **Switch `apps/extension/background/config.js` back to the production URLs.** `ship-to-store.sh` now refuses to package otherwise; `node apps/extension/scripts/check-release-config.mjs` checks it on its own.
 6. `./ship-to-store.sh 2.1.0`, then upload `apps/snaprec-extension-v2.1.0.zip`.
 7. **Once the store has published it**, set `apps/web/public/version.json` to `2.1.0` and deploy the web, so installed copies are told to update. It currently says 2.0.8, behind the store's 2.0.9.
@@ -28,6 +35,7 @@ None changed: `manifest.json` is identical to v2.0.9's apart from the version th
 > - **If the upload can't finish**, you're told why, and you can download the recording or generate the link again. Nothing is lost.
 > - **"Copy link" always copies the real link** to your recording.
 > - **A slow connection no longer cuts off the end of a recording.**
+> - **Pause works again**, and **Cancel** during the 3-2-1 countdown stops the recording from starting.
 
 ## PostHog: before and after
 
