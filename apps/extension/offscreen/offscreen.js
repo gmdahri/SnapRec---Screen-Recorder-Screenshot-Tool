@@ -164,7 +164,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true;
 
         case 'offscreen_loadParked':
-            loadParkedBlob(message.kind)
+            loadParkedBlob(message.kind, message.id ?? null)
                 .then(size => sendResponse({ success: true, size }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
@@ -648,8 +648,9 @@ async function getRecordingBlobBase64() {
  * offscreen document that held the recording has long been closed by
  * finalizeCleanup. So a fresh one is opened and the capture loaded back from
  * the store it was parked in, which is exactly what parking it was for. */
-async function loadParkedBlob(kind = 'video') {
+async function loadParkedBlob(kind = 'video', expectedId = null) {
     const blobKey = kind === 'image' ? 'latest_image_blob' : 'latest_video_blob';
+    const idKey = kind === 'image' ? 'latest_image_id' : 'latest_id';
 
     const blob = await new Promise((resolve, reject) => {
         const request = indexedDB.open('SnapRecDB', 2);
@@ -660,9 +661,15 @@ async function loadParkedBlob(kind = 'video') {
         request.onsuccess = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains('recordings')) return reject(new Error('no store'));
-            const get = db.transaction(['recordings'], 'readonly')
-                .objectStore('recordings').get(blobKey);
-            get.onsuccess = () => resolve(get.result instanceof Blob ? get.result : null);
+            const store = db.transaction(['recordings'], 'readonly').objectStore('recordings');
+            const parkedId = store.get(idKey);
+            const get = store.get(blobKey);
+            get.onsuccess = () => {
+                // The slot holds the latest recording, which may be a newer
+                // one than the recording asked for.
+                if (expectedId && parkedId.result !== expectedId) return reject(new Error('another recording is parked'));
+                resolve(get.result instanceof Blob ? get.result : null);
+            };
             get.onerror = () => reject(new Error('read failed'));
         };
         request.onerror = () => reject(new Error('open failed'));

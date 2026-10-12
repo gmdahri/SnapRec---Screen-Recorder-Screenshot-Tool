@@ -80,3 +80,29 @@ describe('the background copy', () => {
         courier.close();
     }, 30_000);
 });
+
+describe('the disk fallback from the background copy', () => {
+    /* When the document no longer holds a recording the page never took,
+     * the worker saves it from the IndexedDB copy. That slot holds the most
+     * recent recording, which may be a newer one: saving that under this
+     * recording's failure would put the wrong recording in Downloads.
+     *
+     * Checked on the loader itself: the harness's IndexedDB does not keep a
+     * Blob as a Blob, so the save to Downloads cannot be followed end to end
+     * here. */
+    it('loads only the recording it was asked for', async () => {
+        h = createHarness({ tabLoadMs: 0 });
+        await h.sw('startRecording({ microphone: false, systemAudio: false })');
+        await h.waitFor(() => h.recorder()?.state === 'recording', { what: 'the recorder' });
+        await h.offscreen(`persistForHandoff('rec-NEWER', '[]', 'video', new Blob(['newer']))`);
+        const asked = (id) => h.offscreen(`loadParkedBlob('video', ${JSON.stringify(id)}).then(() => 'loaded', (e) => e.message)`);
+        expect(await asked('rec-A')).toBe('another recording is parked');
+        expect(await asked('rec-NEWER')).not.toBe('another recording is parked');
+    }, 30_000);
+
+    it('the worker asks for the recording that was not delivered', async () => {
+        const { readFileSync } = await import('node:fs');
+        const src = readFileSync(`${__dirname}/../background/background.js`, 'utf8');
+        expect(src).toMatch(/action: 'offscreen_loadParked', kind, id \}/);
+    });
+});

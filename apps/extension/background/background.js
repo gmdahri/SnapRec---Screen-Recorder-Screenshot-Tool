@@ -1708,7 +1708,7 @@ async function saveUndeliveredCapture(kind, id) {
             const existed = await hasOffscreenDocument();
             await createOffscreenDocument();
             const loaded = await chrome.runtime
-                .sendMessage({ action: 'offscreen_loadParked', kind })
+                .sendMessage({ action: 'offscreen_loadParked', kind, id })
                 .catch((e) => ({ success: false, error: e.message }));
             if (!loaded?.success) {
                 console.error('[SnapRec] Could not reload the parked capture:', loaded?.error);
