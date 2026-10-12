@@ -22,13 +22,16 @@
      * have been stopped, and this document must not hold gigabytes for ever.
      * Its upload and IndexedDB copy still finish. */
     const DELIVERY_GRACE_MS = 10 * 60 * 1000;
+    /** How often an unsettled upload says it is still going. The page gives
+     * up on silence after several of these (ShareView's EXTENSION_SILENT_MS). */
+    const KEEP_ALIVE_MS = 10 * 1000;
 
     /** `channel` is a BroadcastChannel (or a stand-in with postMessage and
      * onmessage). Everything that touches the outside is passed in, so the
      * whole lifecycle runs under test. */
     function createHandoffHost({
         channel, onIdle = () => {}, log = () => {},
-        deliveryGraceMs = DELIVERY_GRACE_MS, setTimer = setTimeout,
+        deliveryGraceMs = DELIVERY_GRACE_MS, keepAliveMs = KEEP_ALIVE_MS, setTimer = setTimeout,
     }) {
         const sessions = new Map();   // recording id -> session
 
@@ -77,6 +80,16 @@
                 s.lastProgress = p;
                 send({ type: 'progress', id, ...p });
             };
+            /* Until the upload settles, the last report again every few
+             * seconds: re-sending part 1 or retrying completion can go minutes
+             * without new progress, and the page takes silence to mean the
+             * document is gone. */
+            const keepAlive = () => setTimer(() => {
+                if (s.uploadSettled) return;
+                send({ type: 'progress', id, ...(s.lastProgress ?? { state: 'uploading' }) });
+                keepAlive();
+            }, keepAliveMs);
+            keepAlive();
 
             Promise.resolve().then(persist).then(
                 () => { s.saved = true; },

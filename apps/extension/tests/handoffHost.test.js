@@ -19,11 +19,13 @@ function load() {
     return sandbox.SnapRecHandoffHost;
 }
 
-function rig({ deliveryGraceMs } = {}) {
+function rig({ deliveryGraceMs, keepAliveMs } = {}) {
     const sent = [];
     const channel = { onmessage: null, postMessage: (m) => sent.push(m) };
     const onIdle = vi.fn();
-    const host = load().createHandoffHost({ channel, onIdle, ...(deliveryGraceMs ? { deliveryGraceMs } : {}) });
+    const host = load().createHandoffHost({
+        channel, onIdle, ...(deliveryGraceMs ? { deliveryGraceMs } : {}), ...(keepAliveMs ? { keepAliveMs } : {}),
+    });
     const from = (data) => channel.onmessage({ data });
     return { host, sent, onIdle, from };
 }
@@ -199,3 +201,34 @@ describe('a recording nobody comes for', () => {
         expect(onIdle).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('while the upload is under way', () => {
+    /* Re-sending part 1 or retrying the completion can take minutes without
+     * a byte of progress to report. The page tells "still working" from "the
+     * extension is gone" by these repeats: they stop when the upload settles,
+     * or when the document dies. */
+    it('repeats the last report until the upload settles, then stops', async () => {
+        const { host, sent } = rig({ keepAliveMs: 20 });
+        const one = startOne(host);
+        await flush();
+        one.progress({ state: 'completing', uploadedBytes: 10, totalBytes: 10 });
+        await new Promise((r) => setTimeout(r, 75));
+        const repeats = sent.filter((m) => m.type === 'progress' && m.state === 'completing');
+        expect(repeats.length).toBeGreaterThanOrEqual(3);
+        expect(repeats.every((m) => m.id === 'rec-A' && m.uploadedBytes === 10)).toBe(true);
+
+        one.upload.resolve(null);
+        await flush(); await flush();
+        const settledAt = sent.length;
+        await new Promise((r) => setTimeout(r, 75));
+        expect(sent.slice(settledAt)).toEqual([]);
+    });
+
+    it('says it is uploading before the first report', async () => {
+        const { host, sent } = rig({ keepAliveMs: 20 });
+        startOne(host);
+        await new Promise((r) => setTimeout(r, 30));
+        expect(sent.some((m) => m.type === 'progress' && m.state === 'uploading' && m.id === 'rec-A')).toBe(true);
+    });
+});
+
