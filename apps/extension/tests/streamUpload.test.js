@@ -345,3 +345,64 @@ describe('the network and the store failing', () => {
         expect(result).not.toBeNull();
     });
 });
+
+describe('an uploader used again after abort', () => {
+    /* abort() ends an upload whose part may still be on its way. When that
+     * PUT answers, the uploader may already be serving the next recording:
+     * the old part must not join the new upload. */
+    it('never lets the old upload\'s part into the next upload', async () => {
+        const api = server();
+        const completes = [];
+        const fetch = async (url, init) => {
+            if (String(url).endsWith('/recordings/upload/complete')) completes.push(JSON.parse(init.body));
+            return api.fetch(url, init);
+        };
+        let release;
+        const up = load().createStreamUploader({
+            apiBase: 'https://api.test', fetch, store: memoryStore(), track: () => {},
+            partSliceLength: (buffered, isFinal) => (buffered <= 0 ? 0 : isFinal ? buffered : buffered >= PART ? PART : 0),
+            partMinBytes: PART, setTimer: fast,
+            putPart: async (url, _blob, { signal } = {}) => {
+                if (url.endsWith('up-1/2')) {
+                    // Answers only when released, whatever abort() did.
+                    await new Promise((r) => { release = r; });
+                    void signal;
+                }
+                return { ok: true, status: 200, etag: `"${url.split('/').slice(-2).join('-')}"` };
+            },
+        });
+        await up.begin();
+        up.push(chunk(PART)); await tick();
+        up.push(chunk(PART)); await tick();          // up-1 part 2 is on its way
+        await up.abort('recording_failed');
+        await up.begin();                            // the next recording
+        release();                                   // the old PUT answers now
+        await tick();
+        up.push(chunk(1000));
+        await up.finish();
+        const second = completes.find((c) => c.uploadId === 'up-2');
+        expect(second.parts.map((p) => p.ETag)).toEqual(['"up-2-1"']);
+    });
+
+    it('a PUT cancelled by abort() is not counted against the next upload', async () => {
+        const api = server();
+        const events = [];
+        const up = load().createStreamUploader({
+            apiBase: 'https://api.test', fetch: api.fetch, store: memoryStore(),
+            track: (event, props) => events.push({ event, ...props }),
+            partSliceLength: (buffered, isFinal) => (buffered <= 0 ? 0 : isFinal ? buffered : buffered >= PART ? PART : 0),
+            partMinBytes: PART, setTimer: fast,
+            putPart: (url, _blob, { signal } = {}) => (url.endsWith('up-1/1')
+                ? new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason)))
+                : Promise.resolve({ ok: true, status: 200, etag: '"e"' })),
+        });
+        await up.begin();
+        up.push(chunk(PART)); await tick();          // up-1 part 1 hangs until cancelled
+        await up.abort('recording_failed');
+        await up.begin();
+        await tick();
+        expect(events.filter((e) => e.event === 'upload_part_failed')).toEqual([]);
+        up.push(chunk(1000));
+        expect(await up.finish()).not.toBeNull();
+    });
+});

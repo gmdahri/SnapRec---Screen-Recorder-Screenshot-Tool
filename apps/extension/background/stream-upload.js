@@ -259,9 +259,13 @@
         }
 
         async function uploadPart(part) {
+            // The upload this part belongs to. abort() can end it while the
+            // part is on its way, and begin() start the next one.
+            const target = record;
             const { uploadUrl } = await post('/recordings/upload/part', {
-                fileName: record.fileName, uploadId: record.uploadId, partNumber: part.partNumber,
+                fileName: target.fileName, uploadId: target.uploadId, partNumber: part.partNumber,
             });
+            if (record !== target) return;
             const controller = new AbortController();
             const timer = setTimer(() => controller.abort(new Error('part PUT timed out')), PART_TIMEOUT_MS);
             inFlight = controller;
@@ -276,17 +280,24 @@
                         if (loaded > inFlightBytes) { inFlightBytes = loaded; moved(); report('uploading'); }
                     },
                 });
+            } catch (e) {
+                if (record !== target) return;   // cancelled by abort(): not a failure of this upload
+                throw e;
             } finally {
                 clearTimer(timer);
-                inFlight = null;
-                inFlightBytes = 0;
-                uploadingPart = null;
+                if (inFlight === controller) {
+                    inFlight = null;
+                    inFlightBytes = 0;
+                    uploadingPart = null;
+                }
             }
+            // Aborted while the part was in flight: it is no part of whatever
+            // upload is open now.
+            if (record !== target) return;
             if (!res.ok) throw new Error(`part PUT failed: HTTP ${res.status}`);
             // Quoted by R2, and handed back to CompleteMultipartUpload as received.
             const etag = res.etag;
             if (!etag) throw new Error('R2 returned no ETag');
-            if (!record) return; // aborted while the part was in flight
             moved();
             if (part.partNumber === 1) firstPartSent = sent;
 
@@ -500,6 +511,7 @@
         }
 
         async function abort(reason = 'aborted') {
+            inFlight?.abort(new Error('upload aborted'));
             reset();
             if (!record) return;
             const dropped = record;
