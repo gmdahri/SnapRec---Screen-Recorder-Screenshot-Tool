@@ -80,6 +80,9 @@ function filenameFor(rec: { title?: string; type?: string } | null | undefined):
     return `${base}.${ext}`;
 }
 
+/** Silence from the extension, while it is uploading, after which the page
+ * stops waiting on it. Several of its 10-second repeats (handoff-host.js). */
+const EXTENSION_SILENT_MS = 45_000;
 /** How long a new capture's page waits for the recording without hearing
  * from the extension at all, before saying it did not arrive. The extension's
  * frame sends "still coming" every second while it fetches the recording, so a
@@ -387,6 +390,22 @@ const ShareView: React.FC = () => {
         const t = setTimeout(() => setHandoffTimedOut(true), HANDOFF_TIMEOUT_MS);
         return () => clearTimeout(t);
     }, [expectedRecordingId, localVideoBlob, handoffTimedOut, handoffHeardAt]);
+
+    /* The extension went quiet. While its upload is unsettled it repeats its
+     * last report every 10 s, so silence means it is gone: the browser closed
+     * its document, or this page was reloaded and no longer hears it. The
+     * upload then counts as failed, which offers Download and Generate,
+     * rather than "Finishing upload…" for ever. Any later report takes over. */
+    useEffect(() => {
+        if (!expectedRecordingId || !localVideoBlob || shareUrl) return;
+        const waiting = !uploadReport || ['uploading', 'completing', 'registering'].includes(uploadReport.state);
+        if (!waiting) return;
+        const t = setTimeout(
+            () => setUploadReport((r) => ({ ...(r ?? {}), state: 'failed', reason: 'extension_silent' })),
+            EXTENSION_SILENT_MS,
+        );
+        return () => clearTimeout(t);
+    }, [expectedRecordingId, localVideoBlob, shareUrl, uploadReport, handoffHeardAt]);
 
     // Keeps "uploading slowly" honest between progress reports.
     const uploadFinishing = !!uploadReport && ['uploading', 'completing', 'registering'].includes(uploadReport.state);

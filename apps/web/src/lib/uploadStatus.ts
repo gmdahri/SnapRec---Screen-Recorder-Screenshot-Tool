@@ -44,6 +44,7 @@ const FAILURE_DETAIL: Record<string, string> = {
     part_failed: 'The connection kept failing.',
     complete_failed: 'The server could not finish the file.',
     session_expired: 'Your session expired. Sign in, then generate a link.',
+    extension_silent: 'SnapRec stopped reporting on the upload.',
 };
 
 /** True when the trailing SLOW_AFTER_MS window moved too little. */

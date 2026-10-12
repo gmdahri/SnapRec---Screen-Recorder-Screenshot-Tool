@@ -207,3 +207,48 @@ describe('a recording that never arrives', () => {
         expect(screen.queryByText(/didn.t reach this page/)).toBeNull();
     });
 });
+
+describe('when the extension goes quiet', () => {
+    /* While its upload is unsettled the extension repeats its last report
+     * every 10 s. Silence after that means it is gone — the browser closed
+     * its document, or this page was reloaded and no longer hears it — and
+     * the page must not sit on "Finishing upload…" for ever. */
+    it('after 45 s with no report, the upload counts as failed and a link can be generated', async () => {
+        open();
+        await deliver();
+        await progress({ state: 'uploading', uploadedBytes: 5 * MB, totalBytes: 10 * MB });
+        await pass(44_000);
+        expect(primary().textContent).toMatch(/finishing upload/i);
+        await pass(2_000);
+        expect(screen.getByTestId('capture-notice').textContent).toMatch(/stopped reporting/);
+        expect(primary().textContent).toMatch(/generate shareable link/i);
+        expect(primary()).toBeEnabled();
+    });
+
+    it('a page that has the recording but never hears about its upload (a reload) does not wait for ever', async () => {
+        open();
+        await deliver();
+        await pass(46_000);
+        expect(primary().textContent).toMatch(/generate shareable link/i);
+    });
+
+    it('an upload that keeps reporting, even with no new bytes, is still finishing', async () => {
+        open();
+        await deliver();
+        for (let s = 0; s < 12; s++) {
+            await progress({ state: 'completing', uploadedBytes: 10 * MB, totalBytes: 10 * MB });
+            await pass(10_000);
+        }
+        expect(primary().textContent).toMatch(/finishing upload/i);
+    });
+
+    it('a report after the silence takes over again', async () => {
+        open();
+        await deliver();
+        await pass(46_000);
+        registered = true;
+        await progress({ state: 'registered' });
+        await pass(4_000);
+        expect(primary().textContent).toMatch(/copy link/i);
+    });
+});
