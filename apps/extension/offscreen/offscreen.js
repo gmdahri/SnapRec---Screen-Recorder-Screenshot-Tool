@@ -504,6 +504,10 @@ async function startMediaRecorder() {
      * once (reserving room for a Duration and a seek index) and passes every
      * later chunk on as the same Blob. The uploader keeps its own reference
      * to each chunk; the recording is untouched by uploading. */
+    // A fresh uploader if the previous recording's is still finishing. Swapped
+    // before it is captured below: the finishing one no longer accepts bytes,
+    // so this recording's would be dropped.
+    if (finishingUploaders.has(streamUploader)) streamUploader = makeUploader();
     const uploaderForThis = streamUploader;
     indexFix = null;
     recordingIndex = globalThis.SnapRecWebm.createRecordingIndex({
@@ -543,9 +547,7 @@ async function startMediaRecorder() {
 
     // Upload as we record. Not awaited: a slow or failed open must never delay
     // the recorder, and the share page can still upload the local capture.
-    // A fresh uploader if the previous recording's is still finishing.
-    if (finishingUploaders.has(streamUploader)) streamUploader = makeUploader();
-    void streamUploader.begin({ contentType: 'video/webm' });
+    void uploaderForThis.begin({ contentType: 'video/webm' });
 
     // Clear pending state
     pendingStream = null;
