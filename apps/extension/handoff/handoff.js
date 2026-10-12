@@ -188,7 +188,8 @@ window.addEventListener('message', (event) => {
             channel?.postMessage({ type: 'delivered', id });
         } else {
             console.warn('[Handoff] No acknowledgement after', HANDOFF_TIMEOUT_MS / 1000, 'seconds; falling back to disk');
-            channel?.postMessage({ type: 'gave_up', id });
+            // The worker saves it to disk, from the document's memory, and
+            // then tells the document it can let go. Not before.
             chrome.runtime.sendMessage({ action: 'handoffFailed', kind, id });
         }
         // The channel stays open: upload progress keeps reaching the page.

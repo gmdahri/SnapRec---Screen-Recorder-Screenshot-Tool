@@ -54,9 +54,6 @@
             } else if (m.type === 'delivered') {
                 s.delivered = true;
                 maybeIdle();
-            } else if (m.type === 'gave_up') {
-                s.handoffGaveUp = true;
-                maybeIdle();
             }
         };
 

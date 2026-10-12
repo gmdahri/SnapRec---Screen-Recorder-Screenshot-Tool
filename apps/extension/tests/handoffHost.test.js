@@ -155,13 +155,15 @@ describe('idle', () => {
         expect(host.busy()).toBe(false);
     });
 
-    it('a courier that gave up counts as settled, so the document can close', async () => {
-        const { host, onIdle, from } = rig();
+    it('a recording the page never took is held until the worker has saved it to disk', async () => {
+        const { host, onIdle } = rig();
         const one = startOne(host);
         one.save.resolve(); one.upload.resolve(null);
         await flush(); await flush();
-        from({ type: 'gave_up', id: 'rec-A' });
+        expect(host.recordingFor('rec-A')).not.toBeNull();   // the worker reads it from here
+        host.handoffSettled('rec-A');
         expect(onIdle).toHaveBeenCalledTimes(1);
+        expect(host.recordingFor('rec-A')).toBeNull();
     });
 
     it('not while another recording is still finishing', async () => {

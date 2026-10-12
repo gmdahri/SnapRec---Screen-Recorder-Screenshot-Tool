@@ -160,6 +160,23 @@ describe('from the offscreen document', () => {
         expect(host.received.map((m) => m.type)).toEqual(['want', 'delivered']);
     });
 
+    it('with no acknowledgement, leaves the recording held for the disk fallback', async () => {
+        /* The worker saves an unacknowledged recording to disk from the
+         * document's memory, and tells the document when it is done. Telling
+         * the document "gave up" here as well let it drop the recording
+         * before the worker had read it. */
+        const idb = new IDBFactory();
+        const { Channel, host } = channelPair();
+        host.onmessage = (e) => {
+            host.received.push(e.data);
+            if (e.data.type === 'want') host.postMessage({ type: 'recording', id: 'rec-A', blob: new NodeBlob(['x']), metadataStr: '[]' });
+        };
+        const c = runCourier(idb, 'rec-A', { channel: Channel, timeoutMs: 4_000 });   // 200 ms here
+        await settle(400);
+        expect(c.sent).toEqual([{ action: 'handoffFailed', kind: 'video', id: 'rec-A' }]);
+        expect(host.received.map((m) => m.type)).toEqual(['want']);
+    });
+
     it('falls back to IndexedDB when the document does not answer', async () => {
         const idb = new IDBFactory();
         await park(idb, { id: 'rec-A' });
