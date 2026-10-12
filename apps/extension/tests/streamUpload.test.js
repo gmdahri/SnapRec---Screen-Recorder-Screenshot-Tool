@@ -39,7 +39,7 @@ function memoryStore() {
 /** API + R2 with switches. complete on an upload that is not open answers 500,
  * as the real controller does for R2's NoSuchUpload. */
 function server() {
-    const s = { calls: [], uploads: new Map(), offline: false, failComplete: 0, failPut: 0, registered: [] };
+    const s = { calls: [], uploads: new Map(), offline: false, failComplete: 0, loseCompleteResponse: 0, failPut: 0, registered: [] };
     s.fetch = async (url, init = {}) => {
         const path = String(url).replace('https://api.test', '');
         s.calls.push(path);
@@ -59,6 +59,12 @@ function server() {
         if (path === '/recordings/upload/complete') {
             const up = s.uploads.get(body.uploadId);
             if (s.failComplete > 0) { s.failComplete--; return json({}, 503); }
+            // The real controller refuses a key that already holds a file.
+            if (up && up.state === 'complete') return json({ message: 'exists' }, 409);
+            if (s.loseCompleteResponse > 0 && up?.state === 'open') {
+                s.loseCompleteResponse--; up.state = 'complete';   // done on R2; the answer never arrives
+                throw new TypeError('Failed to fetch');
+            }
             if (!up || up.state !== 'open') return json({}, 500);
             up.state = 'complete';
             return json({ fileUrl: up.fileName });
@@ -406,3 +412,21 @@ describe('an uploader used again after abort', () => {
         expect(await up.finish()).not.toBeNull();
     });
 });
+
+describe('a completion whose answer was lost', () => {
+    /* R2 completed the file but the response never arrived. The retry is
+     * refused — the key now holds a file — and aborting then would leave the
+     * finished file on R2 with no recording pointing at it. The key is this
+     * upload's own, so a file there is this upload's file. */
+    it('is recognised on the retry as done, and the file is registered', async () => {
+        const { up, api } = uploader();
+        await up.begin();
+        up.push(chunk(6 * MB));
+        await tick();
+        api.loseCompleteResponse = 1;
+        const result = await up.finish();
+        expect(result).toMatchObject({ fileUrl: expect.stringMatching(/^video-/) });
+        expect(api.calls.filter((c) => c === '/recordings/upload/abort')).toEqual([]);
+    });
+});
+

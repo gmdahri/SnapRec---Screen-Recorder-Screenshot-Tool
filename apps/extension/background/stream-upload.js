@@ -107,6 +107,19 @@
         };
     }
 
+    /** True when the key holds a finished file. False when it does not, or
+     * when that cannot be told. */
+    function objectChecker(apiBase, fetchFn) {
+        return async (fileName) => {
+            try {
+                const res = await fetchFn(`${apiBase}/recordings/status/${encodeURIComponent(fileName)}`, {
+                    signal: AbortSignal.timeout(API_TIMEOUT_MS),
+                });
+                return res.ok && (await res.json()).ready === true;
+            } catch { return false; }
+        };
+    }
+
     function apiPoster(apiBase, fetchFn) {
         return async (path, body) => {
             const res = await fetchFn(`${apiBase}${path}`, {
@@ -484,12 +497,23 @@
             // downstream asks.
             const durationSec = Math.max(1, Math.round((now() - finished.startedAt) / 1000));
             report('completing');
+            const objectExists = objectChecker(apiBase, fetchFn);
             for (let attempt = 1; ; attempt++) {
                 try {
-                    const { fileUrl } = await post('/recordings/upload/complete', {
-                        fileName: finished.fileName, uploadId: finished.uploadId,
-                        parts: completionPayload(finished.parts),
-                    });
+                    let fileUrl;
+                    try {
+                        ({ fileUrl } = await post('/recordings/upload/complete', {
+                            fileName: finished.fileName, uploadId: finished.uploadId,
+                            parts: completionPayload(finished.parts),
+                        }));
+                    } catch (e) {
+                        /* An earlier attempt may have completed it and lost
+                         * its answer: the retry is then refused, the key
+                         * holding a file. The key is this upload's own, so a
+                         * file there is this recording. */
+                        if (attempt > 1 && await objectExists(finished.fileName)) fileUrl = finished.fileName;
+                        else throw e;
+                    }
                     report('done');
                     record = null;
                     finishing = false;
@@ -555,14 +579,7 @@
         const live = new Set([liveUploadId].flat().filter(Boolean));
         const records = await store.list().catch(() => []);
         const post = apiPoster(apiBase, fetchFn);
-        const objectExists = async (fileName) => {
-            try {
-                const res = await fetchFn(`${apiBase}/recordings/status/${encodeURIComponent(fileName)}`, {
-                    signal: AbortSignal.timeout(API_TIMEOUT_MS),
-                });
-                return res.ok && (await res.json()).ready === true;
-            } catch { return false; }
-        };
+        const objectExists = objectChecker(apiBase, fetchFn);
 
         const outcomes = [];
         for (const record of records) {
