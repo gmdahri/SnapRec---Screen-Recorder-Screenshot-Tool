@@ -16,8 +16,8 @@
  *
  * The dividing line is Stop. Once a recording is stopped the user has the
  * whole capture locally — the share page receives it — so its persisted record
- * is removed before completion is even attempted, and recovery never touches
- * it. Recovery only ever finalizes recordings that never reached Stop, which
+ * is marked stopped at Stop (recovery aborts such an upload rather than
+ * completing it) and removed before completion is attempted. Recovery only ever finalizes recordings that never reached Stop, which
  * are exactly the ones where the parts on R2 are all the user has. That rule
  * is what keeps a recording from being registered twice.
  *
@@ -412,6 +412,10 @@
             accepting = false;
             if (retryTimer) { clearTimer(retryTimer); retryTimer = null; }
             if (!record) return null;
+            // Stopped: recovery must not complete what is left of this upload
+            // if the document dies during the drain below (see the header).
+            record.stopped = true;
+            await save();
             // The index goes at the very end; the header fix-up into part 1.
             if (trailer?.length) { buffer.push(new Blob([trailer])); buffered += trailer.length; }
             if (header?.length) patchUnsentHeader(header);
@@ -562,6 +566,17 @@
         return outcomes;
 
         async function recoverOne(record) {
+            /* Stopped, then interrupted while its last parts were going up.
+             * The user has the whole recording locally, and part 1 may carry
+             * the patched header — a Duration for the full length and a seek
+             * index past the last part that made it. Completing it would
+             * publish a cut-off file that claims to be whole. */
+            if (record.stopped === true) {
+                await store.remove(record.uploadId).catch(() => {});
+                await post('/recordings/upload/abort', { fileName: record.fileName, uploadId: record.uploadId }).catch(() => {});
+                track('upload_failed', { error_reason: 'interrupted_after_stop', recovered: true });
+                return 'abandoned';
+            }
             if (record.parts.length === 0) {
                 await store.remove(record.uploadId).catch(() => {});
                 await post('/recordings/upload/abort', { fileName: record.fileName, uploadId: record.uploadId }).catch(() => {});
