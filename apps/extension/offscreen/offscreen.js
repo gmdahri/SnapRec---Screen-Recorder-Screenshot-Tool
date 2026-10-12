@@ -674,6 +674,10 @@ async function loadParkedBlob(kind = 'video') {
     return blob.size;
 }
 
+/** Writing a few GB takes seconds on a normal disk; a write still going after
+ * this is not going to finish. */
+const PARK_TIMEOUT_MS = 5 * 60 * 1000;
+
 async function persistForHandoff(id, metadataStr, kind = 'video', blobOverride = null) {
     const blob = blobOverride ?? (kind === 'image' ? currentImageBlob : currentRecordingBlob);
     if (!blob) throw new Error('No capture available');
@@ -688,7 +692,20 @@ async function persistForHandoff(id, metadataStr, kind = 'video', blobOverride =
     const metaKey = kind === 'image' ? 'latest_image_meta' : 'latest_metadata';
     const tsKey = kind === 'image' ? 'latest_image_timestamp' : 'latest_video_timestamp';
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolveOnce, rejectOnce) => {
+        /* Settles exactly once, and always: the document keeps the recording
+         * in memory, and stays open, until this copy is written or has failed.
+         * A full disk aborts the transaction rather than failing a request,
+         * and a write can also simply never answer. */
+        let settled = false;
+        let transaction = null;
+        const timer = setTimeout(() => {
+            try { transaction?.abort(); } catch { /* already finished */ }
+            reject(new Error('Parking the capture timed out'));
+        }, PARK_TIMEOUT_MS);
+        const resolve = (v) => { if (settled) return; settled = true; clearTimeout(timer); resolveOnce(v); };
+        const reject = (e) => { if (settled) return; settled = true; clearTimeout(timer); rejectOnce(e); };
+
         const request = indexedDB.open('SnapRecDB', 2);
 
         request.onupgradeneeded = (e) => {
@@ -700,7 +717,7 @@ async function persistForHandoff(id, metadataStr, kind = 'video', blobOverride =
 
         request.onsuccess = (e) => {
             const db = e.target.result;
-            const transaction = db.transaction(['recordings'], 'readwrite');
+            transaction = db.transaction(['recordings'], 'readwrite');
             const store = transaction.objectStore('recordings');
             store.put(blob, blobKey);
             store.put(id, idKey);
@@ -712,6 +729,7 @@ async function persistForHandoff(id, metadataStr, kind = 'video', blobOverride =
                 resolve({ size: blob.size, type: blob.type });
             };
             transaction.onerror = () => reject(new Error('Failed to park capture for handoff'));
+            transaction.onabort = () => reject(new Error('Parking the capture was aborted'));
         };
 
         request.onerror = () => reject(new Error('Failed to open IndexedDB'));
